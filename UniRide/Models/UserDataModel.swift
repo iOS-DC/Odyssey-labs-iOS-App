@@ -107,7 +107,7 @@ final class UserDataModel {
             throw NSError(domain: "Phone", code: 400,
                           userInfo: [NSLocalizedDescriptionKey: "Enter a valid phone number"])
         }
-        let otp = String(Int.random(in: 100000...999999))
+        let otp = String(Int.random(in: 1000...9999))
         phoneOTPs[phone] = otp
         print("DEBUG Phone OTP for \(phone): \(otp)")
     }
@@ -133,6 +133,29 @@ final class UserDataModel {
         saveUsers()
         phoneOTPs[phone] = nil
     }
+    
+    func createNewUser(fullName: String, course: String, year: Int, phone: String) {
+        // Create the new user
+        let newUser = UserProfile(
+            email: "",                   // email already verified earlier OR fill appropriately
+            isEmailVerified: true,
+            phone: phone,
+            isPhoneVerified: true,
+            fullName: fullName,
+            courseName: course,
+            year: year,
+            photoURL: nil,
+            vehicle: nil
+        )
+
+        // Save user
+        users.append(newUser)
+        currentUserID = newUser.id
+        saveUsers()
+
+        print("New user created:", newUser)
+    }
+
 
     // MARK: - PROFILE CRUD
     func getCurrentUser() -> UserProfile? {
