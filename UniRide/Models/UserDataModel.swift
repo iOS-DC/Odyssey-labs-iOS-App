@@ -162,6 +162,9 @@ final class UserDataModel {
         guard let id = currentUserID else { return nil }
         return users.first(where: { $0.id == id })
     }
+    func getUser(by id: UUID) -> UserProfile? {
+        return users.first(where: { $0.id == id })
+    }
 
     func editCurrentUser(fullName: String? = nil,
                          courseName: String? = nil,
