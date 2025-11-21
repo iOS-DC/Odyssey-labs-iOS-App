@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<<<<<<< HEAD
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="atz-54-KBh">
-    <device id="retina6_7" orientation="portrait" appearance="light"/>
-=======
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Vfr-ef-bjR">
     <device id="retina6_3" orientation="portrait" appearance="light"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -18,19 +13,11 @@
             <objects>
                 <viewController storyboardIdentifier="OnboardingViewController" id="Vfr-ef-bjR" customClass="OnboardingViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="EeW-Dd-tU4">
-<<<<<<< HEAD
-                        <rect key="frame" x="0.0" y="0.0" width="430" height="932"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5YN-hv-SS2">
-                                <rect key="frame" x="357" y="40" width="57" height="35"/>
-=======
                         <rect key="frame" x="0.0" y="0.0" width="402" height="874"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5YN-hv-SS2">
                                 <rect key="frame" x="329" y="40" width="57" height="35"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="Skip"/>
                                 <connections>
@@ -38,31 +25,19 @@
                                 </connections>
                             </button>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="qMr-Ee-40v">
-<<<<<<< HEAD
-                                <rect key="frame" x="24" y="159" width="382" height="224"/>
-=======
                                 <rect key="frame" x="24" y="224" width="354" height="224"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <constraints>
                                     <constraint firstAttribute="height" constant="224" id="uGp-u8-el9"/>
                                 </constraints>
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="s8L-Kg-03Y">
-<<<<<<< HEAD
-                                <rect key="frame" x="24" y="473" width="382" height="21"/>
-=======
                                 <rect key="frame" x="24" y="538" width="354" height="21"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <pageControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" numberOfPages="3" translatesAutoresizingMaskIntoConstraints="NO" id="28l-el-P2C">
-<<<<<<< HEAD
-                                <rect key="frame" x="160" y="768" width="110" height="26"/>
-=======
                                 <rect key="frame" x="160" y="676" width="82" height="26"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <color key="pageIndicatorTintColor" cyan="0.58999999999999997" magenta="0.0" yellow="0.70407241580000002" black="0.0" alpha="1" colorSpace="custom" customColorSpace="genericCMYKColorSpace"/>
                                 <color key="currentPageIndicatorTintColor" red="0.1960784314" green="0.67843137249999996" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <connections>
@@ -70,11 +45,7 @@
                                 </connections>
                             </pageControl>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tzq-B6-xiC">
-<<<<<<< HEAD
-                                <rect key="frame" x="40" y="802" width="350" height="56"/>
-=======
                                 <rect key="frame" x="40" y="710" width="322" height="56"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <constraints>
                                     <constraint firstAttribute="height" constant="56" id="o8k-Ax-oVf"/>
                                 </constraints>
@@ -94,11 +65,7 @@
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RhF-1Q-WOL">
-<<<<<<< HEAD
-                                <rect key="frame" x="24" y="413" width="382" height="30"/>
-=======
                                 <rect key="frame" x="24" y="478" width="354" height="30"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <fontDescription key="fontDescription" type="system" pointSize="25"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -146,29 +113,17 @@
             <objects>
                 <viewController storyboardIdentifier="EmailViewController" id="kaT-c5-CPE" customClass="EmailViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="oUa-j7-1M4">
-<<<<<<< HEAD
-                        <rect key="frame" x="0.0" y="0.0" width="430" height="932"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="UniRide" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0sH-zK-gT1">
-                                <rect key="frame" x="130" y="59" width="170" height="209"/>
-=======
                         <rect key="frame" x="0.0" y="0.0" width="402" height="874"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="UniRide" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0sH-zK-gT1">
                                 <rect key="frame" x="130" y="124" width="142" height="52"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="30"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="The Smartest Way to Campus" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="a3Y-07-YQe">
-<<<<<<< HEAD
-                                <rect key="frame" x="95.666666666666686" y="276" width="239" height="21"/>
-=======
                                 <rect key="frame" x="81.666666666666686" y="184" width="239" height="21"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <fontDescription key="fontDescription" type="system" pointSize="18"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -177,31 +132,19 @@
                                 <rect key="frame" x="24" y="264" width="345" height="339"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="752" text="Welcome!" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KOY-QS-18o">
-<<<<<<< HEAD
-                                        <rect key="frame" x="135.33333333333334" y="24" width="111.66666666666666" height="29"/>
-=======
                                         <rect key="frame" x="121.33333333333334" y="24" width="111.66666666666666" height="29"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="College Email" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tuI-7n-Hxe">
-<<<<<<< HEAD
-                                        <rect key="frame" x="53" y="93" width="98" height="19"/>
-=======
                                         <rect key="frame" x="25" y="93" width="98" height="19"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <fontDescription key="fontDescription" type="system" pointSize="16"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" verticalCompressionResistancePriority="752" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter Your College Email" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ekM-z7-Qo0">
-<<<<<<< HEAD
-                                        <rect key="frame" x="16" y="120" width="350" height="34"/>
-=======
                                         <rect key="frame" x="16" y="120" width="322" height="34"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <color key="backgroundColor" red="0.86666666670000003" green="0.86666666670000003" blue="0.86666666670000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                         <textInputTraits key="textInputTraits"/>
@@ -225,19 +168,8 @@
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-<<<<<<< HEAD
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="service and privacy policy" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WKY-sb-RdI">
-                                        <rect key="frame" x="122.66666666666666" y="289" width="136.99999999999997" height="14"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="11"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="753" misplaced="YES" text="By continuing you accept our terms of " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="rLT-HI-51P">
-                                        <rect key="frame" x="70" y="268" width="204" height="14"/>
-=======
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="service and privacy policy" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WKY-sb-RdI">
                                         <rect key="frame" x="104" y="301" width="137" height="14"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <fontDescription key="fontDescription" type="system" pointSize="11"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
@@ -312,75 +244,44 @@ addresses</string>
             <objects>
                 <viewController storyboardIdentifier="OTPViewController" id="6gS-kM-WQA" customClass="OTPViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="ooH-rx-NFp">
-<<<<<<< HEAD
-                        <rect key="frame" x="0.0" y="0.0" width="430" height="932"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="The Smartest Way to Campus" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jBB-tx-FtM">
-                                <rect key="frame" x="77" y="120.00000000000001" width="276" height="21.666666666666671"/>
-=======
                         <rect key="frame" x="0.0" y="0.0" width="402" height="874"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="The Smartest Way to Campus" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="jBB-tx-FtM">
                                 <rect key="frame" x="77" y="185" width="248" height="21.666666666666657"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <fontDescription key="fontDescription" type="system" pointSize="18"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="UniRide" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Ke8-up-ONb">
-<<<<<<< HEAD
-                                <rect key="frame" x="141.66666666666669" y="76" width="146.66666666666669" height="36"/>
-=======
                                 <rect key="frame" x="141.66666666666666" y="141" width="118.66666666666666" height="36"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="30"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="IJF-jk-VRQ">
-<<<<<<< HEAD
-                                <rect key="frame" x="42" y="210" width="346" height="511"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="752" text="Verify Your College Email" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5Q1-EJ-5FE">
-                                        <rect key="frame" x="34" y="202.33333333333331" width="278" height="28.666666666666657"/>
-=======
                                 <rect key="frame" x="42" y="275" width="318" height="354"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="752" text="Verify Your College Email" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5Q1-EJ-5FE">
                                         <rect key="frame" x="20" y="45.333333333333314" width="278" height="28.666666666666671"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="We have sent a 4 digit code to your  " textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="5" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bGR-oh-pZ3">
-<<<<<<< HEAD
-                                        <rect key="frame" x="48.333333333333329" y="244" width="249.33333333333337" height="18"/>
-=======
                                         <rect key="frame" x="34.333333333333329" y="87" width="249.33333333333337" height="18"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="College email." textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="5" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nnr-7E-TfD">
-<<<<<<< HEAD
-                                        <rect key="frame" x="125" y="263" width="96.333333333333314" height="18"/>
-=======
                                         <rect key="frame" x="111" y="106" width="96.333333333333314" height="18"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="B4s-X1-aHS">
-<<<<<<< HEAD
-                                        <rect key="frame" x="91" y="307" width="164" height="56"/>
-=======
                                         <rect key="frame" x="77" y="150" width="164" height="56"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <subviews>
                                             <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="center" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="7Sb-mj-SjA">
                                                 <rect key="frame" x="0.0" y="0.0" width="32" height="56"/>
@@ -417,31 +318,19 @@ addresses</string>
                                         </subviews>
                                     </stackView>
                                     <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5e2-FM-1vT">
-<<<<<<< HEAD
-                                        <rect key="frame" x="152.33333333333334" y="371" width="41.333333333333343" height="20.333333333333314"/>
-=======
                                         <rect key="frame" x="138.33333333333334" y="214" width="41.333333333333343" height="20.333333333333343"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="LEh-gZ-zlx">
-<<<<<<< HEAD
-                                        <rect key="frame" x="152.33333333333334" y="462" width="41.333333333333343" height="20.333333333333314"/>
-=======
                                         <rect key="frame" x="138.33333333333334" y="305" width="41.333333333333343" height="20.333333333333314"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2Be-Cy-jWb">
-<<<<<<< HEAD
-                                        <rect key="frame" x="40" y="395" width="266" height="50"/>
-=======
                                         <rect key="frame" x="40" y="238" width="238" height="50"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <constraints>
                                             <constraint firstAttribute="height" constant="50" id="ACi-ju-AN3"/>
                                         </constraints>
@@ -513,40 +402,22 @@ addresses</string>
             <objects>
                 <viewController storyboardIdentifier="ProfileStep1ViewController" id="oBu-AQ-ag8" customClass="ProfileStep1ViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="PSs-1i-sp7">
-<<<<<<< HEAD
-                        <rect key="frame" x="0.0" y="0.0" width="430" height="932"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Setup Profile" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cdo-XY-Kpx">
-                                <rect key="frame" x="142.66666666666666" y="82" width="144.99999999999997" height="202"/>
-=======
                         <rect key="frame" x="0.0" y="0.0" width="402" height="874"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Setup Profile" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cdo-XY-Kpx">
                                 <rect key="frame" x="129" y="147" width="144.33333333333337" height="45"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Step 1 of 3" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Y0q-Ko-dgY">
-<<<<<<< HEAD
-                                <rect key="frame" x="174" y="292" width="82" height="21"/>
-=======
                                 <rect key="frame" x="160.33333333333334" y="200" width="81.333333333333343" height="21"/>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="dE3-en-PLg">
-<<<<<<< HEAD
-                                <rect key="frame" x="43.666666666666657" y="332" width="341" height="453"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Tell us about Yourself" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bvH-vn-gjF">
-                                        <rect key="frame" x="33.333333333333343" y="24" width="274.33333333333326" height="21"/>
-=======
                                 <rect key="frame" x="20" y="266" width="362" height="500"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="aEr-Ts-o5h">
@@ -660,80 +531,10 @@ addresses</string>
                                                 </connections>
                                             </button>
                                         </subviews>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                         <constraints>
                                             <constraint firstItem="bvH-vn-gjF" firstAttribute="centerX" secondItem="aEr-Ts-o5h" secondAttribute="centerX" id="tdV-5w-fum"/>
                                         </constraints>
-<<<<<<< HEAD
-                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Full Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Fjx-5y-7n8">
-                                        <rect key="frame" x="23.000000000000007" y="77" width="75" height="21"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Course" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="CeZ-1S-mfW">
-                                        <rect key="frame" x="23.000000000000007" y="156" width="54.999999999999993" height="21"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Phone Number" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="o4k-TX-4Fd">
-                                        <rect key="frame" x="24" y="305" width="115" height="21"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Year" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fAd-3o-fdd">
-                                        <rect key="frame" x="23.000000000000007" y="228" width="34" height="21"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter Your full name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="FZI-W7-GtE">
-                                        <rect key="frame" x="23" y="106" width="298" height="34"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                        <textInputTraits key="textInputTraits"/>
-                                    </textField>
-                                    <button opaque="NO" contentMode="scaleToFill" showsMenuAsPrimaryAction="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" changesSelectionAsPrimaryAction="YES" translatesAutoresizingMaskIntoConstraints="NO" id="O2H-MA-4XM">
-                                        <rect key="frame" x="23.000000000000007" y="185" width="75" height="35"/>
-                                        <color key="backgroundColor" red="0.8627929688" green="0.8627929688" blue="0.8627929688" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="75" id="fZU-g8-FJc"/>
-                                        </constraints>
-                                        <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="plain" title="Button"/>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" showsMenuAsPrimaryAction="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" changesSelectionAsPrimaryAction="YES" translatesAutoresizingMaskIntoConstraints="NO" id="rQs-1U-veq">
-                                        <rect key="frame" x="24" y="257" width="191" height="35"/>
-                                        <color key="backgroundColor" red="0.8627929688" green="0.8627929688" blue="0.8627929688" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-                                        <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="plain" title="Button"/>
-                                    </button>
-                                    <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter Your Phone Number" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Ilj-Au-YUH">
-                                        <rect key="frame" x="24" y="334" width="191" height="34"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="191" id="sL6-aD-QRy"/>
-                                        </constraints>
-                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                        <textInputTraits key="textInputTraits" textContentType="tel"/>
-                                    </textField>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xFd-LI-985">
-                                        <rect key="frame" x="40" y="385" width="261" height="50"/>
-                                        <constraints>
-                                            <constraint firstAttribute="height" constant="50" id="JkB-4a-zPn"/>
-                                        </constraints>
-                                        <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="filled" title="Continue">
-                                            <color key="baseBackgroundColor" red="0.0" green="0.71372549019999998" blue="0.52549019610000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                        </buttonConfiguration>
-                                    </button>
-=======
                                     </stackView>
->>>>>>> 1958575ff243b7a4519f187b8096d4b260cf6fda
                                 </subviews>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
