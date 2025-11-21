@@ -7,78 +7,170 @@
 
 import UIKit
 
+let courseDurations: [String: Int] = [
+    // 4-year courses
+    "CSE": 4, "ECE": 4, "Mechanical": 4, "Civil": 4, "Electrical": 4,
+    "Chemical Engineering": 4,
+
+    // 3-year courses
+    "Arts": 3,
+    "BCA": 3,
+    "BBA": 3,
+
+    // 2-year courses
+    "MBA": 2,
+    "MCA": 2,
+
+    // Add more if needed...
+]
+
 class ProfileStep1ViewController: UIViewController {
 
+    @IBOutlet weak var fullNameTextField: UITextField!
+    @IBOutlet var containerCard: UIView!
+    @IBOutlet weak var stackView: UIStackView!
     @IBOutlet weak var dropDownButton: UIButton! // Connect your UIButton here
 
+    @IBOutlet weak var otpStatusLabel: UILabel!
+    
+    @IBOutlet weak var phoneTextField: UITextField!
+    @IBOutlet weak var otpTextField: UITextField!
+    @IBOutlet weak var sendOTPButton: UIButton!
     @IBOutlet weak var yearDropDownButton: UIButton!
+    
+    @IBOutlet weak var continueButton: UIButton!
+    var otpLabelTopConstraint: NSLayoutConstraint!
+    var otpFieldTopConstraint: NSLayoutConstraint!
+    var continueButtonTopConstraint: NSLayoutConstraint!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupCard()
         setupCourseDropDownMenu()
         setupYearDropDownMenu()
-    }
 
+
+        stackView.isLayoutMarginsRelativeArrangement = true
+        stackView.setCustomSpacing(0, after: otpStatusLabel)
+        stackView.setCustomSpacing(0, after: otpTextField)
+
+        continueButton.layer.cornerRadius = 25
+        continueButton.clipsToBounds = true
+    }
+    
+    func setupCard() {
+        containerCard.layer.cornerRadius = 20
+        containerCard.layer.shadowColor = UIColor.black.cgColor
+        containerCard.layer.shadowOpacity = 0.08
+        containerCard.layer.shadowRadius = 10
+        containerCard.layer.shadowOffset = CGSize(width: 0, height: 4)
+    }
     func setupCourseDropDownMenu() {
-        // 1. Define the options
-        let options = ["CSE", "ECE", "Mechanical", "Civil", "Electrical", "Arts","Chemical Engineering","Reset"]
-        
-        // 2. Create UIAction for each option
+        let options = Array(courseDurations.keys).sorted() + ["Reset"]
+
         let menuActions = options.map { option in
             return UIAction(title: option) { action in
-                // This block runs when an option is selected
-                print("Selected: \(action.title)")
                 
-                // Update the button's title to show the selected option
-                self.dropDownButton.setTitle(action.title, for: .normal)
-                
-                // You can add logic specific to an option if needed
                 if action.title == "Reset" {
-                    // Perform reset logic
+                    self.dropDownButton.setTitle("Select Course", for: .normal)
+                    self.setupYearDropDownMenu(defaultYears: [1,2,3,4])
+                    return
+                }
+
+                self.dropDownButton.setTitle(action.title, for: .normal)
+
+                if let duration = courseDurations[action.title] {
+                    let years = Array(1...duration)
+                    self.setupYearDropDownMenu(defaultYears: years)
                 }
             }
         }
-        
-        // 3. Create UIMenu from the actions
-        let menu = UIMenu(title: "Select your course", children: menuActions)
-        
-        // 4. Assign the menu to the button
-        dropDownButton.menu = menu
-        
-        // This ensures the button's title changes to the selected option
+
+        dropDownButton.menu = UIMenu(title: "Select your course", children: menuActions)
         dropDownButton.changesSelectionAsPrimaryAction = true
     }
+
         
-    func setupYearDropDownMenu() {
-        // 1. Define the options
-        let options = ["1", "2", "3", "4"]
+    func setupYearDropDownMenu(defaultYears: [Int] = [1,2,3,4]) {
         
-        // 2. Create UIAction for each option
-        let menuActions = options.map { option in
-            return UIAction(title: option) { action in
-                // This block runs when an option is selected
-                print("Selected: \(action.title)")
-                
-                // Update the button's title to show the selected option
+        let menuActions = defaultYears.map { year in
+            return UIAction(title: "\(year)") { action in
                 self.yearDropDownButton.setTitle(action.title, for: .normal)
-                
-                // You can add logic specific to an option if needed
-                if action.title == "Reset" {
-                    // Perform reset logic
-                }
             }
         }
-        
-        // 3. Create UIMenu from the actions
-        let menu = UIMenu(title: "Select your year", children: menuActions)
-        
-        // 4. Assign the menu to the button
-        yearDropDownButton.menu = menu
-        
-        // This ensures the button's title changes to the selected option
+
+        yearDropDownButton.menu = UIMenu(title: "Select your year", children: menuActions)
         yearDropDownButton.changesSelectionAsPrimaryAction = true
-        
     }
-        
+
+    @IBAction func sendOTPPressed(_ sender: UIButton) {
+        guard let phone = phoneTextField.text, !phone.isEmpty else {
+            otpStatusLabel.text = "Enter phone number first"
+            otpStatusLabel.textColor = .red
+            otpStatusLabel.isHidden = false
+            return
+        }
+
+        do {
+            try UserDataModel.shared.startPhoneVerification(phone: phone)
+            otpStatusLabel.text = "OTP sent! Check console"
+            otpStatusLabel.textColor = .systemGreen
+            otpStatusLabel.isHidden = false
+
+            // Show OTP field
+            otpTextField.isHidden = false
+
+            // Animate layout change
+            UIView.animate(withDuration: 0.3) {
+                self.view.layoutIfNeeded()
+            }
+
+        } catch {
+            otpStatusLabel.text = error.localizedDescription
+            otpStatusLabel.textColor = .red
+            otpStatusLabel.isHidden = false
+        }
+    }
+    
+    @IBAction func continuePressed(_ sender: UIButton) {
+
+        // If phone NOT verified → try verifying OTP
+        if !otpTextField.isHidden {
+            guard let phone = phoneTextField.text,
+                  let otp = otpTextField.text else { return }
+
+            do {
+                try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
+                print("Phone verified")
+                UserDataModel.shared.createNewUser(
+                    fullName: fullNameTextField.text ?? "",
+                    course: dropDownButton.titleLabel?.text ?? "",
+                    year: Int(yearDropDownButton.titleLabel?.text ?? "1") ?? 1,
+                    phone: phoneTextField.text ?? ""
+                )
+
+                // Proceed to next page
+                goToNextPage()
+
+            } catch {
+                otpStatusLabel.text = error.localizedDescription
+                otpStatusLabel.textColor = .red
+                otpStatusLabel.isHidden = false
+            }
+            return
+        }
+
+        // If OTP field is hidden means OTP not yet requested → tell user
+        otpStatusLabel.text = "Please verify your phone number first"
+        otpStatusLabel.textColor = .red
+        otpStatusLabel.isHidden = false
+    }
+    
+    func goToNextPage() {
+        let vc = storyboard?.instantiateViewController(identifier: "ProfileStep2ViewController") as! ProfileStep2ViewController
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
 
     /*
     // MARK: - Navigation
