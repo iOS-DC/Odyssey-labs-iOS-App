@@ -10,70 +10,67 @@ import UIKit
 class HomeViewController: UIViewController {
 
     // MARK: - Outlets
-    @IBOutlet weak var greetingLabel: UILabel!
-    @IBOutlet weak var ridesStackView: UIStackView!
-    @IBOutlet weak var eventsStackView: UIStackView!
+
+    @IBOutlet weak var greetingsLabel: UILabel!
+    @IBOutlet weak var homeTableView: UITableView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         let name = UserDataModel.shared.getCurrentUser()?.fullName ?? "User"
-        greetingLabel.text = "Hey, \(name)"
-
-        loadRides()
-        loadEvents()
+        greetingsLabel.text = "Hey, \(name)"
+        homeTableView.layer.backgroundColor = UIColor(named: "#F6FAFB")?.cgColor
+        setupTable()
     }
-    func loadRides() {
-        // Remove the placeholder card
-        ridesStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        for ride in MockData.sampleRides {
+    func setupTable() {
+        homeTableView.delegate = self
+        homeTableView.dataSource = self
+        homeTableView.separatorStyle = .none
 
-            let card: RideCardView = RideCardView.loadFromNib()
+        homeTableView.register(
+            UINib(nibName: "RideTableViewCell", bundle: nil),
+            forCellReuseIdentifier: "RideCell"
+        )
 
-            card.nameLabel.text = "Driver"
-            card.yearLabel.text = "3rd Year"
-            card.fromLabel.text = ride.source.address
-            card.toLabel.text = ride.destination.address
-
-            let formatter = DateFormatter()
-            formatter.dateFormat = "hh:mm a"
-            card.timeLabel.text = formatter.string(from: ride.departureTime)
-
-            card.vehicleTypeLabel.text = "Car"
-            card.seatsLabel.text = "Seats: \(ride.seatsTotal)"
-            card.priceLabel.text = "₹\(ride.farePerSeat)"
-
-            card.joinButton.setTitle("Join", for: .normal)
-
-            ridesStackView.addArrangedSubview(card)
-        }
+        homeTableView.register(
+            UINib(nibName: "EventTableViewCell", bundle: nil),
+            forCellReuseIdentifier: "EventCell"
+        )
     }
     
-    
-    func loadEvents() {
-        eventsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+}
+extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd MMM, yyyy"
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 2
+    }
 
-        for event in MockData.sampleEvents {
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return section == 0 ? "Nearby Rides" : "Top Events"
+    }
 
-            let card: EventCardView = EventCardView.loadFromNib()
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if section == 0 { return MockData.sampleRides.count }
+        return MockData.sampleEvents.count
+    }
 
-            card.titleLabel.text = event.title
-            card.locationLabel.text = event.location?.name ?? "Unknown"
-            card.dateLabel.text = formatter.string(from: event.startsAt)
+    func tableView(_ tableView: UITableView,
+                   cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-            card.attendButton.setTitle("Attend", for: .normal)
-
-            eventsStackView.addArrangedSubview(card)
+        if indexPath.section == 0 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "RideCell", for: indexPath) as! RideTableViewCell
+            cell.configure(with: MockData.sampleRides[indexPath.row])
+            return cell
+        } else {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
+            cell.configure(with: MockData.sampleEvents[indexPath.row])
+            return cell
         }
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return indexPath.section == 0 ? 180 : 160
     }
 }
 
-extension UIView {
-    static func loadFromNib<T: UIView>() -> T {
-        return Bundle.main.loadNibNamed(String(describing: T.self), owner: nil, options: nil)![0] as! T
-    }
-}
