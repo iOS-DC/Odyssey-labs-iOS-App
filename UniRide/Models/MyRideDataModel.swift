@@ -19,12 +19,22 @@ struct LocationPoint: Codable, Equatable {
     var address: String?
 }
 
+struct RideRoute: Codable, Equatable {
+    var coordinates: [LocationPoint]   // ordered coordinates along the polyline
+    var distanceMeters: Double
+    var expectedTravelTime: Double
+}
+
 struct Ride: Codable, Equatable {
     let id: UUID
     let driverUserID: UUID
     var source: LocationPoint
     var destination: LocationPoint
     var waypoints: [LocationPoint]
+
+    // NEW: store chosen route (optional)
+    var selectedRoute: RideRoute?
+
     var departureTime: Date
     var seatsTotal: Int
     var seatsAvailable: Int
@@ -37,6 +47,7 @@ struct Ride: Codable, Equatable {
          source: LocationPoint,
          destination: LocationPoint,
          waypoints: [LocationPoint] = [],
+         selectedRoute: RideRoute? = nil,    // NEW param (default nil)
          departureTime: Date,
          seatsTotal: Int,
          farePerSeat: Double,
@@ -47,6 +58,7 @@ struct Ride: Codable, Equatable {
         self.source = source
         self.destination = destination
         self.waypoints = waypoints
+        self.selectedRoute = selectedRoute      // store
         self.departureTime = departureTime
         self.seatsTotal = seatsTotal
         self.seatsAvailable = seatsTotal

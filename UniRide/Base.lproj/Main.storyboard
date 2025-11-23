@@ -595,7 +595,7 @@ addresses</string>
                 </tabBarController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Mva-uN-5gl" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="4482" y="-669"/>
+            <point key="canvasLocation" x="4249" y="-641"/>
         </scene>
         <!--MyRide-->
         <scene sceneID="Mon-4d-HWG">

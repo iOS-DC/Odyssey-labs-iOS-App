@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Y6W-OH-hqX">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="ZtC-b7-gXi">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
@@ -8,7 +8,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--Home-->
+        <!--Home View Controller-->
         <scene sceneID="s0d-6b-0kx">
             <objects>
                 <viewController storyboardIdentifier="HomeVC" id="Y6W-OH-hqX" customClass="HomeViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
@@ -37,6 +37,10 @@
                                                 <integer key="value" value="20"/>
                                             </userDefinedRuntimeAttribute>
                                         </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="offerRideTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="ftt-lk-MLe"/>
+                                            <segue destination="xdA-VL-6Kd" kind="show" id="JFv-wm-aDh"/>
+                                        </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="MNZ-fN-t70">
                                         <rect key="frame" x="182.66666666666663" y="0.0" width="170.33333333333337" height="90"/>
@@ -48,7 +52,7 @@
                                     <constraint firstAttribute="height" constant="90" id="z1W-vb-CRa"/>
                                 </constraints>
                             </stackView>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="exj-Zl-8Yn">
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="exj-Zl-8Yn">
                                 <rect key="frame" x="0.0" y="261.33333333333331" width="393" height="522.66666666666674"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <color key="sectionIndexBackgroundColor" red="0.9677734375" green="0.9799804688" blue="0.9838867188" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
@@ -68,13 +72,42 @@
                             <constraint firstItem="exj-Zl-8Yn" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="vu4-Fc-OVQ"/>
                         </constraints>
                     </view>
-                    <tabBarItem key="tabBarItem" title="Home" image="house" catalog="system" id="6fE-8B-sCd"/>
+                    <navigationItem key="navigationItem" id="iL8-lL-Dys"/>
                     <connections>
                         <outlet property="greetingsLabel" destination="bhF-3a-zUs" id="naM-V5-kFz"/>
                         <outlet property="homeTableView" destination="exj-Zl-8Yn" id="9zA-HD-7lF"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1993.1297709923663" y="91.549295774647888"/>
+        </scene>
+        <!--OfferRide-->
+        <scene sceneID="qXE-z3-tmp">
+            <objects>
+                <viewControllerPlaceholder storyboardIdentifier="OfferRideViewController" storyboardName="OfferRide" id="xdA-VL-6Kd" sceneMemberID="viewController">
+                    <navigationItem key="navigationItem" id="7PZ-uT-pMI"/>
+                </viewControllerPlaceholder>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="HJL-Yy-mDe" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="2637.4045801526718" y="-35.211267605633807"/>
+        </scene>
+        <!--Home-->
+        <scene sceneID="jOs-Dn-phs">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="ZtC-b7-gXi" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Home" image="house" catalog="system" id="6fE-8B-sCd"/>
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="tOM-eI-5Ar">
+                        <rect key="frame" x="0.0" y="118" width="393" height="54"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="Y6W-OH-hqX" kind="relationship" relationship="rootViewController" id="FeA-LV-oxr"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="wYz-VV-YHg" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1066.4122137404579" y="91.549295774647888"/>
         </scene>

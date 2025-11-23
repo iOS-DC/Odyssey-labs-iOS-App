@@ -20,9 +20,17 @@ class RideTableViewCell: UITableViewCell {
     @IBOutlet weak var seatsLabel: UILabel!
     @IBOutlet weak var priceLabel: UILabel!
     @IBOutlet weak var joinButton: UIButton!
+    @IBOutlet weak var cardContainerView: UIView!
 
     override func awakeFromNib() {
         super.awakeFromNib()
+        self.contentView.layer.cornerRadius = 20
+        self.contentView.layer.masksToBounds = false
+
+        self.contentView.layer.shadowColor = UIColor.black.cgColor
+        self.contentView.layer.shadowOpacity = 0.12
+        self.contentView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        self.contentView.layer.shadowRadius = 8
 
         // Optional styling
         self.selectionStyle = .none

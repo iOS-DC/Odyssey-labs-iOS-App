@@ -38,6 +38,11 @@ class HomeViewController: UIViewController {
             forCellReuseIdentifier: "EventCell"
         )
     }
+    @IBAction func offerRideTapped(_ sender: UIButton) {
+        let storyboard = UIStoryboard(name: "OfferRide", bundle: nil)
+        let vc = storyboard.instantiateViewController(withIdentifier: "OfferRideViewController") as! OfferRideViewController
+        navigationController?.pushViewController(vc, animated: true)
+    }
     
 }
 extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
@@ -72,5 +77,31 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return indexPath.section == 0 ? 180 : 160
     }
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        let label = UILabel()
+        label.font = UIFont.boldSystemFont(ofSize: 22)
+        label.textColor = UIColor.black
+        label.text = section == 0 ? "Nearby Rides" : "Top Events"
+        return label
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 50
+    }
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return 1
+    }
+
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        let space = UIView()
+        space.backgroundColor = .clear
+        return space
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        cell.contentView.layoutMargins = UIEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
+    }
+
+
 }
 

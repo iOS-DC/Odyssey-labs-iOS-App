@@ -124,6 +124,7 @@
                 </userDefinedRuntimeAttribute>
             </userDefinedRuntimeAttributes>
             <connections>
+                <outlet property="cardContainerView" destination="H2p-sc-9uM" id="GHg-gV-3Zq"/>
                 <outlet property="fromLabel" destination="4dY-8E-pEk" id="MWa-51-DXL"/>
                 <outlet property="joinButton" destination="9kL-Ju-GjU" id="xlN-b0-s3C"/>
                 <outlet property="nameLabel" destination="Np5-Ut-guL" id="YLP-eG-XB0"/>
