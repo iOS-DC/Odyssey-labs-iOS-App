@@ -68,7 +68,29 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
             dateTextField.resignFirstResponder()
         }
 
-        // MARK: - Time Picker
+    @IBAction func nextButtonTapped(_ sender: Any) {
+        let storyboard = UIStoryboard(name: "OfferRide", bundle: nil)
+        let vc = storyboard.instantiateViewController(withIdentifier: "VehicleDetailsViewController") as! VehicleDetailsViewController
+
+        vc.source = LocationPoint(lat: fromCoordinate!.latitude,
+                                   lon: fromCoordinate!.longitude,
+                                   address: fromTextField.text)
+
+        vc.destination = LocationPoint(lat: toCoordinate!.latitude,
+                                       lon: toCoordinate!.longitude,
+                                       address: toTextField.text)
+
+        vc.date = datePicker.date
+        vc.time = timePicker.date
+
+        if let chosen = chosenRoute {
+            vc.selectedRoute = convertMKRouteToRideRoute(chosen)
+        }
+
+        navigationController?.pushViewController(vc, animated: true)
+
+    }
+    // MARK: - Time Picker
         func setupTimePicker() {
             timePicker.datePickerMode = .time
             timePicker.preferredDatePickerStyle = .wheels
