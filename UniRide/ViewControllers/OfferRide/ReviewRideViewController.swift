@@ -115,8 +115,15 @@ class ReviewRideViewController: UIViewController {
         finalComponents.day = dateComponents.day
         finalComponents.hour = timeComponents.hour
         finalComponents.minute = timeComponents.minute
-        
-        let finalDepartureTime = calendar.date(from: finalComponents) ?? Date()
+                
+        var finalDepartureTime = calendar.date(from: finalComponents) ?? Date()
+
+        // ✅ Make sure departure time is not in the past
+        let now = Date()
+        if finalDepartureTime < now {
+            // push it slightly into the future so it's counted as upcoming
+            finalDepartureTime = now.addingTimeInterval(60) // 1 minute from now
+        }
         
         // 3. Safely unwrap required fields
         guard let src = source,
@@ -129,17 +136,18 @@ class ReviewRideViewController: UIViewController {
         
         // 4. Create Ride object with REAL user id
         let ride = Ride(
-            driverUserID: currentUser.id,   // USE REAL USER ID
+            driverUserID: currentUser.id,
             source: src,
             destination: dst,
-            waypoints: [],                  // Later if needed
-            selectedRoute: selectedRoute,   // Optional route
+            waypoints: [],
+            selectedRoute: selectedRoute,
             departureTime: finalDepartureTime,
-            seatsTotal: seats,              // Only this is required
+            seatsTotal: seats,
             farePerSeat: farePerSeat,
-            status: .published,             // Draft or Published both work
+            status: .published,
             notes: notesTextView.text
         )
+
 
         
         // 5. Save the ride
