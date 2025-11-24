@@ -17,38 +17,72 @@ final class EmailViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        errorLabel.textColor = .systemRed
+        errorLabel.font = .systemFont(ofSize: 13)
+        errorLabel.isHidden = true
+
         
         setupCard()
         setupTextField()
         setupButton()
     }
     @IBOutlet weak var containerCard: UIView!
-
-    func setupCard() {
-        containerCard.layer.cornerRadius = 20
-        containerCard.layer.shadowColor = UIColor.black.cgColor
-        containerCard.layer.shadowOpacity = 0.08
-        containerCard.layer.shadowRadius = 10
-        containerCard.layer.shadowOffset = CGSize(width: 0, height: 4)
-    }
-
     
+    
+    func setupCard() {
+        containerCard.layer.cornerRadius = 28
+        containerCard.layer.masksToBounds = false
+        containerCard.backgroundColor = .white
+
+        containerCard.layer.shadowColor = UIColor.black.cgColor
+        containerCard.layer.shadowOpacity = 0.10
+        containerCard.layer.shadowRadius = 18
+        containerCard.layer.shadowOffset = CGSize(width: 0, height: 6)
+    }
+    
+//    func setupTextField() {
+//        emailTextField.backgroundColor = .white
+//        emailTextField.layer.cornerRadius = 12
+//        emailTextField.layer.borderWidth = 1
+//        emailTextField.layer.borderColor = UIColor(red:229/255, green:231/255, blue:235/255, alpha:1).cgColor
+//        
+//        emailTextField.setLeftPaddingPoints(12)
+//        emailTextField.attributedPlaceholder = NSAttributedString(
+//            string: "Enter your college email",
+//            attributes: [.foregroundColor: UIColor.systemGray3]
+//        )
+//    }
     func setupTextField() {
-        emailTextField.backgroundColor = .white
-        emailTextField.layer.cornerRadius = 12
+        emailTextField.layer.cornerRadius = 14
         emailTextField.layer.borderWidth = 1
-        emailTextField.layer.borderColor = UIColor(red:229/255, green:231/255, blue:235/255, alpha:1).cgColor
-        
-        emailTextField.setLeftPaddingPoints(12)
+        emailTextField.layer.borderColor = UIColor(red: 229/255, green: 231/255, blue: 235/255, alpha: 1).cgColor
+        emailTextField.backgroundColor = UIColor(white: 0.97, alpha: 1)
+
+        // Padding
+        emailTextField.setLeftPaddingPoints(16)
+
+        // Placeholder
         emailTextField.attributedPlaceholder = NSAttributedString(
-            string: "Enter your college email",
+            string: "your.name@college.edu",
             attributes: [.foregroundColor: UIColor.systemGray3]
         )
+
+        // Email icon to the right
+        let icon = UIImageView(image: UIImage(named: "email_icon"))
+        icon.frame = CGRect(x: 0, y: 0, width: 22, height: 22)
+        icon.tintColor = .systemGray2
+        emailTextField.rightView = icon
+        emailTextField.rightViewMode = .always
     }
+
     
+//    func setupButton() {
+//        continueButton.layer.cornerRadius = 26
+//        continueButton.backgroundColor = UIColor(red: 0/255, green: 197/255, blue: 142/255, alpha: 1)
+//        continueButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+//    }
     func setupButton() {
-        continueButton.layer.cornerRadius = 26
+        continueButton.layer.cornerRadius = 24
         continueButton.backgroundColor = UIColor(red: 0/255, green: 197/255, blue: 142/255, alpha: 1)
         continueButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
     }
