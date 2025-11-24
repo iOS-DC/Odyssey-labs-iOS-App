@@ -10,11 +10,11 @@
 import UIKit
 
 final class EmailViewController: UIViewController {
-
+    
     @IBOutlet weak var emailTextField: UITextField!
     @IBOutlet weak var errorLabel: UILabel!
     @IBOutlet weak var continueButton: UIButton!
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -24,7 +24,7 @@ final class EmailViewController: UIViewController {
         setupButton()
     }
     @IBOutlet weak var containerCard: UIView!
-
+    
     func setupCard() {
         containerCard.layer.cornerRadius = 20
         containerCard.layer.shadowColor = UIColor.black.cgColor
@@ -32,7 +32,7 @@ final class EmailViewController: UIViewController {
         containerCard.layer.shadowRadius = 10
         containerCard.layer.shadowOffset = CGSize(width: 0, height: 4)
     }
-
+    
     
     func setupTextField() {
         emailTextField.backgroundColor = .white
@@ -52,24 +52,39 @@ final class EmailViewController: UIViewController {
         continueButton.backgroundColor = UIColor(red: 0/255, green: 197/255, blue: 142/255, alpha: 1)
         continueButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
     }
-
-
+    
+    
     @IBAction func continueTapped(_ sender: UIButton) {
         errorLabel.isHidden = true
         let raw = emailTextField.text ?? ""
         
         do {
             try UserDataModel.shared.startEmailVerification(email: raw)
-            // success → push OTP screen
+            
+            // Save email for OTP screen
             UserDefaults.standard.set(raw, forKey: "lastEmailForOTP")
-            let vc = storyboard!.instantiateViewController(withIdentifier: "OTPViewController")
-            navigationController?.pushViewController(vc, animated: true)
+            
+            // Create OTP VC
+            let otpVC = storyboard!.instantiateViewController(withIdentifier: "OTPViewController")
+            
+            if let nav = navigationController {
+                // If we are already in a navigation controller → push normally
+                nav.pushViewController(otpVC, animated: true)
+            } else {
+                // If NOT inside a nav controller → present one modally
+                let nav = UINavigationController(rootViewController: otpVC)
+                nav.modalPresentationStyle = .fullScreen
+                present(nav, animated: true, completion: nil)
+            }
+            
         } catch {
             errorLabel.text = error.localizedDescription
             errorLabel.isHidden = false
         }
     }
+    
 }
+
 
 // MARK: - UITextField padding helper at file scope
 extension UITextField {

@@ -38,6 +38,12 @@ class UpcommingTableViewCell: UITableViewCell {
         cardView.layer.shadowOpacity = 0.08
         cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
         cardView.layer.shadowRadius = 6
+        
+        statusLabel.layer.cornerRadius = 8
+            statusLabel.clipsToBounds = true
+            statusLabel.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.12)
+            statusLabel.textColor = .systemGreen
+
     }
 
 

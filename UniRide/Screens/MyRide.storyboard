@@ -33,7 +33,7 @@
                                 <rect key="frame" x="0.0" y="168" width="393" height="650"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                             </tableView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="MyRide" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3Tk-n0-Qgb">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MyRide" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3Tk-n0-Qgb">
                                 <rect key="frame" x="168" y="69" width="57" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                 <nil key="textColor"/>
@@ -44,6 +44,7 @@
                         <color key="backgroundColor" red="0.96470588235294119" green="0.98039215686274506" blue="0.98431372549019602" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="ozt-5i-FBz" firstAttribute="top" secondItem="3Tk-n0-Qgb" secondAttribute="bottom" constant="30" id="2np-vC-3K6"/>
+                            <constraint firstItem="3Tk-n0-Qgb" firstAttribute="centerX" secondItem="5EZ-qb-Rvc" secondAttribute="centerX" id="7Kz-zu-UAP"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="hl7-Ac-weu" secondAttribute="bottom" id="7fU-sd-olT"/>
                             <constraint firstItem="ozt-5i-FBz" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="20" id="Lvq-nr-GfR"/>
                             <constraint firstItem="hl7-Ac-weu" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="Yuo-MB-v1E"/>
