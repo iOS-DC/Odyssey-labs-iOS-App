@@ -27,8 +27,7 @@ class MyRidesViewController: UIViewController {
         
         tableView.register(
             UINib(nibName: "UpcommingTableViewCell", bundle: nil),
-            forCellReuseIdentifier: "UpcommingRideCell"
-        )
+            forCellReuseIdentifier: "UpcommingRideCell")
         
 
 
@@ -58,7 +57,7 @@ class MyRidesViewController: UIViewController {
             ]
         }
         
-        private func updateForSelectedSegment() {
+         func updateForSelectedSegment() {
             if segmentedControl.selectedSegmentIndex == 0 {
                 // Upcoming selected
                 currentTrips = upcomingTrips

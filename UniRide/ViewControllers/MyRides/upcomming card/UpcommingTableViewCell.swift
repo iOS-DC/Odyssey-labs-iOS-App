@@ -8,6 +8,9 @@
 import UIKit
 
 class UpcommingTableViewCell: UITableViewCell {
+    
+    
+    @IBOutlet weak var cardView: UIView!
     @IBOutlet weak var statusLabel: UILabel!
     
     @IBOutlet weak var callButton: UIButton!
@@ -22,10 +25,21 @@ class UpcommingTableViewCell: UITableViewCell {
     @IBOutlet weak var dateLabel: UILabel!
     override func awakeFromNib() {
         super.awakeFromNib()
+
         messageButton.layer.cornerRadius = 12
-               callButton.layer.cornerRadius = 12
-        // Initialization code
+        callButton.layer.cornerRadius = 12
+
+        cardView.layer.cornerRadius = 16
+        cardView.layer.masksToBounds = false
+        cardView.backgroundColor = UIColor.systemBackground  // or a light grey: UIColor.systemGray6
+
+        // subtle shadow
+        cardView.layer.shadowColor = UIColor.black.cgColor
+        cardView.layer.shadowOpacity = 0.08
+        cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        cardView.layer.shadowRadius = 6
     }
+
 
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)

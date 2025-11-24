@@ -44,6 +44,14 @@ class HomeViewController: UIViewController {
         navigationController?.pushViewController(vc, animated: true)
     }
     
+    
+    
+    @IBAction func joinRide(_ sender: Any) {
+        let storyboard = UIStoryboard(name: "JoinRide", bundle: nil)
+        let vc = storyboard.instantiateViewController(withIdentifier: "JoinRideViewController") as! OfferRideViewController
+        navigationController?.pushViewController(vc, animated: true)
+    }
+    
 }
 extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 

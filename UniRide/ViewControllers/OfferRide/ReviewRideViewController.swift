@@ -90,21 +90,21 @@ class ReviewRideViewController: UIViewController {
     // MARK: - Offer Ride Action
     @IBAction func offerRideTapped(_ sender: UIButton) {
         let sb = UIStoryboard(name: "MyRide", bundle: nil)
-            let vc = sb.instantiateViewController(withIdentifier: "MyRidesViewController") as! MyRidesViewController
+        let vc = sb.instantiateViewController(withIdentifier: "MyRidesViewController") as! MyRidesViewController
         // Combine date + time into single Date
         let calendar = Calendar.current
         let dateComponents = calendar.dateComponents([.year,.month,.day], from: date!)
         let timeComponents = calendar.dateComponents([.hour,.minute], from: time!)
-
+        
         var finalComponents = DateComponents()
         finalComponents.year = dateComponents.year
         finalComponents.month = dateComponents.month
         finalComponents.day = dateComponents.day
         finalComponents.hour = timeComponents.hour
         finalComponents.minute = timeComponents.minute
-
+        
         let finalDepartureTime = calendar.date(from: finalComponents) ?? Date()
-
+        
         // Create Ride object
         let ride = Ride(
             driverUserID: UUID(),
@@ -118,21 +118,29 @@ class ReviewRideViewController: UIViewController {
             status: .draft,
             notes: notesTextView.text
         )
-
-
+        
+        
         // Save the ride
         RideDataModel.shared.createRide(ride)
-
+        
         print("Ride created successfully:")
         print(ride)
-
-        // Navigate to My Rides or Success Screen
-//        let alert = UIAlertController(title: "Success", message: "Your ride has been created!", preferredStyle: .alert)
-//        alert.addAction(UIAlertAction(title: "OK", style: .default))
-//
-//        self.present(alert, animated: true)
         
-        navigationController?.pushViewController(vc, animated: true)
-    }
+        // Navigate to My Rides or Success Screen
+        //        let alert = UIAlertController(title: "Success", message: "Your ride has been created!", preferredStyle: .alert)
+        //        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        //
+        //        self.present(alert, animated: true)
+        // Step 1: Switch to MyRide tab
+        tabBarController?.selectedIndex = 1   // change 3 if MyRide is at another index
+        
+        // Step 2: Force Upcoming segment selection when opening
+        if let tabVCs = tabBarController?.viewControllers,
+           let navVC = tabVCs[1] as? UINavigationController,   // MyRide is inside navigation?
+           let myRideVC = navVC.topViewController as? MyRidesViewController {
+            
+            myRideVC.segmentedControl.selectedSegmentIndex = 0
+            myRideVC.updateForSelectedSegment()
+        }}
 }
 
