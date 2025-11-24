@@ -56,6 +56,9 @@ class ProfileStep1ViewController: UIViewController {
 
         continueButton.layer.cornerRadius = 25
         continueButton.clipsToBounds = true
+        
+        otpTextField.isHidden = true
+            otpStatusLabel.isHidden = true
     }
     
     func setupTextField() {
@@ -116,67 +119,70 @@ class ProfileStep1ViewController: UIViewController {
 
     @IBAction func sendOTPPressed(_ sender: UIButton) {
         guard let phone = phoneTextField.text, !phone.isEmpty else {
-            otpStatusLabel.text = "Enter phone number first"
-            otpStatusLabel.textColor = .red
-            otpStatusLabel.isHidden = false
-            return
-        }
+               otpStatusLabel.text = "Enter phone number first"
+               otpStatusLabel.textColor = .red
+               otpStatusLabel.isHidden = false
+               return
+           }
 
-        do {
-            try UserDataModel.shared.startPhoneVerification(phone: phone)
-            otpStatusLabel.text = "OTP sent! Check console"
-            otpStatusLabel.textColor = .systemGreen
-            otpStatusLabel.isHidden = false
+           do {
+               // ✅ Send OTP (this prints OTP in console)
+               try UserDataModel.shared.startPhoneVerification(phone: phone)
 
-            // Show OTP field
-            otpTextField.isHidden = false
+               otpStatusLabel.text = "OTP sent! Check console"
+               otpStatusLabel.textColor = .systemGreen
+               otpStatusLabel.isHidden = false
 
-            // Animate layout change
-            UIView.animate(withDuration: 0.3) {
-                self.view.layoutIfNeeded()
-            }
+               // Show OTP text field
+               otpTextField.text = ""
+               otpTextField.isHidden = false
 
-        } catch {
-            otpStatusLabel.text = error.localizedDescription
-            otpStatusLabel.textColor = .red
-            otpStatusLabel.isHidden = false
-        }
-    }
-    
+               // Animate layout if needed
+               UIView.animate(withDuration: 0.3) {
+                   self.view.layoutIfNeeded()
+               }
+
+           } catch {
+               otpStatusLabel.text = error.localizedDescription
+               otpStatusLabel.textColor = .red
+               otpStatusLabel.isHidden = false
+           }
+       }
     @IBAction func continuePressed(_ sender: UIButton) {
+        // If OTP field is visible → we expect user to have entered OTP and now we verify
+           if !otpTextField.isHidden {
+               guard let phone = phoneTextField.text,
+                     let otp = otpTextField.text, !otp.isEmpty else { return }
 
-        // If phone NOT verified → try verifying OTP
-        if !otpTextField.isHidden {
-            guard let phone = phoneTextField.text,
-                  let otp = otpTextField.text else { return }
+               do {
+                   // 1️⃣ Verify phone for the EXISTING current user
+                   try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
+                   print("Phone verified")
 
-            do {
-                try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
-                print("Phone verified")
-                UserDataModel.shared.createNewUser(
-                    fullName: fullNameTextField.text ?? "",
-                    course: dropDownButton.titleLabel?.text ?? "",
-                    year: Int(yearDropDownButton.titleLabel?.text ?? "1") ?? 1,
-                    phone: phoneTextField.text ?? ""
-                )
+                   // 2️⃣ Update (edit) the same user with profile details
+                   UserDataModel.shared.editCurrentUser(
+                       fullName: fullNameTextField.text,
+                       courseName: dropDownButton.title(for: .normal),
+                       year: Int(yearDropDownButton.title(for: .normal) ?? "1")
+                       // phone & isPhoneVerified are already set in verifyPhoneOTP
+                   )
 
-                // Proceed to next page
-                goToNextPage()
+                   // 3️⃣ Go to next page
+                   goToNextPage()
 
-            } catch {
-                otpStatusLabel.text = error.localizedDescription
-                otpStatusLabel.textColor = .red
-                otpStatusLabel.isHidden = false
-            }
-            return
-        }
+               } catch {
+                   otpStatusLabel.text = error.localizedDescription
+                   otpStatusLabel.textColor = .red
+                   otpStatusLabel.isHidden = false
+               }
+               return
+           }
 
-        // If OTP field is hidden means OTP not yet requested → tell user
-        otpStatusLabel.text = "Please verify your phone number first"
-        otpStatusLabel.textColor = .red
-        otpStatusLabel.isHidden = false
-    }
-    
+           // If OTP field is hidden -> user never requested OTP
+           otpStatusLabel.text = "Please verify your phone number first"
+           otpStatusLabel.textColor = .red
+           otpStatusLabel.isHidden = false
+       }
     func goToNextPage() {
         let vc = storyboard?.instantiateViewController(identifier: "ProfileStep2ViewController") as! ProfileStep2ViewController
         navigationController?.pushViewController(vc, animated: true)
