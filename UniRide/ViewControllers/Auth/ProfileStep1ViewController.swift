@@ -48,7 +48,7 @@ class ProfileStep1ViewController: UIViewController {
         setupCard()
         setupCourseDropDownMenu()
         setupYearDropDownMenu()
-
+        setupTextField()
 
         stackView.isLayoutMarginsRelativeArrangement = true
         stackView.setCustomSpacing(0, after: otpStatusLabel)
@@ -61,6 +61,17 @@ class ProfileStep1ViewController: UIViewController {
             otpStatusLabel.isHidden = true
     }
     
+    func setupTextField() {
+        fullNameTextField.layer.cornerRadius = 14
+        fullNameTextField.layer.borderWidth = 1
+        fullNameTextField.layer.borderColor = UIColor(red: 229/255, green: 231/255, blue: 235/255, alpha: 1).cgColor
+        fullNameTextField.backgroundColor = UIColor(white: 0.97, alpha: 1)
+
+        // Padding
+        fullNameTextField.setLeftPaddingPoints(16)
+
+        
+    }
     func setupCard() {
         containerCard.layer.cornerRadius = 20
         containerCard.layer.shadowColor = UIColor.black.cgColor

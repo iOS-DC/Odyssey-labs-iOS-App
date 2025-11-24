@@ -9,21 +9,60 @@ import UIKit
 
 class ProfileViewController: UIViewController {
 
+    // MARK: - IBOutlets
+
+    @IBOutlet weak var profileImageView: UIImageView!
+    @IBOutlet weak var nameLabel: UILabel!
+    @IBOutlet weak var departmentLabel: UILabel!
+    @IBOutlet weak var yearLabel: UILabel!
+    @IBOutlet weak var memberSinceLabel: UILabel!
+    @IBOutlet weak var ratingLabel: UILabel!
+    @IBOutlet weak var ridesLabel: UILabel!
+    @IBOutlet weak var EmailAddress: UITextField!
+    @IBOutlet weak var emailLabel: UILabel!
+    @IBOutlet weak var Phonenumber: UITextField!
+    @IBOutlet weak var phoneLabel: UILabel!
+
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
+        loadProfile()
     }
-    
 
-    /*
-    // MARK: - Navigation
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
 
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+        // Apply circular image AFTER layout
+        profileImageView.layer.cornerRadius = profileImageView.frame.height / 2
+        profileImageView.clipsToBounds = true
     }
-    */
 
+    // MARK: - Load Data from Model
+    private func loadProfile() {
+        guard let profile = ProfileDataModel.shared.getProfile() else { return }
+
+        nameLabel.text = profile.fullName
+        departmentLabel.text = profile.department
+        yearLabel.text = profile.year
+        memberSinceLabel.text = "Member Since \(profile.memberSince)"
+
+        ratingLabel.text = "\(profile.rating) ★"
+        ridesLabel.text = "\(profile.totalRides) rides"
+
+        emailLabel.text = profile.email
+        phoneLabel.text = profile.phone
+
+        if let imageName = profile.profileImage {
+            profileImageView.image = UIImage(named: imageName)
+        }
+    }
+
+    // MARK: - Edit Button Action
+    @IBAction func editButtonTapped(_ sender: Any) {
+        print("Edit button pressed")
+        // Navigation to Edit screen will go here
+    }
 }
+
+
