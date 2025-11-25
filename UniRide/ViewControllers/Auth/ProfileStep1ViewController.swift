@@ -69,9 +69,8 @@ class ProfileStep1ViewController: UIViewController {
 
         // Padding
         fullNameTextField.setLeftPaddingPoints(16)
-
-        
     }
+    
     func setupCard() {
         containerCard.layer.cornerRadius = 20
         containerCard.layer.shadowColor = UIColor.black.cgColor
@@ -79,6 +78,7 @@ class ProfileStep1ViewController: UIViewController {
         containerCard.layer.shadowRadius = 10
         containerCard.layer.shadowOffset = CGSize(width: 0, height: 4)
     }
+    
     func setupCourseDropDownMenu() {
         let options = Array(courseDurations.keys).sorted() + ["Reset"]
 
@@ -148,6 +148,7 @@ class ProfileStep1ViewController: UIViewController {
                otpStatusLabel.isHidden = false
            }
        }
+    
     @IBAction func continuePressed(_ sender: UIButton) {
         // If OTP field is visible → we expect user to have entered OTP and now we verify
            if !otpTextField.isHidden {
