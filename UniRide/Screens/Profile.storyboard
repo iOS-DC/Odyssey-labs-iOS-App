@@ -11,7 +11,7 @@
         <!--Profile-->
         <scene sceneID="Syi-DZ-bMI">
             <objects>
-                <viewController storyboardIdentifier="ProfileVC" id="j7r-bs-o0q" customClass="ProfileViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ProfileVC" title="Profile" id="j7r-bs-o0q" customClass="ProfileViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="I4Q-0g-wH1">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -105,7 +105,7 @@
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Xhv-5P-mda">
                                 <rect key="frame" x="16" y="498.66666666666674" width="361" height="230"/>
                                 <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Contact Information" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KuL-bv-sUR">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Contact Information" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KuL-bv-sUR">
                                         <rect key="frame" x="16" y="15.999999999999943" width="329" height="21.666666666666671"/>
                                         <fontDescription key="fontDescription" type="boldSystem" pointSize="18"/>
                                         <nil key="textColor"/>
@@ -117,7 +117,7 @@
                                         <color key="textColor" systemColor="systemGrayColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Email:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Hnb-n5-bao">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Email:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Hnb-n5-bao">
                                         <rect key="frame" x="46" y="56.999999999999943" width="46" height="20.333333333333343"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <nil key="textColor"/>
@@ -129,7 +129,7 @@
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Email Address" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4rX-gm-uoS">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Email Address" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4rX-gm-uoS">
                                         <rect key="frame" x="46" y="78.333333333333314" width="269" height="20.333333333333329"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <color key="textColor" systemColor="systemGrayColor"/>
@@ -140,6 +140,9 @@
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" title="Edit"/>
+                                        <connections>
+                                            <action selector="editButtonTapped:" destination="j7r-bs-o0q" eventType="touchUpInside" id="z3T-lI-ddy"/>
+                                        </connections>
                                     </button>
                                 </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -195,20 +198,20 @@
                     </view>
                     <tabBarItem key="tabBarItem" title="Profile" image="person.fill" catalog="system" id="DXX-bf-7d0"/>
                     <connections>
-                        <outlet property="departmentLabel" destination="pL0-Mi-9uz" id="EQY-hH-Wug"/>
-                        <outlet property="emailLabel" destination="4rX-gm-uoS" id="wj6-4d-W2E"/>
-                        <outlet property="memberSinceLabel" destination="XQm-78-VOx" id="XhD-J2-Mvh"/>
-                        <outlet property="nameLabel" destination="PHQ-tP-cI8" id="Hq7-dL-yBU"/>
-                        <outlet property="phoneLabel" destination="mcG-9V-0nh" id="WF1-Vp-KRY"/>
-                        <outlet property="profileImageView" destination="V8P-k8-5Oc" id="SJL-NV-U7X"/>
-                        <outlet property="ratingLabel" destination="PaC-LO-822" id="S9T-oY-uQu"/>
-                        <outlet property="ridesLabel" destination="RSO-0M-NJU" id="dsC-6F-INE"/>
-                        <outlet property="yearLabel" destination="Lr1-sU-Qk6" id="FO2-9i-zQ9"/>
+                        <outlet property="departmentLabel" destination="pL0-Mi-9uz" id="YRW-We-agS"/>
+                        <outlet property="emailLabel" destination="4rX-gm-uoS" id="eqd-dP-p5w"/>
+                        <outlet property="memberSinceLabel" destination="XQm-78-VOx" id="uMT-Rr-9yU"/>
+                        <outlet property="nameLabel" destination="PHQ-tP-cI8" id="rCt-Pt-VWI"/>
+                        <outlet property="phoneLabel" destination="mcG-9V-0nh" id="SwI-vY-fky"/>
+                        <outlet property="profileImageView" destination="V8P-k8-5Oc" id="syw-UY-aNs"/>
+                        <outlet property="ratingLabel" destination="PaC-LO-822" id="nns-ao-g2O"/>
+                        <outlet property="ridesLabel" destination="RSO-0M-NJU" id="YfM-Pb-le5"/>
+                        <outlet property="yearLabel" destination="Lr1-sU-Qk6" id="HMz-cs-fa3"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Unf-iw-fH0" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="956" y="134"/>
+            <point key="canvasLocation" x="-4688" y="163"/>
         </scene>
     </scenes>
     <resources>
