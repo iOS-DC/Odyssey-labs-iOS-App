@@ -817,22 +817,28 @@ addresses</string>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hYr-ln-bR3">
                                         <rect key="frame" x="29" y="282" width="255" height="38"/>
                                         <subviews>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Phone Verification" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KVz-76-JxI">
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Phone Verification" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KVz-76-JxI">
                                                 <rect key="frame" x="32" y="6" width="88" height="12"/>
-                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="10"/>
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Your profile will be verified in 24 hours" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Xno-aI-e0n">
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Your profile will be verified in 24 hours" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Xno-aI-e0n">
                                                 <rect key="frame" x="32" y="21" width="186" height="12"/>
-                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="10"/>
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
                                         </subviews>
                                         <color key="backgroundColor" red="0.943359375" green="0.9716796875" blue="0.9970703125" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                        <constraints>
+                                            <constraint firstItem="KVz-76-JxI" firstAttribute="top" secondItem="hYr-ln-bR3" secondAttribute="top" constant="6" id="QvE-rc-tA9"/>
+                                            <constraint firstItem="KVz-76-JxI" firstAttribute="leading" secondItem="hYr-ln-bR3" secondAttribute="leading" constant="32" id="ROR-O8-iwV"/>
+                                            <constraint firstItem="Xno-aI-e0n" firstAttribute="leading" secondItem="hYr-ln-bR3" secondAttribute="leading" constant="32" id="Xxp-Oy-rXb"/>
+                                            <constraint firstAttribute="trailing" secondItem="KVz-76-JxI" secondAttribute="trailing" constant="135" id="fQb-Yj-XlF"/>
+                                            <constraint firstAttribute="trailing" secondItem="Xno-aI-e0n" secondAttribute="trailing" constant="37" id="o2B-6U-lM8"/>
+                                            <constraint firstItem="Xno-aI-e0n" firstAttribute="top" secondItem="KVz-76-JxI" secondAttribute="bottom" constant="3" id="pxE-os-IKt"/>
+                                        </constraints>
                                     </view>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Asj-1R-VEL">
                                         <rect key="frame" x="78.333333333333329" y="352" width="156.33333333333337" height="35"/>
