@@ -30,7 +30,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D6DFDEA12EC761F000BF33E0 /* Exceptions for "UniRide" folder in "UniRide" target */ = {
+		9A58CBF42ED6DADA007E4D22 /* Exceptions for "UniRide" folder in "UniRide" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -43,7 +43,7 @@
 		D6DFDE7B2EC761EF00BF33E0 /* UniRide */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D6DFDEA12EC761F000BF33E0 /* Exceptions for "UniRide" folder in "UniRide" target */,
+				9A58CBF42ED6DADA007E4D22 /* Exceptions for "UniRide" folder in "UniRide" target */,
 			);
 			path = UniRide;
 			sourceTree = "<group>";

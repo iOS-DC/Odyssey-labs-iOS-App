@@ -113,4 +113,3 @@ class CommunityViewController: UIViewController, UITableViewDelegate, UITableVie
         return sementedControl.selectedSegmentIndex == 0 ? 160 : 150
     }
 }
-
