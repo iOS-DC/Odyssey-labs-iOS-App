@@ -1,16 +1,8 @@
-//
-//  ProfileViewController.swift
-//  UniRide
-//
-//  Created by Krish Bahukhandi on 17/11/25.
-//
-
 import UIKit
 
 class ProfileViewController: UIViewController {
 
     // MARK: - IBOutlets
-
     @IBOutlet weak var profileImageView: UIImageView!
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var departmentLabel: UILabel!
@@ -18,13 +10,10 @@ class ProfileViewController: UIViewController {
     @IBOutlet weak var memberSinceLabel: UILabel!
     @IBOutlet weak var ratingLabel: UILabel!
     @IBOutlet weak var ridesLabel: UILabel!
-    @IBOutlet weak var EmailAddress: UITextField!
     @IBOutlet weak var emailLabel: UILabel!
-    @IBOutlet weak var Phonenumber: UITextField!
     @IBOutlet weak var phoneLabel: UILabel!
 
     // MARK: - Lifecycle
-
     override func viewDidLoad() {
         super.viewDidLoad()
         loadProfile()
@@ -32,37 +21,61 @@ class ProfileViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-
-        // Apply circular image AFTER layout
-        profileImageView.layer.cornerRadius = profileImageView.frame.height / 2
+        profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
         profileImageView.clipsToBounds = true
+        profileImageView.contentMode = .scaleAspectFill
     }
 
-    // MARK: - Load Data from Model
+    // MARK: - Load Profile Data
     private func loadProfile() {
-        guard let profile = ProfileDataModel.shared.getProfile() else { return }
 
-        nameLabel.text = profile.fullName
-        departmentLabel.text = profile.department
-        yearLabel.text = profile.year
-        memberSinceLabel.text = "Member Since \(profile.memberSince)"
+        guard let profile = UserDataModel.shared.getCurrentUser() else {
+            print("❌ No logged-in user found")
+            return
+        }
 
-        ratingLabel.text = "\(profile.rating) ★"
-        ridesLabel.text = "\(profile.totalRides) rides"
+        // MARK: BASIC INFO
+        nameLabel.text = profile.fullName.isEmpty ? "Your Name" : profile.fullName
+        departmentLabel.text = profile.courseName ?? "Not set"
 
+        if let year = profile.year {
+            yearLabel.text = "Year \(year)"
+        } else {
+            yearLabel.text = "Not set"
+        }
+
+        memberSinceLabel.text = "Member Since \(profile.id.uuidString.prefix(4))"
+
+        // Temporary static values until added to model
+        ratingLabel.text = "4.9 ★"
+        ridesLabel.text = "12 rides"
+
+        // MARK: CONTACT INFO
         emailLabel.text = profile.email
-        phoneLabel.text = profile.phone
+        phoneLabel.text = profile.phone ?? "Not added"
 
-        if let imageName = profile.profileImage {
-            profileImageView.image = UIImage(named: imageName)
+        // MARK: PROFILE IMAGE
+        if let url = profile.photoURL {
+            DispatchQueue.global(qos: .background).async {
+                if let data = try? Data(contentsOf: url),
+                   let image = UIImage(data: data) {
+                    DispatchQueue.main.async {
+                        self.profileImageView.image = image
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self.profileImageView.image = UIImage(named: "defaultProfile")
+                    }
+                }
+            }
+        } else {
+            profileImageView.image = UIImage(named: "defaultProfile")
         }
     }
 
-    // MARK: - Edit Button Action
+    // MARK: - Edit Button
     @IBAction func editButtonTapped(_ sender: Any) {
-        print("Edit button pressed")
-        // Navigation to Edit screen will go here
+        print("✏️ Edit button tapped")
+        // TODO: Navigate to edit profile screen
     }
 }
-
-
