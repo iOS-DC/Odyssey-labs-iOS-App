@@ -266,10 +266,10 @@
             </objects>
             <point key="canvasLocation" x="3037.3134328358205" y="95.42334096109839"/>
         </scene>
-        <!--Tab Bar Controller-->
+        <!--Custom Tab Bar Controller-->
         <scene sceneID="M9b-0I-MtW">
             <objects>
-                <tabBarController storyboardIdentifier="MainTabBarController" id="atz-54-KBh" sceneMemberID="viewController">
+                <tabBarController storyboardIdentifier="MainTabBarController" id="atz-54-KBh" customClass="CustomTabBarController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
                     <tabBar key="tabBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="tBs-6l-Ppo">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="49"/>
                         <autoresizingMask key="autoresizingMask"/>

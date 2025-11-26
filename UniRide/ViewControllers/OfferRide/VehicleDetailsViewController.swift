@@ -88,7 +88,7 @@ class VehicleDetailsViewController: UIViewController {
     @IBAction func nextTapped(_ sender: UIButton) {
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
             let vc = sb.instantiateViewController(withIdentifier: "ReviewRideViewController") as! ReviewRideViewController
-
+            
             // Pass Step 1 data
             vc.source = self.source
             vc.destination = self.destination
