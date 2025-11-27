@@ -6,7 +6,7 @@ class JoinRideViewController: UIViewController,
                               UITableViewDelegate,
                               UITableViewDataSource,
                               MKLocalSearchCompleterDelegate {
-
+    
     // MARK: - Outlets (connect these in storyboard)
     @IBOutlet weak var fromTextField: UITextField!
     @IBOutlet weak var toTextField: UITextField!
@@ -14,47 +14,83 @@ class JoinRideViewController: UIViewController,
     @IBOutlet weak var timeTextField: UITextField!
     @IBOutlet weak var findRideButton: UIButton!
     @IBOutlet weak var suggestionsTable: UITableView!   // small table used for autocomplete
-
+    
     // MARK: - Helpers
     private let datePicker = UIDatePicker()
     private let timePicker = UIDatePicker()
     private let searchCompleter = MKLocalSearchCompleter()
     private var searchResults: [MKLocalSearchCompletion] = []
     private var activeTextField: UITextField?
-
+    
     private var fromCoordinate: CLLocationCoordinate2D?
     private var toCoordinate: CLLocationCoordinate2D?
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Find Ride"
-
+        
         // Autocomplete table will be manually positioned
         suggestionsTable.translatesAutoresizingMaskIntoConstraints = true
         suggestionsTable.isHidden = true
+        suggestionsTable.isUserInteractionEnabled = false   // 🔴 important
 
+        
         fromTextField.delegate = self
         toTextField.delegate = self
-
+        
+        dateTextField.delegate = self      // ✅ ADD THIS
+        timeTextField.delegate = self      // ✅ ADD THIS
+        
+        
         suggestionsTable.delegate = self
         suggestionsTable.dataSource = self
-
+        
+        searchCompleter.resultTypes = .address   // ✅ GOOD TO ADD
+        
         searchCompleter.delegate = self
-
+        
         setupDatePicker()
         setupTimePicker()
-
+        
         findRideButton.layer.cornerRadius = 22
     }
-
+    
+    
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if textField == fromTextField {
+            print("👉 FROM tapped")
+        } else if textField == toTextField {
+            print("👉 TO tapped")
+        } else if textField == dateTextField {
+            print("👉 DATE tapped")
+        } else if textField == timeTextField {
+            print("👉 TIME tapped")
+        }
+        return true
+    }
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        print("fromTextField enabled:", fromTextField.isEnabled,
+              "userInteraction:", fromTextField.isUserInteractionEnabled)
+        print("toTextField enabled:", toTextField.isEnabled,
+              "userInteraction:", toTextField.isUserInteractionEnabled)
+        print("dateTextField enabled:", dateTextField.isEnabled,
+              "userInteraction:", dateTextField.isUserInteractionEnabled)
+        print("timeTextField enabled:", timeTextField.isEnabled,
+              "userInteraction:", timeTextField.isUserInteractionEnabled)
+    }
+    
     // MARK: - Date picker
     private func setupDatePicker() {
         datePicker.datePickerMode = .date
         datePicker.preferredDatePickerStyle = .wheels
         datePicker.minimumDate = Date()
-
+        
         dateTextField.inputView = datePicker
-
+        
         let toolbar = UIToolbar()
         toolbar.sizeToFit()
         let done = UIBarButtonItem(
@@ -66,21 +102,21 @@ class JoinRideViewController: UIViewController,
         toolbar.items = [done]
         dateTextField.inputAccessoryView = toolbar
     }
-
+    
     @objc private func doneSelectingDate() {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yyyy"
         dateTextField.text = formatter.string(from: datePicker.date)
         dateTextField.resignFirstResponder()
     }
-
+    
     // MARK: - Time picker
     private func setupTimePicker() {
         timePicker.datePickerMode = .time
         timePicker.preferredDatePickerStyle = .wheels
-
+        
         timeTextField.inputView = timePicker
-
+        
         let toolbar = UIToolbar()
         toolbar.sizeToFit()
         let done = UIBarButtonItem(
@@ -92,40 +128,42 @@ class JoinRideViewController: UIViewController,
         toolbar.items = [done]
         timeTextField.inputAccessoryView = toolbar
     }
-
+    
     @objc private func doneSelectingTime() {
         let formatter = DateFormatter()
         formatter.dateFormat = "hh:mm a"
         timeTextField.text = formatter.string(from: timePicker.date)
         timeTextField.resignFirstResponder()
     }
-
+    
     // MARK: - Autocomplete
     func textField(_ textField: UITextField,
                    shouldChangeCharactersIn range: NSRange,
                    replacementString string: String) -> Bool {
-
+        
         let updated = ((textField.text ?? "") as NSString)
             .replacingCharacters(in: range, with: string)
-
+        
         searchCompleter.queryFragment = updated
         activeTextField = textField
         updateSuggestionTablePosition()
         return true
     }
-
+    
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         searchResults = completer.results
-        suggestionsTable.reloadData()
-        suggestionsTable.isHidden = searchResults.isEmpty
-    }
+           suggestionsTable.reloadData()
 
+           let hasResults = !searchResults.isEmpty
+           suggestionsTable.isHidden = !hasResults
+           suggestionsTable.isUserInteractionEnabled = hasResults   // 🔴}
+    
     // MARK: - Suggestions table
     func tableView(_ tableView: UITableView,
                    numberOfRowsInSection section: Int) -> Int {
         return searchResults.count
     }
-
+    
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .subtitle,
@@ -135,15 +173,15 @@ class JoinRideViewController: UIViewController,
         cell.detailTextLabel?.text = result.subtitle
         return cell
     }
-
+    
     func tableView(_ tableView: UITableView,
                    didSelectRowAt indexPath: IndexPath) {
         let result = searchResults[indexPath.row]
         let request = MKLocalSearch.Request(completion: result)
-
+        
         MKLocalSearch(request: request).start { response, error in
             guard let item = response?.mapItems.first else { return }
-
+            
             if self.activeTextField == self.fromTextField {
                 self.fromTextField.text = item.name
                 self.fromCoordinate = item.placemark.coordinate
@@ -151,18 +189,20 @@ class JoinRideViewController: UIViewController,
                 self.toTextField.text = item.name
                 self.toCoordinate = item.placemark.coordinate
             }
-
+            
             self.suggestionsTable.isHidden = true
+            self.suggestionsTable.isUserInteractionEnabled = false   // 🔴
+
         }
     }
-
+    
     private func updateSuggestionTablePosition() {
         guard let tf = activeTextField else { return }
-
+        
         view.bringSubviewToFront(suggestionsTable)
-
+        
         let frameInView = tf.convert(tf.bounds, to: self.view)
-
+        
         suggestionsTable.frame = CGRect(
             x: frameInView.minX,
             y: frameInView.maxY + 4,
@@ -170,10 +210,11 @@ class JoinRideViewController: UIViewController,
             height: 220
         )
     }
-
+    
     // MARK: - Find Ride button
-    @IBAction func findRideTapped(_ sender: UIButton) {
-        print("Find Ride tapped")
+    // MARK: - Find Ride button
+    @IBAction func didTapFindRide(_ sender: Any) {
+        print("🎉 didTapFindRide fired")
 
         guard
             let fromCoord = fromCoordinate,
@@ -185,11 +226,25 @@ class JoinRideViewController: UIViewController,
             return
         }
 
-        print("From:", fromText, fromCoord)
-        print("To:", toText, toCoord)
-        print("Date:", datePicker.date)
-        print("Time:", timePicker.date)
+        guard let vc = storyboard?.instantiateViewController(
+            identifier: "AvailableRideViewController"
+        ) as? AvailableRideViewController else {
+            print("❌ Could not cast to AvailableRideViewController")
+            return
+        }
 
-        // Later: search rides and push AvailableRideViewController
+        vc.fromCoordinate = fromCoord
+        vc.toCoordinate = toCoord
+        vc.date = datePicker.date
+        vc.time = timePicker.date
+
+        guard let nav = navigationController else {
+            print("❌ navigationController is nil")
+            return
+        }
+
+        nav.pushViewController(vc, animated: true)
     }
+
+    
 }
