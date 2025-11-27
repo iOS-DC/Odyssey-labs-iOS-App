@@ -66,22 +66,23 @@ final class UserDataModel {
     private var phoneOTPs: [String: String] = [:]
 
     private init() {
-        archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("plist")
+        archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")  // plist to json
         loadUsers()
+
     }
 
-    // MARK: - EMAIL LOGIN & VERIFICATION
+    // FUNCTION CALLING IN THE EMAILVIEW CONTROLLER for storing the email and printing the otp
     func startEmailVerification(email raw: String) throws {
         let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-        let otp = String(Int.random(in: 1000...9999))
-        emailOTPs[email] = otp
+        let otp = String(Int.random(in: 1000...9999)) // Creating a otp
+        emailOTPs[email] = otp  // Storing the otp in emailOTPs
         print("DEBUG Email OTP for \(email): \(otp)")
     }
-
+    // Function Verifying The otp. Called in the otp view controller
     func verifyEmailOTP(email: String, code: String) throws -> UserProfile {
         guard let sent = emailOTPs[email.lowercased()] else {
             throw NSError(domain: "Login", code: 404,
@@ -196,13 +197,22 @@ final class UserDataModel {
     // MARK: - Persistence
     private func loadUsers() {
         guard let data = try? Data(contentsOf: archiveURL) else { return }
-        let decoder = PropertyListDecoder()
-        users = (try? decoder.decode([UserProfile].self, from: data)) ?? []
+          do {
+              let decoder = JSONDecoder()
+              users = try decoder.decode([UserProfile].self, from: data)
+          } catch {
+              print("Failed to load users.json:", error)
+          }
     }
 
     private func saveUsers() {
-        let encoder = PropertyListEncoder()
-        let data = try? encoder.encode(users)
-        try? data?.write(to: archiveURL, options: .noFileProtection)
+        do {
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.prettyPrinted]  
+                let data = try encoder.encode(users)
+                try data.write(to: archiveURL, options: .atomic)
+            } catch {
+                print("Failed to save users.json:", error)
+            }
     }
 }

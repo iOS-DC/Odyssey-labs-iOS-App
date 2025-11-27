@@ -108,10 +108,10 @@ final class CommunityDataModel {
     private var shares: [ShareEvent] = []
 
     private init() {
-        postsURL = documentsDirectory.appendingPathComponent("community_posts").appendingPathExtension("plist")
-        likesURL = documentsDirectory.appendingPathComponent("community_likes").appendingPathExtension("plist")
-        commentsURL = documentsDirectory.appendingPathComponent("community_comments").appendingPathExtension("plist")
-        sharesURL = documentsDirectory.appendingPathComponent("community_shares").appendingPathExtension("plist")
+        postsURL = documentsDirectory.appendingPathComponent("community_posts").appendingPathExtension("json")
+        likesURL = documentsDirectory.appendingPathComponent("community_likes").appendingPathExtension("json")
+        commentsURL = documentsDirectory.appendingPathComponent("community_comments").appendingPathExtension("json")
+        sharesURL = documentsDirectory.appendingPathComponent("community_shares").appendingPathExtension("json")
         loadAll()
     }
 
