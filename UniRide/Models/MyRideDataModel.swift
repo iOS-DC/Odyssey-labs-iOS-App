@@ -141,9 +141,9 @@ final class RideDataModel {
     private var bookings: [Booking] = []
 
     private init() {
-        ridesURL    = documentsDirectory.appendingPathComponent("rides").appendingPathExtension("plist")
-        requestsURL = documentsDirectory.appendingPathComponent("ride_requests").appendingPathExtension("plist")
-        bookingsURL = documentsDirectory.appendingPathComponent("ride_bookings").appendingPathExtension("plist")
+        ridesURL    = documentsDirectory.appendingPathComponent("rides").appendingPathExtension("json")
+        requestsURL = documentsDirectory.appendingPathComponent("ride_requests").appendingPathExtension("json")
+        bookingsURL = documentsDirectory.appendingPathComponent("ride_bookings").appendingPathExtension("json")
         loadAll()
     }
 
@@ -321,13 +321,23 @@ final class RideDataModel {
 
     private func load<T: Decodable>(_ type: T.Type, from url: URL) -> T? {
         guard let data = try? Data(contentsOf: url) else { return nil }
-        let dec = PropertyListDecoder()
-        return try? dec.decode(T.self, from: data)
+                do {
+                    let dec = JSONDecoder()
+                    return try dec.decode(T.self, from: data)
+                } catch {
+                    print("JSON LOAD ERROR:", error)
+                    return nil
+                }
     }
     private func save<T: Encodable>(_ value: T, to url: URL) {
-        let enc = PropertyListEncoder()
-        let data = try? enc.encode(value)
-        try? data?.write(to: url, options: .noFileProtection)
+        do {
+                    let enc = JSONEncoder()
+                    enc.outputFormatting = [.prettyPrinted]
+                    let data = try enc.encode(value)
+                    try data.write(to: url, options: .atomic)
+                } catch {
+                    print("JSON SAVE ERROR:", error)
+                }
     }
 }
 

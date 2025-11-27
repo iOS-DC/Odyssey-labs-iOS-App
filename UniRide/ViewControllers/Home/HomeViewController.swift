@@ -48,7 +48,7 @@ class HomeViewController: UIViewController {
     
     @IBAction func joinRide(_ sender: Any) {
         let storyboard = UIStoryboard(name: "JoinRide", bundle: nil)
-        let vc = storyboard.instantiateViewController(withIdentifier: "JoinRideViewController") as! OfferRideViewController
+        let vc = storyboard.instantiateViewController(withIdentifier: "JoinRideViewController") as! JoinRideViewController
         navigationController?.pushViewController(vc, animated: true)
     }
     
