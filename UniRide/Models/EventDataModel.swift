@@ -81,8 +81,8 @@ final class EventDataModel {
     private var attendance: [EventAttendance] = []
 
     private init() {
-        eventsURL = documentsDirectory.appendingPathComponent("community_events").appendingPathExtension("plist")
-        attendanceURL = documentsDirectory.appendingPathComponent("community_event_attendance").appendingPathExtension("plist")
+        eventsURL = documentsDirectory.appendingPathComponent("community_events").appendingPathExtension("json")
+        attendanceURL = documentsDirectory.appendingPathComponent("community_event_attendance").appendingPathExtension("json")
         loadAll()
     }
 
@@ -186,6 +186,8 @@ final class EventDataModel {
 
     // MARK: - Persistence
 
+    // MARK: - Persistence
+
     private func loadAll() {
         events = load([EventItem].self, from: eventsURL) ?? []
         attendance = load([EventAttendance].self, from: attendanceURL) ?? []
@@ -194,15 +196,27 @@ final class EventDataModel {
     private func saveEvents()     { save(events, to: eventsURL) }
     private func saveAttendance() { save(attendance, to: attendanceURL) }
 
+    // MARK: - JSON load/save
     private func load<T: Decodable>(_ type: T.Type, from url: URL) -> T? {
         guard let data = try? Data(contentsOf: url) else { return nil }
-        let dec = PropertyListDecoder()
-        return try? dec.decode(T.self, from: data)
+        do {
+            let decoder = JSONDecoder()
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            print("Failed to load JSON:", error)
+            return nil
+        }
     }
 
     private func save<T: Encodable>(_ value: T, to url: URL) {
-        let enc = PropertyListEncoder()
-        let data = try? enc.encode(value)
-        try? data?.write(to: url, options: .noFileProtection)
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted]
+            let data = try encoder.encode(value)
+            try data.write(to: url, options: .atomic)
+        } catch {
+            print("Failed to save JSON:", error)
+        }
     }
+
 }
