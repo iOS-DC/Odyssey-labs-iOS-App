@@ -17,10 +17,12 @@ class ProfileViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Navigation bar title
         self.title = "Profile"
 
+<<<<<<< Updated upstream
         // Right → Edit
+=======
+>>>>>>> Stashed changes
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "Edit",
             style: .plain,
@@ -28,7 +30,10 @@ class ProfileViewController: UIViewController {
             action: #selector(editTapped)
         )
 
+<<<<<<< Updated upstream
         // Left → Logout
+=======
+>>>>>>> Stashed changes
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             title: "Logout",
             style: .plain,
@@ -44,7 +49,11 @@ class ProfileViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+<<<<<<< Updated upstream
         loadProfile()  // refresh after editing
+=======
+        loadProfile()
+>>>>>>> Stashed changes
     }
 
 >>>>>>> Stashed changes
@@ -63,21 +72,21 @@ class ProfileViewController: UIViewController {
             return
         }
 
-        // BASIC INFO
         nameLabel.text = profile.fullName.isEmpty ? "Your Name" : profile.fullName
         departmentLabel.text = profile.courseName ?? "Not set"
         yearLabel.text = profile.year != nil ? "Year \(profile.year!)" : "Not set"
         memberSinceLabel.text = "Member Since \(profile.id.uuidString.prefix(4))"
 
+<<<<<<< Updated upstream
         // TEMPORARY STATIC VALUES
+=======
+>>>>>>> Stashed changes
         ratingLabel.text = "4.9 ★"
         ridesLabel.text = "12 rides"
 
-        // CONTACT
         emailLabel.text = profile.email
         phoneLabel.text = profile.phone ?? "Not added"
 
-        // PROFILE IMAGE
         if let url = profile.photoURL {
             DispatchQueue.global(qos: .background).async {
                 if let data = try? Data(contentsOf: url),
@@ -96,6 +105,7 @@ class ProfileViewController: UIViewController {
 <<<<<<< Updated upstream
     @IBAction func editButtonTapped(_ sender: Any) {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
+<<<<<<< Updated upstream
         
         if let editVC = storyboard.instantiateViewController(withIdentifier: "EditProfileViewController") as? EditProfileViewController {
             navigationController?.pushViewController(editVC, animated: true)
@@ -107,10 +117,18 @@ class ProfileViewController: UIViewController {
             navigationController?.pushViewController(editVC, animated: true)
         } else {
             print(" ERROR: No ViewController with Storyboard ID 'EditProfileViewController'")
+=======
+
+        guard let editVC = storyboard.instantiateViewController(
+            withIdentifier: "EditProfileViewController"
+        ) as? EditProfileViewController else {
+            print("❌ ERROR: 'EditProfileViewController' not found")
+            return
+>>>>>>> Stashed changes
         }
     }
 
-    // MARK: - Logout
+    // MARK: - Logout (No login navigation)
     @objc func logoutTapped() {
         let alert = UIAlertController(
             title: "Logout?",
@@ -119,13 +137,15 @@ class ProfileViewController: UIViewController {
         )
 
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
         alert.addAction(UIAlertAction(title: "Logout", style: .destructive, handler: { _ in
             UserDataModel.shared.logout()
-            self.navigateToLogin()
+            self.navigationController?.popViewController(animated: true)
         }))
 
         present(alert, animated: true)
     }
+<<<<<<< Updated upstream
 
     private func navigateToLogin() {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
@@ -141,5 +161,7 @@ class ProfileViewController: UIViewController {
         sceneDelegate?.window?.rootViewController = UINavigationController(rootViewController: loginVC)
 >>>>>>> Stashed changes
     }
+=======
+>>>>>>> Stashed changes
 }
 

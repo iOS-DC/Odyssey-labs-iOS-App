@@ -136,6 +136,7 @@
                                         <nil key="highlightedColor"/>
                                     </label>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="vmD-qK-xAz">
                                         <rect key="frame" x="289" y="8" width="54" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -145,6 +146,8 @@
                                             <action selector="editButtonTapped:" destination="j7r-bs-o0q" eventType="touchUpInside" id="z3T-lI-ddy"/>
                                         </connections>
                                     </button>
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
                                 </subviews>
