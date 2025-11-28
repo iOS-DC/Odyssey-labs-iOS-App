@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="j7r-bs-o0q">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="4cX-lN-GMG">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
@@ -17,7 +17,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="tpx-Rm-PDi">
-                                <rect key="frame" x="16" y="186.66666666666663" width="361" height="280"/>
+                                <rect key="frame" x="16" y="240.66666666666663" width="361" height="280"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="center" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="w6B-2X-Rm7">
                                         <rect key="frame" x="0.0" y="0.0" width="361" height="280"/>
@@ -103,7 +103,7 @@
                                 </userDefinedRuntimeAttributes>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Xhv-5P-mda">
-                                <rect key="frame" x="16" y="498.66666666666674" width="361" height="230"/>
+                                <rect key="frame" x="16" y="552.66666666666663" width="361" height="230"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Contact Information" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="KuL-bv-sUR">
                                         <rect key="frame" x="16" y="15.999999999999943" width="329" height="21.666666666666671"/>
@@ -112,7 +112,7 @@
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Mobile Number" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mcG-9V-0nh">
-                                        <rect key="frame" x="46" y="135.66666666666669" width="269" height="20.333333333333343"/>
+                                        <rect key="frame" x="46" y="135" width="269" height="21"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <color key="textColor" systemColor="systemGrayColor"/>
                                         <nil key="highlightedColor"/>
@@ -124,7 +124,7 @@
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Phone Number:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ezk-Mo-puq">
-                                        <rect key="frame" x="46" y="119.66666666666667" width="119" height="20.333333333333329"/>
+                                        <rect key="frame" x="46" y="119.66666666666673" width="119" height="20.333333333333329"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
@@ -135,6 +135,7 @@
                                         <color key="textColor" systemColor="systemGrayColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
+<<<<<<< Updated upstream
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="vmD-qK-xAz">
                                         <rect key="frame" x="289" y="8" width="54" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -144,6 +145,8 @@
                                             <action selector="editButtonTapped:" destination="j7r-bs-o0q" eventType="touchUpInside" id="z3T-lI-ddy"/>
                                         </connections>
                                     </button>
+=======
+>>>>>>> Stashed changes
                                 </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
@@ -160,6 +163,7 @@
                                     <constraint firstItem="Hnb-n5-bao" firstAttribute="leading" secondItem="Xhv-5P-mda" secondAttribute="leading" constant="46" id="bRN-0p-9t3"/>
                                     <constraint firstItem="ezk-Mo-puq" firstAttribute="leading" secondItem="Xhv-5P-mda" secondAttribute="leading" constant="46" id="cz7-z7-46x"/>
                                     <constraint firstAttribute="bottom" secondItem="mcG-9V-0nh" secondAttribute="bottom" constant="74" id="drj-ix-FbY"/>
+                                    <constraint firstItem="4rX-gm-uoS" firstAttribute="top" secondItem="Hnb-n5-bao" secondAttribute="bottom" constant="1" id="e7z-iR-Thr"/>
                                     <constraint firstAttribute="trailing" secondItem="4rX-gm-uoS" secondAttribute="trailing" constant="46" id="eRh-y1-zJv"/>
                                     <constraint firstAttribute="bottom" secondItem="ezk-Mo-puq" secondAttribute="bottom" constant="90" id="hVw-5X-Bnn"/>
                                     <constraint firstItem="mcG-9V-0nh" firstAttribute="leading" secondItem="Xhv-5P-mda" secondAttribute="leading" constant="46" id="ldU-Pz-aOn"/>
@@ -167,6 +171,7 @@
                                     <constraint firstAttribute="trailing" secondItem="ezk-Mo-puq" secondAttribute="trailing" constant="196" id="oOI-i3-4b4"/>
                                     <constraint firstAttribute="trailing" secondItem="mcG-9V-0nh" secondAttribute="trailing" constant="46" id="ruD-Su-vES"/>
                                     <constraint firstAttribute="height" constant="230" id="sgQ-fp-U7d"/>
+                                    <constraint firstItem="ezk-Mo-puq" firstAttribute="top" secondItem="4rX-gm-uoS" secondAttribute="bottom" constant="21" id="sve-sU-dCD"/>
                                     <constraint firstAttribute="trailing" secondItem="KuL-bv-sUR" secondAttribute="trailing" constant="16" id="wee-a5-ybj"/>
                                     <constraint firstItem="Hnb-n5-bao" firstAttribute="top" secondItem="KuL-bv-sUR" secondAttribute="bottom" constant="19.329999999999998" id="xlD-em-HHh"/>
                                 </constraints>
@@ -176,27 +181,23 @@
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </view>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Profile" textAlignment="center" lineBreakMode="tailTruncation" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="YVO-0e-RNv">
-                                <rect key="frame" x="160.33333333333334" y="134" width="72.666666666666657" height="28.666666666666657"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="hjx-2A-Lbb"/>
                         <color key="backgroundColor" red="0.95686274510000002" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
+                            <constraint firstItem="hjx-2A-Lbb" firstAttribute="bottom" secondItem="Xhv-5P-mda" secondAttribute="bottom" constant="1.3300000000000001" id="CTi-KJ-S1v"/>
                             <constraint firstItem="Xhv-5P-mda" firstAttribute="top" secondItem="tpx-Rm-PDi" secondAttribute="bottom" constant="32" id="FA1-xN-tnA"/>
-                            <constraint firstItem="tpx-Rm-PDi" firstAttribute="top" secondItem="YVO-0e-RNv" secondAttribute="bottom" constant="24" id="S7A-TR-B3H"/>
+                            <constraint firstItem="Xhv-5P-mda" firstAttribute="top" secondItem="tpx-Rm-PDi" secondAttribute="bottom" constant="32" id="GeD-nu-4f4"/>
                             <constraint firstItem="hjx-2A-Lbb" firstAttribute="trailing" secondItem="tpx-Rm-PDi" secondAttribute="trailing" constant="16" id="cPh-NW-Mr5"/>
                             <constraint firstItem="Xhv-5P-mda" firstAttribute="leading" secondItem="hjx-2A-Lbb" secondAttribute="leading" constant="16" id="ckt-z2-I6G"/>
                             <constraint firstItem="hjx-2A-Lbb" firstAttribute="trailing" secondItem="Xhv-5P-mda" secondAttribute="trailing" constant="16" id="f0u-K2-Chh"/>
                             <constraint firstItem="tpx-Rm-PDi" firstAttribute="leading" secondItem="hjx-2A-Lbb" secondAttribute="leading" constant="16" id="f3X-QT-Fgw"/>
-                            <constraint firstItem="YVO-0e-RNv" firstAttribute="top" secondItem="hjx-2A-Lbb" secondAttribute="top" constant="16" id="t4T-MP-eSM"/>
-                            <constraint firstItem="YVO-0e-RNv" firstAttribute="centerX" secondItem="hjx-2A-Lbb" secondAttribute="centerX" id="viY-gQ-KBF"/>
+                            <constraint firstItem="hjx-2A-Lbb" firstAttribute="trailing" secondItem="Xhv-5P-mda" secondAttribute="trailing" constant="16" id="jhb-lh-skG"/>
                         </constraints>
                     </view>
-                    <tabBarItem key="tabBarItem" title="Profile" image="person.fill" catalog="system" id="DXX-bf-7d0"/>
+                    <navigationItem key="navigationItem" title="Profile" id="5bu-2R-YBo">
+                        <barButtonItem key="leftBarButtonItem" title="Item" id="TWD-5U-xdd"/>
+                    </navigationItem>
                     <connections>
                         <outlet property="departmentLabel" destination="pL0-Mi-9uz" id="YRW-We-agS"/>
                         <outlet property="emailLabel" destination="4rX-gm-uoS" id="eqd-dP-p5w"/>
@@ -211,22 +212,45 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Unf-iw-fH0" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
+<<<<<<< Updated upstream
             <point key="canvasLocation" x="-4688" y="163"/>
+=======
+            <point key="canvasLocation" x="1492" y="101"/>
+        </scene>
+        <!--Profile-->
+        <scene sceneID="yQX-fu-PmF">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="4cX-lN-GMG" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Profile" image="person.fill" catalog="system" id="DXX-bf-7d0"/>
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="PKV-rZ-0gH">
+                        <rect key="frame" x="0.0" y="118" width="393" height="54"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </navigationBar>
+                    <nil name="viewControllers"/>
+                    <connections>
+                        <segue destination="j7r-bs-o0q" kind="relationship" relationship="rootViewController" id="dnd-GZ-ehc"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="0r2-aw-Ujx" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="848" y="117"/>
+>>>>>>> Stashed changes
         </scene>
     </scenes>
     <resources>
         <image name="person.fill" catalog="system" width="128" height="120"/>
         <systemColor name="systemGray5Color">
-            <color red="0.8980392157" green="0.8980392157" blue="0.91764705879999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.89803921568627454" green="0.89803921568627454" blue="0.91764705882352937" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemGrayColor">
-            <color red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemMintColor">
-            <color red="0.0" green="0.78039215689999997" blue="0.74509803919999995" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.0" green="0.78431372549019607" blue="0.70196078431372544" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemPinkColor">
-            <color red="1" green="0.1764705882" blue="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="0.17647058823529413" blue="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="tableBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
