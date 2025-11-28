@@ -58,35 +58,44 @@ class CommunityViewController: UIViewController, UITableViewDelegate, UITableVie
         NewPostTextField.becomeFirstResponder()
     }
     
-    // MARK: - Close Bottom Sheet (Fixed)
-    @IBAction func closeNewPostView(_ sender: UIButton) {
-        print("❌ Close button tapped")
-        
-        UIView.animate(withDuration: 0.3, animations: {
-            self.newPostBottomConstraint.constant = 250  // Same as initial
+    // MARK: - Hide Bottom Sheet (Common Function)
+    func hidePostSheet() {
+        UIView.animate(withDuration: 0.3) {
+            self.newPostBottomConstraint.constant = 250  // Move back down
             self.view.layoutIfNeeded()
-        }) { _ in
+        } completion: { _ in
             self.NewPostContainerView.isHidden = true
         }
         
         NewPostTextField.resignFirstResponder()
     }
     
+    // MARK: - Close Button Action
+    @IBAction func closeNewPostView(_ sender: UIButton) {
+        hidePostSheet()
+    }
+
     // MARK: - Post Button Action
     @IBAction func postButtonTapped(_ sender: UIButton) {
         guard let text = NewPostTextField.text,
               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
+        // Add new post to events tab
         let newPost = Post(message: text, timestamp: "Just now")
         eventPosts.insert(newPost, at: 0)
-        tableView.reloadData()
         
+        // Refresh UI
+        tableView.reloadData()
         NewPostTextField.text = ""
-        sementedControl.selectedSegmentIndex = 1  // Switch to event tab
-        closeNewPostView(sender)
+        
+        // Switch to Events tab
+        sementedControl.selectedSegmentIndex = 1
+        
+        // Close the sheet
+        hidePostSheet()
     }
-    
-    // MARK: - Segment Action
+
+    // MARK: - Segment Changed
     @IBAction func segmentChanged(_ sender: UISegmentedControl) {
         tableView.reloadData()
     }

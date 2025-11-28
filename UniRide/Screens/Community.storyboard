@@ -178,6 +178,9 @@
                                         <rect key="frame" x="349.33333333333331" y="0.0" width="43.666666666666686" height="34.333333333333336"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" image="multiply" catalog="system"/>
+                                        <connections>
+                                            <action selector="closeNewPostView:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="rlR-9e-Qvc"/>
+                                        </connections>
                                     </button>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="New Post" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ecK-W0-u0R">
                                         <rect key="frame" x="0.0" y="0.0" width="72.666666666666671" height="21"/>
@@ -201,7 +204,7 @@
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Post"/>
                                         <connections>
-                                            <action selector="postButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="1eU-Tu-TVs"/>
+                                            <action selector="postButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="iOo-mo-DOO"/>
                                         </connections>
                                     </button>
                                 </subviews>
