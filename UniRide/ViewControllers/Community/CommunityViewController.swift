@@ -3,19 +3,17 @@ import UIKit
 class CommunityViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
 
     // MARK: - IBOutlets
- 
     @IBOutlet weak var sementedControl: UISegmentedControl!
-
     @IBOutlet weak var NewPostContainerView: UIView!
     @IBOutlet weak var NewPostTextField: UITextField!
     @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var newPostBottomConstraint: NSLayoutConstraint!  // Bottom constraint for bottom sheet
     
     // MARK: - Variables
-    var newPostBottomConstraint: NSLayoutConstraint!
-    
     var eventPosts: [Post] = [
         Post(message: "Rangrez 2025", timestamp: "Nov 6, 2025 at 14:00")
     ]
+    
     var feedPosts: [Post] = [
         Post(message: "Planning a weekend trip to Kasauli!", timestamp: "2 hours ago")
     ]
@@ -32,35 +30,40 @@ class CommunityViewController: UIViewController, UITableViewDelegate, UITableVie
         title = "Community"
         NewPostContainerView.isHidden = true
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(didTapAddPost))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .add,
+            target: self,
+            action: #selector(didTapAddPost)
+        )
         
         tableView.delegate = self
         tableView.dataSource = self
         
-        // Set bottom sheet constraint programmatically
-        NewPostContainerView.translatesAutoresizingMaskIntoConstraints = false
-        newPostBottomConstraint = NewPostContainerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 300)
-        newPostBottomConstraint.isActive = true
+        // Ensure bottom sheet is hidden initially
+        newPostBottomConstraint.constant = 250
     }
     
     // MARK: - Show Bottom Sheet
     @objc func didTapAddPost() {
         NewPostContainerView.isHidden = false
         print("🟢 didTapAddPost triggered successfully")
-
+        
         let tabBarHeight = tabBarController?.tabBar.frame.height ?? 90
+        
         UIView.animate(withDuration: 0.3) {
-            self.newPostBottomConstraint.constant = -tabBarHeight
+            self.newPostBottomConstraint.constant = -tabBarHeight  // Slide above tab bar
             self.view.layoutIfNeeded()
         }
         
-        NewPostTextField.becomeFirstResponder() // Optional: Auto show keyboard
+        NewPostTextField.becomeFirstResponder()
     }
     
-    // MARK: - Close Bottom Sheet
-    @objc func closeNewPostView() {
+    // MARK: - Close Bottom Sheet (Fixed)
+    @IBAction func closeNewPostView(_ sender: UIButton) {
+        print("❌ Close button tapped")
+        
         UIView.animate(withDuration: 0.3, animations: {
-            self.newPostBottomConstraint.constant = 300
+            self.newPostBottomConstraint.constant = 250  // Same as initial
             self.view.layoutIfNeeded()
         }) { _ in
             self.NewPostContainerView.isHidden = true
@@ -71,15 +74,16 @@ class CommunityViewController: UIViewController, UITableViewDelegate, UITableVie
     
     // MARK: - Post Button Action
     @IBAction func postButtonTapped(_ sender: UIButton) {
-        guard let text = NewPostTextField.text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        guard let text = NewPostTextField.text,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
         let newPost = Post(message: text, timestamp: "Just now")
         eventPosts.insert(newPost, at: 0)
         tableView.reloadData()
         
         NewPostTextField.text = ""
-        sementedControl.selectedSegmentIndex = 1
-        closeNewPostView()
+        sementedControl.selectedSegmentIndex = 1  // Switch to event tab
+        closeNewPostView(sender)
     }
     
     // MARK: - Segment Action
