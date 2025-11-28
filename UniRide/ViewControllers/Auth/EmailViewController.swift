@@ -38,21 +38,6 @@ final class EmailViewController: UIViewController {
     }
     
 
-    
-    
-  
-//    func setupTextField() {
-//        emailTextField.backgroundColor = .white
-//        emailTextField.layer.cornerRadius = 12
-//        emailTextField.layer.borderWidth = 1
-//        emailTextField.layer.borderColor = UIColor(red:229/255, green:231/255, blue:235/255, alpha:1).cgColor
-//        
-//        emailTextField.setLeftPaddingPoints(12)
-//        emailTextField.attributedPlaceholder = NSAttributedString(
-//            string: "Enter your college email",
-//            attributes: [.foregroundColor: UIColor.systemGray3]
-//        )
-//    }
     func setupTextField() {
         emailTextField.layer.cornerRadius = 14
         emailTextField.layer.borderWidth = 1
@@ -61,27 +46,9 @@ final class EmailViewController: UIViewController {
 
         // Padding
         emailTextField.setLeftPaddingPoints(16)
-
-        // Placeholder
-        emailTextField.attributedPlaceholder = NSAttributedString(
-            string: "your.name@college.edu",
-            attributes: [.foregroundColor: UIColor.systemGray3]
-        )
-
-        // Email icon to the right
-        let icon = UIImageView(image: UIImage(named: "email_icon"))
-        icon.frame = CGRect(x: 0, y: 0, width: 22, height: 22)
-        icon.tintColor = .systemGray2
-        emailTextField.rightView = icon
-        emailTextField.rightViewMode = .always
     }
 
     
-//    func setupButton() {
-//        continueButton.layer.cornerRadius = 26
-//        continueButton.backgroundColor = UIColor(red: 0/255, green: 197/255, blue: 142/255, alpha: 1)
-//        continueButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-//    }
     func setupButton() {
         continueButton.layer.cornerRadius = 24
         continueButton.backgroundColor = UIColor(red: 0/255, green: 197/255, blue: 142/255, alpha: 1)
@@ -96,21 +63,15 @@ final class EmailViewController: UIViewController {
         do {
             try UserDataModel.shared.startEmailVerification(email: raw)
             
-            // Save email for OTP screen
+            // Storing email for OTP screen
             UserDefaults.standard.set(raw, forKey: "lastEmailForOTP")
-            
-            // Create OTP VC
+
+
             let otpVC = storyboard!.instantiateViewController(withIdentifier: "OTPViewController")
-            
-            if let nav = navigationController {
-                // If we are already in a navigation controller → push normally
-                nav.pushViewController(otpVC, animated: true)
-            } else {
-                // If NOT inside a nav controller → present one modally
-                let nav = UINavigationController(rootViewController: otpVC)
-                nav.modalPresentationStyle = .fullScreen
-                present(nav, animated: true, completion: nil)
-            }
+     
+            let nav = UINavigationController(rootViewController: otpVC)
+            nav.modalPresentationStyle = .fullScreen
+            present(nav, animated: true, completion: nil)
             
         } catch {
             errorLabel.text = error.localizedDescription
@@ -121,7 +82,7 @@ final class EmailViewController: UIViewController {
 }
 
 
-// MARK: - UITextField padding helper at file scope
+// UITextField padding helper at file scope
 extension UITextField {
     func setLeftPaddingPoints(_ amount: CGFloat) {
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: amount, height: self.frame.height))

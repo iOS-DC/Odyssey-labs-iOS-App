@@ -28,8 +28,7 @@ class ReviewRideViewController: UIViewController {
     @IBOutlet weak var totalFareLabel: UILabel!
     @IBOutlet weak var notesTextView: UITextView!
     @IBOutlet weak var offerRideButton: UIButton!
-    
-    // MARK: - Data coming from Step 1 + Step 2
+
     var source: LocationPoint?
     var destination: LocationPoint?
     
@@ -37,7 +36,7 @@ class ReviewRideViewController: UIViewController {
     var time: Date?
     var selectedRoute: RideRoute?
     
-    var vehicleType: String!       // "Car" or "Bike"
+    var vehicleType: String!
     var seats: Int!
     var farePerSeat: Double!
     
@@ -63,7 +62,7 @@ class ReviewRideViewController: UIViewController {
               let dst = destination,
               let dt = date,
               let tm = time else {
-            print("❌ ERROR: Missing data in ReviewRideViewController")
+            print("ERROR: Missing data in ReviewRideViewController")
             return
         }
         
@@ -87,7 +86,7 @@ class ReviewRideViewController: UIViewController {
         totalFareLabel.text = "Total: \(Int(total))"
     }
     
-    // MARK: - Offer Ride Action
+    //Offer Ride Action
     @IBAction func offerRideTapped(_ sender: UIButton) {
         // ❌ Remove these two lines – you don't need to instantiate it manually
         // let sb = UIStoryboard(name: "MyRide", bundle: nil)
@@ -95,7 +94,7 @@ class ReviewRideViewController: UIViewController {
         
         // 1. Get the logged-in user
         guard let currentUser = UserDataModel.shared.getCurrentUser() else {
-            print("❌ No current user, cannot create ride")
+            print("No current user, cannot create ride")
             return
         }
         

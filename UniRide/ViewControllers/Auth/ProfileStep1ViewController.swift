@@ -8,20 +8,8 @@
 import UIKit
 
 let courseDurations: [String: Int] = [
-    // 4-year courses
     "CSE": 4, "ECE": 4, "Mechanical": 4, "Civil": 4, "Electrical": 4,
-    "Chemical Engineering": 4,
-
-    // 3-year courses
-    "Arts": 3,
-    "BCA": 3,
-    "BBA": 3,
-
-    // 2-year courses
-    "MBA": 2,
-    "MCA": 2,
-
-    // Add more if needed...
+    "Chemical Engineering": 4, "Arts": 3, "BCA": 3, "BBA": 3, "MBA": 2,"MCA": 2,
 ]
 
 class ProfileStep1ViewController: UIViewController {
@@ -126,7 +114,6 @@ class ProfileStep1ViewController: UIViewController {
            }
 
            do {
-               // ✅ Send OTP (this prints OTP in console)
                try UserDataModel.shared.startPhoneVerification(phone: phone)
 
                otpStatusLabel.text = "OTP sent! Check console"
@@ -137,7 +124,6 @@ class ProfileStep1ViewController: UIViewController {
                otpTextField.text = ""
                otpTextField.isHidden = false
 
-               // Animate layout if needed
                UIView.animate(withDuration: 0.3) {
                    self.view.layoutIfNeeded()
                }
@@ -150,25 +136,25 @@ class ProfileStep1ViewController: UIViewController {
        }
     
     @IBAction func continuePressed(_ sender: UIButton) {
-        // If OTP field is visible → we expect user to have entered OTP and now we verify
            if !otpTextField.isHidden {
-               guard let phone = phoneTextField.text,
-                     let otp = otpTextField.text, !otp.isEmpty else { return }
+               guard let phone = phoneTextField.text, let otp = otpTextField.text, !otp.isEmpty else {
+                   return
+               }
 
                do {
-                   // 1️⃣ Verify phone for the EXISTING current user
+                   // Verify phone for the EXISTING current user
                    try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
                    print("Phone verified")
 
-                   // 2️⃣ Update (edit) the same user with profile details
+                   //  Update (edit) the same user with profile details
                    UserDataModel.shared.editCurrentUser(
                        fullName: fullNameTextField.text,
                        courseName: dropDownButton.title(for: .normal),
                        year: Int(yearDropDownButton.title(for: .normal) ?? "1")
-                       // phone & isPhoneVerified are already set in verifyPhoneOTP
+                       
                    )
 
-                   // 3️⃣ Go to next page
+                   
                    goToNextPage()
 
                } catch {

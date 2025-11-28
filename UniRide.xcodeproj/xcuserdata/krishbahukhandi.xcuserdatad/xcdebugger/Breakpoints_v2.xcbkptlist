@@ -14,8 +14,8 @@
             filePath = "UniRide/ViewControllers/Auth/ProfileStep1ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "34"
-            endingLineNumber = "34"
+            startingLineNumber = "22"
+            endingLineNumber = "22"
             landmarkName = "ProfileStep1ViewController"
             landmarkType = "3">
          </BreakpointContent>
@@ -30,8 +30,8 @@
             filePath = "UniRide/ViewControllers/Auth/ProfileStep1ViewController.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "33"
-            endingLineNumber = "33"
+            startingLineNumber = "21"
+            endingLineNumber = "21"
             landmarkName = "ProfileStep1ViewController"
             landmarkType = "3">
          </BreakpointContent>
