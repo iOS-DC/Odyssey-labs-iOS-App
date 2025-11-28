@@ -16,6 +16,7 @@ class ProfileViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+<<<<<<< Updated upstream
 
         self.title = "Profile"
 
@@ -41,6 +42,9 @@ class ProfileViewController: UIViewController {
             action: #selector(logoutTapped)
         )
 
+=======
+        self.title = "Profile"
+>>>>>>> Stashed changes
         loadProfile()
     }
 <<<<<<< Updated upstream
@@ -50,9 +54,13 @@ class ProfileViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         loadProfile()  // refresh after editing
 =======
         loadProfile()
+>>>>>>> Stashed changes
+=======
+        loadProfile()     // Refresh when returning from edit screen
 >>>>>>> Stashed changes
     }
 
@@ -78,7 +86,10 @@ class ProfileViewController: UIViewController {
         memberSinceLabel.text = "Member Since \(profile.id.uuidString.prefix(4))"
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         // TEMPORARY STATIC VALUES
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
         ratingLabel.text = "4.9 ★"
@@ -100,6 +111,7 @@ class ProfileViewController: UIViewController {
             profileImageView.image = UIImage(named: "defaultProfile")
         }
     }
+<<<<<<< Updated upstream
     
     // MARK: - Edit Button
 <<<<<<< Updated upstream
@@ -118,18 +130,33 @@ class ProfileViewController: UIViewController {
         } else {
             print(" ERROR: No ViewController with Storyboard ID 'EditProfileViewController'")
 =======
+=======
+
+    // MARK: - Storyboard Edit Button
+    @IBAction func editButtonPressed(_ sender: Any) {
+        let storyboard = UIStoryboard(name: "editprofile", bundle: nil)
+>>>>>>> Stashed changes
 
         guard let editVC = storyboard.instantiateViewController(
             withIdentifier: "EditProfileViewController"
         ) as? EditProfileViewController else {
+<<<<<<< Updated upstream
             print("❌ ERROR: 'EditProfileViewController' not found")
+=======
+            print("❌ ERROR: EditProfileViewController not found in storyboard")
+>>>>>>> Stashed changes
             return
 >>>>>>> Stashed changes
         }
     }
 
+<<<<<<< Updated upstream
     // MARK: - Logout (No login navigation)
     @objc func logoutTapped() {
+=======
+    // MARK: - Storyboard Logout Button
+    @IBAction func logoutButtonPressed(_ sender: Any) {
+>>>>>>> Stashed changes
         let alert = UIAlertController(
             title: "Logout?",
             message: "Are you sure you want to log out?",
@@ -146,6 +173,7 @@ class ProfileViewController: UIViewController {
         present(alert, animated: true)
     }
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
     private func navigateToLogin() {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
@@ -161,6 +189,8 @@ class ProfileViewController: UIViewController {
         sceneDelegate?.window?.rootViewController = UINavigationController(rootViewController: loginVC)
 >>>>>>> Stashed changes
     }
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 }

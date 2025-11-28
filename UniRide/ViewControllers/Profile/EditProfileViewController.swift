@@ -29,7 +29,7 @@ class EditProfileViewController: UIViewController, UIImagePickerControllerDelega
     @IBOutlet weak var yearTextField: UITextField!
     @IBOutlet weak var phoneTextField: UITextField!
 
-    private var newPhotoURL: URL? = nil   // store new image temporarily
+    private var newPhotoURL: URL? = nil
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
