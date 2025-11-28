@@ -131,7 +131,6 @@ struct Booking: Codable, Equatable {
     static func ==(lhs: Booking, rhs: Booking) -> Bool { lhs.id == rhs.id }
 }
 
-// MARK: - Singleton store (plist-backed)
 final class RideDataModel {
 
     static let shared = RideDataModel()
@@ -152,13 +151,15 @@ final class RideDataModel {
         loadAll()
     }
 
-    // MARK: - Offer ride (Host) CRUD
-    @discardableResult
+    
+    @discardableResult  //prevents unnecessary warnings like function is unused
     func createRide(_ ride: Ride) -> Ride {
         rides.append(ride); saveRides(); return ride
     }
 
-    func getRide(_ id: UUID) -> Ride? { rides.first { $0.id == id } }
+    func getRide(_ id: UUID) -> Ride? {
+        rides.first { $0.id == id }
+    }
 
     func updateRide(_ updated: Ride) {
         guard let i = rides.firstIndex(where: { $0.id == updated.id }) else { return }
@@ -183,8 +184,7 @@ final class RideDataModel {
         saveRides(); saveRequests(); saveBookings()
     }
 
-    // MARK: - Join ride (Passenger)
-    @discardableResult
+    @discardableResult   //prevents unnecessary warnings like function is unused
     func createJoinRequest(_ req: RideRequest) -> RideRequest {
         requests.append(req); saveRequests(); return req
     }
@@ -252,7 +252,6 @@ final class RideDataModel {
         saveBookings()
     }
 
-    // MARK: - Discovery helper (optional)
     func ridesNear(_ point: LocationPoint, maxMeters: Double = 1200) -> [Ride] {
         // simple proximity using a naive flat-earth approximation (good enough for campus)
         func distM(_ a: LocationPoint, _ b: LocationPoint) -> Double {
@@ -269,13 +268,13 @@ final class RideDataModel {
             .sorted { $0.departureTime < $1.departureTime }
     }
 
-    // MARK: - "My Rides" tabs
+    // My Rides
     struct MyTrip: Equatable {
         enum Role { case hosting, passenger }
         var role: Role
         var ride: Ride
         
-        // For passenger role: optional request id + status (nil for pure hosting rows)
+        // For passenger role: optional request id + status (nil for pure hosting role )
             var requestID: UUID?
             var requestStatus: RideRequestStatus?
     }
@@ -328,13 +327,11 @@ final class RideDataModel {
         return out.sorted { $0.ride.departureTime > $1.ride.departureTime }
     }
 
-    // MARK: - Basic lists
     func listRidesHosted(by userID: UUID) -> [Ride] { rides.filter { $0.driverUserID == userID } }
     func listRequests(for rideID: UUID) -> [RideRequest] { requests.filter { $0.rideID == rideID } }
     func listBookings(for rideID: UUID) -> [Booking] { bookings.filter { $0.rideID == rideID } }
     func listMyBookings(userID: UUID) -> [Booking] { bookings.filter { $0.passengerUserID == userID } }
 
-    // MARK: - Persistence
     private func loadAll() {
         rides = load([Ride].self, from: ridesURL) ?? []
         requests = load([RideRequest].self, from: requestsURL) ?? []

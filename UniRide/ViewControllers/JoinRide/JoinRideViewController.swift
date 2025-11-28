@@ -51,23 +51,11 @@ class JoinRideViewController: UIViewController,
         
         view.bringSubviewToFront(findRideButton)
           
-          print("🔷 Button frame at runtime:", findRideButton.frame)
     }
 
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesEnded(touches, with: event)
+   
 
-        guard let touch = touches.first else { return }
-        let point = touch.location(in: view)
-        print("👆 touchesEnded at:", point)
-
-        if findRideButton.frame.contains(point) {
-            print("👉 Touch was inside Find Ride button frame")
-        }
-    }
-
-    // MARK: - Date picker
+    //   Date picker
     private func setupDatePicker() {
         datePicker.datePickerMode = .date
         datePicker.preferredDatePickerStyle = .wheels
@@ -120,7 +108,7 @@ class JoinRideViewController: UIViewController,
         timeTextField.resignFirstResponder()
     }
 
-    // MARK: - Autocomplete typing
+    //  Autocomplete typing
     func textField(_ textField: UITextField,
                    shouldChangeCharactersIn range: NSRange,
                    replacementString string: String) -> Bool {
@@ -198,16 +186,16 @@ class JoinRideViewController: UIViewController,
 
         suggestionsTable.isHidden = false
 
-        // 👉 Put table just above the text field,
+        //  table just above the text field,
         //    but NOT above the whole view / button
         view.insertSubview(suggestionsTable, aboveSubview: tf)
 
-        // 👉 Make sure button stays on top
+        //  button stays on top
         view.bringSubviewToFront(findRideButton)
     }
         // MARK: - Find Ride button
         @IBAction func didTapFindRide(_ sender: Any) {
-            print("🎉 didTapFindRide fired")
+            print(" didTapFindRide fired")
 
                     guard
                         let fromCoord = fromCoordinate,
@@ -215,14 +203,14 @@ class JoinRideViewController: UIViewController,
                         let fromText = fromTextField.text, !fromText.isEmpty,
                         let toText = toTextField.text, !toText.isEmpty
                     else {
-                        print("❌ Please choose From & To from suggestions")
+                        print(" Please choose From & To from suggestions")
                         return
                     }
 
                     guard let vc = storyboard?.instantiateViewController(
                         identifier: "AvailableRideViewController"
                     ) as? AvailableRideViewController else {
-                        print("❌ Could not cast to AvailableRideViewController")
+                        print(" Could not cast to AvailableRideViewController")
                         return
                     }
 
@@ -232,7 +220,7 @@ class JoinRideViewController: UIViewController,
                     vc.time = timePicker.date
 
                     guard let nav = navigationController else {
-                        print("❌ navigationController is nil")
+                        print(" navigationController is nil")
                         return
                     }
 

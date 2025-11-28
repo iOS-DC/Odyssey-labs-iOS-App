@@ -121,9 +121,9 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tqa-fG-Xo3">
-                                <rect key="frame" x="191.33333333333334" y="190.33333333333334" width="92.666666666666657" height="34.333333333333343"/>
+                                <rect key="frame" x="176" y="190.33333333333334" width="108" height="34.333333333333343"/>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title="message"/>
+                                <buttonConfiguration key="configuration" style="plain" title="cancel Req"/>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Hosting" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fVf-3y-EAg">
                                 <rect key="frame" x="238" y="64" width="44" height="14.333333333333329"/>

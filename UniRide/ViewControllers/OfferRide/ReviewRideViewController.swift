@@ -88,9 +88,7 @@ class ReviewRideViewController: UIViewController {
     
     //Offer Ride Action
     @IBAction func offerRideTapped(_ sender: UIButton) {
-        // ❌ Remove these two lines – you don't need to instantiate it manually
-        // let sb = UIStoryboard(name: "MyRide", bundle: nil)
-        // let vc = sb.instantiateViewController(withIdentifier: "MyRidesViewController") as! MyRidesViewController
+    
         
         // 1. Get the logged-in user
         guard let currentUser = UserDataModel.shared.getCurrentUser() else {
@@ -100,7 +98,7 @@ class ReviewRideViewController: UIViewController {
         
         // 2. Combine date + time into single Date
         guard let rideDate = date, let rideTime = time else {
-            print("❌ Missing date or time")
+            print(" Missing date or time")
             return
         }
         
@@ -117,7 +115,7 @@ class ReviewRideViewController: UIViewController {
                 
         var finalDepartureTime = calendar.date(from: finalComponents) ?? Date()
 
-        // ✅ Make sure departure time is not in the past
+        //  departure time is not in the past
         let now = Date()
         if finalDepartureTime < now {
             // push it slightly into the future so it's counted as upcoming
@@ -129,7 +127,7 @@ class ReviewRideViewController: UIViewController {
               let dst = destination,
               let seats = seats,
               let farePerSeat = farePerSeat else {
-            print("❌ Missing ride details")
+            print(" Missing ride details")
             return
         }
         
@@ -152,7 +150,7 @@ class ReviewRideViewController: UIViewController {
         // 5. Save the ride
         RideDataModel.shared.createRide(ride)
         
-        print("✅ Ride created successfully:")
+        print(" Ride created successfully:")
         print(ride)
         
         // (Optional) Debug: see what myUpcoming returns right now

@@ -22,8 +22,8 @@ class AvailableRideViewController: UIViewController,
 
        var rides: [Ride] = []
 
-       // 👇 Add this inside the class (but outside functions)
-       private static var didSeedMockData = false
+//       //  Add this inside the class (but outside functions)
+//       private static var didSeedMockData = false
 
        override func viewDidLoad() {
            super.viewDidLoad()
@@ -37,41 +37,47 @@ class AvailableRideViewController: UIViewController,
 
            tableView.separatorStyle = .none
            tableView.rowHeight = UITableView.automaticDimension
-           tableView.estimatedRowHeight = 140
+           tableView.estimatedRowHeight = 200
 
            loadDummyRidesForNow()
        }
 
        private func loadDummyRidesForNow() {
-           // 1️⃣ Make sure we have a "from" location from JoinRideViewController
+           //  Make sure we have a "from" location from JoinRideViewController
+           
+           print("ALL RIDES IN MODEL:")
+           for r in RideDataModel.shared.listAllRides() { // add such helper if not present
+               print(r.id, r.status, r.departureTime, r.source.lat, r.source.lon)
+           }
+
            guard let fromCoord = fromCoordinate else {
-               print("❌ No fromCoordinate passed in")
+               print(" No fromCoordinate passed in")
                rides = []
                tableView.reloadData()
                return
            }
 
-           // 2️⃣ Seed mock rides into RideDataModel only once
-           if !AvailableRideViewController.didSeedMockData {
-               for mockRide in MockData.sampleRides {
-                   let created = RideDataModel.shared.createRide(mockRide)
-                   // ensure they are published (in case you forgot status above)
-                   RideDataModel.shared.publishRide(id: created.id)
-               }
-               AvailableRideViewController.didSeedMockData = true
-               print("✅ Seeded mock rides into RideDataModel")
-           }
+           // Seed mock rides into RideDataModel only once
+//           if !AvailableRideViewController.didSeedMockData {
+//               for mockRide in MockData.sampleRides {
+//                   let created = RideDataModel.shared.createRide(mockRide)
+//                   // ensure they are published (in case you forgot status above)
+//                   RideDataModel.shared.publishRide(id: created.id)
+//               }
+//               AvailableRideViewController.didSeedMockData = true
+//               print(" Seeded mock rides into RideDataModel")
+//           }
 
-           // 3️⃣ Build a LocationPoint from fromCoordinate
+           //  Build a LocationPoint from fromCoordinate
            let fromPoint = LocationPoint(
                lat: fromCoord.latitude,
                lon: fromCoord.longitude,
                address: nil
            )
 
-           // 4️⃣ Use your existing nearby logic
+           //  Use your existing nearby logic
            let nearby = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 15_000)
-           print("🚗 Nearby rides found:", nearby.count)
+           print(" Nearby rides found:", nearby.count)
 
            self.rides = nearby
            tableView.reloadData()

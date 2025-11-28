@@ -2,8 +2,8 @@ import UIKit
 
 class UpcomingPassengerTableViewCell: UITableViewCell {
     
-    // MARK: - Outlets (hook these from your XIB)
-    
+   
+//    outlets forms upcomming passenger table view cell xib file
     @IBOutlet weak var cardView: UIView!
     
     @IBOutlet weak var dateLabel: UILabel!
@@ -16,16 +16,12 @@ class UpcomingPassengerTableViewCell: UITableViewCell {
     @IBOutlet weak var endTimeLabel: UILabel!
     @IBOutlet weak var durationLabel: UILabel!
     
-    // TOP small pill -> ride lifecycle: Published / Ongoing / Completed
+    
     @IBOutlet weak var rideStatusLabel: UILabel!
     
-    // Text near avatar: shows host’s name
     @IBOutlet weak var hostNameLabel: UILabel!
     
-    // Label that says "Passenger" (the role)
-    @IBOutlet weak var roleLabel: UILabel!      // use any label in card where you want this
-    
-    // Request status label (bottom right: "Confirmed" / "Pending")
+    @IBOutlet weak var roleLabel: UILabel!
     @IBOutlet weak var requestStatusLabel: UILabel!
     
     @IBOutlet weak var hostImageView: UIImageView!
@@ -34,7 +30,7 @@ class UpcomingPassengerTableViewCell: UITableViewCell {
     @IBOutlet weak var callButton: UIButton!
     @IBOutlet weak var cancelRequestButton: UIButton!
     
-    // MARK: - Lifecycle
+   
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -53,7 +49,7 @@ class UpcomingPassengerTableViewCell: UITableViewCell {
         hostImageView.clipsToBounds = true
     }
     
-    // MARK: - Configure
+ 
     
     func configure(with trip: RideDataModel.MyTrip) {
         let ride = trip.ride

@@ -102,9 +102,9 @@
                                 </subviews>
                             </stackView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="MqO-bM-fGV">
-                                <rect key="frame" x="191.33333333333334" y="135.66666666666666" width="92.666666666666657" height="34.333333333333343"/>
+                                <rect key="frame" x="169" y="135.66666666666666" width="115" height="34.333333333333343"/>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title="message"/>
+                                <buttonConfiguration key="configuration" style="plain" title="Cancel RIde"/>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="--&gt;" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="34E-aQ-NG4">
                                 <rect key="frame" x="67.333333333333329" y="44.333333333333336" width="19" height="14.333333333333336"/>

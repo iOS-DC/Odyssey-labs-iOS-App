@@ -9,14 +9,11 @@ import UIKit
 
 class UpcomingTableViewCell: UITableViewCell {
 
-    // MARK: - Outlets
-    
+//    outlet with upcoming table view cell xib file
     @IBOutlet weak var cardView: UIView!
     
-    // pill at top showing ride lifecycle (Published / Ongoing / Completed / etc.)
     @IBOutlet weak var statusLabel: UILabel!
     
-    // small text label showing your role (Hosting / Passenger)
     @IBOutlet weak var roleLabel: UILabel!
     
     @IBOutlet weak var callButton: UIButton!
@@ -33,7 +30,6 @@ class UpcomingTableViewCell: UITableViewCell {
     @IBOutlet weak var dateLabel: UILabel!
     
     
-    // MARK: - Lifecycle
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -54,7 +50,6 @@ class UpcomingTableViewCell: UITableViewCell {
         cardView.layer.shadowOffset  = CGSize(width: 0, height: 2)
         cardView.layer.shadowRadius  = 6
         
-        // default pill style; colors will be adjusted in configure()
         statusLabel.layer.cornerRadius = 8
         statusLabel.clipsToBounds = true
         
@@ -77,7 +72,6 @@ class UpcomingTableViewCell: UITableViewCell {
 
         let ride = trip.ride
         
-        // 🔹 ROLE STATUS (you are hosting / passenger)
         // This cell is mainly used for hosting, but we still respect the role from MyTrip.
         switch trip.role {
         case .hosting:
@@ -86,7 +80,6 @@ class UpcomingTableViewCell: UITableViewCell {
             roleLabel.text = "Passenger"
         }
         
-        // 🔹 RIDE STATUS PILL (Published / Ongoing / Completed / Cancelled / Draft)
         switch ride.status {
         case .published:
             statusLabel.text = "Published"
@@ -114,20 +107,20 @@ class UpcomingTableViewCell: UITableViewCell {
             statusLabel.backgroundColor = UIColor.systemOrange.withAlphaComponent(0.12)
         }
         
-        // 🔹 DATE
+        //  DATE
         let df = DateFormatter()
         df.dateFormat = "EEE, MMM d"
         dateLabel.text = df.string(from: ride.departureTime)
         
-        // 🔹 SEATS (booked/total like "2/4 seats")
+        //  SEATS (booked/total like "2/4 seats")
         let booked = ride.seatsTotal - ride.seatsAvailable
         seatsLabel.text = "\(booked)/\(ride.seatsTotal) seats"
         
-        // 🔹 ROUTE
+        //  ROUTE
         fromLabel.text = ride.source.address ?? "Source"
         toLabel.text   = ride.destination.address ?? "Destination"
         
-        // 🔹 TIMES
+        //  TIMES
         let tf = DateFormatter()
         tf.dateFormat = "HH:mm"
         startTimeLabel.text = tf.string(from: ride.departureTime)
@@ -137,7 +130,7 @@ class UpcomingTableViewCell: UITableViewCell {
         endTimeLabel.text = tf.string(from: endDate)
         durationLabel.text = "2h"  // placeholder
         
-        // 🔹 Passengers label
+        //  Passengers label
         passengersLabel.text = "Passengers >"
     }
 }
