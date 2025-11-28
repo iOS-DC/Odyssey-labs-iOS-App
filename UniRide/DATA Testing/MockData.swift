@@ -24,7 +24,8 @@ struct MockData {
             destination: dst1,
             departureTime: Date().addingTimeInterval(3600),
             seatsTotal: 3,
-            farePerSeat: 80
+            farePerSeat: 80,
+            status: .published
         )
 
         let r2 = Ride(
@@ -33,7 +34,8 @@ struct MockData {
             destination: dst2,
             departureTime: Date().addingTimeInterval(7200),
             seatsTotal: 2,
-            farePerSeat: 120
+            farePerSeat: 120,
+            status: .published
         )
 
         return [r1, r2]

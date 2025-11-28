@@ -4,15 +4,20 @@
 //
 //  Created by Air on 11/11/25.
 //
+extension Notification.Name {
+    static let rideRequestsUpdated = Notification.Name("rideRequestsUpdated")
+}
+
+
 
 import Foundation
 
-// MARK: - Enums (scoped to rides)
+// MARK: - Enums used for ride status and ride request and booking status
 enum RideStatus: String, Codable { case draft, published, ongoing, completed, cancelled }
 enum RideRequestStatus: String, Codable { case pending, approved, denied, cancelled }
 enum BookingStatus: String, Codable { case confirmed, cancelled }
 
-// MARK: - Value types
+// location point variable
 struct LocationPoint: Codable, Equatable {
     var lat: Double
     var lon: Double
@@ -269,25 +274,45 @@ final class RideDataModel {
         enum Role { case hosting, passenger }
         var role: Role
         var ride: Ride
+        
+        // For passenger role: optional request id + status (nil for pure hosting rows)
+            var requestID: UUID?
+            var requestStatus: RideRequestStatus?
     }
 
     func myUpcoming(userID: UUID, now: Date = Date()) -> [MyTrip] {
         var out: [MyTrip] = []
 
-        // Hosting
-        out += rides
-            .filter { $0.driverUserID == userID && $0.status != .completed && $0.status != .cancelled && $0.departureTime >= now }
-            .map { MyTrip(role: .hosting, ride: $0) }
+           // Hosting
+           out += rides
+               .filter { $0.driverUserID == userID && $0.status != .completed && $0.status != .cancelled && $0.departureTime >= now }
+               .map { MyTrip(role: .hosting, ride: $0, requestID: nil, requestStatus: nil) }
 
-        // Passenger
-        let myB = bookings.filter { $0.passengerUserID == userID && $0.status == .confirmed }
-        out += myB.compactMap { b in rides.first { $0.id == b.rideID } }
-            .filter { $0.status != .completed && $0.status != .cancelled && $0.departureTime >= now }
-            .map { MyTrip(role: .passenger, ride: $0) }
+           // From confirmed bookings
+           let myBookings = bookings.filter { $0.passengerUserID == userID && $0.status == .confirmed }
+           let passengerFromBookings: [MyTrip] = myBookings.compactMap { b in
+               guard let ride = rides.first(where: { $0.id == b.rideID }) else { return nil }
+               guard ride.status != .completed && ride.status != .cancelled && ride.departureTime >= now else { return nil }
+               return MyTrip(role: .passenger, ride: ride, requestID: nil, requestStatus: .approved)
+           }
+           out += passengerFromBookings
 
-        return out.sorted { $0.ride.departureTime < $1.ride.departureTime }
-    }
+           let bookingRideIDs = Set(passengerFromBookings.map { $0.ride.id })
 
+           // From requests (pending/denied/etc.) — include if user requested it
+           let myReqs = requests.filter { $0.passengerUserID == userID }
+           let passengerFromRequests: [MyTrip] = myReqs.compactMap { req in
+               guard let ride = rides.first(where: { $0.id == req.rideID }) else { return nil }
+               if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
+               guard ride.status != .completed && ride.status != .cancelled && ride.departureTime >= now else { return nil }
+               return MyTrip(role: .passenger, ride: ride, requestID: req.id, requestStatus: req.status)
+           }
+           out += passengerFromRequests
+
+           return out.sorted { $0.ride.departureTime < $1.ride.departureTime }
+       }
+    
+    
     func myPast(userID: UUID, now: Date = Date()) -> [MyTrip] {
         var out: [MyTrip] = []
 
