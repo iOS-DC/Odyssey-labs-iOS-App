@@ -116,23 +116,37 @@ class CommunityViewController: UIViewController, UITableViewDelegate, UITableVie
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return sementedControl.selectedSegmentIndex == 0 ? feedPosts.count : eventPosts.count
     }
-    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if sementedControl.selectedSegmentIndex == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
             let post = feedPosts[indexPath.row]
+            
             (cell.viewWithTag(2) as? UILabel)?.text = "Rehan Khan"
             (cell.viewWithTag(4) as? UILabel)?.text = post.timestamp
             (cell.viewWithTag(5) as? UILabel)?.text = post.message
+
+            
+            cell.selectionStyle = .none
+            cell.isUserInteractionEnabled = false
+            
             return cell
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath)
             let post = eventPosts[indexPath.row]
+            
             (cell.viewWithTag(2) as? UILabel)?.text = post.message
             (cell.viewWithTag(3) as? UILabel)?.text = post.timestamp
+
+            
+            cell.selectionStyle = .none
+            cell.isUserInteractionEnabled = false
+
             return cell
         }
     }
+
+
+    
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return sementedControl.selectedSegmentIndex == 0 ? 160 : 150
