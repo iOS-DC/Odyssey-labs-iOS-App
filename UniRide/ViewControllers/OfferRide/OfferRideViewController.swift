@@ -18,20 +18,19 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
     
     let datePicker = UIDatePicker()
     let timePicker = UIDatePicker()
-    let searchCompleter = MKLocalSearchCompleter()
-    var searchResults = [MKLocalSearchCompletion]()
-    // at top of OfferRideViewController class
+    let searchCompleter = MKLocalSearchCompleter()  // An object from MapKit that provides auto-complete suggestions for location/search queries as the user types
+    var searchResults = [MKLocalSearchCompletion]() //Stores the current list of autocomplete suggestions returned by the searchCompleter.
     var availableRoutes: [MKRoute] = []
     var chosenRoute: MKRoute?
 
-    var fromCoordinate: CLLocationCoordinate2D?
+    var fromCoordinate: CLLocationCoordinate2D? //CLLocationCoordinate2D is a Core Location struct that represents a geographic coordinate on Earth using latitude and longitude.
     var toCoordinate: CLLocationCoordinate2D?
     var activeTextField: UITextField?
     @IBOutlet weak var suggestionsTable: UITableView!
 
     override func viewDidLoad() {
             super.viewDidLoad()
-        suggestionsTable.translatesAutoresizingMaskIntoConstraints = true
+            suggestionsTable.translatesAutoresizingMaskIntoConstraints = true
             fromTextField.delegate = self
             toTextField.delegate = self
 
@@ -46,7 +45,7 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
             setupTimePicker()
         }
 
-        // MARK: - Date Picker
+        // Date Picker
         func setupDatePicker() {
             datePicker.datePickerMode = .date
             datePicker.preferredDatePickerStyle = .wheels
@@ -90,7 +89,7 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
         navigationController?.pushViewController(vc, animated: true)
 
     }
-    // MARK: - Time Picker
+    // Time Picker
         func setupTimePicker() {
             timePicker.datePickerMode = .time
             timePicker.preferredDatePickerStyle = .wheels
@@ -111,7 +110,7 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
             timeTextField.resignFirstResponder()
         }
 
-        // MARK: - TextField Autocomplete
+        // TextField Autocomplete
         func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
             let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
             searchCompleter.queryFragment = updated
@@ -126,7 +125,7 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
             suggestionsTable.isHidden = searchResults.isEmpty
         }
 
-        // MARK: - TableView
+        // TableView
         func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
             return searchResults.count
         }
@@ -161,7 +160,6 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
             }
         }
 
-        // MARK: - Draw Routes
         func drawRoutesIfPossible() {
             guard let from = fromCoordinate, let to = toCoordinate else { return }
 
@@ -180,27 +178,22 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
                     return
                 }
 
-                // keep up to 4
                 self.availableRoutes = Array(routes.prefix(4))
 
                 DispatchQueue.main.async {
-                    // render overlays
                     self.mapView.removeOverlays(self.mapView.overlays)
                     for route in self.availableRoutes {
                         self.mapView.addOverlay(route.polyline)
                     }
 
-                    // default selection -> first
                     self.chosenRoute = self.availableRoutes.first
 
-                    // zoom to first
                     if let first = self.availableRoutes.first {
                         self.mapView.setVisibleMapRect(first.polyline.boundingMapRect,
                                                        edgePadding: UIEdgeInsets(top: 40, left: 20, bottom: 40, right: 20),
                                                        animated: true)
                     }
 
-                    // PRESENT the bottom sheet to let user choose
                     self.presentRoutesBottomSheet()
                 }
             }

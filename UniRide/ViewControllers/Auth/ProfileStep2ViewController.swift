@@ -18,18 +18,18 @@ class ProfileStep2ViewController: UIViewController {
     @IBOutlet weak var vehicleSectionStack: UIStackView!  // contains label + dropdown
 
     private var selectedHasVehicle: Bool?
-        private var selectedVehicleType: String?
+    private var selectedVehicleType: String?
 
-        override func viewDidLoad() {
-            super.viewDidLoad()
+    override func viewDidLoad() {
+        super.viewDidLoad()
 
-            vehicleSectionStack.isHidden = true
-            continueButton.isEnabled = false
-            continueButton.alpha = 0.5
+        vehicleSectionStack.isHidden = true
+        continueButton.isEnabled = false
+        continueButton.alpha = 0.5
 
-            setupVehicleDropdown()
-            styleButtons()
-        }
+        setupVehicleDropdown()
+        styleButtons()
+    }
 
         func styleButtons() {
             yesVehicleButton.layer.cornerRadius = 12
@@ -44,7 +44,7 @@ class ProfileStep2ViewController: UIViewController {
         }
 
         func setupVehicleDropdown() {
-            let options = ["Car", "Motorcycle", "Bicycle"]
+            let options = ["Car", "Two-Wheeler"]
 
             let actions = options.map { option in
                 UIAction(title: option) { action in

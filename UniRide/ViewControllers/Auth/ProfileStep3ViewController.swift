@@ -36,14 +36,13 @@ class ProfileStep3ViewController: UIViewController, UIImagePickerControllerDeleg
 
         profileImageView.layer.cornerRadius = profileImageView.frame.width / 2
         profileImageView.clipsToBounds = true
-        profileImageView.image = UIImage(systemName: "person.circle") // placeholder
         profileImageView.tintColor = .systemGray3
 
         uploadButton.layer.cornerRadius = 15
         completeSetupButton.layer.cornerRadius = 20
     }
 
-    // MARK: - Upload Photo
+    // Upload Photo
     @IBAction func uploadPhotoTapped(_ sender: UIButton) {
 
         let picker = UIImagePickerController()
@@ -54,7 +53,7 @@ class ProfileStep3ViewController: UIViewController, UIImagePickerControllerDeleg
         present(picker, animated: true)
     }
 
-    // MARK: - Image Picker Result
+    // Image Picker Result
     func imagePickerController(_ picker: UIImagePickerController,
                                didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
 
@@ -69,7 +68,7 @@ class ProfileStep3ViewController: UIViewController, UIImagePickerControllerDeleg
         picker.dismiss(animated: true)
     }
 
-    // MARK: - Complete Setup
+    
     @IBAction func completeSetupTapped(_ sender: UIButton) {
 
         if let img = selectedImage {

@@ -1,11 +1,11 @@
 import Foundation
 
-// MARK: - Vehicle Types
+// Vehicle Types
 enum VehicleType: String, Codable {
     case bike, car, other
 }
 
-// MARK: - Vehicle Struct
+// Vehicle Struct
 struct Vehicle: Codable, Equatable {
     var type: VehicleType
     var model: String
@@ -13,7 +13,7 @@ struct Vehicle: Codable, Equatable {
     var seats: Int
 }
 
-// MARK: - User Profile
+// User Profile Structure
 struct UserProfile: Equatable, Codable {
     let id: UUID
     var email: String
@@ -52,12 +52,12 @@ struct UserProfile: Equatable, Codable {
     }
 }
 
-// MARK: - Singleton Data Manager
+// Singleton Data Manager
 final class UserDataModel {
 
     static let shared = UserDataModel()
 
-    private let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    private let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!  // Storing the url of the document directory in which our app will store the data which is typically our sandbox. Typically there is only one url.
     private let archiveURL: URL
     private var users: [UserProfile] = []
     private var currentUserID: UUID?
@@ -66,42 +66,60 @@ final class UserDataModel {
     private var phoneOTPs: [String: String] = [:]
 
     private init() {
-        archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")  // plist to json
+        archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json") // We are appending the url which is pointing to the user.json file.
         loadUsers()
 
     }
 
     // FUNCTION CALLING IN THE EMAILVIEW CONTROLLER for storing the email and printing the otp
     func startEmailVerification(email raw: String) throws {
-        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()  // Storing the email with no trailing and leading spaces and converting it into lowercase for maintaing consistency
         guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-        let otp = String(Int.random(in: 1000...9999)) // Creating a otp
-        emailOTPs[email] = otp  // Storing the otp in emailOTPs
+        let otp = String(Int.random(in: 1000...9999)) // Generating a otp
+        emailOTPs[email] = otp  // Storing the otp in emailOTPs array
         print("DEBUG Email OTP for \(email): \(otp)")
     }
     // Function Verifying The otp. Called in the otp view controller
     func verifyEmailOTP(email: String, code: String) throws -> UserProfile {
+
+        // Get the OTP we sent earlier
         guard let sent = emailOTPs[email.lowercased()] else {
             throw NSError(domain: "Login", code: 404,
                           userInfo: [NSLocalizedDescriptionKey: "No OTP found for this email"])
         }
+
+        // Check OTP correctness
         guard sent == code else {
             throw NSError(domain: "Login", code: 403,
                           userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
         }
 
+        // Before creating a new user checking if email already exists or not
+        if let existingUser = users.first(where: { $0.email == email.lowercased() }) {
+            
+            currentUserID = existingUser.id
+            emailOTPs[email.lowercased()] = nil
+            return existingUser
+        }
+
+        // Creating a new user
         let newUser = UserProfile(email: email.lowercased(), isEmailVerified: true)
         users.append(newUser)
         currentUserID = newUser.id
         saveUsers()
+
+        print("New user created:", newUser)
+
+        // Clear OTP
         emailOTPs[email.lowercased()] = nil
+
         return newUser
     }
 
-    // MARK: - PHONE VERIFICATION
+    // PHONE VERIFICATION Function
     func startPhoneVerification(phone raw: String) throws {
         let phone = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard phone.count >= 10 else {
@@ -138,7 +156,7 @@ final class UserDataModel {
     func createNewUser(fullName: String, course: String, year: Int, phone: String) {
         // Create the new user
         let newUser = UserProfile(
-            email: "",                   // email already verified earlier OR fill appropriately
+            email: "",                   // email already stored earlier
             isEmailVerified: true,
             phone: phone,
             isPhoneVerified: true,
@@ -158,7 +176,7 @@ final class UserDataModel {
     }
 
 
-    // MARK: - PROFILE CRUD
+    // PROFILE CRUD
     func getCurrentUser() -> UserProfile? {
         guard let id = currentUserID else { return nil }
         return users.first(where: { $0.id == id })
@@ -186,7 +204,7 @@ final class UserDataModel {
         saveUsers()
     }
 
-    // MARK: - LOGOUT (delete user)
+    // LOGOUT Function
     func logout() {
         guard let id = currentUserID else { return }
         users.removeAll { $0.id == id }
@@ -194,12 +212,13 @@ final class UserDataModel {
         saveUsers()
     }
 
-    // MARK: - Persistence
     private func loadUsers() {
-        guard let data = try? Data(contentsOf: archiveURL) else { return }
-          do {
-              let decoder = JSONDecoder()
-              users = try decoder.decode([UserProfile].self, from: data)
+        guard let data = try? Data(contentsOf: archiveURL) else { // here we are trying to read the raw bytes of the file locating int he archiveURL which is point to sandbox containng an user.json file
+            return
+        }
+        do {
+              let decoder = JSONDecoder() // Converts the JSON data into swift types
+              users = try decoder.decode([UserProfile].self, from: data) // decoding the JSON into users whose data type is UserProfile
           } catch {
               print("Failed to load users.json:", error)
           }
@@ -207,10 +226,10 @@ final class UserDataModel {
 
     private func saveUsers() {
         do {
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = [.prettyPrinted]  
+                let encoder = JSONEncoder() // Converts the swift into JSON data
+                encoder.outputFormatting = [.prettyPrinted]  // this makes the data human readable
                 let data = try encoder.encode(users)
-                try data.write(to: archiveURL, options: .atomic)
+                try data.write(to: archiveURL, options: .atomic) // writing the json data into file but first writing it in temporary file and then replace the destination
             } catch {
                 print("Failed to save users.json:", error)
             }

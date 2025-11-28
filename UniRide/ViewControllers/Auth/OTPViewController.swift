@@ -44,7 +44,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
         }
 
         startResendTimer()
-        otpField1.becomeFirstResponder()
+        otpField1.becomeFirstResponder() // Focuses on otpField1 and brings up the keyboard when the screen appears
     }
     
     func setupCard() {
@@ -80,27 +80,34 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
             return
         }
 
-        // We need the same email used in EmailViewController.
-        // Option A: Store it temporarily in UserDefaults when calling startEmailVerification.
-        // Let’s do that: save in EmailViewController, read here.
         let email = UserDefaults.standard.string(forKey: "lastEmailForOTP") ?? ""
 
         do {
-            _ = try UserDataModel.shared.verifyEmailOTP(email: email, code: code)
-            // Move to Profile Step 1
-            let vc = storyboard!.instantiateViewController(withIdentifier: "ProfileStep1ViewController")
-            navigationController?.pushViewController(vc, animated: true)
+            let user = try UserDataModel.shared.verifyEmailOTP(email: email, code: code)
+
+            if user.fullName.isEmpty {
+                // New or incomplete profile Proceed to profile setup
+                let vc = storyboard!.instantiateViewController(withIdentifier: "ProfileStep1ViewController")
+                navigationController?.pushViewController(vc, animated: true)
+            } else {
+                // If Existing user Go directly to Home
+                let homeVC = storyboard!.instantiateViewController(withIdentifier: "MainTabBarController")
+                homeVC.modalPresentationStyle = .fullScreen
+                self.present(homeVC, animated: true)
+            }
+
         } catch {
             errorLabel.text = error.localizedDescription
             errorLabel.isHidden = false
         }
+
     }
 
     private func startResendTimer() {
         resendLabel.text = "Resend OTP in \(seconds)s"
         resendLabel.isUserInteractionEnabled = false
         resendTimer?.invalidate()
-        resendTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        resendTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in // prevents retain cycle between Timer and ViewController
             guard let self = self else { return }
             self.seconds -= 1
             if self.seconds <= 0 {
