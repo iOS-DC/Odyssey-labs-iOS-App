@@ -43,7 +43,7 @@ class MyRidesViewController: UIViewController {
                                                selector: #selector(handleRequestsUpdated(_:)),
                                                name: .rideRequestsUpdated,
                                                object: nil)
-        
+//        
         if seedForTesting {
             seedMockIfEmpty()
         }

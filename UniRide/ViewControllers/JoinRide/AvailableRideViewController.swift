@@ -45,11 +45,7 @@ class AvailableRideViewController: UIViewController,
        private func loadDummyRidesForNow() {
            //  Make sure we have a "from" location from JoinRideViewController
            
-           print("ALL RIDES IN MODEL:")
-           for r in RideDataModel.shared.listAllRides() { // add such helper if not present
-               print(r.id, r.status, r.departureTime, r.source.lat, r.source.lon)
-           }
-
+           
            guard let fromCoord = fromCoordinate else {
                print(" No fromCoordinate passed in")
                rides = []

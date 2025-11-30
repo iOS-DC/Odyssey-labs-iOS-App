@@ -285,7 +285,8 @@ final class RideDataModel {
            // Hosting
            out += rides
                .filter { $0.driverUserID == userID && $0.status != .completed && $0.status != .cancelled && $0.departureTime >= now }
-               .map { MyTrip(role: .hosting, ride: $0, requestID: nil, requestStatus: nil) }
+               .map { MyTrip(role: .hosting, ride: $0, requestID: nil, requestStatus: nil)
+               }
 
            // From confirmed bookings
            let myBookings = bookings.filter { $0.passengerUserID == userID && $0.status == .confirmed }

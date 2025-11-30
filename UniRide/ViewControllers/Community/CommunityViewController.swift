@@ -2,117 +2,141 @@ import UIKit
 
 class CommunityViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
 
-    // MARK: - IBOutlets
     @IBOutlet weak var sementedControl: UISegmentedControl!
     @IBOutlet weak var NewPostContainerView: UIView!
     @IBOutlet weak var NewPostTextField: UITextField!
     @IBOutlet weak var tableView: UITableView!
-    @IBOutlet weak var newPostBottomConstraint: NSLayoutConstraint!  // Bottom constraint for bottom sheet
-    
-    // MARK: - Variables
-    var eventPosts: [Post] = [
-        Post(message: "Rangrez 2025", timestamp: "Nov 6, 2025 at 14:00")
-    ]
-    
-    var feedPosts: [Post] = [
-        Post(message: "Planning a weekend trip to Kasauli!", timestamp: "2 hours ago")
-    ]
-    
+    @IBOutlet weak var newPostBottomConstraint: NSLayoutConstraint!
+
     struct Post {
+        let name: String
+        let subtitle: String
         let message: String
         let timestamp: String
     }
-    
-    // MARK: - View Lifecycle
+
+    var eventPosts: [Post] = [
+        Post(name: "Event Admin", subtitle: "Organizing Team", message: "Rangrez 2025 Fest Starts Soon!", timestamp: "Nov 6, 2025 at 14:00")
+    ]
+
+    var feedPosts: [Post] = [
+        Post(name: "Rehan Khan", subtitle: "3rd Year CSE", message: "Planning a weekend trip to Kasauli! Looking for 3 more people to share the ride and expenses. Comment if interested 🏖️", timestamp: "2 hours ago"),
+        Post(name: "Krish", subtitle: "2nd Year IT", message: "Anyone interested in carpooling to the tech fest tomorrow? Sharing fuel and food costs!", timestamp: "1 hour ago")
+    ]
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         title = "Community"
         NewPostContainerView.isHidden = true
-        
+
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .add,
             target: self,
             action: #selector(didTapAddPost)
         )
-        
+
         tableView.delegate = self
         tableView.dataSource = self
-        
-        // Ensure bottom sheet is hidden initially
         newPostBottomConstraint.constant = 250
     }
-    
-    // MARK: - Show Bottom Sheet
+
     @objc func didTapAddPost() {
         NewPostContainerView.isHidden = false
-        print("🟢 didTapAddPost triggered successfully")
-        
         let tabBarHeight = tabBarController?.tabBar.frame.height ?? 90
-        
         UIView.animate(withDuration: 0.3) {
-            self.newPostBottomConstraint.constant = -tabBarHeight  // Slide above tab bar
+            self.newPostBottomConstraint.constant = -tabBarHeight
             self.view.layoutIfNeeded()
         }
-        
         NewPostTextField.becomeFirstResponder()
     }
-    
-    // MARK: - Close Bottom Sheet (Fixed)
-    @IBAction func closeNewPostView(_ sender: UIButton) {
-        print("❌ Close button tapped")
-        
-        UIView.animate(withDuration: 0.3, animations: {
-            self.newPostBottomConstraint.constant = 250  // Same as initial
+
+    func hidePostSheet() {
+        UIView.animate(withDuration: 0.3) {
+            self.newPostBottomConstraint.constant = 250
             self.view.layoutIfNeeded()
-        }) { _ in
+        } completion: { _ in
             self.NewPostContainerView.isHidden = true
         }
-        
         NewPostTextField.resignFirstResponder()
     }
-    
-    // MARK: - Post Button Action
-    @IBAction func postButtonTapped(_ sender: UIButton) {
-        guard let text = NewPostTextField.text,
-              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        
-        let newPost = Post(message: text, timestamp: "Just now")
-        eventPosts.insert(newPost, at: 0)
-        tableView.reloadData()
-        
-        NewPostTextField.text = ""
-        sementedControl.selectedSegmentIndex = 1  // Switch to event tab
-        closeNewPostView(sender)
+
+    @IBAction func closeNewPostView(_ sender: UIButton) {
+        hidePostSheet()
     }
-    
-    // MARK: - Segment Action
+
+    @IBAction func postButtonTapped(_ sender: UIButton) {
+        guard let typedText = NewPostTextField.text,
+              !typedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        let newPost = Post(name: "Rehan Khan", subtitle: "3rd Year CSE", message: typedText, timestamp: "Just now")
+        feedPosts.insert(newPost, at: 0)
+
+        if sementedControl.selectedSegmentIndex == 0 {
+            tableView.reloadData()
+            tableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
+        } else {
+            let alert = UIAlertController(title: "Posted!", message: "Your post has been added to Feed.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
+
+        NewPostTextField.text = ""
+        hidePostSheet()
+    }
+
     @IBAction func segmentChanged(_ sender: UISegmentedControl) {
         tableView.reloadData()
     }
-    
-    // MARK: - TableView Logic
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return sementedControl.selectedSegmentIndex == 0 ? feedPosts.count : eventPosts.count
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if sementedControl.selectedSegmentIndex == 0 {  // Feed tab
+        if sementedControl.selectedSegmentIndex == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
             let post = feedPosts[indexPath.row]
-            (cell.viewWithTag(2) as? UILabel)?.text = "Rehan Khan"
-            (cell.viewWithTag(4) as? UILabel)?.text = post.timestamp
-            (cell.viewWithTag(5) as? UILabel)?.text = post.message
+
+            if let nameLabel = cell.viewWithTag(2) as? UILabel {
+                nameLabel.text = post.name
+                nameLabel.adjustsFontSizeToFitWidth = true
+                nameLabel.minimumScaleFactor = 0.5
+            }
+
+            if let subtitleLabel = cell.viewWithTag(3) as? UILabel {
+                subtitleLabel.text = post.subtitle
+            }
+
+            if let timeLabel = cell.viewWithTag(4) as? UILabel {
+                timeLabel.text = post.timestamp
+            }
+
+            if let messageLabel = cell.viewWithTag(5) as? UILabel {
+                messageLabel.text = post.message
+                messageLabel.numberOfLines = 0
+            }
+
+            cell.selectionStyle = .none
+            cell.isUserInteractionEnabled = false
             return cell
-        } else {  // Events tab
+        } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath)
             let post = eventPosts[indexPath.row]
-            (cell.viewWithTag(2) as? UILabel)?.text = post.message
-            (cell.viewWithTag(3) as? UILabel)?.text = post.timestamp
+
+            if let messageLabel = cell.viewWithTag(2) as? UILabel {
+                messageLabel.text = post.message
+            }
+
+            if let timeLabel = cell.viewWithTag(3) as? UILabel {
+                timeLabel.text = post.timestamp
+            }
+
+            cell.selectionStyle = .none
+            cell.isUserInteractionEnabled = false
             return cell
         }
     }
-    
+
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return sementedControl.selectedSegmentIndex == 0 ? 160 : 150
     }
