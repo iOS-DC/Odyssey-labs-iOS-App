@@ -24,7 +24,7 @@ struct UserProfile: Equatable, Codable {
     var courseName: String?
     var year: Int?
     var photoURL: URL?
-    var vehicle: Vehicle?   
+    var vehicle: Vehicle?
 
     init(email: String,
          isEmailVerified: Bool = false,
@@ -66,11 +66,19 @@ final class UserDataModel {
     private var phoneOTPs: [String: String] = [:]
 
     private init() {
+<<<<<<< Updated upstream
         archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("plist")
         loadUsers()
     }
 
     // MARK: - EMAIL LOGIN & VERIFICATION
+=======
+        archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")
+        loadUsers()
+    }
+
+    // EMAIL VERIFICATION
+>>>>>>> Stashed changes
     func startEmailVerification(email raw: String) throws {
         let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
@@ -92,6 +100,15 @@ final class UserDataModel {
                           userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
         }
 
+<<<<<<< Updated upstream
+=======
+        if let existingUser = users.first(where: { $0.email == email.lowercased() }) {
+            currentUserID = existingUser.id
+            emailOTPs[email.lowercased()] = nil
+            return existingUser
+        }
+
+>>>>>>> Stashed changes
         let newUser = UserProfile(email: email.lowercased(), isEmailVerified: true)
         users.append(newUser)
         currentUserID = newUser.id
@@ -100,7 +117,11 @@ final class UserDataModel {
         return newUser
     }
 
+<<<<<<< Updated upstream
     // MARK: - PHONE VERIFICATION
+=======
+    // PHONE VERIFICATION
+>>>>>>> Stashed changes
     func startPhoneVerification(phone raw: String) throws {
         let phone = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard phone.count >= 10 else {
@@ -115,13 +136,14 @@ final class UserDataModel {
     func verifyPhoneOTP(phone: String, code: String) throws {
         guard let sent = phoneOTPs[phone] else {
             throw NSError(domain: "Phone", code: 404,
-                          userInfo: [NSLocalizedDescriptionKey: "No OTP found for this phone number"])
+                          userInfo: [NSLocalizedDescriptionKey: "No OTP found for this phone"])
         }
         guard sent == code else {
             throw NSError(domain: "Phone", code: 403,
                           userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
         }
-        guard let id = currentUserID, let idx = users.firstIndex(where: { $0.id == id }) else {
+        guard let id = currentUserID,
+              let idx = users.firstIndex(where: { $0.id == id }) else {
             throw NSError(domain: "Phone", code: 440,
                           userInfo: [NSLocalizedDescriptionKey: "No current user to update"])
         }
@@ -135,33 +157,35 @@ final class UserDataModel {
     }
     
     func createNewUser(fullName: String, course: String, year: Int, phone: String) {
-        // Create the new user
         let newUser = UserProfile(
+<<<<<<< Updated upstream
             email: "",                   // email already verified earlier OR fill appropriately
+=======
+            email: "",
+>>>>>>> Stashed changes
             isEmailVerified: true,
             phone: phone,
             isPhoneVerified: true,
             fullName: fullName,
             courseName: course,
-            year: year,
-            photoURL: nil,
-            vehicle: nil
+            year: year
         )
-
-        // Save user
         users.append(newUser)
         currentUserID = newUser.id
         saveUsers()
-
-        print("New user created:", newUser)
     }
 
+<<<<<<< Updated upstream
 
     // MARK: - PROFILE CRUD
+=======
+    // PROFILE CRUD
+>>>>>>> Stashed changes
     func getCurrentUser() -> UserProfile? {
         guard let id = currentUserID else { return nil }
         return users.first(where: { $0.id == id })
     }
+
     func getUser(by id: UUID) -> UserProfile? {
         return users.first(where: { $0.id == id })
     }
@@ -171,6 +195,7 @@ final class UserDataModel {
                          year: Int? = nil,
                          photoURL: URL? = nil,
                          vehicle: Vehicle? = nil) {
+
         guard let id = currentUserID,
               let index = users.firstIndex(where: { $0.id == id }) else { return }
 
@@ -185,7 +210,20 @@ final class UserDataModel {
         saveUsers()
     }
 
+<<<<<<< Updated upstream
     // MARK: - LOGOUT (delete user)
+=======
+    // ✅ ADDED (Missing function)
+    func saveUserProfile(_ updatedUser: UserProfile) {
+        guard let id = currentUserID,
+              let index = users.firstIndex(where: { $0.id == id }) else { return }
+
+        users[index] = updatedUser
+        saveUsers()
+    }
+
+    // LOGOUT
+>>>>>>> Stashed changes
     func logout() {
         guard let id = currentUserID else { return }
         users.removeAll { $0.id == id }
@@ -196,6 +234,7 @@ final class UserDataModel {
     // MARK: - Persistence
     private func loadUsers() {
         guard let data = try? Data(contentsOf: archiveURL) else { return }
+<<<<<<< Updated upstream
         let decoder = PropertyListDecoder()
         users = (try? decoder.decode([UserProfile].self, from: data)) ?? []
     }
@@ -204,5 +243,25 @@ final class UserDataModel {
         let encoder = PropertyListEncoder()
         let data = try? encoder.encode(users)
         try? data?.write(to: archiveURL, options: .noFileProtection)
+=======
+        do {
+            let decoder = JSONDecoder()
+            users = try decoder.decode([UserProfile].self, from: data)
+        } catch {
+            print("Failed to load users.json:", error)
+        }
+    }
+
+    private func saveUsers() {
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted]
+            let data = try encoder.encode(users)
+            try data.write(to: archiveURL, options: .atomic)
+        } catch {
+            print("Failed to save users.json:", error)
+        }
+>>>>>>> Stashed changes
     }
 }
+

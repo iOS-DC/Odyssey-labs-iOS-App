@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="4cX-lN-GMG">
 =======
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="n8F-8X-zxh">
+>>>>>>> Stashed changes
+=======
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="jyd-9f-Lhx">
 >>>>>>> Stashed changes
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
@@ -121,7 +125,11 @@
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Mobile Number" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mcG-9V-0nh">
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                                         <rect key="frame" x="46" y="135" width="269" height="21"/>
+=======
+                                        <rect key="frame" x="46" y="135.66666666666674" width="269" height="20.333333333333343"/>
+>>>>>>> Stashed changes
 =======
                                         <rect key="frame" x="46" y="135.66666666666674" width="269" height="20.333333333333343"/>
 >>>>>>> Stashed changes
@@ -150,6 +158,7 @@
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="vmD-qK-xAz">
                                         <rect key="frame" x="289" y="8" width="54" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -159,6 +168,8 @@
                                             <action selector="editButtonTapped:" destination="j7r-bs-o0q" eventType="touchUpInside" id="z3T-lI-ddy"/>
                                         </connections>
                                     </button>
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 =======
@@ -203,6 +214,7 @@
                         <viewLayoutGuide key="safeArea" id="hjx-2A-Lbb"/>
                         <color key="backgroundColor" red="0.95686274510000002" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
+<<<<<<< Updated upstream
                             <constraint firstItem="hjx-2A-Lbb" firstAttribute="bottom" secondItem="Xhv-5P-mda" secondAttribute="bottom" constant="1.3300000000000001" id="CTi-KJ-S1v"/>
                             <constraint firstItem="Xhv-5P-mda" firstAttribute="top" secondItem="tpx-Rm-PDi" secondAttribute="bottom" constant="32" id="FA1-xN-tnA"/>
 <<<<<<< Updated upstream
@@ -210,10 +222,15 @@
 =======
                             <constraint firstItem="Xhv-5P-mda" firstAttribute="top" secondItem="tpx-Rm-PDi" secondAttribute="bottom" constant="32" id="W99-OR-d6T"/>
 >>>>>>> Stashed changes
+=======
+                            <constraint firstItem="hjx-2A-Lbb" firstAttribute="bottom" secondItem="Xhv-5P-mda" secondAttribute="bottom" constant="1.3300000000000001" id="5ku-Eq-oc0"/>
+                            <constraint firstItem="Xhv-5P-mda" firstAttribute="top" secondItem="tpx-Rm-PDi" secondAttribute="bottom" constant="32" id="FA1-xN-tnA"/>
+>>>>>>> Stashed changes
                             <constraint firstItem="hjx-2A-Lbb" firstAttribute="trailing" secondItem="tpx-Rm-PDi" secondAttribute="trailing" constant="16" id="cPh-NW-Mr5"/>
                             <constraint firstItem="Xhv-5P-mda" firstAttribute="leading" secondItem="hjx-2A-Lbb" secondAttribute="leading" constant="16" id="ckt-z2-I6G"/>
                             <constraint firstItem="hjx-2A-Lbb" firstAttribute="trailing" secondItem="Xhv-5P-mda" secondAttribute="trailing" constant="16" id="f0u-K2-Chh"/>
                             <constraint firstItem="tpx-Rm-PDi" firstAttribute="leading" secondItem="hjx-2A-Lbb" secondAttribute="leading" constant="16" id="f3X-QT-Fgw"/>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
                             <constraint firstItem="hjx-2A-Lbb" firstAttribute="trailing" secondItem="Xhv-5P-mda" secondAttribute="trailing" constant="16" id="jhb-lh-skG"/>
                         </constraints>
@@ -236,6 +253,14 @@
                             </connections>
                         </barButtonItem>
 >>>>>>> Stashed changes
+=======
+                            <constraint firstItem="Xhv-5P-mda" firstAttribute="top" secondItem="tpx-Rm-PDi" secondAttribute="bottom" constant="32" id="sEb-nn-0nl"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Profile" id="t1A-4d-xAf">
+                        <barButtonItem key="leftBarButtonItem" title="Logout" id="7AU-B8-bk5"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="fPF-Lh-Cls"/>
+>>>>>>> Stashed changes
                     </navigationItem>
                     <connections>
                         <outlet property="departmentLabel" destination="pL0-Mi-9uz" id="YRW-We-agS"/>
@@ -251,6 +276,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Unf-iw-fH0" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
             <point key="canvasLocation" x="-4688" y="163"/>
@@ -275,11 +301,23 @@
                     <toolbarItems/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="4Bo-fK-qcO">
 >>>>>>> Stashed changes
+=======
+            <point key="canvasLocation" x="1642" y="134"/>
+        </scene>
+        <!--Profile-->
+        <scene sceneID="lIw-dD-M5X">
+            <objects>
+                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="jyd-9f-Lhx" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Profile" image="person.fill" catalog="system" id="DXX-bf-7d0"/>
+                    <toolbarItems/>
+                    <navigationBar key="navigationBar" contentMode="scaleToFill" id="kiz-Mo-kKL">
+>>>>>>> Stashed changes
                         <rect key="frame" x="0.0" y="118" width="393" height="54"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                     <nil name="viewControllers"/>
                     <connections>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
                         <segue destination="j7r-bs-o0q" kind="relationship" relationship="rootViewController" id="dnd-GZ-ehc"/>
                     </connections>
@@ -295,6 +333,14 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cGG-hG-FW3" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="640" y="132"/>
+>>>>>>> Stashed changes
+=======
+                        <segue destination="j7r-bs-o0q" kind="relationship" relationship="rootViewController" id="hZo-FR-8dY"/>
+                    </connections>
+                </navigationController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Igr-j0-S4b" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="954.96183206106866" y="133.80281690140845"/>
 >>>>>>> Stashed changes
         </scene>
     </scenes>
