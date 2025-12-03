@@ -156,6 +156,9 @@ final class RideDataModel {
     func createRide(_ ride: Ride) -> Ride {
         rides.append(ride); saveRides(); return ride
     }
+    func getAllRides() -> [Ride] {
+        return rides
+    }
 
     func getRide(_ id: UUID) -> Ride? {
         rides.first { $0.id == id }

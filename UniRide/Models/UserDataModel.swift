@@ -24,7 +24,8 @@ struct UserProfile: Equatable, Codable {
     var courseName: String?
     var year: Int?
     var photoURL: URL?
-    var vehicle: Vehicle?   
+    var vehicle: Vehicle?
+    var savedHomeLocation: LocationPoint?
 
     init(email: String,
          isEmailVerified: Bool = false,
@@ -69,6 +70,15 @@ final class UserDataModel {
         archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json") // We are appending the url which is pointing to the user.json file.
         loadUsers()
 
+    }
+    func updateUserLocation(_ location: LocationPoint) {
+        guard let id = currentUserID,
+              let index = users.firstIndex(where: { $0.id == id }) else { return }
+
+        var user = users[index]
+        user.savedHomeLocation = location
+        users[index] = user
+        saveUsers()
     }
 
     // FUNCTION CALLING IN THE EMAILVIEW CONTROLLER for storing the email and printing the otp
