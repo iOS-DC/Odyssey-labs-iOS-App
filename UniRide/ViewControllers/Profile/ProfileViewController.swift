@@ -12,6 +12,8 @@ class ProfileViewController: UIViewController {
     @IBOutlet weak var ridesLabel: UILabel!
     @IBOutlet weak var emailLabel: UILabel!
     @IBOutlet weak var phoneLabel: UILabel!
+    
+
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -113,6 +115,7 @@ class ProfileViewController: UIViewController {
     }
 
 
+
     // MARK: - Logout Button Action
     @objc private func logoutTapped() {
 
@@ -120,7 +123,7 @@ class ProfileViewController: UIViewController {
         UserDataModel.shared.logout()
 
         // 2. Load Onboarding screen
-        let storyboard = UIStoryboard(name: "Profile", bundle: nil)
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
         let onboardingVC = storyboard.instantiateViewController(withIdentifier: "OnboardingViewController")
 
         // 3. Reset root controller → prevents going back

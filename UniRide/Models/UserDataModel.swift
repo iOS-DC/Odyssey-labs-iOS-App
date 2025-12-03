@@ -24,7 +24,7 @@ struct UserProfile: Equatable, Codable {
     var courseName: String?
     var year: Int?
     var photoURL: URL?
-    var vehicle: Vehicle?   
+    var vehicle: Vehicle?
 
     init(email: String,
          isEmailVerified: Bool = false,
@@ -57,7 +57,7 @@ final class UserDataModel {
 
     static let shared = UserDataModel()
 
-    private let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!  // Storing the url of the document directory in which our app will store the data which is typically our sandbox. Typically there is only one url.
+    private let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     private let archiveURL: URL
     private var users: [UserProfile] = []
     private var currentUserID: UUID?
@@ -66,46 +66,41 @@ final class UserDataModel {
     private var phoneOTPs: [String: String] = [:]
 
     private init() {
-        archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json") // We are appending the url which is pointing to the user.json file.
+        archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")
         loadUsers()
-
     }
 
     // FUNCTION CALLING IN THE EMAILVIEW CONTROLLER for storing the email and printing the otp
     func startEmailVerification(email raw: String) throws {
-        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()  // Storing the email with no trailing and leading spaces and converting it into lowercase for maintaing consistency
+        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-        let otp = String(Int.random(in: 1000...9999)) // Generating a otp
-        emailOTPs[email] = otp  // Storing the otp in emailOTPs array
+        let otp = String(Int.random(in: 1000...9999))
+        emailOTPs[email] = otp
         print("DEBUG Email OTP for \(email): \(otp)")
     }
+
     // Function Verifying The otp. Called in the otp view controller
     func verifyEmailOTP(email: String, code: String) throws -> UserProfile {
 
-        // Get the OTP we sent earlier
         guard let sent = emailOTPs[email.lowercased()] else {
             throw NSError(domain: "Login", code: 404,
                           userInfo: [NSLocalizedDescriptionKey: "No OTP found for this email"])
         }
 
-        // Check OTP correctness
         guard sent == code else {
             throw NSError(domain: "Login", code: 403,
                           userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
         }
 
-        // Before creating a new user checking if email already exists or not
         if let existingUser = users.first(where: { $0.email == email.lowercased() }) {
-            
             currentUserID = existingUser.id
             emailOTPs[email.lowercased()] = nil
             return existingUser
         }
 
-        // Creating a new user
         let newUser = UserProfile(email: email.lowercased(), isEmailVerified: true)
         users.append(newUser)
         currentUserID = newUser.id
@@ -113,7 +108,6 @@ final class UserDataModel {
 
         print("New user created:", newUser)
 
-        // Clear OTP
         emailOTPs[email.lowercased()] = nil
 
         return newUser
@@ -154,9 +148,9 @@ final class UserDataModel {
     }
     
     func createNewUser(fullName: String, course: String, year: Int, phone: String) {
-        // Create the new user
+
         let newUser = UserProfile(
-            email: "",                   // email already stored earlier
+            email: "",
             isEmailVerified: true,
             phone: phone,
             isPhoneVerified: true,
@@ -167,7 +161,6 @@ final class UserDataModel {
             vehicle: nil
         )
 
-        // Save user
         users.append(newUser)
         currentUserID = newUser.id
         saveUsers()
@@ -175,21 +168,23 @@ final class UserDataModel {
         print("New user created:", newUser)
     }
 
-
     // PROFILE CRUD
     func getCurrentUser() -> UserProfile? {
         guard let id = currentUserID else { return nil }
         return users.first(where: { $0.id == id })
     }
+
     func getUser(by id: UUID) -> UserProfile? {
         return users.first(where: { $0.id == id })
     }
 
-    func editCurrentUser(fullName: String? = nil,
-                         courseName: String? = nil,
-                         year: Int? = nil,
-                         photoURL: URL? = nil,
-                         vehicle: Vehicle? = nil) {
+    func editCurrentUser(
+        fullName: String? = nil,
+        courseName: String? = nil,
+        year: Int? = nil,
+        photoURL: URL? = nil,
+        vehicle: Vehicle? = nil
+    ) {
         guard let id = currentUserID,
               let index = users.firstIndex(where: { $0.id == id }) else { return }
 
@@ -204,6 +199,15 @@ final class UserDataModel {
         saveUsers()
     }
 
+    // ✅ ADDED: saveUserProfile (missing earlier)
+    func saveUserProfile(_ updatedUser: UserProfile) {
+        guard let id = currentUserID,
+              let index = users.firstIndex(where: { $0.id == id }) else { return }
+
+        users[index] = updatedUser
+        saveUsers()
+    }
+
     // LOGOUT Function
     func logout() {
         guard let id = currentUserID else { return }
@@ -213,25 +217,26 @@ final class UserDataModel {
     }
 
     private func loadUsers() {
-        guard let data = try? Data(contentsOf: archiveURL) else { // here we are trying to read the raw bytes of the file locating int he archiveURL which is point to sandbox containng an user.json file
+        guard let data = try? Data(contentsOf: archiveURL) else {
             return
         }
         do {
-              let decoder = JSONDecoder() // Converts the JSON data into swift types
-              users = try decoder.decode([UserProfile].self, from: data) // decoding the JSON into users whose data type is UserProfile
-          } catch {
-              print("Failed to load users.json:", error)
-          }
+            let decoder = JSONDecoder()
+            users = try decoder.decode([UserProfile].self, from: data)
+        } catch {
+            print("Failed to load users.json:", error)
+        }
     }
 
     private func saveUsers() {
         do {
-                let encoder = JSONEncoder() // Converts the swift into JSON data
-                encoder.outputFormatting = [.prettyPrinted]  // this makes the data human readable
-                let data = try encoder.encode(users)
-                try data.write(to: archiveURL, options: .atomic) // writing the json data into file but first writing it in temporary file and then replace the destination
-            } catch {
-                print("Failed to save users.json:", error)
-            }
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted]
+            let data = try encoder.encode(users)
+            try data.write(to: archiveURL, options: .atomic)
+        } catch {
+            print("Failed to save users.json:", error)
+        }
     }
 }
+
