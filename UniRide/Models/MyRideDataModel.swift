@@ -149,12 +149,17 @@ final class RideDataModel {
         requestsURL = documentsDirectory.appendingPathComponent("ride_requests").appendingPathExtension("json")
         bookingsURL = documentsDirectory.appendingPathComponent("ride_bookings").appendingPathExtension("json")
         loadAll()
+        
+        seedMockRidesIfNeeded()
     }
 
     
     @discardableResult  //prevents unnecessary warnings like function is unused
     func createRide(_ ride: Ride) -> Ride {
         rides.append(ride); saveRides(); return ride
+    }
+    func getAllRides() -> [Ride] {
+        return rides
     }
 
     func getRide(_ id: UUID) -> Ride? {
@@ -252,21 +257,19 @@ final class RideDataModel {
         saveBookings()
     }
 
-    func ridesNear(_ point: LocationPoint, maxMeters: Double = 1200) -> [Ride] {
-        // simple proximity using a naive flat-earth approximation (good enough for campus)
+    func ridesNear(_ point: LocationPoint, maxMeters: Double = 2500) -> [Ride] {
         func distM(_ a: LocationPoint, _ b: LocationPoint) -> Double {
             let dx = (a.lon - b.lon) * 111_320 * cos((a.lat + b.lat) * 0.5 * .pi / 180)
             let dy = (a.lat - b.lat) * 110_540
             return sqrt(dx*dx + dy*dy)
         }
+
         return rides
             .filter { $0.status == .published }
-            .filter { r in
-                let c = [r.source] + r.waypoints + [r.destination]
-                return c.contains { distM($0, point) <= maxMeters }
-            }
+            .filter { distM($0.source, point) <= maxMeters }
             .sorted { $0.departureTime < $1.departureTime }
     }
+
 
     // My Rides
     struct MyTrip: Equatable {
@@ -362,6 +365,26 @@ final class RideDataModel {
                     print("JSON SAVE ERROR:", error)
                 }
     }
+    
+    // MARK: - Seed Mock Rides Once
+    private static let mockDataSeedKey = "mock_rides_seeded"
+
+    func seedMockRidesIfNeeded() {
+        let seeded = UserDefaults.standard.bool(forKey: RideDataModel.mockDataSeedKey)
+        if seeded { return }
+
+        print("➡️ Seeding mock rides into JSON...")
+
+        for ride in MockData.sampleRides {
+            let created = createRide(ride)
+            publishRide(id: created.id)
+        }
+
+        UserDefaults.standard.set(true, forKey: RideDataModel.mockDataSeedKey)
+        print("✅ Mock rides seeded successfully!")
+    }
+
+
 }
 
 

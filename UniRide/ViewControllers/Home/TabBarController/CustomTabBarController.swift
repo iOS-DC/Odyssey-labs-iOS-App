@@ -13,6 +13,10 @@ final class CustomTabBarController: UITabBarController, UITabBarControllerDelega
     override func viewDidLoad() {
         super.viewDidLoad()
         self.delegate = self
+        
+        // 🔥 Start live location tracking globally
+        LocationService.shared.requestWhenInUse()
+        LocationService.shared.startLiveUpdates()
     }
 
     // When switching tabs, always reset the navigation stack

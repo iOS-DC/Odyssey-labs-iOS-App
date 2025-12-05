@@ -16,6 +16,7 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
     @IBOutlet weak var timeTextField: UITextField!
     @IBOutlet weak var mapView: MKMapView!
     
+    @IBOutlet weak var ContainerView: UIView!
     let datePicker = UIDatePicker()
     let timePicker = UIDatePicker()
     let searchCompleter = MKLocalSearchCompleter()  // An object from MapKit that provides auto-complete suggestions for location/search queries as the user types
@@ -40,7 +41,11 @@ class OfferRideViewController: UIViewController,UITextFieldDelegate, UITableView
             suggestionsTable.dataSource = self
             suggestionsTable.isHidden = true
             mapView.isHidden = true
-
+            ContainerView.layer.cornerRadius = 20
+            ContainerView.layer.shadowColor = UIColor.black.cgColor
+            ContainerView.layer.shadowOpacity = 0.08
+            ContainerView.layer.shadowRadius = 10
+            ContainerView.layer.shadowOffset = CGSize(width: 0, height: 4)
             setupDatePicker()
             setupTimePicker()
         }
