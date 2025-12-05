@@ -2,14 +2,11 @@
 //  RideTableViewCell.swift
 //  UniRide
 //
-//  Created by Krish Bahukhandi on 21/11/25.
-//
 
 import UIKit
 
 class RideTableViewCell: UITableViewCell {
 
-    // MARK: - Outlets
     @IBOutlet weak var profileImageView: UIImageView!
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var yearLabel: UILabel!
@@ -24,24 +21,36 @@ class RideTableViewCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        self.contentView.layer.cornerRadius = 20
-        self.contentView.layer.masksToBounds = false
 
-        self.contentView.layer.shadowColor = UIColor.black.cgColor
-        self.contentView.layer.shadowOpacity = 0.12
-        self.contentView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        self.contentView.layer.shadowRadius = 8
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
 
-        // Optional styling
-        self.selectionStyle = .none
-        self.contentView.backgroundColor = .clear
+        cardContainerView.backgroundColor = UIColor.systemBackground
+        cardContainerView.layer.cornerRadius = 20
+        cardContainerView.layer.masksToBounds = true
+
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.12
+        layer.shadowOffset = CGSize(width: 0, height: 2)
+        layer.shadowRadius = 8
+        layer.masksToBounds = false
+        selectionStyle = .none
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let shadowRect = cardContainerView.frame
+        layer.shadowPath = UIBezierPath(
+            roundedRect: shadowRect,
+            cornerRadius: cardContainerView.layer.cornerRadius
+        ).cgPath
     }
 
     // MARK: - Configure Function
-    func configure(with ride: Ride) {
+    func configure(with ride: Ride, driverName: String) {
 
-        // Hardcoded driver name for now
-        nameLabel.text = "Krish Bahukhandi"
+        // DRIVER NAME
+        nameLabel.text = driverName
         yearLabel.text = "3rd Year CSE"
 
         // Route
@@ -57,7 +66,7 @@ class RideTableViewCell: UITableViewCell {
         vehicleLabel.text = "Bike"
 
         // Seats
-        seatsLabel.text = "\(ride.seatsTotal) seat"
+        seatsLabel.text = "\(ride.seatsTotal) seats"
 
         // Price
         priceLabel.text = "₹\(ride.farePerSeat) / seat"
@@ -65,8 +74,7 @@ class RideTableViewCell: UITableViewCell {
         // Button
         joinButton.setTitle("Join Ride", for: .normal)
 
-        // Optional default image
+        // Default profile image
         profileImageView.image = UIImage(named: "defaultProfile")
     }
 }
-

@@ -17,7 +17,6 @@ import MapKit
 
 class ReviewRideViewController: UIViewController {
     
-    // MARK: - IBOutlets (connect these in storyboard)
     @IBOutlet weak var fromLabel: UILabel!
     @IBOutlet weak var toLabel: UILabel!
     @IBOutlet weak var dateLabel: UILabel!
@@ -45,8 +44,7 @@ class ReviewRideViewController: UIViewController {
         configureUI()
         fillRideDetails()
     }
-    
-    // MARK: - UI Setup
+
     func configureUI() {
         offerRideButton.layer.cornerRadius = 16
         
@@ -55,7 +53,6 @@ class ReviewRideViewController: UIViewController {
         notesTextView.layer.borderColor = UIColor.systemTeal.cgColor
     }
     
-    // MARK: - Show all ride details on the screen
     func fillRideDetails() {
         
         guard let src = source,

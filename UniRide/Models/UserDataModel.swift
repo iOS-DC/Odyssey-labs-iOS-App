@@ -26,6 +26,9 @@ struct UserProfile: Equatable, Codable {
     var photoURL: URL?
     var vehicle: Vehicle?
 
+    var savedHomeLocation: LocationPoint?
+
+
     init(email: String,
          isEmailVerified: Bool = false,
          phone: String? = nil,
@@ -68,6 +71,15 @@ final class UserDataModel {
     private init() {
         archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")
         loadUsers()
+    }
+    func updateUserLocation(_ location: LocationPoint) {
+        guard let id = currentUserID,
+              let index = users.firstIndex(where: { $0.id == id }) else { return }
+
+        var user = users[index]
+        user.savedHomeLocation = location
+        users[index] = user
+        saveUsers()
     }
 
     // FUNCTION CALLING IN THE EMAILVIEW CONTROLLER for storing the email and printing the otp
@@ -199,7 +211,7 @@ final class UserDataModel {
         saveUsers()
     }
 
-    // ✅ ADDED: saveUserProfile (missing earlier)
+    // saveUserProfile (missing earlier)
     func saveUserProfile(_ updatedUser: UserProfile) {
         guard let id = currentUserID,
               let index = users.firstIndex(where: { $0.id == id }) else { return }
