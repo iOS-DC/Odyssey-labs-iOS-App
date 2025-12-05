@@ -42,42 +42,29 @@ class AvailableRideViewController: UIViewController,
            loadDummyRidesForNow()
        }
 
-       private func loadDummyRidesForNow() {
-           //  Make sure we have a "from" location from JoinRideViewController
-           
-           
-           guard let fromCoord = fromCoordinate else {
-               print(" No fromCoordinate passed in")
-               rides = []
-               tableView.reloadData()
-               return
-           }
+    private func loadDummyRidesForNow() {
+        guard let fromCoord = fromCoordinate else {
+            print("No fromCoordinate passed in")
+            rides = []
+            tableView.reloadData()
+            return
+        }
 
-           // Seed mock rides into RideDataModel only once
-//           if !AvailableRideViewController.didSeedMockData {
-//               for mockRide in MockData.sampleRides {
-//                   let created = RideDataModel.shared.createRide(mockRide)
-//                   // ensure they are published (in case you forgot status above)
-//                   RideDataModel.shared.publishRide(id: created.id)
-//               }
-//               AvailableRideViewController.didSeedMockData = true
-//               print(" Seeded mock rides into RideDataModel")
-//           }
+        let fromPoint = LocationPoint(
+            lat: fromCoord.latitude,
+            lon: fromCoord.longitude,
+            address: nil
+        )
 
-           //  Build a LocationPoint from fromCoordinate
-           let fromPoint = LocationPoint(
-               lat: fromCoord.latitude,
-               lon: fromCoord.longitude,
-               address: nil
-           )
+        // Only rides within 2.5 km of pickup
+        let nearby = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 1500)
 
-           //  Use your existing nearby logic
-           let nearby = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 15_000)
-           print(" Nearby rides found:", nearby.count)
+        print("Nearby rides found:", nearby.count)
 
-           self.rides = nearby
-           tableView.reloadData()
-       }
+        self.rides = nearby
+        tableView.reloadData()
+    }
+
     @objc private func joinButtonTapped(_ sender: UIButton) {
         let index = sender.tag
           guard index >= 0 && index < rides.count else { return }
@@ -148,7 +135,10 @@ extension AvailableRideViewController {
         }
 
         let ride = rides[indexPath.row]
-        cell.configure(with: ride)
+        let driverName = MockData.driverNames[indexPath.row % MockData.driverNames.count]
+
+        cell.configure(with: ride, driverName: driverName)
+
 
         // hook join button
         cell.joinButton.tag = indexPath.row

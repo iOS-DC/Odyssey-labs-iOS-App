@@ -23,24 +23,51 @@ class HomeViewController: UIViewController {
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
-        super.viewDidLoad()
+            super.viewDidLoad()
 
-        let name = UserDataModel.shared.getCurrentUser()?.fullName ?? "User"
-        greetingsLabel.text = "Hey, \(name)"
+            let name = UserDataModel.shared.getCurrentUser()?.fullName ?? "User"
+            greetingsLabel.text = "Hey, \(name)"
 
-        homeTableView.layer.backgroundColor = UIColor(named: "#F6FAFB")?.cgColor
+            homeTableView.layer.backgroundColor = UIColor(named: "#F6FAFB")?.cgColor
 
-        setupTable()
-    }
+            setupTable()
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        fetchRideData()
-        homeTableView.reloadData()
-    }
+            // 🔥 ADDED — Listen for live location updates
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleLiveLocationUpdate(_:)),
+                name: .LocationServiceDidUpdate,
+                object: nil
+            )
+        }
 
-    // MARK: - Load REAL DATA
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            fetchRideData()
+            homeTableView.reloadData()
+        }
 
+        // 🔥 ADDED — Called automatically whenever user moves
+        @objc func handleLiveLocationUpdate(_ note: Notification) {
+            guard let loc = note.userInfo?["location"] as? CLLocation else { return }
+
+            let point = LocationPoint(
+                lat: loc.coordinate.latitude,
+                lon: loc.coordinate.longitude,
+                address: nil
+            )
+
+            // Save location to user profile
+            UserDataModel.shared.updateUserLocation(point)
+
+            // Refresh nearby rides
+            fetchRideData()
+
+            // Reload UI
+            homeTableView.reloadData()
+        }
+
+        // MARK: - Load REAL DATA
     func fetchRideData() {
         guard let user = UserDataModel.shared.getCurrentUser() else {
             upcomingRide = nil
@@ -50,64 +77,58 @@ class HomeViewController: UIViewController {
 
         let model = RideDataModel.shared
 
-        // UPCOMING RIDE (JSON backed)
         let upcoming = model.myUpcoming(userID: user.id)
         upcomingRide = upcoming.first
 
-        // NEARBY RIDES (JSON backed)
-        //
-        // 🔥 Since UserProfile has NO homeLocation,
-        // we simply show all rides except user's own.
-        //
+        // user has a saved location
         if let homeLoc = user.savedHomeLocation {
-            nearbyRides = model.ridesNear(homeLoc, maxMeters: 15000)
+            nearbyRides = model.ridesNear(homeLoc, maxMeters: 2500)
                 .filter { $0.driverUserID != user.id }
+
         } else {
-            nearbyRides = model.getAllRides()
-                .filter { $0.status == .published }
-                .filter { $0.driverUserID != user.id }
+            // No location - fallback to a small curated set instead of all 20 rides
+            print("⚠️ No user location → showing limited fallback rides")
+            let all = model.getAllRides()
+                .filter { $0.status == .published && $0.driverUserID != user.id }
+
+            nearbyRides = Array(all.prefix(5))
+        }
+    }
+
+
+        func setupTable() {
+            homeTableView.delegate = self
+            homeTableView.dataSource = self
+            homeTableView.separatorStyle = .none
+
+            homeTableView.register(
+                UINib(nibName: "RideTableViewCell", bundle: nil),
+                forCellReuseIdentifier: "RideCell"
+            )
+
+            homeTableView.register(
+                UINib(nibName: "EventTableViewCell", bundle: nil),
+                forCellReuseIdentifier: "EventCell"
+            )
+
+            homeTableView.register(
+                UINib(nibName: "UpcomingTableViewCell", bundle: nil),
+                forCellReuseIdentifier: "UpcomingRideCell"
+            )
         }
 
+        @IBAction func offerRideTapped(_ sender: UIButton) {
+            let sb = UIStoryboard(name: "OfferRide", bundle: nil)
+            let vc = sb.instantiateViewController(withIdentifier: "OfferRideViewController") as! OfferRideViewController
+            navigationController?.pushViewController(vc, animated: true)
+        }
 
+        @IBAction func joinRide(_ sender: UIButton) {
+            let sb = UIStoryboard(name: "JoinRide", bundle: nil)
+            let vc = sb.instantiateViewController(withIdentifier: "JoinRideViewController") as! JoinRideViewController
+            navigationController?.pushViewController(vc, animated: true)
+        }
     }
-
-    // MARK: - Table Setup
-
-    func setupTable() {
-        homeTableView.delegate = self
-        homeTableView.dataSource = self
-        homeTableView.separatorStyle = .none
-
-        homeTableView.register(
-            UINib(nibName: "RideTableViewCell", bundle: nil),
-            forCellReuseIdentifier: "RideCell"
-        )
-
-        homeTableView.register(
-            UINib(nibName: "EventTableViewCell", bundle: nil),
-            forCellReuseIdentifier: "EventCell"
-        )
-
-        homeTableView.register(
-            UINib(nibName: "UpcomingTableViewCell", bundle: nil),
-            forCellReuseIdentifier: "UpcomingRideCell"
-        )
-    }
-
-    // MARK: - Buttons
-
-    @IBAction func offerRideTapped(_ sender: UIButton) {
-        let sb = UIStoryboard(name: "OfferRide", bundle: nil)
-        let vc = sb.instantiateViewController(withIdentifier: "OfferRideViewController") as! OfferRideViewController
-        navigationController?.pushViewController(vc, animated: true)
-    }
-
-    @IBAction func joinRide(_ sender: UIButton) {
-        let sb = UIStoryboard(name: "JoinRide", bundle: nil)
-        let vc = sb.instantiateViewController(withIdentifier: "JoinRideViewController") as! JoinRideViewController
-        navigationController?.pushViewController(vc, animated: true)
-    }
-}
 
 // MARK: - TableView Delegate + DataSource
 
@@ -168,7 +189,10 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                     withIdentifier: "RideCell",
                     for: indexPath
                 ) as! RideTableViewCell
-                cell.configure(with: nearbyRides[indexPath.row])
+                let ride = nearbyRides[indexPath.row]
+                let driverName = MockData.driverNames[indexPath.row % MockData.driverNames.count]
+                cell.configure(with: ride, driverName: driverName)
+
                 return cell
 
             case 2: // EVENTS
@@ -192,7 +216,9 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 withIdentifier: "RideCell",
                 for: indexPath
             ) as! RideTableViewCell
-            cell.configure(with: nearbyRides[indexPath.row])
+            let ride = nearbyRides[indexPath.row]
+            let driverName = MockData.driverNames[indexPath.row % MockData.driverNames.count]
+            cell.configure(with: ride, driverName: driverName)
             return cell
 
         case 1: // EVENTS

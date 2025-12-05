@@ -536,16 +536,8 @@
                                             <constraint firstItem="aIX-nY-8Fi" firstAttribute="leading" secondItem="HKa-Du-nlB" secondAttribute="leading" constant="32" id="xQ8-Ii-hTs"/>
                                         </constraints>
                                     </view>
-                                    <button opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2J7-KB-bFz">
-                                        <rect key="frame" x="96" y="410" width="121" height="35"/>
-                                        <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="plain" title="Skip for Now"/>
-                                        <connections>
-                                            <action selector="skipTapped:" destination="39d-aa-ssG" eventType="touchUpInside" id="q8t-7G-Z8i"/>
-                                        </connections>
-                                    </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Rqc-py-gLs">
-                                        <rect key="frame" x="56.666666666666657" y="368.33333333333337" width="199.99999999999997" height="50"/>
+                                        <rect key="frame" x="56.666666666666657" y="309" width="199.99999999999997" height="50"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="50" id="PNI-wa-ycS"/>
                                             <constraint firstAttribute="width" constant="200" id="Zcv-Tc-Y8p"/>
@@ -558,19 +550,12 @@
                                             <action selector="completeSetupTapped:" destination="39d-aa-ssG" eventType="touchUpInside" id="oll-h0-yn8"/>
                                         </connections>
                                     </button>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Allow us to access your current location to show nearby rides." textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="FxJ-T7-wWe">
-                                        <rect key="frame" x="29" y="287" width="262" height="32"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="MBU-2O-f5t">
-                                        <rect key="frame" x="63" y="326" width="194" height="34.333333333333314"/>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2J7-KB-bFz">
+                                        <rect key="frame" x="96" y="367" width="121" height="35"/>
                                         <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="filled" title="Enable Location"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="Skip for Now"/>
                                         <connections>
-                                            <action selector="enableLocationTapped:" destination="39d-aa-ssG" eventType="touchUpInside" id="3PT-Za-vz3"/>
+                                            <action selector="skipTapped:" destination="39d-aa-ssG" eventType="touchUpInside" id="q8t-7G-Z8i"/>
                                         </connections>
                                     </button>
                                 </subviews>
@@ -580,22 +565,19 @@
                                     <constraint firstItem="HKa-Du-nlB" firstAttribute="top" secondItem="BZT-h8-I7S" secondAttribute="bottom" constant="25" id="4YO-ZB-I8j"/>
                                     <constraint firstItem="mj5-N9-4DI" firstAttribute="centerX" secondItem="bTp-dc-nk4" secondAttribute="centerX" id="53j-dU-d18"/>
                                     <constraint firstItem="HKa-Du-nlB" firstAttribute="centerX" secondItem="2J7-KB-bFz" secondAttribute="centerX" id="5iQ-TM-uf9"/>
-                                    <constraint firstItem="MBU-2O-f5t" firstAttribute="leading" secondItem="bTp-dc-nk4" secondAttribute="leading" constant="63" id="68O-iy-fpy"/>
                                     <constraint firstItem="HKa-Du-nlB" firstAttribute="top" secondItem="bTp-dc-nk4" secondAttribute="top" constant="251" id="6rW-pT-7Kh"/>
                                     <constraint firstItem="2J7-KB-bFz" firstAttribute="top" secondItem="Rqc-py-gLs" secondAttribute="bottom" constant="8" id="879-mZ-x0c"/>
                                     <constraint firstItem="Yaw-wZ-tZ6" firstAttribute="top" secondItem="mj5-N9-4DI" secondAttribute="bottom" constant="23.329999999999998" id="8qX-Wm-sa1"/>
                                     <constraint firstItem="mj5-N9-4DI" firstAttribute="top" secondItem="bTp-dc-nk4" secondAttribute="top" constant="24" id="BG1-Ay-K11"/>
                                     <constraint firstAttribute="trailing" secondItem="2J7-KB-bFz" secondAttribute="trailing" constant="96" id="JzE-gB-UH5"/>
                                     <constraint firstItem="Yaw-wZ-tZ6" firstAttribute="centerX" secondItem="bTp-dc-nk4" secondAttribute="centerX" id="VPh-SA-bhU"/>
-                                    <constraint firstItem="MBU-2O-f5t" firstAttribute="top" secondItem="HKa-Du-nlB" secondAttribute="bottom" constant="37" id="YcA-vu-Tn9"/>
-                                    <constraint firstItem="Rqc-py-gLs" firstAttribute="top" secondItem="MBU-2O-f5t" secondAttribute="bottom" constant="8" symbolic="YES" id="hKF-Mq-HQj"/>
                                     <constraint firstItem="BZT-h8-I7S" firstAttribute="bottom" secondItem="Yaw-wZ-tZ6" secondAttribute="bottom" constant="50" id="kWu-wo-z7X"/>
                                     <constraint firstAttribute="trailing" secondItem="HKa-Du-nlB" secondAttribute="trailing" constant="29" id="mgs-tw-99n"/>
                                     <constraint firstAttribute="bottom" secondItem="HKa-Du-nlB" secondAttribute="bottom" constant="164" id="mvc-y0-108"/>
                                     <constraint firstItem="HKa-Du-nlB" firstAttribute="centerX" secondItem="Rqc-py-gLs" secondAttribute="centerX" id="p60-vl-ONC"/>
+                                    <constraint firstItem="Rqc-py-gLs" firstAttribute="top" secondItem="HKa-Du-nlB" secondAttribute="bottom" constant="20" id="phm-vt-nxq"/>
                                     <constraint firstItem="2J7-KB-bFz" firstAttribute="leading" secondItem="bTp-dc-nk4" secondAttribute="leading" constant="96" id="sQT-VU-twX"/>
                                     <constraint firstItem="BZT-h8-I7S" firstAttribute="centerX" secondItem="bTp-dc-nk4" secondAttribute="centerX" id="x4n-tz-V2V"/>
-                                    <constraint firstAttribute="trailing" secondItem="MBU-2O-f5t" secondAttribute="trailing" constant="56" id="yR6-Cd-K9e"/>
                                 </constraints>
                             </view>
                         </subviews>
@@ -610,7 +592,6 @@
                             <constraint firstItem="dQn-uo-jQ0" firstAttribute="top" secondItem="DEe-ML-mvs" secondAttribute="bottom" constant="12" id="cdc-AT-0U4"/>
                             <constraint firstItem="mJd-TF-gBA" firstAttribute="bottom" secondItem="bTp-dc-nk4" secondAttribute="bottom" constant="113" id="i0g-Bf-JPv"/>
                             <constraint firstItem="mJd-TF-gBA" firstAttribute="trailing" secondItem="bTp-dc-nk4" secondAttribute="trailing" constant="45.329999999999998" id="n1n-vm-0ZJ"/>
-                            <constraint firstItem="mJd-TF-gBA" firstAttribute="bottom" secondItem="bTp-dc-nk4" secondAttribute="bottom" constant="113" id="p0x-aJ-KaS"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="VSU-Mz-B0e"/>

@@ -12,9 +12,6 @@ final class LocationService: NSObject {
     private let manager = CLLocationManager()
     private(set) var lastLocation: CLLocation?
 
-    // Configure how live you want updates
-    // distanceFilter: minimum movement (meters) to trigger an update
-    // desiredAccuracy: choose between bestForNavigation/best/nearestTenMeters, etc.
     var distanceFilter: CLLocationDistance = kCLDistanceFilterNone {
         didSet { manager.distanceFilter = distanceFilter }
     }
@@ -35,16 +32,9 @@ final class LocationService: NSObject {
         manager.requestWhenInUseAuthorization()
     }
 
-    // Call this if you truly need background updates (also update Info.plist and capabilities)
-    func requestAlways() {
-        manager.requestAlwaysAuthorization()
-    }
-
-    // MARK: - Live Tracking Controls
-
     func startLiveUpdates() {
-        // If authorization is not yet granted, request it first
         let status = manager.authorizationStatus
+
         if status == .notDetermined {
             manager.requestWhenInUseAuthorization()
         }
@@ -55,29 +45,19 @@ final class LocationService: NSObject {
         manager.stopUpdatingLocation()
     }
 
-    // Lower power alternative (no continuous GPS, wakes on significant changes)
-    func startSignificantChangeUpdates() {
-        manager.startMonitoringSignificantLocationChanges()
-    }
-
-    func stopSignificantChangeUpdates() {
-        manager.stopMonitoringSignificantLocationChanges()
-    }
-
-    // MARK: - Helper to persist and broadcast
-
     private func handleNewLocation(_ location: CLLocation) {
         lastLocation = location
 
-        // Persist into your existing user model as savedHomeLocation
         let point = LocationPoint(
             lat: location.coordinate.latitude,
             lon: location.coordinate.longitude,
             address: nil
         )
+
+        print("📍 SAVED LOCATION:", point.lat, point.lon)
+
         UserDataModel.shared.updateUserLocation(point)
 
-        // Broadcast to interested screens
         NotificationCenter.default.post(
             name: .LocationServiceDidUpdate,
             object: self,
@@ -87,16 +67,20 @@ final class LocationService: NSObject {
 }
 
 extension LocationService: CLLocationManagerDelegate {
+
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         switch manager.authorizationStatus {
+
         case .authorizedWhenInUse, .authorizedAlways:
-            // Optionally auto-start after auth if desired
-            break
+            manager.startUpdatingLocation()
+
         case .denied, .restricted:
-            // You can post a notification or handle UI here
-            break
+            print("⚠️ Location permission denied.")
+            NotificationCenter.default.post(name: .LocationServiceDidUpdate, object: nil)
+
         case .notDetermined:
-            break
+            manager.requestWhenInUseAuthorization()
+
         @unknown default:
             break
         }
