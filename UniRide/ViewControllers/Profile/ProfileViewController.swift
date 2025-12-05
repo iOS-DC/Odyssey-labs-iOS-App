@@ -13,7 +13,9 @@ class ProfileViewController: UIViewController {
     @IBOutlet weak var emailLabel: UILabel!
     @IBOutlet weak var phoneLabel: UILabel!
     
-
+    @IBOutlet weak var Phone: UITextField!
+    @IBOutlet weak var Email: UITextField!
+    
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
