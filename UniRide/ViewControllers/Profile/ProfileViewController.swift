@@ -23,8 +23,13 @@ class ProfileViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-
         setupNavBar()
+        loadProfile()
+    }
+
+    // 🔥 Automatically refresh profile when returning from Edit Profile
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         loadProfile()
     }
 
@@ -77,7 +82,7 @@ class ProfileViewController: UIViewController {
         ratingLabel.text = "4.9 ★"
         ridesLabel.text = "12 rides"
 
-        // MARK: CONTACT INFO (fixed!)
+        // MARK: CONTACT INFO
         emailTextField.text = profile.email
         phoneTextField.text = profile.phone ?? ""
 
