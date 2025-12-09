@@ -188,12 +188,13 @@
                     </navigationItem>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="Email" destination="WNl-pV-tcX" id="rNt-ha-qFi"/>
-                        <outlet property="Phone" destination="j9r-SS-ypZ" id="vUp-cd-EYb"/>
                         <outlet property="departmentLabel" destination="koX-yA-rhF" id="QbN-mj-aCA"/>
                         <outlet property="emailLabel" destination="GPB-8Y-FZw" id="Xgc-79-a1T"/>
+                        <outlet property="emailTextField" destination="WNl-pV-tcX" id="3zD-ym-zda"/>
                         <outlet property="memberSinceLabel" destination="06E-oH-cuE" id="1z0-Ls-SOR"/>
+                        <outlet property="nameLabel" destination="chJ-N0-sap" id="kFd-if-c9t"/>
                         <outlet property="phoneLabel" destination="RQD-zm-btJ" id="bCk-mG-tzm"/>
+                        <outlet property="phoneTextField" destination="j9r-SS-ypZ" id="48L-Yy-tAI"/>
                         <outlet property="profileImageView" destination="tiT-QF-PA1" id="XUt-5z-x8h"/>
                         <outlet property="ratingLabel" destination="U7w-l6-Abf" id="mbD-DL-L9C"/>
                         <outlet property="ridesLabel" destination="Y3X-Qz-JEg" id="4x4-6u-IWH"/>
@@ -202,7 +203,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1927.4809160305342" y="-58.450704225352112"/>
+            <point key="canvasLocation" x="1673" y="-58"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="JwS-4e-3qU">
