@@ -28,7 +28,7 @@ class RideTableViewCell: UITableViewCell {
         cardContainerView.backgroundColor = UIColor.systemBackground
         cardContainerView.layer.cornerRadius = 20
         cardContainerView.layer.masksToBounds = true
-
+        
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.12
         layer.shadowOffset = CGSize(width: 0, height: 2)
@@ -39,6 +39,8 @@ class RideTableViewCell: UITableViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        let inset: CGFloat = 10
+        contentView.frame = contentView.frame.insetBy(dx: 0, dy: inset)
         let shadowRect = cardContainerView.frame
         layer.shadowPath = UIBezierPath(
             roundedRect: shadowRect,
