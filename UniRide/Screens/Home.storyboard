@@ -55,9 +55,9 @@
                                 </constraints>
                             </stackView>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="exj-Zl-8Yn">
-                                <rect key="frame" x="0.0" y="261.33333333333331" width="393" height="522.66666666666674"/>
+                                <rect key="frame" x="20" y="261.33333333333331" width="353" height="522.66666666666674"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <color key="sectionIndexBackgroundColor" red="0.9677734375" green="0.9799804688" blue="0.9838867188" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                <color key="sectionIndexBackgroundColor" red="0.96862745098039216" green="0.98039215686274506" blue="0.98431372549019602" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                             </tableView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
@@ -68,10 +68,10 @@
                             <constraint firstItem="IXv-Qa-9B1" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="20" id="EPB-Lt-IMX"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="exj-Zl-8Yn" secondAttribute="bottom" id="Epb-Q2-dNS"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="IXv-Qa-9B1" secondAttribute="trailing" constant="20" id="PQW-0h-0FU"/>
-                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="exj-Zl-8Yn" secondAttribute="trailing" id="Y8K-Im-KbU"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="exj-Zl-8Yn" secondAttribute="trailing" constant="20" id="Y8K-Im-KbU"/>
                             <constraint firstItem="bhF-3a-zUs" firstAttribute="leading" secondItem="5EZ-qb-Rvc" secondAttribute="leading" constant="20" id="ayv-u5-FYv"/>
                             <constraint firstItem="IXv-Qa-9B1" firstAttribute="top" secondItem="bhF-3a-zUs" secondAttribute="bottom" constant="20" id="kju-BB-e1e"/>
-                            <constraint firstItem="exj-Zl-8Yn" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="vu4-Fc-OVQ"/>
+                            <constraint firstItem="exj-Zl-8Yn" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="20" id="vu4-Fc-OVQ"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="iL8-lL-Dys"/>

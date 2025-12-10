@@ -10,23 +10,32 @@ class ProfileViewController: UIViewController {
     @IBOutlet weak var memberSinceLabel: UILabel!
     @IBOutlet weak var ratingLabel: UILabel!
     @IBOutlet weak var ridesLabel: UILabel!
+    
+    // These two are only TITLES ("Email", "Phone")
     @IBOutlet weak var emailLabel: UILabel!
     @IBOutlet weak var phoneLabel: UILabel!
     
-    @IBOutlet weak var Phone: UITextField!
-    @IBOutlet weak var Email: UITextField!
+    // Actual text fields to show values
+    @IBOutlet weak var emailTextField: UITextField!
+    @IBOutlet weak var phoneTextField: UITextField!
     
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-
         setupNavBar()
+        loadProfile()
+    }
+
+    // 🔥 Automatically refresh profile when returning from Edit Profile
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         loadProfile()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        
         profileImageView.layer.cornerRadius = profileImageView.bounds.height / 2
         profileImageView.clipsToBounds = true
         profileImageView.contentMode = .scaleAspectFill
@@ -69,15 +78,13 @@ class ProfileViewController: UIViewController {
             yearLabel.text = "Not set"
         }
 
-        // TEMP — you can replace this once you add 'createdAt'
         memberSinceLabel.text = "Member Since 2025"
-
         ratingLabel.text = "4.9 ★"
         ridesLabel.text = "12 rides"
 
         // MARK: CONTACT INFO
-        emailLabel.text = profile.email
-        phoneLabel.text = profile.phone ?? "Not added"
+        emailTextField.text = profile.email
+        phoneTextField.text = profile.phone ?? ""
 
         // MARK: PROFILE IMAGE
         if let url = profile.photoURL {
@@ -89,7 +96,7 @@ class ProfileViewController: UIViewController {
 
     // MARK: - Async Image Loader
     private func loadImageAsync(from url: URL) {
-        URLSession.shared.dataTask(with: url) { data, _, error in
+        URLSession.shared.dataTask(with: url) { data, _, _ in
             if let data = data, let image = UIImage(data: data) {
                 DispatchQueue.main.async {
                     self.profileImageView.image = image
@@ -116,19 +123,14 @@ class ProfileViewController: UIViewController {
         navigationController?.pushViewController(editVC, animated: true)
     }
 
-
-
     // MARK: - Logout Button Action
     @objc private func logoutTapped() {
 
-        // 1. Clear current user
         UserDataModel.shared.logout()
 
-        // 2. Load Onboarding screen
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         let onboardingVC = storyboard.instantiateViewController(withIdentifier: "OnboardingViewController")
 
-        // 3. Reset root controller → prevents going back
         if let sceneDelegate = view.window?.windowScene?.delegate as? SceneDelegate {
             let nav = UINavigationController(rootViewController: onboardingVC)
             sceneDelegate.window?.rootViewController = nav

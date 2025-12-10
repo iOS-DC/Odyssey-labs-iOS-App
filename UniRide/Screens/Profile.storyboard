@@ -20,7 +20,7 @@
                                 <rect key="frame" x="0.0" y="172" width="393" height="612"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="2TY-E1-UA6">
-                                        <rect key="frame" x="0.0" y="0.0" width="393" height="612"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="393" height="563"/>
                                         <subviews>
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xmw-9k-eV9">
                                                 <rect key="frame" x="20" y="20" width="353" height="281.33333333333331"/>
@@ -93,7 +93,7 @@
                                                 </constraints>
                                             </view>
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xIO-Aj-i6l">
-                                                <rect key="frame" x="20" y="321.33333333333326" width="353" height="270.66666666666674"/>
+                                                <rect key="frame" x="20" y="321.33333333333331" width="353" height="221.66666666666669"/>
                                                 <subviews>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Contact Information" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ZdN-cd-9yA">
                                                         <rect key="frame" x="16" y="16" width="321" height="24"/>
@@ -188,12 +188,13 @@
                     </navigationItem>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
-                        <outlet property="Email" destination="WNl-pV-tcX" id="rNt-ha-qFi"/>
-                        <outlet property="Phone" destination="j9r-SS-ypZ" id="vUp-cd-EYb"/>
                         <outlet property="departmentLabel" destination="koX-yA-rhF" id="QbN-mj-aCA"/>
                         <outlet property="emailLabel" destination="GPB-8Y-FZw" id="Xgc-79-a1T"/>
+                        <outlet property="emailTextField" destination="WNl-pV-tcX" id="3zD-ym-zda"/>
                         <outlet property="memberSinceLabel" destination="06E-oH-cuE" id="1z0-Ls-SOR"/>
+                        <outlet property="nameLabel" destination="chJ-N0-sap" id="kFd-if-c9t"/>
                         <outlet property="phoneLabel" destination="RQD-zm-btJ" id="bCk-mG-tzm"/>
+                        <outlet property="phoneTextField" destination="j9r-SS-ypZ" id="48L-Yy-tAI"/>
                         <outlet property="profileImageView" destination="tiT-QF-PA1" id="XUt-5z-x8h"/>
                         <outlet property="ratingLabel" destination="U7w-l6-Abf" id="mbD-DL-L9C"/>
                         <outlet property="ridesLabel" destination="Y3X-Qz-JEg" id="4x4-6u-IWH"/>
@@ -202,13 +203,15 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1927.4809160305342" y="-58.450704225352112"/>
+            <point key="canvasLocation" x="1673" y="-58"/>
         </scene>
-        <!--Navigation Controller-->
+        <!--Profile-->
         <scene sceneID="JwS-4e-3qU">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="UCs-bb-Yik" sceneMemberID="viewController">
+                    <tabBarItem key="tabBarItem" title="Profile" image="person.crop.circle.fill" catalog="system" id="Rah-vr-CKL"/>
                     <toolbarItems/>
+                    <simulatedTabBarMetrics key="simulatedBottomBarMetrics"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="je8-0t-2De">
                         <rect key="frame" x="0.0" y="118" width="393" height="54"/>
                         <autoresizingMask key="autoresizingMask"/>
@@ -219,11 +222,13 @@
                     </connections>
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Jf7-ra-3W3" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+                <tabBarItem title="Profile" image="person.crop.circle.fill" catalog="system" id="aSR-jn-Hsh"/>
             </objects>
-            <point key="canvasLocation" x="1000.763358778626" y="-58.450704225352112"/>
+            <point key="canvasLocation" x="836" y="-58"/>
         </scene>
     </scenes>
     <resources>
+        <image name="person.crop.circle.fill" catalog="system" width="128" height="123"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
