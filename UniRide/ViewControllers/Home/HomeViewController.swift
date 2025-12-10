@@ -28,7 +28,8 @@ class HomeViewController: UIViewController {
             let name = UserDataModel.shared.getCurrentUser()?.fullName ?? "User"
             greetingsLabel.text = "Hey, \(name)"
 
-            homeTableView.layer.backgroundColor = UIColor(named: "#F6FAFB")?.cgColor
+            homeTableView.backgroundColor = UIColor(named: "Color")
+            
 
             setupTable()
 
@@ -82,8 +83,10 @@ class HomeViewController: UIViewController {
 
         // user has a saved location
         if let homeLoc = user.savedHomeLocation {
-            nearbyRides = model.ridesNear(homeLoc, maxMeters: 2500)
-                .filter { $0.driverUserID != user.id }
+            
+                nearbyRides = model.ridesNear(homeLoc, maxMeters: 300).filter { $0.driverUserID != user.id }
+            
+            nearbyRides = Array(nearbyRides.prefix(3))
 
         } else {
             // No location - fallback to a small curated set instead of all 20 rides
@@ -153,8 +156,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         }
     }
 
-    func tableView(_ tableView: UITableView,
-                   numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 
         if upcomingRide != nil {
             if section == 0 { return 1 }
@@ -166,8 +168,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         }
     }
 
-    func tableView(_ tableView: UITableView,
-                   cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         // 🔹 CASE: user HAS upcoming ride
         if upcomingRide != nil {
@@ -235,21 +236,32 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
 
+//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+//
+//        if upcomingRide != nil {
+//            if indexPath.section == 0 { return 180 }
+//            if indexPath.section == 1 { return 200 }
+//            return 180
+//        }
+//
+//        if indexPath.section == 0 { return 200 }
+//        return 180
+//    }
     func tableView(_ tableView: UITableView,
                    heightForRowAt indexPath: IndexPath) -> CGFloat {
-
-        if upcomingRide != nil {
-            if indexPath.section == 0 { return 180 }
-            if indexPath.section == 1 { return 200 }
-            return 180
-        }
-
-        if indexPath.section == 0 { return 200 }
-        return 180
+        return 230   // increased height
     }
 
     func tableView(_ tableView: UITableView,
-                   viewForHeaderInSection section: Int) -> UIView? {
+                   willDisplay cell: UITableViewCell,
+                   forRowAt indexPath: IndexPath) {
+
+        // Add top & bottom padding
+        let inset: CGFloat = 12
+        cell.contentView.frame = cell.contentView.frame.insetBy(dx: 0, dy: inset / 2)
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
 
         let label = UILabel()
         label.font = UIFont.boldSystemFont(ofSize: 22)
@@ -258,8 +270,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         return label
     }
 
-    func tableView(_ tableView: UITableView,
-                   heightForHeaderInSection section: Int) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 50
     }
 }

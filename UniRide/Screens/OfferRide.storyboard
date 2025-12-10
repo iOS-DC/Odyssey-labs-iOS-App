@@ -446,7 +446,7 @@
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Zk3-Hv-7Df">
-                                        <rect key="frame" x="20" y="411" width="313" height="34.333333333333314"/>
+                                        <rect key="frame" x="20" y="411" width="313" height="34.333333333333329"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Next">
                                             <color key="baseBackgroundColor" red="0.050980392156862744" green="0.72156862745098038" blue="0.62745098039215685" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -672,7 +672,7 @@
                                                 </constraints>
                                                 <color key="tintColor" red="0.050980392159999999" green="0.72156862749999995" blue="0.62745098040000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <state key="normal" title="Button"/>
-                                                <buttonConfiguration key="configuration" style="filled" title="Button"/>
+                                                <buttonConfiguration key="configuration" style="filled" title="Offer Ride"/>
                                                 <connections>
                                                     <action selector="offerTapped:" destination="g46-YD-dXd" eventType="touchUpInside" id="YKg-zZ-7bx"/>
                                                 </connections>

@@ -64,7 +64,6 @@ class ReviewRideViewController: UIViewController {
     @IBOutlet weak var seatsLabel: UILabel!
     @IBOutlet weak var fareLabel: UILabel!
     @IBOutlet weak var totalLabel: UILabel!
-    @IBOutlet weak var notesTextView: UITextView!
     @IBOutlet weak var offerButton: UIButton!
 
     var summary: RideSummary!
@@ -84,10 +83,7 @@ class ReviewRideViewController: UIViewController {
         cardView.layer.shadowRadius = 8
         cardView.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        // Notes Box
-        notesTextView.layer.cornerRadius = 12
-        notesTextView.layer.borderWidth = 1
-        notesTextView.layer.borderColor = UIColor.systemGray4.cgColor
+        
 
         // Button
         offerButton.layer.cornerRadius = 18
@@ -126,7 +122,7 @@ class ReviewRideViewController: UIViewController {
             seatsTotal: summary.seats,
             farePerSeat: summary.farePerSeat,
             status: .published,
-            notes: notesTextView.text
+            notes: ""
         )
 
         RideDataModel.shared.createRide(ride)
