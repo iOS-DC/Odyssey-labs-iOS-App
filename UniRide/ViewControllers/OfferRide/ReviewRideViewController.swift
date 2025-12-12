@@ -108,15 +108,29 @@ class ReviewRideViewController: UIViewController {
 
     @IBAction func offerTapped(_ sender: UIButton) {
 
-        guard let user = UserDataModel.shared.getCurrentUser() else { return }
+        guard let user = UserDataModel.shared.getCurrentUser() else {
+            print("[ReviewRide] no current user; cannot create ride")
+            return
+        }
 
         let finalDeparture = merge(summary.date, summary.time)
+
+        // Use route waypoints if available; sample if too many points
+        let rawWaypoints = summary.route?.coordinates ?? []
+        let waypoints: [LocationPoint]
+        if rawWaypoints.count > 120 {
+            // sample roughly 80-120 points max for storage efficiency
+            let step = max(1, rawWaypoints.count / 100)
+            waypoints = stride(from: 0, to: rawWaypoints.count, by: step).map { rawWaypoints[$0] }
+        } else {
+            waypoints = rawWaypoints
+        }
 
         let ride = Ride(
             driverUserID: user.id,
             source: summary.from,
             destination: summary.to,
-            waypoints: [],
+            waypoints: waypoints,
             selectedRoute: summary.route,
             departureTime: finalDeparture,
             seatsTotal: summary.seats,
@@ -125,11 +139,29 @@ class ReviewRideViewController: UIViewController {
             notes: ""
         )
 
+        // Save + publish
         RideDataModel.shared.createRide(ride)
+        // Ensure model helper marks it published (redundant because we set status .published,
+        // but calling publishRide keeps logic consistent if you have checks there)
+        RideDataModel.shared.publishRide(id: ride.id)
 
+        // Notify observers so lists refresh immediately
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+
+        // Debug logs to confirm times present
+        if let rt = ride.selectedRoute {
+            print("[ReviewRide] created ride id:", ride.id.uuidString,
+                  "expectedTravelTime(s):", rt.expectedTravelTime,
+                  "distance(m):", rt.distanceMeters,
+                  "waypoints:", waypoints.count)
+        } else {
+            print("[ReviewRide] created ride WITHOUT selectedRoute (fallback travel time will be used).")
+        }
+
+        // Navigate back to MyRides tab (assuming tab index 1 is MyRides) and pop navigation stack
         tabBarController?.selectedIndex = 1
+        navigationController?.popToRootViewController(animated: true)
     }
-
     func merge(_ date: Date, _ time: Date) -> Date {
         let c = Calendar.current
 

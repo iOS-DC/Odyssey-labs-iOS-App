@@ -6,6 +6,8 @@
 //
 extension Notification.Name {
     static let rideRequestsUpdated = Notification.Name("rideRequestsUpdated")
+    static let ridesUpdated = Notification.Name("ridesUpdated")   // new
+
 }
 
 
@@ -155,52 +157,92 @@ final class RideDataModel {
 
     
     @discardableResult  //prevents unnecessary warnings like function is unused
-    func createRide(_ ride: Ride) -> Ride {
-        rides.append(ride); saveRides(); return ride
-    }
+  
     func getAllRides() -> [Ride] {
         return rides
     }
 
     func getRide(_ id: UUID) -> Ride? {
-        rides.first { $0.id == id }
+        return rides.first { $0.id == id }
     }
 
-    func updateRide(_ updated: Ride) {
-        guard let i = rides.firstIndex(where: { $0.id == updated.id }) else { return }
-        rides[i] = updated; saveRides()
+    @discardableResult
+    func createRide(_ ride: Ride) -> Ride {
+        rides.append(ride)
+        saveRides()
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+        return ride
     }
 
-    func publishRide(id: UUID) {
-        guard var r = getRide(id) else { return }
-        guard r.status == .draft || r.status == .cancelled else { return }
-        r.status = .published; updateRide(r)
+    @discardableResult
+    func updateRide(_ updated: Ride) -> Bool {
+        guard let i = rides.firstIndex(where: { $0.id == updated.id }) else { return false }
+        rides[i] = updated
+        saveRides()
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+        return true
     }
 
-    func cancelRide(id: UUID) {
-        guard var r = getRide(id) else { return }
-        r.status = .cancelled; updateRide(r)
+    /// Publish a ride (from draft or cancelled). Returns true if published.
+    @discardableResult
+    func publishRide(id: UUID) -> Bool {
+        guard var r = getRide(id) else { return false }
+        // allow publishing from draft; allow republishing a cancelled ride if app policy permits
+        guard r.status == .draft || r.status == .cancelled else { return false }
+        r.status = .published
+        return updateRide(r)
     }
 
-    func deleteRide(id: UUID) {
+    /// Cancel a ride. Returns true if succeeded.
+    @discardableResult
+    func cancelRide(id: UUID) -> Bool {
+        guard var r = getRide(id) else { return false }
+        // idempotent: if already cancelled, treat as success
+        guard r.status != .cancelled else { return true }
+        r.status = .cancelled
+        return updateRide(r)
+    }
+
+    @discardableResult
+    func deleteRide(id: UUID) -> Bool {
+        let initialCount = rides.count
         rides.removeAll { $0.id == id }
         requests.removeAll { $0.rideID == id }
         bookings.removeAll { $0.rideID == id }
         saveRides(); saveRequests(); saveBookings()
+        NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+        return rides.count < initialCount
     }
 
-    @discardableResult   //prevents unnecessary warnings like function is unused
     func createJoinRequest(_ req: RideRequest) -> RideRequest {
-        requests.append(req); saveRequests(); return req
+        requests.append(req)
+        saveRequests()
+        // Notify both requests and rides so UI that watches rides or requests will update.
+        NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+        return req
     }
+
 
     /// Host approves: moves seats, creates booking
     func approveRequest(requestID: UUID, hostUserID: UUID) {
         guard let rqIdx = requests.firstIndex(where: { $0.id == requestID }) else { return }
         var rq = requests[rqIdx]
+
+        // Only pending requests may be approved
+        guard rq.status == .pending else { return }
+
         guard var ride = getRide(rq.rideID) else { return }
         guard ride.driverUserID == hostUserID else { return }
-        guard ride.status == .published else { return }
+
+        // Do not approve requests for cancelled or already completed rides
+        guard ride.status != .cancelled && ride.status != .completed else { return }
+
+        // Allow approving while published or ongoing
+        guard ride.status == .published || ride.status == .ongoing else { return }
+
+        // Ensure seats available
         guard ride.seatsAvailable >= rq.seats else { return }
 
         // mark approved
@@ -218,28 +260,47 @@ final class RideDataModel {
                               seats: rq.seats,
                               pickupPoint: rq.pickupPoint)
         bookings.append(booking)
-        saveRequests(); saveBookings()
+
+        saveRequests()
+        saveBookings()
+
+        // Notify UI that requests/bookings/rides changed
+        NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
     }
 
     func denyRequest(requestID: UUID, hostUserID: UUID) {
         guard let rqIdx = requests.firstIndex(where: { $0.id == requestID }) else { return }
         var rq = requests[rqIdx]
+
+        // only pending requests can be denied
+        guard rq.status == .pending else { return }
+
         guard let ride = getRide(rq.rideID), ride.driverUserID == hostUserID else { return }
+
         rq.status = .denied
         rq.reviewedAt = Date()
         requests[rqIdx] = rq
         saveRequests()
+
+        NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
     }
 
     func cancelMyRequest(requestID: UUID, passengerUserID: UUID) {
         guard let rqIdx = requests.firstIndex(where: { $0.id == requestID }) else { return }
         var rq = requests[rqIdx]
+
         guard rq.passengerUserID == passengerUserID else { return }
+
+        // Only allow cancelling pending requests here. If request was approved, passenger should cancel booking instead.
         guard rq.status == .pending else { return }
+
         rq.status = .cancelled
         rq.reviewedAt = Date()
         requests[rqIdx] = rq
         saveRequests()
+
+        NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
     }
 
     /// Cancel booking (by passenger or host) and return seats
@@ -252,9 +313,16 @@ final class RideDataModel {
 
         bk.status = .cancelled
         bookings[bIdx] = bk
+
+        // Return seats to the ride (cap at seatsTotal)
         ride.seatsAvailable = min(ride.seatsTotal, ride.seatsAvailable + bk.seats)
         updateRide(ride)
+
         saveBookings()
+
+        // Notify UI to update lists
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+        NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
     }
 
     func ridesNear(_ point: LocationPoint, maxMeters: Double = 2500) -> [Ride] {
@@ -283,50 +351,70 @@ final class RideDataModel {
     }
 
     func myUpcoming(userID: UUID, now: Date = Date()) -> [MyTrip] {
+        reconcileAllRideStatuses(now: now)
+
         var out: [MyTrip] = []
 
-           // Hosting
-           out += rides
-               .filter { $0.driverUserID == userID && $0.status != .completed && $0.status != .cancelled && $0.departureTime >= now }
-               .map { MyTrip(role: .hosting, ride: $0, requestID: nil, requestStatus: nil)
-               }
+        // Hosting: include published + ongoing (not completed or cancelled)
+        out += rides
+            .filter { $0.driverUserID == userID && ($0.status == .published || $0.status == .ongoing) }
+            .map { MyTrip(role: .hosting, ride: $0, requestID: nil, requestStatus: nil) }
 
-           // From confirmed bookings
-           let myBookings = bookings.filter { $0.passengerUserID == userID && $0.status == .confirmed }
-           let passengerFromBookings: [MyTrip] = myBookings.compactMap { b in
-               guard let ride = rides.first(where: { $0.id == b.rideID }) else { return nil }
-               guard ride.status != .completed && ride.status != .cancelled && ride.departureTime >= now else { return nil }
-               return MyTrip(role: .passenger, ride: ride, requestID: nil, requestStatus: .approved)
-           }
-           out += passengerFromBookings
+        // From confirmed bookings (passenger) - include if ride is published or ongoing (not completed/cancelled)
+        let myBookings = bookings.filter { $0.passengerUserID == userID && $0.status == .confirmed }
+        let passengerFromBookings: [MyTrip] = myBookings.compactMap { b in
+            guard let ride = rides.first(where: { $0.id == b.rideID }) else { return nil }
+            guard ride.status == .published || ride.status == .ongoing else { return nil }
+            return MyTrip(role: .passenger, ride: ride, requestID: nil, requestStatus: .approved)
+        }
+        out += passengerFromBookings
 
-           let bookingRideIDs = Set(passengerFromBookings.map { $0.ride.id })
+        let bookingRideIDs = Set(passengerFromBookings.map { $0.ride.id })
 
-           // From requests (pending/denied/etc.) — include if user requested it
-           let myReqs = requests.filter { $0.passengerUserID == userID }
-           let passengerFromRequests: [MyTrip] = myReqs.compactMap { req in
-               guard let ride = rides.first(where: { $0.id == req.rideID }) else { return nil }
-               if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
-               guard ride.status != .completed && ride.status != .cancelled && ride.departureTime >= now else { return nil }
-               return MyTrip(role: .passenger, ride: ride, requestID: req.id, requestStatus: req.status)
-           }
-           out += passengerFromRequests
+        // From requests (pending/denied/etc.) — include if user requested it and request not cancelled,
+        // and ride is published or ongoing
+        let myReqs = requests.filter { $0.passengerUserID == userID }
+        let passengerFromRequests: [MyTrip] = myReqs.compactMap { req in
+            guard let ride = rides.first(where: { $0.id == req.rideID }) else { return nil }
+            if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
+            // Exclude cancelled requests from Upcoming
+            guard req.status != .cancelled else { return nil }
+            guard ride.status == .published || ride.status == .ongoing else { return nil }
+            return MyTrip(role: .passenger, ride: ride, requestID: req.id, requestStatus: req.status)
+        }
+        out += passengerFromRequests
 
-           return out.sorted { $0.ride.departureTime < $1.ride.departureTime }
-       }
-    
+        return out.sorted { $0.ride.departureTime < $1.ride.departureTime }
+    }
+
     
     func myPast(userID: UUID, now: Date = Date()) -> [MyTrip] {
+        reconcileAllRideStatuses(now: now)
+
         var out: [MyTrip] = []
 
+        // Host: rides that are completed or cancelled
         out += rides
-            .filter { $0.driverUserID == userID && ($0.status == .completed || $0.departureTime < now) }
+            .filter { $0.driverUserID == userID && ($0.status == .completed || $0.status == .cancelled) }
             .map { MyTrip(role: .hosting, ride: $0) }
 
+        // Passenger bookings: include if ride is completed or cancelled (booking exists)
         let myB = bookings.filter { $0.passengerUserID == userID }
         out += myB.compactMap { b in rides.first { $0.id == b.rideID } }
-            .filter { $0.departureTime < now || $0.status == .completed || $0.status == .cancelled }
+            .filter { $0.status == .completed || $0.status == .cancelled }
             .map { MyTrip(role: .passenger, ride: $0) }
+
+        // Passenger cancelled requests (show cancelled requests as past)
+        let cancelledReqs = requests.filter { $0.passengerUserID == userID && $0.status == .cancelled }
+        for req in cancelledReqs {
+            if let ride = rides.first(where: { $0.id == req.rideID }) {
+                let m = MyTrip(role: .passenger, ride: ride, requestID: req.id, requestStatus: req.status)
+                out.append(m)
+            } else {
+                // If the ride itself was deleted, still show a placeholder MyTrip with minimal info:
+                // (optional - current code requires a ride; you can create a fallback if needed)
+            }
+        }
 
         return out.sorted { $0.ride.departureTime > $1.ride.departureTime }
     }
@@ -365,6 +453,42 @@ final class RideDataModel {
                     print("JSON SAVE ERROR:", error)
                 }
     }
+    
+    
+    private func reconcileAllRideStatuses(now: Date = Date()) {
+        var changed = false
+        for idx in rides.indices {
+            var r = rides[idx]
+
+            // Never touch explicit cancelled or draft rides
+            if r.status == .cancelled || r.status == .draft { continue }
+
+            let travelSeconds = r.selectedRoute?.expectedTravelTime ?? (2 * 3600)
+            let start = r.departureTime
+            let end = start.addingTimeInterval(travelSeconds)
+
+            let newStatus: RideStatus
+            if now >= end {
+                newStatus = .completed
+            } else if now >= start && now < end {
+                newStatus = .ongoing
+            } else {
+                newStatus = .published
+            }
+
+            if newStatus != r.status {
+                r.status = newStatus
+                rides[idx] = r
+                changed = true
+            }
+        }
+
+        if changed {
+            saveRides()
+            NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+        }
+    }
+
     
     // MARK: - Seed Mock Rides Once
     private static let mockDataSeedKey = "mock_rides_seeded"
