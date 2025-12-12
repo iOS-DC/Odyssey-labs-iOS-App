@@ -70,7 +70,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         mapView.layer.shadowRadius = 10
         mapView.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-
     }
 
     private func setupAutocomplete() {

@@ -13,7 +13,8 @@ class ProfileStep2ViewController: UIViewController {
 
     @IBOutlet weak var vehicleTypeLabel: UILabel!
     @IBOutlet weak var vehicleTypeDropdown: UIButton!
-
+    @IBOutlet weak var containerCard: UIView!
+    
     @IBOutlet weak var continueButton: UIButton!
     @IBOutlet weak var vehicleSectionStack: UIStackView!  // contains label + dropdown
 
@@ -26,22 +27,13 @@ class ProfileStep2ViewController: UIViewController {
         vehicleSectionStack.isHidden = true
         continueButton.isEnabled = false
         continueButton.alpha = 0.5
-
+        containerCard.applyCardStyle()
         setupVehicleDropdown()
-        styleButtons()
+        yesVehicleButton.applyOutlineButton()
+        noVehicleButton.applyOutlineButton()
+        continueButton.applyPrimaryButton()
+
     }
-
-        func styleButtons() {
-            yesVehicleButton.layer.cornerRadius = 12
-            yesVehicleButton.layer.borderWidth = 1
-            yesVehicleButton.layer.borderColor = UIColor.systemGray4.cgColor
-
-            noVehicleButton.layer.cornerRadius = 12
-            noVehicleButton.layer.borderWidth = 1
-            noVehicleButton.layer.borderColor = UIColor.systemGray4.cgColor
-
-            continueButton.layer.cornerRadius = 20
-        }
 
         func setupVehicleDropdown() {
             let options = ["Car", "Two-Wheeler"]
@@ -103,7 +95,7 @@ class ProfileStep2ViewController: UIViewController {
         continueButton.isEnabled = true
         continueButton.alpha = 1.0
     }
-    
+   	 
     @IBAction func continuePressed(_ sender: UIButton) {
 
         guard let hasVehicle = selectedHasVehicle else { return }

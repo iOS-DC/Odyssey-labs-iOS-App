@@ -11,12 +11,16 @@ final class LocationService: NSObject {
 
     private let manager = CLLocationManager()
     private(set) var lastLocation: CLLocation?
-
+    
     var distanceFilter: CLLocationDistance = kCLDistanceFilterNone {
-        didSet { manager.distanceFilter = distanceFilter }
-    }
+        didSet {
+            manager.distanceFilter = distanceFilter
+        }
+    }/// we are using this so that we can set the minimum movement before next update
     var desiredAccuracy: CLLocationAccuracy = kCLLocationAccuracyBest {
-        didSet { manager.desiredAccuracy = desiredAccuracy }
+        didSet {
+            manager.desiredAccuracy = desiredAccuracy
+        }
     }
 
     private override init() {
@@ -26,19 +30,19 @@ final class LocationService: NSObject {
         manager.distanceFilter = distanceFilter
     }
 
-    // MARK: - Permissions
+    
 
     func requestWhenInUse() {
-        manager.requestWhenInUseAuthorization()
+        manager.requestWhenInUseAuthorization() ///This triggers the iOS system popup for permission
     }
 
     func startLiveUpdates() {
         let status = manager.authorizationStatus
-
+        /// If the user did not got the pop up or the status for permission is not set yet it will ask again.
         if status == .notDetermined {
             manager.requestWhenInUseAuthorization()
         }
-        manager.startUpdatingLocation()
+        manager.startUpdatingLocation() ///We are asking  iOS to start giving us location continuously
     }
 
     func stopLiveUpdates() {
@@ -53,9 +57,8 @@ final class LocationService: NSObject {
             lon: location.coordinate.longitude,
             address: nil
         )
-
-        print("📍 SAVED LOCATION:", point.lat, point.lon)
-
+        print(point.lat)
+        print(point.lon)
         UserDataModel.shared.updateUserLocation(point)
 
         NotificationCenter.default.post(
@@ -75,7 +78,9 @@ extension LocationService: CLLocationManagerDelegate {
             manager.startUpdatingLocation()
 
         case .denied, .restricted:
-            print("⚠️ Location permission denied.")
+            print("Location permission denied.")
+            
+            /// Sends the nil value for location
             NotificationCenter.default.post(name: .LocationServiceDidUpdate, object: nil)
 
         case .notDetermined:
@@ -87,7 +92,10 @@ extension LocationService: CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let loc = locations.last else { return }
+        // iOS sends an array of locations but we want the newest one so we will just take last
+        guard let loc = locations.last else {
+            return
+        }
         handleNewLocation(loc)
     }
 

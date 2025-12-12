@@ -1,0 +1,51 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<gpx version="1.1" creator="New Delhi GPX">
+  <wpt lat="28.613939" lon="77.209021">
+    <name>India Gate</name>
+  </wpt>
+
+  <wpt lat="28.627014" lon="77.216721">
+    <name>Connaught Place</name>
+  </wpt>
+
+  <trk>
+    <name>New Delhi Route</name>
+    <trkseg>
+      <trkpt lat="28.613939" lon="77.209021">
+        <name>India Gate</name>
+      </trkpt>
+
+      <trkpt lat="28.617195" lon="77.214157">
+        <name>National Stadium</name>
+      </trkpt>
+
+      <trkpt lat="28.619570" lon="77.219490">
+        <name>Pragati Maidan</name>
+      </trkpt>
+
+      <trkpt lat="28.625698" lon="77.222123">
+        <name>Mandi House</name>
+      </trkpt>
+
+      <trkpt lat="28.627014" lon="77.216721">
+        <name>Connaught Place</name>
+      </trkpt>
+
+      <trkpt lat="28.630825" lon="77.208878">
+        <name>Gurudwara Bangla Sahib</name>
+      </trkpt>
+
+      <trkpt lat="28.628950" lon="77.201336">
+        <name>Patel Chowk</name>
+      </trkpt>
+
+      <trkpt lat="28.621104" lon="77.205675">
+        <name>Central Secretariat</name>
+      </trkpt>
+
+      <trkpt lat="28.613939" lon="77.209021">
+        <name>Back to India Gate</name>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

@@ -22,11 +22,6 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     private var resendTimer: Timer?
     private var seconds = 30
     private var currentEmail: String? {
-        // We stored the email implicitly inside UserDataModel when sending OTP,
-        // but we need the email string again for verify. You can keep the raw,
-        // or retype it on Email screen. Easiest: pass via UserDefaults or keep last key:
-        // For simplicity, read the last email you verified OTP for:
-        // (you can also add a property in UserDataModel to remember last email)
         return nil // we’ll request it from last OTP map key in a moment (see below).
     }
 
