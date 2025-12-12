@@ -12,15 +12,11 @@ class HomeViewController: UIViewController {
 
     @IBOutlet weak var greetingsLabel: UILabel!
     @IBOutlet weak var homeTableView: UITableView!
-
-    // MARK: - Data Sources
+   
     var upcomingRide: RideDataModel.MyTrip?
     var nearbyRides: [Ride] = []
 
-    // Events stay hardcoded — MockData
     var events: [EventItem] = MockData.sampleEvents
-
-    // MARK: - Lifecycle
 
     override func viewDidLoad() {
             super.viewDidLoad()
@@ -30,10 +26,9 @@ class HomeViewController: UIViewController {
 
             homeTableView.backgroundColor = UIColor(named: "Color")
             
-
             setupTable()
 
-            // 🔥 ADDED — Listen for live location updates
+            // Listener for live location updates
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(handleLiveLocationUpdate(_:)),
@@ -48,7 +43,7 @@ class HomeViewController: UIViewController {
             homeTableView.reloadData()
         }
 
-        // 🔥 ADDED — Called automatically whenever user moves
+        // ADDED — Called automatically whenever user moves
         @objc func handleLiveLocationUpdate(_ note: Notification) {
             guard let loc = note.userInfo?["location"] as? CLLocation else { return }
 
@@ -68,7 +63,7 @@ class HomeViewController: UIViewController {
             homeTableView.reloadData()
         }
 
-        // MARK: - Load REAL DATA
+
     func fetchRideData() {
         guard let user = UserDataModel.shared.getCurrentUser() else {
             upcomingRide = nil
@@ -84,12 +79,14 @@ class HomeViewController: UIViewController {
         // user has a saved location
         if let homeLoc = user.savedHomeLocation {
             
-                nearbyRides = model.ridesNear(homeLoc, maxMeters: 300).filter { $0.driverUserID != user.id }
+            nearbyRides = model.ridesNear(homeLoc, maxMeters: 300).filter {
+                $0.driverUserID != user.id
+            }
             
             nearbyRides = Array(nearbyRides.prefix(3))
 
         } else {
-            // No location - fallback to a small curated set instead of all 20 rides
+            
             print("⚠️ No user location → showing limited fallback rides")
             let all = model.getAllRides()
                 .filter { $0.status == .published && $0.driverUserID != user.id }
@@ -133,7 +130,7 @@ class HomeViewController: UIViewController {
         }
     }
 
-// MARK: - TableView Delegate + DataSource
+
 
 extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 
@@ -170,7 +167,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-        // 🔹 CASE: user HAS upcoming ride
+        // CASE: user HAS upcoming ride
         if upcomingRide != nil {
 
             switch indexPath.section {
@@ -209,7 +206,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
             }
         }
 
-        // 🔹 CASE: NO upcoming ride
+        // CASE: NO upcoming ride
         switch indexPath.section {
 
         case 0: // NEARBY RIDES
@@ -236,21 +233,25 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
 
-//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-//
-//        if upcomingRide != nil {
-//            if indexPath.section == 0 { return 180 }
-//            if indexPath.section == 1 { return 200 }
-//            return 180
-//        }
-//
-//        if indexPath.section == 0 { return 200 }
-//        return 180
-//    }
     func tableView(_ tableView: UITableView,
                    heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 230   // increased height
+
+        if upcomingRide != nil {
+
+            if indexPath.section == 0 {
+                return 170
+            }   // Upcoming Ride
+            if indexPath.section == 1 {
+                return 230
+            }   // Nearby Rides
+            return 155                                  // Events
+        }
+
+        // No upcoming ride
+        if indexPath.section == 0 { return 230 }       // Nearby rides only
+        return 155                                     // Events
     }
+
 
     func tableView(_ tableView: UITableView,
                    willDisplay cell: UITableViewCell,
