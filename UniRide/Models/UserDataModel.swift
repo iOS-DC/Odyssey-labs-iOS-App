@@ -239,6 +239,12 @@ final class UserDataModel {
             print("Failed to load users.json:", error)
         }
     }
+    
+    // TEMP - debug only
+    func allUsersForDebugging() -> [(id: String, name: String, email: String?)] {
+        return users.map { (id: $0.id.uuidString, name: $0.fullName, email: (Mirror(reflecting: $0).children.first(where: { $0.label == "email" })?.value as? String)) }
+    }
+
 
     private func saveUsers() {
         do {
