@@ -142,9 +142,7 @@ extension AvailableRideViewController {
 
         // hook join button
         cell.joinButton.tag = indexPath.row
-        cell.joinButton.addTarget(self,
-                                  action: #selector(joinButtonTapped(_:)),
-                                  for: .touchUpInside)
+        cell.joinButton.addTarget(self, action: #selector(joinButtonTapped(_:)), for: .touchUpInside)
 
         return cell
     }

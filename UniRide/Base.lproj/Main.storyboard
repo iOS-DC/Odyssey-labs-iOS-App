@@ -451,6 +451,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="CRt-fR-IWO"/>
                     <connections>
+                        <outlet property="containerCard" destination="461-zj-cVZ" id="JZM-Ui-Rwd"/>
                         <outlet property="continueButton" destination="m4b-Oe-tPz" id="rbH-KT-gUk"/>
                         <outlet property="noVehicleButton" destination="r6a-d6-Jae" id="9af-dG-Uui"/>
                         <outlet property="vehicleSectionStack" destination="M7z-rW-3vO" id="6yy-el-5nA"/>
@@ -652,7 +653,7 @@
                                         <textInputTraits key="textInputTraits"/>
                                     </textField>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ICy-o8-c0J">
-                                        <rect key="frame" x="55" y="234" width="238" height="50"/>
+                                        <rect key="frame" x="55" y="228.66666666666669" width="238" height="50"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="238" id="dPa-f0-Lfo"/>
                                             <constraint firstAttribute="height" constant="50" id="oGq-Qg-b7O"/>
@@ -666,13 +667,13 @@
                                         </connections>
                                     </button>
                                     <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="751" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="juH-h2-CN6">
-                                        <rect key="frame" x="20" y="201" width="42" height="21"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <nil key="textColor"/>
+                                        <rect key="frame" x="20" y="201" width="33" height="15.666666666666657"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                        <color key="textColor" systemColor="systemRedColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="service and privacy policy" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1rE-pC-3P5">
-                                        <rect key="frame" x="105.66666666666666" y="319" width="137" height="14"/>
+                                        <rect key="frame" x="105.66666666666666" y="313.66666666666663" width="137" height="14"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="11"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
@@ -686,7 +687,7 @@ addresses</string>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" verticalCompressionResistancePriority="753" text="By continuing you accept our terms of " textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9ea-AO-0jw">
-                                        <rect key="frame" x="72" y="299" width="204" height="14"/>
+                                        <rect key="frame" x="72" y="293.66666666666663" width="204" height="14"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="11"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
@@ -923,6 +924,9 @@ addresses</string>
         <image name="person.circle" catalog="system" width="128" height="123"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemRedColor">
+            <color red="1" green="0.23137254900000001" blue="0.18823529410000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

@@ -24,26 +24,22 @@ final class MapKitManager: NSObject {
         completer.resultTypes = .address
     }
 
-    // MARK: - AUTOCOMPLETE
     func updateQuery(_ text: String) {
-        completer.queryFragment = text
+        completer.queryFragment = text /// queryFragment triggers autocomplete.
     }
 
-    // MARK: - Convert Suggestion → Coordinate
-    func resolveCompletion(_ completion: MKLocalSearchCompletion,
-                           completionHandler: @escaping (MKMapItem?) -> Void) {
+    /// Converting  Suggestion → Actual Coordinate
+    func resolveCompletion(_ completion: MKLocalSearchCompletion, completionHandler: @escaping (MKMapItem?) -> Void) {
 
         let request = MKLocalSearch.Request(completion: completion)
 
-        MKLocalSearch(request: request).start { response, error in
-            completionHandler(response?.mapItems.first)
+        MKLocalSearch(request: request).start {
+            response, error in completionHandler(response?.mapItems.first)
         }
     }
 
-    // MARK: - GET ROUTES
-    func getRoutes(from: CLLocationCoordinate2D,
-                   to: CLLocationCoordinate2D,
-                   completion: @escaping ([MKRoute]) -> Void) {
+    /// Finding ROUTES between the two points
+    func getRoutes(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D, completion: @escaping ([MKRoute]) -> Void) { /// @escaping means that we will call this function later we dont need it rn & ([MKRoute]) -> Void means a function (closure) that takes a list of routes ([MKRoute]) and doesn’t return anything
 
         let req = MKDirections.Request()
         req.source = MKMapItem(placemark: MKPlacemark(coordinate: from))
@@ -51,12 +47,12 @@ final class MapKitManager: NSObject {
         req.transportType = .automobile
         req.requestsAlternateRoutes = true
 
-        MKDirections(request: req).calculate { response, error in
-            completion(response?.routes ?? [])
+        MKDirections(request: req).calculate {
+            response, error in completion(response?.routes ?? [])
         }
     }
 
-    // MARK: - Convert MKRoute → RideRoute
+    /// Convert MKRoute → RideRoute
     func convert(_ route: MKRoute) -> RideRoute {
         let coords = route.polyline.coordinatesArray
         let points = coords.map {
@@ -71,18 +67,18 @@ final class MapKitManager: NSObject {
     }
 }
 
-// MARK: - Completer Delegate
+/// Completer Delegate. This is called automatically when suggestions refresh.
 extension MapKitManager: MKLocalSearchCompleterDelegate {
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         onSuggestionsUpdate?(completer.results)
     }
 }
-// MARK: - MKPolyline Helper
+/// MKPolyline Helper ->
 extension MKPolyline {
-    /// Returns an array of CLLocationCoordinate2D for this polyline
+    /// Returns an array of CLLocationCoordinate2D for the route
     var coordinatesArray: [CLLocationCoordinate2D] {
         var coords = [CLLocationCoordinate2D](
-            repeating: kCLLocationCoordinate2DInvalid,
+            repeating: kCLLocationCoordinate2DInvalid, //this constant is used when we want to indicate that a coordinate is invalid.
             count: self.pointCount
         )
         self.getCoordinates(&coords, range: NSRange(location: 0, length: self.pointCount))

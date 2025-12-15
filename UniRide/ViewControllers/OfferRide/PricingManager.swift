@@ -13,12 +13,6 @@ final class PricingManager {
     static let shared = PricingManager()
 
     private init() {}
-
-    /// Calculates suggested fare per seat based on:
-    /// - distance
-    /// - vehicle type
-    /// - price floors
-    /// - smoothing multipliers
     func suggestedFare(distanceMeters: Double, seats: Int, vehicle: String) -> Int {
 
         let distanceKm = max(distanceMeters / 1000, 1)   // never less than 1 km
@@ -27,7 +21,7 @@ final class PricingManager {
         var ratePerKm: Double = 6      // default bike price
 
         if vehicle.lowercased() == "car" {
-            ratePerKm = 9.5            // higher cost for car
+            ratePerKm = 9.5
         }
 
         // Raw fare

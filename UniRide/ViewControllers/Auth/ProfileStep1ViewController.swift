@@ -17,7 +17,7 @@ class ProfileStep1ViewController: UIViewController {
     @IBOutlet weak var fullNameTextField: UITextField!
     @IBOutlet var containerCard: UIView!
     @IBOutlet weak var stackView: UIStackView!
-    @IBOutlet weak var dropDownButton: UIButton! // Connect your UIButton here
+    @IBOutlet weak var dropDownButton: UIButton! 
 
     @IBOutlet weak var otpStatusLabel: UILabel!
     
@@ -27,44 +27,20 @@ class ProfileStep1ViewController: UIViewController {
     @IBOutlet weak var yearDropDownButton: UIButton!
     
     @IBOutlet weak var continueButton: UIButton!
-    var otpLabelTopConstraint: NSLayoutConstraint!
-    var otpFieldTopConstraint: NSLayoutConstraint!
-    var continueButtonTopConstraint: NSLayoutConstraint!
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupCard()
+        
         setupCourseDropDownMenu()
         setupYearDropDownMenu()
-        setupTextField()
-
-        stackView.isLayoutMarginsRelativeArrangement = true
-        stackView.setCustomSpacing(0, after: otpStatusLabel)
-        stackView.setCustomSpacing(0, after: otpTextField)
-
-        continueButton.layer.cornerRadius = 25
-        continueButton.clipsToBounds = true
         
-        otpTextField.isHidden = true
-            otpStatusLabel.isHidden = true
-    }
-    
-    func setupTextField() {
-        fullNameTextField.layer.cornerRadius = 14
-        fullNameTextField.layer.borderWidth = 1
-        fullNameTextField.layer.borderColor = UIColor(red: 229/255, green: 231/255, blue: 235/255, alpha: 1).cgColor
-        fullNameTextField.backgroundColor = UIColor(white: 0.97, alpha: 1)
-
-        // Padding
-        fullNameTextField.setLeftPaddingPoints(16)
-    }
-    
-    func setupCard() {
-        containerCard.layer.cornerRadius = 20
-        containerCard.layer.shadowColor = UIColor.black.cgColor
-        containerCard.layer.shadowOpacity = 0.08
-        containerCard.layer.shadowRadius = 10
-        containerCard.layer.shadowOffset = CGSize(width: 0, height: 4)
+        containerCard.applyCardStyle()
+        fullNameTextField.applyRoundedField()
+        continueButton.applyPrimaryButton()
+        ///The stackView does NOT automatically fix the spacing around it. SO we are telling the stackView That when these two textField is appearing set them closesly Otherwise the textfield was not appearing.
+        stackView.setCustomSpacing(0, after: otpStatusLabel)
+        stackView.setCustomSpacing(2, after: otpTextField)
     }
     
     func setupCourseDropDownMenu() {
@@ -154,7 +130,6 @@ class ProfileStep1ViewController: UIViewController {
                        
                    )
 
-                   
                    goToNextPage()
 
                } catch {
@@ -174,16 +149,4 @@ class ProfileStep1ViewController: UIViewController {
         let vc = storyboard?.instantiateViewController(identifier: "ProfileStep2ViewController") as! ProfileStep2ViewController
         navigationController?.pushViewController(vc, animated: true)
     }
-
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }

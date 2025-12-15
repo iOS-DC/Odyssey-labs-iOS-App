@@ -38,7 +38,6 @@ class VehicleDetailsViewController: UIViewController {
         updateSeatsUI()
     }
 
-    // MARK: - UI Setup
     func setupUI() {
 
         // Main Card
