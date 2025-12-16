@@ -71,6 +71,22 @@ class CommunityViewController: UIViewController,
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        let defaultPost = Post(
+            name: "Admin",
+            subtitle: "Community Manager",
+            message: "Welcome to the community! Feel free to share your thoughts 👋",
+            timestamp: "1h ago",
+            likeCount: 2,
+            shareCount: 1,
+            comments: [
+                "This is really helpful 👍",
+                "Glad to be here!"
+            ]
+        )
+
+        feedPosts.append(defaultPost)
+        tableView.reloadData()
+
 
         segmentedControl.selectedSegmentIndex = 0
 
