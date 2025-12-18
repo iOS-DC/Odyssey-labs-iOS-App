@@ -30,6 +30,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     private var routes: [MKRoute] = []
     private var selectedRoute: MKRoute?
 
+    @IBOutlet weak var contentView: UIView!
     override func viewDidLoad() {
         super.viewDidLoad()
         setDefaultDateAndTime()
@@ -37,7 +38,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         addIcon("mappin.circle", to: toTextField)
         addIcon("calendar", to: dateTextField)
         addIcon("clock", to: timeTextField)
-
+        contentView.applyCardStyle()
         setupUI()
         setupAutocomplete()
         setupPickers()
