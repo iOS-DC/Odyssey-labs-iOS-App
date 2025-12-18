@@ -36,6 +36,13 @@ class HomeViewController: UIViewController {
                 object: nil
             )
         }
+    private func openMyRideTab() {
+        guard let tabBarController = self.tabBarController else { return }
+
+        // Assuming MyRide is at index 1
+        tabBarController.selectedIndex = 1
+    }
+
 
         override func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
@@ -112,7 +119,7 @@ class HomeViewController: UIViewController {
             )
 
             homeTableView.register(
-                UINib(nibName: "UpcomingTableViewCell", bundle: nil),
+                UINib(nibName: "UpcomingTableHomeViewCell", bundle: nil),
                 forCellReuseIdentifier: "UpcomingRideCell"
             )
         }
@@ -176,7 +183,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 let cell = tableView.dequeueReusableCell(
                     withIdentifier: "UpcomingRideCell",
                     for: indexPath
-                ) as! UpcomingTableViewCell
+                ) as! UpcomingTableHomeViewCell
                 if let trip = upcomingRide {
                     cell.configure(with: trip)
                 }
@@ -239,23 +246,21 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         if upcomingRide != nil {
 
             if indexPath.section == 0 {
-                return 170
+                return 90
             }   // Upcoming Ride
             if indexPath.section == 1 {
-                return 230
+                return 220
             }   // Nearby Rides
             return 155                                  // Events
         }
 
         // No upcoming ride
-        if indexPath.section == 0 { return 230 }       // Nearby rides only
+        if indexPath.section == 0 { return 220 }       // Nearby rides only
         return 155                                     // Events
     }
 
 
-    func tableView(_ tableView: UITableView,
-                   willDisplay cell: UITableViewCell,
-                   forRowAt indexPath: IndexPath) {
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
 
         // Add top & bottom padding
         let inset: CGFloat = 12
@@ -269,6 +274,13 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         label.textColor = .black
         label.text = self.tableView(tableView, titleForHeaderInSection: section)
         return label
+    }
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+
+        // Only react to Upcoming Ride tap
+        guard upcomingRide != nil, indexPath.section == 0 else { return }
+
+        openMyRideTab()
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {

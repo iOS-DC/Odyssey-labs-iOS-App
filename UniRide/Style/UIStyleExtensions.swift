@@ -8,34 +8,49 @@
 import Foundation
 import UIKit
 
+
 // MARK: - Cards / Containers
 extension UIView {
 
-    /// Rounded card with soft shadow
-    func applyCardStyle(corner: CGFloat = 20) {
+    /// Standard app card (used across Home, Offer Ride, Join Ride)
+    func applyCardStyle(
+        corner: CGFloat = 16,
+        shadowOpacity: Float = 0.1,
+        shadowRadius: CGFloat = 8
+    ) {
         layer.cornerRadius = corner
+        layer.masksToBounds = false
+
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.08
-        layer.shadowRadius = 10
+        layer.shadowOpacity = shadowOpacity
+        layer.shadowRadius = shadowRadius
         layer.shadowOffset = CGSize(width: 0, height: 4)
+        backgroundColor = .systemBackground
     }
 
-    /// Small rounded style (e.g. route suggestions / dropdown cards)
+    /// Smaller card (filters, dropdowns, suggestions)
     func applySmallCard(corner: CGFloat = 12) {
         layer.cornerRadius = corner
+        layer.masksToBounds = false
+
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.1
+        layer.shadowOpacity = 0.08
         layer.shadowRadius = 6
         layer.shadowOffset = CGSize(width: 0, height: 3)
+        backgroundColor = .systemBackground
     }
 }
 
 // MARK: - Buttons
 extension UIButton {
 
-    /// Primary filled button
-    func applyPrimaryButton(color: UIColor = .systemGreen, radius: CGFloat = 18) {
+    /// Primary filled button (Offer / Join)
+    func applyPrimaryButton(
+        color: UIColor = .systemGreen,
+        radius: CGFloat = 18
+    ) {
         layer.cornerRadius = radius
+        backgroundColor = color
         setTitleColor(.white, for: .normal)
     }
 
@@ -45,8 +60,10 @@ extension UIButton {
         layer.borderWidth = 1
         layer.borderColor = UIColor.systemGray4.cgColor
         backgroundColor = .clear
+        setTitleColor(.label, for: .normal)
     }
 }
+
 
 // MARK: - TextFields
 extension UITextField {
