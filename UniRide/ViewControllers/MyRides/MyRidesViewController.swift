@@ -117,6 +117,10 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
 
     func upcomingCellDidTapMessage(_ cell: UpcomingTableViewCell) {
         print("Message tapped (future chat)")
+        let sb = UIStoryboard(name: "messages", bundle: nil)
+        let vc = sb.instantiateViewController(withIdentifier: "MessageViewController") as! MessageViewController
+        navigationController?.pushViewController(vc, animated: true)
+        
     }
 
     func upcomingCellDidTapCall(_ cell: UpcomingTableViewCell) {

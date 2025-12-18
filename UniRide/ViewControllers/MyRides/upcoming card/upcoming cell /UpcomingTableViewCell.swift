@@ -29,6 +29,9 @@ final class UpcomingTableViewCell: UITableViewCell {
 
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var showMapButton: UIButton!
+    
+    @IBOutlet weak var mapHeightConstraint: NSLayoutConstraint!
+
 
     @IBOutlet weak var messageButton: UIButton!
     @IBOutlet weak var callButton: UIButton!
@@ -59,6 +62,8 @@ final class UpcomingTableViewCell: UITableViewCell {
         setupUI()
 
         mapView.isHidden = true
+        mapHeightConstraint.constant = 0
+
         requestContainerView.isHidden = true
 
         requestsTableView.delegate = self
@@ -92,13 +97,23 @@ final class UpcomingTableViewCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        mapView.removeAnnotations(mapView.annotations)
-        mapView.removeOverlays(mapView.overlays)
+
+        // Reset state
         isRequestsExpanded = false
         isMapExpanded = false
+
+        // Hide views
         requestContainerView.isHidden = true
         mapView.isHidden = true
+
+        //HIS IS THE IMPORTANT LINE (STEP 4)
+        mapHeightConstraint.constant = 0
+
+        // Clean map
+        mapView.removeAnnotations(mapView.annotations)
+        mapView.removeOverlays(mapView.overlays)
     }
+
 
     // MARK: - Configure
     func configure(with trip: RideDataModel.MyTrip) {
@@ -184,8 +199,20 @@ final class UpcomingTableViewCell: UITableViewCell {
 
     @IBAction func toggleMap(_ sender: UIButton) {
         isMapExpanded.toggle()
-        mapView.isHidden = !isMapExpanded
+
+        if isMapExpanded {
+            mapView.isHidden = false
+            mapHeightConstraint.constant = 180
+        } else {
+            mapHeightConstraint.constant = 0
+            mapView.isHidden = true
+        }
+
+        UIView.animate(withDuration: 0.25) {
+            self.contentView.layoutIfNeeded()
+        }
     }
+
 
     @IBAction func messageTapped(_ sender: UIButton) {
         delegate?.upcomingCellDidTapMessage(self)
