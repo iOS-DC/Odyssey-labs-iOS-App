@@ -159,6 +159,10 @@
                                                     </view>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="253" text="To" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bO1-V1-hRw">
                                                         <rect key="frame" x="20" y="177.33333333333331" width="19" height="20.333333333333343"/>
+                                                        <constraints>
+                                                            <constraint firstAttribute="height" constant="20.329999999999998" id="68F-AH-6Re"/>
+                                                            <constraint firstAttribute="width" constant="19" id="qz3-uN-3xJ"/>
+                                                        </constraints>
                                                         <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="17"/>
                                                         <nil key="textColor"/>
                                                         <nil key="highlightedColor"/>
@@ -276,6 +280,7 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="contentView" destination="Ev6-2w-iB2" id="gj5-CO-SyK"/>
                         <outlet property="dateTextField" destination="cGf-cE-k1n" id="Cdn-13-cTl"/>
                         <outlet property="fromTextField" destination="06t-c6-RdT" id="YsA-oD-eEk"/>
                         <outlet property="mapView" destination="u8o-IE-bpx" id="L38-kH-SfD"/>

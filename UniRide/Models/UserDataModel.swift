@@ -222,8 +222,6 @@ final class UserDataModel {
 
     // LOGOUT Function
     func logout() {
-        guard let id = currentUserID else { return }
-        users.removeAll { $0.id == id }
         currentUserID = nil
         saveUsers()
     }

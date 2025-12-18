@@ -11,7 +11,6 @@ import UIKit
 final class CustomTabBarController: UITabBarController, UITabBarControllerDelegate {
     override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
-
             // Trigger location permission when screen is fully visible
             LocationService.shared.requestWhenInUse()
     }
@@ -19,7 +18,6 @@ final class CustomTabBarController: UITabBarController, UITabBarControllerDelega
         super.viewDidLoad()
         self.delegate = self
         
-        //live location tracking globally
         
     }
 
