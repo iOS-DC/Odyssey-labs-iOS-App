@@ -384,7 +384,14 @@ final class RideDataModel {
         }
         out += passengerFromRequests
 
-        return out.sorted { $0.ride.departureTime < $1.ride.departureTime }
+        return out.sorted {
+            // 1. Ongoing rides first
+            if $0.ride.status != $1.ride.status {
+                return $0.ride.status == .ongoing
+            }
+            // 2. Then by departure time
+            return $0.ride.departureTime < $1.ride.departureTime
+        }
     }
 
     
@@ -457,23 +464,33 @@ final class RideDataModel {
     
     private func reconcileAllRideStatuses(now: Date = Date()) {
         var changed = false
+
         for idx in rides.indices {
             var r = rides[idx]
 
-            // Never touch explicit cancelled or draft rides
-            if r.status == .cancelled || r.status == .draft { continue }
+            // Never touch cancelled or draft rides
+            if r.status == .cancelled || r.status == .draft {
+                continue
+            }
+
+            //  FIX: Future rides MUST remain published
+            if r.departureTime > now {
+                if r.status != .published {
+                    r.status = .published
+                    rides[idx] = r
+                    changed = true
+                }
+                continue
+            }
 
             let travelSeconds = r.selectedRoute?.expectedTravelTime ?? (2 * 3600)
-            let start = r.departureTime
-            let end = start.addingTimeInterval(travelSeconds)
+            let end = r.departureTime.addingTimeInterval(travelSeconds)
 
             let newStatus: RideStatus
             if now >= end {
                 newStatus = .completed
-            } else if now >= start && now < end {
-                newStatus = .ongoing
             } else {
-                newStatus = .published
+                newStatus = .ongoing
             }
 
             if newStatus != r.status {
@@ -488,9 +505,7 @@ final class RideDataModel {
             NotificationCenter.default.post(name: .ridesUpdated, object: nil)
         }
     }
-
-    
-    // MARK: - Seed Mock Rides Once
+// Seed Mock Rides Once
     private static let mockDataSeedKey = "mock_rides_seeded"
 
     func seedMockRidesIfNeeded() {
