@@ -1,143 +1,374 @@
 import UIKit
 
-class CommunityViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class CommunityViewController: UIViewController,
+                               UITableViewDelegate,
+                               UITableViewDataSource,
+                               UITextViewDelegate {
 
-    @IBOutlet weak var sementedControl: UISegmentedControl!
-    @IBOutlet weak var NewPostContainerView: UIView!
-    @IBOutlet weak var NewPostTextField: UITextField!
+    // MARK: - Outlets
+    @IBOutlet weak var segmentedControl: UISegmentedControl!
     @IBOutlet weak var tableView: UITableView!
-    @IBOutlet weak var newPostBottomConstraint: NSLayoutConstraint!
 
+    // SHARE POPUP
+    @IBOutlet weak var sharePopView: UIView!
+    @IBOutlet weak var sharePopUpBottomConstraint: NSLayoutConstraint!
+
+    // NEW POST POPUP
+    @IBOutlet weak var newPostContainerView: UIView!
+    @IBOutlet weak var newPostBottomConstraint: NSLayoutConstraint!
+    @IBOutlet weak var newPostTextView: UITextView!
+    @IBOutlet weak var characterCountLabel: UILabel!
+
+    // COMMENT POPUP
+    @IBOutlet weak var commentPopupView: UIView!
+    @IBOutlet weak var commentPopupBottomConstraint: NSLayoutConstraint!
+    @IBOutlet weak var commentTextField: UITextField!
+    @IBOutlet weak var commentTableView: UITableView!
+
+    // MARK: - Variables
+    var currentPostIndex: Int = 0
+    var selectedPostIndex: Int?
+    var selectedComments: [String] = []
+
+    // MARK: - Models
     struct Post {
         let name: String
         let subtitle: String
         let message: String
         let timestamp: String
+
+        var likeCount: Int
+        var shareCount: Int
+        var hasLiked: Bool = false
+        var hasShared: Bool = false
+
+        var comments: [String] = []
+        var commentCount: Int { comments.count }
     }
 
-    var eventPosts: [Post] = [
-        Post(name: "Event Admin", subtitle: "Organizing Team", message: "Rangrez 2025 Fest Starts Soon!", timestamp: "Nov 6, 2025 at 14:00")
+    struct EventPost {
+        let title: String
+        let date: String
+        let location: String
+        let attendees: Int
+
+        var isAttending: Bool
+        var shareCount: Int
+        var hasShared: Bool = false
+    }
+
+    // MARK: - Data
+    var feedPosts: [Post] = []
+    var eventPosts: [EventPost] = [
+        EventPost(title: "Rangrez 2025",
+                  date: "Nov 6, 2025 at 14:00",
+                  location: "Chitkara University",
+                  attendees: 120,
+                  isAttending: false,
+                  shareCount: 0)
     ]
 
-    var feedPosts: [Post] = [
-        Post(name: "Rehan Khan", subtitle: "3rd Year CSE", message: "Planning a weekend trip to Kasauli! Looking for 3 more people to share the ride and expenses. Comment if interested 🏖️", timestamp: "2 hours ago"),
-        Post(name: "Krish", subtitle: "2nd Year IT", message: "Anyone interested in carpooling to the tech fest tomorrow? Sharing fuel and food costs!", timestamp: "1 hour ago")
-    ]
-
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Community"
-        NewPostContainerView.isHidden = true
-
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .add,
-            target: self,
-            action: #selector(didTapAddPost)
+        let defaultPost = Post(
+            name: "Admin",
+            subtitle: "Community Manager",
+            message: "Welcome to the community! Feel free to share your thoughts 👋",
+            timestamp: "1h ago",
+            likeCount: 2,
+            shareCount: 1,
+            comments: [
+                "This is really helpful 👍",
+                "Glad to be here!"
+            ]
         )
+
+        feedPosts.append(defaultPost)
+        tableView.reloadData()
+
+
+        segmentedControl.selectedSegmentIndex = 0
 
         tableView.delegate = self
         tableView.dataSource = self
-        newPostBottomConstraint.constant = 250
+
+        commentTableView.delegate = self
+        commentTableView.dataSource = self
+
+        newPostTextView.delegate = self
+        characterCountLabel.text = "0/280 characters"
+
+        newPostContainerView.isHidden = true
+        commentPopupView.isHidden = true
+        sharePopView.isHidden = true
+
+        newPostBottomConstraint.constant = 300
+        commentPopupBottomConstraint.constant = 400
+        sharePopUpBottomConstraint.constant = 400
     }
 
-    @objc func didTapAddPost() {
-        NewPostContainerView.isHidden = false
-        let tabBarHeight = tabBarController?.tabBar.frame.height ?? 90
+    // MARK: - NEW POST POPUP
+    func showComposer() {
+        hideCommentPopup()
+        hideSharePopup()
+
+        newPostContainerView.isHidden = false
+
         UIView.animate(withDuration: 0.3) {
-            self.newPostBottomConstraint.constant = -tabBarHeight
+            self.newPostBottomConstraint.constant = 0
             self.view.layoutIfNeeded()
         }
-        NewPostTextField.becomeFirstResponder()
+
+        newPostTextView.becomeFirstResponder()
     }
 
-    func hidePostSheet() {
-        UIView.animate(withDuration: 0.3) {
-            self.newPostBottomConstraint.constant = 250
+    func hideComposer() {
+        newPostTextView.resignFirstResponder()
+
+        UIView.animate(withDuration: 0.3, animations: {
+            self.newPostBottomConstraint.constant = 300
             self.view.layoutIfNeeded()
-        } completion: { _ in
-            self.NewPostContainerView.isHidden = true
+        }) { _ in
+            self.newPostContainerView.isHidden = true
         }
-        NewPostTextField.resignFirstResponder()
     }
 
-    @IBAction func closeNewPostView(_ sender: UIButton) {
-        hidePostSheet()
+    // MARK: - SHARE POPUP
+    func showSharePopup() {
+        hideComposer()
+        hideCommentPopup()
+
+        sharePopView.isHidden = false
+        sharePopView.alpha = 0
+        sharePopUpBottomConstraint.constant = 0
+
+        UIView.animate(withDuration: 0.30) {
+            self.sharePopView.alpha = 1
+            self.view.layoutIfNeeded()
+        }
+    }
+
+    func hideSharePopup() {
+        sharePopUpBottomConstraint.constant = 400
+
+        UIView.animate(withDuration: 0.30, animations: {
+            self.sharePopView.alpha = 0
+            self.view.layoutIfNeeded()
+        }) { _ in
+            self.sharePopView.isHidden = true
+        }
+    }
+
+    // MARK: - COMMENT POPUP
+    func showCommentPopup() {
+        hideComposer()
+        hideSharePopup()
+
+        commentPopupView.isHidden = false
+        commentPopupView.alpha = 0
+        commentPopupBottomConstraint.constant = 0
+
+        commentTableView.reloadData()
+
+        UIView.animate(withDuration: 0.3) {
+            self.commentPopupView.alpha = 1
+            self.view.layoutIfNeeded()
+        }
+    }
+
+    func hideCommentPopup() {
+        commentPopupBottomConstraint.constant = 400
+
+        UIView.animate(withDuration: 0.3, animations: {
+            self.commentPopupView.alpha = 0
+            self.view.layoutIfNeeded()
+        }) { _ in
+            self.commentPopupView.isHidden = true
+        }
+    }
+
+    // MARK: - BUTTON ACTIONS
+    @IBAction func addNewPostButtonTapped(_ sender: Any) {
+        showComposer()
+    }
+
+    @IBAction func closeNewPostTapped(_ sender: UIButton) {
+        hideComposer()
     }
 
     @IBAction func postButtonTapped(_ sender: UIButton) {
-        guard let typedText = NewPostTextField.text,
+        guard let typedText = newPostTextView.text,
               !typedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
-        let newPost = Post(name: "Rehan Khan", subtitle: "3rd Year CSE", message: typedText, timestamp: "Just now")
-        feedPosts.insert(newPost, at: 0)
+        let newPost = Post(name: "Rehan Khan",
+                           subtitle: "3rd Year CSE",
+                           message: typedText,
+                           timestamp: "Just now",
+                           likeCount: 0,
+                           shareCount: 0)
 
-        if sementedControl.selectedSegmentIndex == 0 {
-            tableView.reloadData()
-            tableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)
-        } else {
-            let alert = UIAlertController(title: "Posted!", message: "Your post has been added to Feed.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(alert, animated: true)
+        feedPosts.insert(newPost, at: 0)
+        tableView.reloadData()
+
+        newPostTextView.text = ""
+        characterCountLabel.text = "0/280 characters"
+
+        hideComposer()
+    }
+
+    // MARK: - COMMENTS
+    @IBAction func commentButtonTapped(_ sender: UIButton) {
+        guard let cell = getCell(from: sender),
+              let index = tableView.indexPath(for: cell)?.row else { return }
+
+        currentPostIndex = index
+        selectedPostIndex = index
+        selectedComments = feedPosts[index].comments
+
+        commentTextField.text = ""
+        commentTableView.reloadData()
+
+        showCommentPopup()
+    }
+
+    @IBAction func postComment(_ sender: UIButton) {
+        guard let text = commentTextField.text,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        selectedComments.append(text)
+
+        if let index = selectedPostIndex {
+            feedPosts[index].comments = selectedComments
         }
 
-        NewPostTextField.text = ""
-        hidePostSheet()
+        commentTableView.reloadData()
+        tableView.reloadRows(at: [IndexPath(row: currentPostIndex, section: 0)], with: .none)
+
+        hideCommentPopup()
     }
 
-    @IBAction func segmentChanged(_ sender: UISegmentedControl) {
-        tableView.reloadData()
+    @IBAction func cancelComment(_ sender: Any) {
+        print("cancel tapped")
+        hideCommentPopup()
     }
 
+    // MARK: - LIKE / SHARE
+    @IBAction func likeButtonTapped(_ sender: UIButton) {
+        guard let cell = getCell(from: sender),
+              let index = tableView.indexPath(for: cell)?.row else { return }
+
+        if feedPosts[index].hasLiked { return }
+
+        feedPosts[index].hasLiked = true
+        feedPosts[index].likeCount += 1
+
+        tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+    }
+
+    @IBAction func shareCancelButtonTapped(_ sender: Any) {
+       hideSharePopup()
+    }
+    @IBAction func shareButtonTapped(_ sender: UIButton) {
+        showSharePopup()
+    }
+
+    @IBAction func shareEventTapped(_ sender: UIButton) {
+        showSharePopup()
+    }
+
+    // MARK: - CHAR COUNT
+    func textViewDidChange(_ textView: UITextView) {
+        let maxCharacters = 280
+
+        if textView.text.count > maxCharacters {
+            textView.text = String(textView.text.prefix(maxCharacters))
+        }
+
+        characterCountLabel.text = "\(textView.text.count)/280 characters"
+    }
+
+    // MARK: - TABLEVIEW HELPERS
+    func getCell(from sender: UIView) -> UITableViewCell? {
+        var view: UIView? = sender
+        while view != nil {
+            if let cell = view as? UITableViewCell { return cell }
+            view = view?.superview
+        }
+        return nil
+    }
+
+    // MARK: - DATASOURCE
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sementedControl.selectedSegmentIndex == 0 ? feedPosts.count : eventPosts.count
+
+        if tableView == commentTableView {
+            return selectedComments.count
+        }
+
+        return segmentedControl.selectedSegmentIndex == 0
+            ? feedPosts.count
+            : eventPosts.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if sementedControl.selectedSegmentIndex == 0 {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
-            let post = feedPosts[indexPath.row]
 
-            if let nameLabel = cell.viewWithTag(2) as? UILabel {
-                nameLabel.text = post.name
-                nameLabel.adjustsFontSizeToFitWidth = true
-                nameLabel.minimumScaleFactor = 0.5
-            }
-
-            if let subtitleLabel = cell.viewWithTag(3) as? UILabel {
-                subtitleLabel.text = post.subtitle
-            }
-
-            if let timeLabel = cell.viewWithTag(4) as? UILabel {
-                timeLabel.text = post.timestamp
-            }
-
-            if let messageLabel = cell.viewWithTag(5) as? UILabel {
-                messageLabel.text = post.message
-                messageLabel.numberOfLines = 0
-            }
-
-            cell.selectionStyle = .none
-            cell.isUserInteractionEnabled = false
-            return cell
-        } else {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath)
-            let post = eventPosts[indexPath.row]
-
-            if let messageLabel = cell.viewWithTag(2) as? UILabel {
-                messageLabel.text = post.message
-            }
-
-            if let timeLabel = cell.viewWithTag(3) as? UILabel {
-                timeLabel.text = post.timestamp
-            }
-
-            cell.selectionStyle = .none
-            cell.isUserInteractionEnabled = false
+        // COMMENT LIST
+        if tableView == commentTableView {
+            let cell = UITableViewCell(style: .default, reuseIdentifier: "commentCell")
+            cell.textLabel?.numberOfLines = 0
+            cell.textLabel?.text = selectedComments[indexPath.row]
             return cell
         }
-    }
 
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return sementedControl.selectedSegmentIndex == 0 ? 160 : 150
+        // FEED LIST
+        if segmentedControl.selectedSegmentIndex == 0 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
+
+            if let imgView = cell.viewWithTag(100) as? UIImageView {
+                imgView.image = UIImage(named: "profile")
+                imgView.layer.cornerRadius = 21
+                imgView.clipsToBounds = true
+            }
+
+            let post = feedPosts[indexPath.row]
+
+            (cell.viewWithTag(1) as? UILabel)?.text = post.name
+            (cell.viewWithTag(2) as? UILabel)?.text = post.subtitle
+            (cell.viewWithTag(3) as? UILabel)?.text = post.timestamp
+            (cell.viewWithTag(4) as? UILabel)?.text = post.message
+
+            (cell.viewWithTag(10) as? UIButton)?.setTitle("❤️ \(post.likeCount)", for: .normal)
+            (cell.viewWithTag(11) as? UIButton)?.setTitle("💬 \(post.commentCount)", for: .normal)
+            (cell.viewWithTag(12) as? UIButton)?.setTitle("↪️ \(post.shareCount)", for: .normal)
+
+            let commentsLabel = cell.viewWithTag(20) as? UILabel
+            commentsLabel?.text = post.comments.joined(separator: "\n")
+
+            return cell
+        }
+
+        // EVENT LIST
+        let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath)
+
+        if let imgView = cell.viewWithTag(100) as? UIImageView {
+            imgView.image = UIImage(named: "profile")
+            imgView.layer.cornerRadius = 21
+            imgView.clipsToBounds = true
+        }
+
+        let event = eventPosts[indexPath.row]
+
+        (cell.viewWithTag(1) as? UILabel)?.text = event.title
+        (cell.viewWithTag(2) as? UILabel)?.text = event.date
+        (cell.viewWithTag(3) as? UILabel)?.text = event.location
+        (cell.viewWithTag(4) as? UILabel)?.text = "Attending \(event.attendees)"
+
+        let attendButton = cell.viewWithTag(10) as! UIButton
+        attendButton.setTitle(event.isAttending ? "Attending" : "Attend", for: .normal)
+
+        let shareButton = cell.viewWithTag(11) as! UIButton
+        shareButton.setTitle("Share (\(event.shareCount))", for: .normal)
+
+        return cell
     }
 }
