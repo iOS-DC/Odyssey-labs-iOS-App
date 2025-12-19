@@ -23,16 +23,28 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         @IBOutlet weak var toLabel: UILabel!
         @IBOutlet weak var timeLabel: UILabel!
         @IBOutlet weak var viewDetailsButton: UIButton!
+    var onTap: (() -> Void)?
+    override func awakeFromNib() {
+        super.awakeFromNib()
 
-        override func awakeFromNib() {
-            super.awakeFromNib()
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        cardContainerView.addGestureRecognizer(tap)
+        cardContainerView.isUserInteractionEnabled = true
 
-            selectionStyle = .none
-            backgroundColor = .clear
-            contentView.backgroundColor = .clear
+        selectionStyle = .none
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
 
-            cardContainerView.layer.cornerRadius = 20
-            cardContainerView.backgroundColor = .systemBackground
+        cardContainerView.layer.cornerRadius = 20
+        cardContainerView.backgroundColor = .systemBackground
+    }
+
+   
+
+        
+
+        @objc private func handleTap() {
+            onTap?()
         }
 
         func configure(with trip: RideDataModel.MyTrip) {

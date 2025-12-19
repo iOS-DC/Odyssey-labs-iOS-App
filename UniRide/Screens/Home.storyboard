@@ -28,7 +28,7 @@
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tnd-rS-XM5">
                                         <rect key="frame" x="0.0" y="0.0" width="170.66666666666666" height="90"/>
                                         <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="filled" image="plus.app" catalog="system" title="Offer Ride">
+                                        <buttonConfiguration key="configuration" style="filled" image="plus.app" catalog="system" title="  Offer Ride">
                                             <color key="baseBackgroundColor" red="0.33725490196078434" green="0.77647058823529413" blue="0.6588235294117647" alpha="0.84705883264541626" colorSpace="custom" customColorSpace="sRGB"/>
                                         </buttonConfiguration>
                                         <userDefinedRuntimeAttributes>
@@ -44,7 +44,7 @@
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="MNZ-fN-t70">
                                         <rect key="frame" x="182.66666666666663" y="0.0" width="170.33333333333337" height="90"/>
                                         <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="filled" image="magnifyingglass" catalog="system" title="Join Ride"/>
+                                        <buttonConfiguration key="configuration" style="filled" image="magnifyingglass" catalog="system" title="  Join Ride"/>
                                         <connections>
                                             <action selector="joinRide:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="30l-vE-uSG"/>
                                         </connections>

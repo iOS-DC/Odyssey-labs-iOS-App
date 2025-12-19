@@ -10,7 +10,7 @@
 import UIKit
 import MapKit
 
-class OfferRideViewController: UIViewController, UITableViewDelegate, UITableViewDataSource,UITextFieldDelegate,MKMapViewDelegate, RoutesBottomSheetDelegate {
+class OfferRideViewController: UIViewController, UITableViewDelegate, UITableViewDataSource,UITextFieldDelegate,MKMapViewDelegate {
 
     @IBOutlet weak var fromTextField: UITextField!
     @IBOutlet weak var toTextField: UITextField!
@@ -19,6 +19,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     @IBOutlet weak var dateTextField: UITextField!
     @IBOutlet weak var timeTextField: UITextField!
 
+    @IBOutlet weak var routePillsStack: UIStackView!
+    @IBOutlet weak var routePillsContainer: UIView!
     private let datePicker = UIDatePicker()
     private let timePicker = UIDatePicker()
 
@@ -28,6 +30,9 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     private var suggestions: [MKLocalSearchCompletion] = []
     private var routes: [MKRoute] = []
+    // Persistent Routes Sheet
+    
+
     private var selectedRoute: MKRoute?
 
     @IBOutlet weak var contentView: UIView!
@@ -42,6 +47,10 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setupUI()
         setupAutocomplete()
         setupPickers()
+        routePillsContainer.applySmallCard()
+        routePillsContainer.backgroundColor = .systemBackground
+        routePillsContainer.isHidden = true
+
     }
     private func setDefaultDateAndTime() {
         // Set default date
@@ -162,6 +171,62 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         return true
     }
+    private func buildRoutePills() {
+        routePillsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+        blur.frame = routePillsContainer.bounds
+        blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        routePillsContainer.insertSubview(blur, at: 0)
+
+        for (index, route) in routes.enumerated() {
+
+            let minutes = Int(route.expectedTravelTime / 60)
+            let km = String(format: "%.1f", route.distance / 1000)
+
+            let title: String
+            if index == 0 {
+                title = "Fastest\n\(km) km • \(minutes) min"
+            } else if index == 1 {
+                title = "Shortest\n\(km) km • \(minutes) min"
+            } else {
+                title = "Alternative\n\(km) km • \(minutes) min"
+            }
+
+            let button = UIButton(type: .system)
+            button.tag = index
+            button.setTitle(title, for: .normal)
+
+            let isSelected = (route == selectedRoute)
+            button.applyRoutePill(selected: isSelected)
+
+            button.addTarget(self,
+                             action: #selector(routePillTapped(_:)),
+                             for: .touchUpInside)
+
+            routePillsStack.addArrangedSubview(button)
+        }
+
+        routePillsContainer.isHidden = false
+    }
+
+    
+    @objc private func routePillTapped(_ sender: UIButton) {
+        selectedRoute = routes[sender.tag]
+
+        drawRoutes()
+        mapView.setVisibleRoute(selectedRoute!)
+        UIView.animate(withDuration: 0.25,
+                       delay: 0,
+                       usingSpringWithDamping: 0.8,
+                       initialSpringVelocity: 0.5) {
+            self.mapView.setVisibleRoute(self.selectedRoute!)
+        }
+            
+        // Update pill states
+        for case let btn as UIButton in routePillsStack.arrangedSubviews {
+            btn.applyRoutePill(selected: btn.tag == sender.tag)
+        }
+    }
 
     // MARK: - Suggestion Selected
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -188,67 +253,58 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     // MARK: - Fetch Routes
     private func tryFetchRoutes() {
-        guard let f = fromCoord, let t = toCoord else {
-            return
-        }
-        
+        guard let f = fromCoord, let t = toCoord else { return }
 
         MapKitManager.shared.getRoutes(from: f, to: t) { routes in
             DispatchQueue.main.async {
                 self.routes = routes
                 self.selectedRoute = routes.first
+
                 self.drawRoutes()
-                if let firstRoute = routes.first {
-                    self.mapView.setVisibleRoute(firstRoute)
-                }
-                self.presentRouteSheet()
+                self.mapView.setVisibleRoute(self.selectedRoute!)
+
+                self.buildRoutePills()
             }
         }
-        
     }
+
+
 
     private func drawRoutes() {
         mapView.isHidden = false
         mapView.removeOverlays(mapView.overlays)
 
-        for r in routes {
-            mapView.addOverlay(r.polyline)
+        for route in routes {
+            let polyline = route.polyline
+            polyline.title = (route == selectedRoute) ? "selected" : "unselected"
+            mapView.addOverlay(polyline)
         }
     }
 
+
+
     // MARK: - Renderer
-    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+    func mapView(_ mapView: MKMapView,
+                 rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
 
         let renderer = MKPolylineRenderer(overlay: overlay)
 
-        if let route = routes.first(where: { $0.polyline === overlay }) {
-            if route === selectedRoute {
-                renderer.strokeColor = .systemGreen
-                renderer.lineWidth = 6
-            } else {
-                renderer.strokeColor = UIColor.systemBlue.withAlphaComponent(0.4)
-                renderer.lineWidth = 4
-            }
+        if overlay.title == "selected" {
+            //  Hero route
+            renderer.strokeColor = .systemGreen
+            renderer.lineWidth = 9
+            renderer.alpha = 1.0
+        } else {
+            //  Background suggestions
+            renderer.strokeColor = UIColor.systemGray4
+            renderer.lineWidth = 4
+            renderer.alpha = 0.5
         }
 
+        renderer.lineCap = .round
+        renderer.lineJoin = .round
+
         return renderer
-    }
-
-    // MARK: - Bottom Sheet
-    private func presentRouteSheet() {
-        let sb = UIStoryboard(name: "OfferRide", bundle: nil)
-        let vc = sb.instantiateViewController(withIdentifier: "RoutesBottomSheetViewController") as! RoutesBottomSheetViewController
-
-        vc.routes = routes
-        vc.delegate = self
-
-        present(vc, animated: true)
-    }
-
-    func routesBottomSheet(_ sheet: RoutesBottomSheetViewController, didSelectRouteAt index: Int) {
-
-        selectedRoute = routes[index]
-        drawRoutes()
     }
 
     // MARK: - Table DataSource

@@ -91,3 +91,33 @@ extension UITextField {
         leftViewMode = .always
     }
 }
+
+// MARK: - Route Pills
+extension UIButton {
+
+    func applyRoutePill(selected: Bool) {
+        titleLabel?.font = selected
+            ? UIFont.systemFont(ofSize: 14, weight: .semibold)
+            : UIFont.systemFont(ofSize: 13, weight: .medium)
+
+        titleLabel?.numberOfLines = 2
+        titleLabel?.textAlignment = .center
+
+        layer.cornerRadius = 14
+        layer.masksToBounds = true
+
+        if selected {
+            backgroundColor = .systemGreen
+            setTitleColor(.white, for: .normal)
+            layer.shadowOpacity = 0.2
+            layer.shadowRadius = 6
+            layer.shadowOffset = CGSize(width: 0, height: 3)
+        } else {
+            backgroundColor = UIColor.systemBackground.withAlphaComponent(0.9)
+            setTitleColor(.label, for: .normal)
+            layer.borderWidth = 1
+            layer.borderColor = UIColor.systemGray4.cgColor
+            layer.shadowOpacity = 0
+        }
+    }
+}
