@@ -1,152 +1,209 @@
-//
-//  ProfileStep1ViewController.swift
-//  UniRide
-//
-//  Created by Krish Bahukhandi on 16/11/25.
-//
-
 import UIKit
 
 let courseDurations: [String: Int] = [
-    "CSE": 4, "ECE": 4, "Mechanical": 4, "Civil": 4, "Electrical": 4,
-    "Chemical Engineering": 4, "Arts": 3, "BCA": 3, "BBA": 3, "MBA": 2,"MCA": 2,
+    "CSE": 4, "ECE": 4, "Mechanical": 4, "Civil": 4,
+    "Electrical": 4, "Chemical Engineering": 4,
+    "Arts": 3, "BCA": 3, "BBA": 3, "MBA": 2, "MCA": 2
 ]
 
-class ProfileStep1ViewController: UIViewController {
+final class ProfileStep1ViewController: UIViewController {
+
+    // MARK: - IBOutlets
+    @IBOutlet weak var containerCard: UIView!
+    @IBOutlet weak var stackView: UIStackView!
 
     @IBOutlet weak var fullNameTextField: UITextField!
-    @IBOutlet var containerCard: UIView!
-    @IBOutlet weak var stackView: UIStackView!
-    @IBOutlet weak var dropDownButton: UIButton! 
+    @IBOutlet weak var dropDownButton: UIButton!
+    @IBOutlet weak var yearDropDownButton: UIButton!
+
+    @IBOutlet weak var phoneTextField: UITextField!
+    @IBOutlet weak var sendOTPButton: UIButton!
 
     @IBOutlet weak var otpStatusLabel: UILabel!
-    
-    @IBOutlet weak var phoneTextField: UITextField!
     @IBOutlet weak var otpTextField: UITextField!
-    @IBOutlet weak var sendOTPButton: UIButton!
-    @IBOutlet weak var yearDropDownButton: UIButton!
-    
+
     @IBOutlet weak var continueButton: UIButton!
 
-    
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        setupUI()
         setupCourseDropDownMenu()
         setupYearDropDownMenu()
-        
-        containerCard.applyCardStyle()
-        fullNameTextField.applyRoundedField()
-        continueButton.applyPrimaryButton()
-        ///The stackView does NOT automatically fix the spacing around it. SO we are telling the stackView That when these two textField is appearing set them closesly Otherwise the textfield was not appearing.
-        stackView.setCustomSpacing(0, after: otpStatusLabel)
-        stackView.setCustomSpacing(2, after: otpTextField)
     }
-    
-    func setupCourseDropDownMenu() {
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        enforceContinueButtonWidth()
+    }
+
+    // MARK: - UI Setup
+    private func setupUI() {
+
+        // Card
+        containerCard.applyCardStyle()
+
+        // TextFields
+        fullNameTextField.applyRoundedField()
+        phoneTextField.applyRoundedField()
+        phoneTextField.keyboardType = .numberPad
+
+        otpTextField.applyRoundedField()
+        otpTextField.keyboardType = .numberPad
+        otpTextField.textAlignment = .center
+        otpTextField.textAlignment = .left
+        otpTextField.font = .systemFont(ofSize: 16, weight: .regular)
+        otpTextField.textColor = .label
+        otpTextField.placeholder = "Enter OTP"
+
+        otpTextField.backgroundColor = UIColor(white: 0.97, alpha: 1)
+        otpTextField.layer.borderColor = UIColor.systemGray4.cgColor
+        otpTextField.layer.borderWidth = 1
+        otpTextField.layer.cornerRadius = 12
+
+
+        // Buttons
+        sendOTPButton.applyOutlineButton()
+        continueButton.applyPrimaryButton()
+
+        continueButton.isEnabled = false
+        continueButton.alpha = 0.5
+
+        // OTP hidden initially
+        otpTextField.isHidden = true
+        otpTextField.alpha = 0
+        otpStatusLabel.isHidden = true
+        otpStatusLabel.font = .systemFont(ofSize: 13, weight: .medium)
+
+        // Stack spacing fix
+        stackView.setCustomSpacing(6, after: otpStatusLabel)
+        stackView.setCustomSpacing(12, after: otpTextField)
+    }
+
+    // MARK: - Course Dropdown
+    private func setupCourseDropDownMenu() {
         let options = Array(courseDurations.keys).sorted() + ["Reset"]
 
-        let menuActions = options.map { option in
-            return UIAction(title: option) { action in
-                
-                if action.title == "Reset" {
-                    self.dropDownButton.setTitle("Select Course", for: .normal)
-                    self.setupYearDropDownMenu(defaultYears: [1,2,3,4])
-                    return
-                }
+        dropDownButton.menu = UIMenu(
+            title: "Select your course",
+            children: options.map { option in
+                UIAction(title: option) { _ in
+                    if option == "Reset" {
+                        self.dropDownButton.setTitle("Select Course", for: .normal)
+                        self.setupYearDropDownMenu()
+                        return
+                    }
 
-                self.dropDownButton.setTitle(action.title, for: .normal)
-
-                if let duration = courseDurations[action.title] {
-                    let years = Array(1...duration)
-                    self.setupYearDropDownMenu(defaultYears: years)
+                    self.dropDownButton.setTitle(option, for: .normal)
+                    if let duration = courseDurations[option] {
+                        self.setupYearDropDownMenu(defaultYears: Array(1...duration))
+                    }
                 }
             }
-        }
+        )
 
-        dropDownButton.menu = UIMenu(title: "Select your course", children: menuActions)
-        dropDownButton.changesSelectionAsPrimaryAction = true
+        dropDownButton.showsMenuAsPrimaryAction = true
     }
 
-        
-    func setupYearDropDownMenu(defaultYears: [Int] = [1,2,3,4]) {
-        
-        let menuActions = defaultYears.map { year in
-            return UIAction(title: "\(year)") { action in
-                self.yearDropDownButton.setTitle(action.title, for: .normal)
+    private func setupYearDropDownMenu(defaultYears: [Int] = [1,2,3,4]) {
+        yearDropDownButton.menu = UIMenu(
+            title: "Select year",
+            children: defaultYears.map { year in
+                UIAction(title: "\(year)") { _ in
+                    self.yearDropDownButton.setTitle("\(year)", for: .normal)
+                }
             }
-        }
-
-        yearDropDownButton.menu = UIMenu(title: "Select your year", children: menuActions)
-        yearDropDownButton.changesSelectionAsPrimaryAction = true
+        )
+        yearDropDownButton.showsMenuAsPrimaryAction = true
     }
 
+
+    // MARK: - OTP
     @IBAction func sendOTPPressed(_ sender: UIButton) {
-        guard let phone = phoneTextField.text, !phone.isEmpty else {
-               otpStatusLabel.text = "Enter phone number first"
-               otpStatusLabel.textColor = .red
-               otpStatusLabel.isHidden = false
-               return
-           }
 
-           do {
-               try UserDataModel.shared.startPhoneVerification(phone: phone)
+        guard let phone = phoneTextField.text, phone.count >= 10 else {
+            showOTPStatus("Enter a valid phone number", color: .systemRed)
+            return
+        }
 
-               otpStatusLabel.text = "OTP sent! Check console"
-               otpStatusLabel.textColor = .systemGreen
-               otpStatusLabel.isHidden = false
+        do {
+            try UserDataModel.shared.startPhoneVerification(phone: phone)
 
-               // Show OTP text field
-               otpTextField.text = ""
-               otpTextField.isHidden = false
+            otpStatusLabel.isHidden = true
 
-               UIView.animate(withDuration: 0.3) {
-                   self.view.layoutIfNeeded()
-               }
+            showOTPStatus("✓ OTP sent", color: .systemGreen)
 
-           } catch {
-               otpStatusLabel.text = error.localizedDescription
-               otpStatusLabel.textColor = .red
-               otpStatusLabel.isHidden = false
-           }
-       }
-    
+            otpTextField.text = ""
+            otpTextField.isHidden = false
+
+            UIView.animate(withDuration: 0.35, delay: 0, options: [.curveEaseOut]) {
+                self.otpTextField.alpha = 1
+            }
+
+            otpTextField.becomeFirstResponder()
+            
+            continueButton.isEnabled = true
+            continueButton.alpha = 1
+
+        } catch {
+            showOTPStatus(error.localizedDescription, color: .systemRed)
+        }
+    }
+    private func enforceContinueButtonWidth() {
+
+        continueButton.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            continueButton.widthAnchor.constraint(equalToConstant: 238),
+            continueButton.centerXAnchor.constraint(equalTo: containerCard.centerXAnchor)
+        ])
+    }
+
+
+    // MARK: - Continue
     @IBAction func continuePressed(_ sender: UIButton) {
-           if !otpTextField.isHidden {
-               guard let phone = phoneTextField.text, let otp = otpTextField.text, !otp.isEmpty else {
-                   return
-               }
 
-               do {
-                   // Verify phone for the EXISTING current user
-                   try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
-                   print("Phone verified")
+        guard let phone = phoneTextField.text, phone.count >= 10 else {
+            showOTPStatus("Enter a valid phone number", color: .systemRed)
+            return
+        }
 
-                   //  Update (edit) the same user with profile details
-                   UserDataModel.shared.editCurrentUser(
-                       fullName: fullNameTextField.text,
-                       courseName: dropDownButton.title(for: .normal),
-                       year: Int(yearDropDownButton.title(for: .normal) ?? "1")
-                       
-                   )
+        guard let otp = otpTextField.text, !otp.isEmpty else {
+            showOTPStatus("Please enter OTP", color: .systemRed)
+            return
+        }
 
-                   goToNextPage()
+        do {
+            
+            try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
 
-               } catch {
-                   otpStatusLabel.text = error.localizedDescription
-                   otpStatusLabel.textColor = .red
-                   otpStatusLabel.isHidden = false
-               }
-               return
-           }
+            showOTPStatus("✓ Phone number verified", color: .systemGreen)
 
-           // If OTP field is hidden -> user never requested OTP
-           otpStatusLabel.text = "Please verify your phone number first"
-           otpStatusLabel.textColor = .red
-           otpStatusLabel.isHidden = false
-       }
-    func goToNextPage() {
-        let vc = storyboard?.instantiateViewController(identifier: "ProfileStep2ViewController") as! ProfileStep2ViewController
+            // Save profile data
+            UserDataModel.shared.editCurrentUser(
+                fullName: fullNameTextField.text,
+                courseName: dropDownButton.title(for: .normal),
+                year: Int(yearDropDownButton.title(for: .normal) ?? "1")
+            )
+
+            // Move to next screen
+            goToNextPage()
+
+        } catch {
+            showOTPStatus(error.localizedDescription, color: .systemRed)
+        }
+    }
+
+    // MARK: - Helpers
+    private func showOTPStatus(_ text: String, color: UIColor) {
+        otpStatusLabel.text = text
+        otpStatusLabel.textColor = color
+        otpStatusLabel.isHidden = false
+    }
+
+    private func goToNextPage() {
+        let vc = storyboard?.instantiateViewController(
+            identifier: "ProfileStep2ViewController"
+        ) as! ProfileStep2ViewController
         navigationController?.pushViewController(vc, animated: true)
     }
 }

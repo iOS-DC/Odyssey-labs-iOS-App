@@ -187,6 +187,10 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 if let trip = upcomingRide {
                     cell.configure(with: trip)
                 }
+                cell.selectionStyle = .default
+                cell.onTap = { [weak self] in
+                        self?.openMyRideTab()
+                    }
                 return cell
 
             case 1: // NEARBY RIDES
@@ -240,8 +244,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
 
-    func tableView(_ tableView: UITableView,
-                   heightForRowAt indexPath: IndexPath) -> CGFloat {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
 
         if upcomingRide != nil {
 
@@ -275,13 +278,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         label.text = self.tableView(tableView, titleForHeaderInSection: section)
         return label
     }
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-
-        // Only react to Upcoming Ride tap
-        guard upcomingRide != nil, indexPath.section == 0 else { return }
-
-        openMyRideTab()
-    }
+   
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 50

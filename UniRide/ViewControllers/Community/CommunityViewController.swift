@@ -46,27 +46,11 @@ class CommunityViewController: UIViewController,
         var commentCount: Int { comments.count }
     }
 
-    struct EventPost {
-        let title: String
-        let date: String
-        let location: String
-        let attendees: Int
-
-        var isAttending: Bool
-        var shareCount: Int
-        var hasShared: Bool = false
-    }
 
     // MARK: - Data
     var feedPosts: [Post] = []
-    var eventPosts: [EventPost] = [
-        EventPost(title: "Rangrez 2025",
-                  date: "Nov 6, 2025 at 14:00",
-                  location: "Chitkara University",
-                  attendees: 120,
-                  isAttending: false,
-                  shareCount: 0)
-    ]
+    var eventPosts: [EventItem] = []
+
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -83,6 +67,8 @@ class CommunityViewController: UIViewController,
                 "Glad to be here!"
             ]
         )
+        eventPosts = EventDataModel.shared.eventList()
+
 
         feedPosts.append(defaultPost)
         tableView.reloadData()
@@ -149,6 +135,9 @@ class CommunityViewController: UIViewController,
         }
     }
 
+    @IBAction func segmentChanged(_ sender: Any) {
+        tableView.reloadData()
+    }
     func hideSharePopup() {
         sharePopUpBottomConstraint.constant = 400
 
@@ -266,15 +255,45 @@ class CommunityViewController: UIViewController,
         tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
     }
 
+
     @IBAction func shareCancelButtonTapped(_ sender: Any) {
        hideSharePopup()
     }
     @IBAction func shareButtonTapped(_ sender: UIButton) {
         showSharePopup()
     }
-
-    @IBAction func shareEventTapped(_ sender: UIButton) {
+    @IBAction func EventShareButtonTapped(_ sender: Any) {
         showSharePopup()
+    }
+    
+    @IBAction func shareEventTapped(_ sender: UIButton) {
+        if let indexPath = getCellIndexPath(sender: sender) {
+                currentPostIndex = indexPath.row   // ← IMPORTANT
+            }
+
+            showSharePopup()
+    }
+
+    
+    @IBAction func shareOptionTapped(_ sender: UIButton) {
+        hideSharePopup()
+
+        switch sender.tag {
+        case 1: print("WhatsApp tapped")
+        case 2: print("Instagram tapped")
+        case 3: print("Facebook tapped")
+        case 4: print("More tapped")
+        default: break
+        }
+
+        // Increase share count for whichever post is currently selected
+        if segmentedControl.selectedSegmentIndex == 0 {
+            feedPosts[currentPostIndex].shareCount += 1
+        } else {
+            eventPosts[currentPostIndex].shareCount += 1
+        }
+
+        tableView.reloadRows(at: [IndexPath(row: currentPostIndex, section: 0)], with: .none)
     }
 
     // MARK: - CHAR COUNT
@@ -308,6 +327,10 @@ class CommunityViewController: UIViewController,
         return segmentedControl.selectedSegmentIndex == 0
             ? feedPosts.count
             : eventPosts.count
+    }
+    func getCellIndexPath(sender: UIView) -> IndexPath? {
+        let point = sender.convert(CGPoint.zero, to: tableView)
+        return tableView.indexPathForRow(at: point)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -348,23 +371,34 @@ class CommunityViewController: UIViewController,
         }
 
         // EVENT LIST
+        let event = eventPosts[indexPath.row]
         let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath)
 
         if let imgView = cell.viewWithTag(100) as? UIImageView {
-            imgView.image = UIImage(named: "profile")
-            imgView.layer.cornerRadius = 21
+            imgView.image = UIImage(named: event.imageName ?? "")
+            imgView.contentMode = .scaleAspectFill
             imgView.clipsToBounds = true
+
+            imgView.layer.cornerRadius = 21
+            
         }
+        
 
-        let event = eventPosts[indexPath.row]
-
+        // title
         (cell.viewWithTag(1) as? UILabel)?.text = event.title
-        (cell.viewWithTag(2) as? UILabel)?.text = event.date
-        (cell.viewWithTag(3) as? UILabel)?.text = event.location
-        (cell.viewWithTag(4) as? UILabel)?.text = "Attending \(event.attendees)"
 
-        let attendButton = cell.viewWithTag(10) as! UIButton
-        attendButton.setTitle(event.isAttending ? "Attending" : "Attend", for: .normal)
+        // date
+        let df = DateFormatter()
+        df.dateFormat = "MMM d, yyyy 'at' HH:mm"
+        (cell.viewWithTag(2) as? UILabel)?.text = df.string(from: event.startsAt)
+
+        // location
+        (cell.viewWithTag(3) as? UILabel)?.text = event.location?.name ?? "No Location"
+
+        // attendees
+        (cell.viewWithTag(4) as? UILabel)?.text = "Attending \(event.attendeeCount)"
+
+
 
         let shareButton = cell.viewWithTag(11) as! UIButton
         shareButton.setTitle("Share (\(event.shareCount))", for: .normal)
