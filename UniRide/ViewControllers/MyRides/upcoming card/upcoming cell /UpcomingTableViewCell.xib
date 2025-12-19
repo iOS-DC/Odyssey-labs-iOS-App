@@ -183,6 +183,7 @@
                                     <constraint firstItem="UmS-A0-JCr" firstAttribute="top" secondItem="BZ3-Fw-CN7" secondAttribute="top" id="8XX-1C-EvQ"/>
                                     <constraint firstAttribute="trailing" secondItem="UmS-A0-JCr" secondAttribute="trailing" id="9kE-2c-vn0"/>
                                     <constraint firstItem="UmS-A0-JCr" firstAttribute="leading" secondItem="BZ3-Fw-CN7" secondAttribute="leading" id="aEd-Tc-LLA"/>
+                                    <constraint firstAttribute="height" constant="17" id="kl8-0O-sG4"/>
                                     <constraint firstAttribute="bottom" secondItem="UmS-A0-JCr" secondAttribute="bottom" id="t04-Nb-Fo4"/>
                                 </constraints>
                             </view>
@@ -260,7 +261,8 @@
                 <outlet property="messageButton" destination="KtP-x6-58P" id="Mah-F4-rLA"/>
                 <outlet property="passengersLabel" destination="gPw-Qd-dmV" id="3Ox-h1-pSW"/>
                 <outlet property="requestContainerView" destination="BZ3-Fw-CN7" id="XEL-x7-aTD"/>
-                <outlet property="requestsContainerHeightConstraint" destination="rPL-B7-Wy5" id="hVy-Ug-Mhv"/>
+                <outlet property="requestsContainerHeightConstraint" destination="kl8-0O-sG4" id="2vW-Mg-AYs"/>
+                <outlet property="requestsTableHeightConstraint" destination="rPL-B7-Wy5" id="aM5-LY-X5S"/>
                 <outlet property="requestsTableView" destination="UmS-A0-JCr" id="TV4-tf-Vpk"/>
                 <outlet property="roleLabel" destination="gS8-Lg-iTa" id="c7K-Z5-aqw"/>
                 <outlet property="seatsLabel" destination="SKb-7o-GLi" id="PyB-DU-Wfu"/>

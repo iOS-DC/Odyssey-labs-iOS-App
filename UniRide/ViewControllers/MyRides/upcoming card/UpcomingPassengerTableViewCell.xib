@@ -10,15 +10,15 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="UpcomingPassengerTableViewCell" rowHeight="257" id="KGk-i7-Jjw" customClass="UpcomingPassengerTableViewCell" customModule="UniRide">
-            <rect key="frame" x="0.0" y="0.0" width="320" height="257"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="UpcomingPassengerTableViewCell" rowHeight="261" id="KGk-i7-Jjw" customClass="UpcomingPassengerTableViewCell" customModule="UniRide">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="261"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
-                <rect key="frame" x="0.0" y="0.0" width="320" height="257"/>
+                <rect key="frame" x="0.0" y="0.0" width="320" height="261"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="9uu-gT-Qld" userLabel="cardView">
-                        <rect key="frame" x="12" y="8" width="296" height="241"/>
+                        <rect key="frame" x="12" y="8" width="296" height="245"/>
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Mon,Jan 16" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="nbA-aT-C8s">
                                 <rect key="frame" x="219" y="12" width="65" height="14.333333333333336"/>
@@ -93,7 +93,7 @@
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="iiI-i7-4U7">
+                            <stackView opaque="NO" contentMode="scaleToFill" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="iiI-i7-4U7">
                                 <rect key="frame" x="12" y="156" width="272" height="34.333333333333343"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Tgt-I7-NT3">
@@ -121,7 +121,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tqa-fG-Xo3">
-                                <rect key="frame" x="176" y="195.33333333333334" width="108" height="34.333333333333343"/>
+                                <rect key="frame" x="94" y="195.33333333333334" width="108" height="37.666666666666657"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="cancel Req"/>
                             </button>
@@ -134,7 +134,7 @@
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstAttribute="trailing" secondItem="tqa-fG-Xo3" secondAttribute="trailing" constant="12" id="6N3-Ef-YLP"/>
+                            <constraint firstItem="tqa-fG-Xo3" firstAttribute="centerX" secondItem="9uu-gT-Qld" secondAttribute="centerX" id="6sP-o9-l6q"/>
                             <constraint firstItem="b3X-99-xbB" firstAttribute="leading" secondItem="lPr-mL-NPX" secondAttribute="trailing" constant="8" id="8Qp-tK-Itf"/>
                             <constraint firstItem="hQe-fa-6vV" firstAttribute="top" secondItem="9uu-gT-Qld" secondAttribute="top" constant="12" id="8ra-Sc-1eh"/>
                             <constraint firstItem="7al-FD-spb" firstAttribute="leading" secondItem="zTq-Wm-isH" secondAttribute="trailing" constant="8" id="AP7-ur-glZ"/>
@@ -150,6 +150,7 @@
                             <constraint firstItem="lPr-mL-NPX" firstAttribute="leading" secondItem="917-fO-xAZ" secondAttribute="trailing" constant="8" id="Ogg-ME-T6a"/>
                             <constraint firstItem="yri-q2-Dc1" firstAttribute="top" secondItem="KB1-wu-1Ge" secondAttribute="bottom" constant="6" id="PYH-QC-LKB"/>
                             <constraint firstItem="fVf-3y-EAg" firstAttribute="top" secondItem="klr-Y3-lng" secondAttribute="bottom" constant="19.329999999999998" id="PbN-Ai-s3X"/>
+                            <constraint firstAttribute="bottom" secondItem="tqa-fG-Xo3" secondAttribute="bottom" constant="12" id="Pqx-yd-k81"/>
                             <constraint firstItem="iiI-i7-4U7" firstAttribute="leading" secondItem="9uu-gT-Qld" secondAttribute="leading" constant="12" id="RF0-dt-iET"/>
                             <constraint firstItem="JiA-0U-0CD" firstAttribute="top" secondItem="klr-Y3-lng" secondAttribute="bottom" constant="55.329999999999998" id="Rka-Ja-1rh"/>
                             <constraint firstItem="c2U-R6-QDL" firstAttribute="top" secondItem="hQe-fa-6vV" secondAttribute="bottom" constant="18" id="RxE-yI-7OG"/>
@@ -198,7 +199,7 @@
                 <outlet property="startTimeLabel" destination="yri-q2-Dc1" id="4mg-V6-Rxx"/>
                 <outlet property="toLabel" destination="c2U-R6-QDL" id="eZG-OJ-IwK"/>
             </connections>
-            <point key="canvasLocation" x="32.061068702290072" y="-9.5070422535211279"/>
+            <point key="canvasLocation" x="32.061068702290072" y="-8.0985915492957758"/>
         </tableViewCell>
     </objects>
     <resources>

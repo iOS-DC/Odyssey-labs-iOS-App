@@ -29,9 +29,7 @@ final class UpcomingTableViewCell: UITableViewCell {
 
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var showMapButton: UIButton!
-    
     @IBOutlet weak var mapHeightConstraint: NSLayoutConstraint!
-
 
     @IBOutlet weak var messageButton: UIButton!
     @IBOutlet weak var callButton: UIButton!
@@ -41,6 +39,7 @@ final class UpcomingTableViewCell: UITableViewCell {
     @IBOutlet weak var requestContainerView: UIView!
     @IBOutlet weak var requestsTableView: UITableView!
     @IBOutlet weak var requestsContainerHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var requestsTableHeightConstraint: NSLayoutConstraint!
 
     @IBOutlet weak var approvedTableView: UITableView!
     @IBOutlet weak var approvedContainerHeightConstraint: NSLayoutConstraint!
@@ -49,6 +48,7 @@ final class UpcomingTableViewCell: UITableViewCell {
     private var trip: RideDataModel.MyTrip?
     private var rideRequests: [RideRequest] = []
     private var approvedPassengers: [String] = []
+
     private var isRequestsExpanded = false
     private var isMapExpanded = false
 
@@ -58,24 +58,32 @@ final class UpcomingTableViewCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        print("✅ UpcomingTableViewCell awakeFromNib")
+
         selectionStyle = .none
         setupUI()
 
-        mapView.isHidden = true
-        mapHeightConstraint.constant = 0
-
+        // Requests container initial state
         requestContainerView.isHidden = true
+        requestContainerView.isUserInteractionEnabled = false
+        requestsContainerHeightConstraint.constant = 0
+        requestsTableHeightConstraint.constant = 0
 
+        // Map initial state (KEEP 1)
+        mapView.isHidden = true
+        mapHeightConstraint.constant = 1
+
+        // Tables
         requestsTableView.delegate = self
         requestsTableView.dataSource = self
         requestsTableView.isScrollEnabled = false
+        requestsTableView.rowHeight = 70
 
         approvedTableView.delegate = self
         approvedTableView.dataSource = self
         approvedTableView.isScrollEnabled = false
-        
-        mapView.delegate = self
 
+        mapView.delegate = self
 
         requestsTableView.register(
             UINib(nibName: "RequestCell", bundle: nil),
@@ -86,6 +94,9 @@ final class UpcomingTableViewCell: UITableViewCell {
             UITableViewCell.self,
             forCellReuseIdentifier: "ApprovedCell"
         )
+
+        print("👉 viewRequestButton enabled:", viewRequestButton.isEnabled)
+        print("👉 viewRequestButton interaction:", viewRequestButton.isUserInteractionEnabled)
     }
 
     private func setupUI() {
@@ -98,29 +109,32 @@ final class UpcomingTableViewCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
 
-        // Reset state
+        trip = nil
+        rideRequests.removeAll()
+        approvedPassengers.removeAll()
+
         isRequestsExpanded = false
         isMapExpanded = false
 
-        // Hide views
         requestContainerView.isHidden = true
+        requestContainerView.isUserInteractionEnabled = false
+        requestsContainerHeightConstraint.constant = 0
+        requestsTableHeightConstraint.constant = 0
+
         mapView.isHidden = true
-
-        //HIS IS THE IMPORTANT LINE (STEP 4)
-        mapHeightConstraint.constant = 0
-
-        // Clean map
-        mapView.removeAnnotations(mapView.annotations)
-        mapView.removeOverlays(mapView.overlays)
+        mapHeightConstraint.constant = 1
+        showMapButton.setTitle("Show Map", for: .normal)
     }
-
 
     // MARK: - Configure
     func configure(with trip: RideDataModel.MyTrip) {
         self.trip = trip
         let ride = trip.ride
 
-        roleLabel.text = trip.role == .hosting ? "Hosting" : "Passenger"
+        print("🧩 CONFIGURE CELL — Ride:", ride.id)
+        print("🧩 Ride status:", ride.status.rawValue)
+
+        roleLabel.text = "Hosting"
 
         dateLabel.text = DateFormatter.localizedString(
             from: ride.departureTime,
@@ -130,7 +144,6 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         let tf = DateFormatter()
         tf.dateFormat = "HH:mm"
-
         startTimeLabel.text = tf.string(from: ride.departureTime)
 
         let travel = ride.selectedRoute?.expectedTravelTime ?? 3600
@@ -141,36 +154,28 @@ final class UpcomingTableViewCell: UITableViewCell {
         toLabel.text = ride.destination.address ?? "Unknown"
         seatsLabel.text = "\(ride.seatsAvailable)/\(ride.seatsTotal)"
 
-        // STATUS
-        switch ride.status {
-        case .draft:
-            statusLabel.text = "Draft"
-            statusLabel.textColor = .secondaryLabel
-        case .published:
-            statusLabel.text = "Active"
-            statusLabel.textColor = .systemGreen
-        case .ongoing:
-            statusLabel.text = "Ongoing"
-            statusLabel.textColor = .systemBlue
-        case .completed:
-            statusLabel.text = "Completed"
-            statusLabel.textColor = .secondaryLabel
-        case .cancelled:
-            statusLabel.text = "Cancelled"
-            statusLabel.textColor = .systemRed
-        }
+        statusLabel.text = ride.status.rawValue.capitalized
+        statusLabel.textColor =
+            ride.status == .published ? .systemGreen :
+            ride.status == .ongoing ? .systemBlue :
+            .secondaryLabel
 
+        // ======================
         // REQUESTS
-        rideRequests = RideDataModel.shared.listRequests(for: ride.id)
+        // ======================
+        rideRequests = RideDataModel.shared
+            .listRequests(for: ride.id)
+            .filter { $0.status == .pending }
 
-        if rideRequests.isEmpty {
-            viewRequestButton.isHidden = true
-        } else {
-            viewRequestButton.isHidden = false
-            viewRequestButton.setTitle("Requests (\(rideRequests.count))", for: .normal)
-        }
+        print("🟡 [DEBUG] Pending requests count:", rideRequests.count)
+        print("🟡 [DEBUG] Request IDs:", rideRequests.map { $0.id })
 
+        viewRequestButton.isHidden = rideRequests.isEmpty
+        viewRequestButton.setTitle("Requests (\(rideRequests.count))", for: .normal)
+
+        // ======================
         // APPROVED PASSENGERS
+        // ======================
         approvedPassengers = RideDataModel.shared
             .listBookings(for: ride.id)
             .filter { $0.status == .confirmed }
@@ -182,37 +187,52 @@ final class UpcomingTableViewCell: UITableViewCell {
         approvedContainerHeightConstraint.constant =
             approvedPassengers.isEmpty ? 0 : CGFloat(approvedPassengers.count) * 44
 
-        updateRequestTableHeight()
-        
-        drawRouteIfNeeded(for: ride)
+        // RESET REQUEST UI ON CONFIGURE
+        isRequestsExpanded = false
+        requestContainerView.isHidden = true
+        requestContainerView.isUserInteractionEnabled = false
+        requestsContainerHeightConstraint.constant = 0
+        requestsTableHeightConstraint.constant = 0
 
         requestsTableView.reloadData()
         approvedTableView.reloadData()
+
+        drawRouteIfNeeded(for: ride)
     }
 
     // MARK: - Actions
     @IBAction func viewRequestsTapped(_ sender: UIButton) {
+        print("🔥 viewRequestsTapped CALLED")
+
         isRequestsExpanded.toggle()
-        updateRequestTableHeight()
+
+        let rowHeight: CGFloat = 70
+        let height = isRequestsExpanded ? CGFloat(rideRequests.count) * rowHeight : 0
+
+        print("🟠 Expanded:", isRequestsExpanded)
+        print("🟠 Applying height:", height)
+
+        requestContainerView.isHidden = !isRequestsExpanded
+        requestContainerView.isUserInteractionEnabled = isRequestsExpanded
+        requestsContainerHeightConstraint.constant = height
+        requestsTableHeightConstraint.constant = height
+
+        requestsTableView.reloadData()
+
         delegate?.upcomingCellRequestsToggled(self)
     }
 
     @IBAction func toggleMap(_ sender: UIButton) {
         isMapExpanded.toggle()
 
-        if isMapExpanded {
-            mapView.isHidden = false
-            mapHeightConstraint.constant = 180
-        } else {
-            mapHeightConstraint.constant = 0
-            mapView.isHidden = true
-        }
+        mapView.isHidden = !isMapExpanded
+        mapHeightConstraint.constant = isMapExpanded ? 180 : 1
+        sender.setTitle(isMapExpanded ? "Hide Map" : "Show Map", for: .normal)
 
         UIView.animate(withDuration: 0.25) {
             self.contentView.layoutIfNeeded()
         }
     }
-
 
     @IBAction func messageTapped(_ sender: UIButton) {
         delegate?.upcomingCellDidTapMessage(self)
@@ -226,54 +246,56 @@ final class UpcomingTableViewCell: UITableViewCell {
         delegate?.upcomingCellDidTapCancelRide(self)
     }
 
-    private func updateRequestTableHeight() {
-        requestContainerView.isHidden = !isRequestsExpanded
-        requestsContainerHeightConstraint.constant =
-            isRequestsExpanded ? CGFloat(rideRequests.count) * 120 : 0
-    }
-    
     private func drawRouteIfNeeded(for ride: Ride) {
         mapView.removeOverlays(mapView.overlays)
 
         guard let route = ride.selectedRoute else { return }
 
-        let coordinates = route.coordinates.map {
+        let coords = route.coordinates.map {
             CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
         }
 
-        guard coordinates.count > 1 else { return }
+        guard coords.count > 1 else { return }
 
-        let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+        let polyline = MKPolyline(coordinates: coords, count: coords.count)
         mapView.addOverlay(polyline)
 
         mapView.setVisibleMapRect(
             polyline.boundingMapRect,
-            edgePadding: UIEdgeInsets(top: 40, left: 40, bottom: 40, right: 40),
+            edgePadding: UIEdgeInsets(top: 30, left: 30, bottom: 30, right: 30),
             animated: false
         )
     }
-
 }
 
 // MARK: - Tables
 extension UpcomingTableViewCell: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        tableView == requestsTableView ? rideRequests.count : approvedPassengers.count
+        let count = tableView == requestsTableView ? rideRequests.count : approvedPassengers.count
+
+        if tableView == requestsTableView {
+            print("🟢 numberOfRowsInSection (requests) =", count)
+        }
+
+        return count
     }
 
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         if tableView == requestsTableView {
+            print("🟢 cellForRowAt REQUEST index =", indexPath.row)
+
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: RequestCell.identifier,
                 for: indexPath
             ) as! RequestCell
 
             let req = rideRequests[indexPath.row]
-            let ride = trip!.ride
+            print("🟢 Request ID =", req.id)
 
+            let ride = trip!.ride
             cell.configure(
                 name: UserDataModel.shared.getUser(by: req.passengerUserID)?.fullName ?? "Passenger",
                 route: "\(ride.source.address ?? "From") → \(ride.destination.address ?? "To")"
@@ -296,38 +318,39 @@ extension UpcomingTableViewCell: RequestCellDelegate {
         guard let index = requestsTableView.indexPath(for: cell)?.row,
               let ride = trip?.ride else { return }
 
-        let req = rideRequests[index]
+        print("✅ APPROVE tapped")
+
         RideDataModel.shared.approveRequest(
-            requestID: req.id,
+            requestID: rideRequests[index].id,
             hostUserID: ride.driverUserID
         )
+
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
     }
 
     func requestCellDenyTapped(_ cell: RequestCell) {
         guard let index = requestsTableView.indexPath(for: cell)?.row,
               let ride = trip?.ride else { return }
 
-        let req = rideRequests[index]
+        print("❌ DENY tapped")
+
         RideDataModel.shared.denyRequest(
-            requestID: req.id,
+            requestID: rideRequests[index].id,
             hostUserID: ride.driverUserID
         )
+
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
     }
 }
 
 // MARK: - Map Renderer
 extension UpcomingTableViewCell: MKMapViewDelegate {
-
     func mapView(_ mapView: MKMapView,
                  rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
 
-        if let polyline = overlay as? MKPolyline {
-            let renderer = MKPolylineRenderer(polyline: polyline)
-            renderer.strokeColor = .systemBlue
-            renderer.lineWidth = 4
-            renderer.lineCap = .round
-            return renderer
-        }
-        return MKOverlayRenderer()
+        let r = MKPolylineRenderer(overlay: overlay)
+        r.strokeColor = .systemBlue
+        r.lineWidth = 4
+        return r
     }
 }

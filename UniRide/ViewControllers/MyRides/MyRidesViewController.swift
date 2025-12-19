@@ -32,6 +32,18 @@ final class MyRidesViewController: UIViewController {
         tableView.estimatedRowHeight = 260
 
         reloadTrips()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(ridesDidUpdate),
+            name: .ridesUpdated,
+            object: nil
+        )
+
+    }
+
+    
+    @objc private func ridesDidUpdate() {
+        reloadTrips()
     }
 
     // MARK: - Data
@@ -56,7 +68,9 @@ final class MyRidesViewController: UIViewController {
         tableView.reloadData()
     }
     
-    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
     
 }
 
@@ -105,6 +119,7 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
             return cell
         }
     }
+    
 }
 
 // MARK: - Cell Delegate (HOST)
@@ -116,12 +131,24 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
     }
 
     func upcomingCellDidTapMessage(_ cell: UpcomingTableViewCell) {
-        print("Message tapped (future chat)")
-        let sb = UIStoryboard(name: "messages", bundle: nil)
-        let vc = sb.instantiateViewController(withIdentifier: "MessageViewController") as! MessageViewController
-        navigationController?.pushViewController(vc, animated: true)
-        
+        print("Message tapped")
+
+//        let sb = UIStoryboard(name: "Messages", bundle: nil)
+//        guard let vc = sb.instantiateViewController(
+//            withIdentifier: "MessageViewController"
+//        ) as? MessageViewController else {
+//            print("VC not found")
+//            return
+//        }
+//
+//        if let nav = navigationController {
+//            nav.pushViewController(vc, animated: true)
+//        } else {
+//            vc.modalPresentationStyle = .fullScreen
+//            present(vc, animated: true)
+//        }
     }
+
 
     func upcomingCellDidTapCall(_ cell: UpcomingTableViewCell) {
         print("Call tapped (future call)")
@@ -134,6 +161,7 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         RideDataModel.shared.cancelRide(id: trip.ride.id)
         reloadTrips()
     }
+    
 }
 
 // MARK: - Passenger Actions
@@ -156,4 +184,7 @@ extension MyRidesViewController {
 
         reloadTrips()
     }
+   
 }
+
+

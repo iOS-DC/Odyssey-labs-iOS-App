@@ -376,7 +376,7 @@ final class RideDataModel {
         let myReqs = requests.filter { $0.passengerUserID == userID }
         let passengerFromRequests: [MyTrip] = myReqs.compactMap { req in
             guard let ride = rides.first(where: { $0.id == req.rideID }) else { return nil }
-            if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
+//            if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
             // Exclude cancelled requests from Upcoming
             guard req.status != .cancelled else { return nil }
             guard ride.status == .published || ride.status == .ongoing else { return nil }
@@ -468,12 +468,12 @@ final class RideDataModel {
         for idx in rides.indices {
             var r = rides[idx]
 
-            // Never touch cancelled or draft rides
-            if r.status == .cancelled || r.status == .draft {
+            // Never touch draft or cancelled
+            if r.status == .draft || r.status == .cancelled {
                 continue
             }
 
-            //  FIX: Future rides MUST remain published
+            // Future rides → Published
             if r.departureTime > now {
                 if r.status != .published {
                     r.status = .published
@@ -483,20 +483,31 @@ final class RideDataModel {
                 continue
             }
 
-            let travelSeconds = r.selectedRoute?.expectedTravelTime ?? (2 * 3600)
-            let end = r.departureTime.addingTimeInterval(travelSeconds)
-
-            let newStatus: RideStatus
-            if now >= end {
-                newStatus = .completed
+            // Calculate end time SAFELY
+            let travelSeconds: TimeInterval
+            if let route = r.selectedRoute {
+                travelSeconds = route.expectedTravelTime
             } else {
-                newStatus = .ongoing
+                // fallback ONLY for completion logic
+                travelSeconds = 60 * 60   // 1 hour
             }
 
-            if newStatus != r.status {
-                r.status = newStatus
-                rides[idx] = r
-                changed = true
+            let endTime = r.departureTime.addingTimeInterval(travelSeconds)
+
+            // After end time → Completed
+            if now >= endTime {
+                if r.status != .completed {
+                    r.status = .completed
+                    rides[idx] = r
+                    changed = true
+                }
+            } else {
+                // Between start and end → Ongoing
+                if r.status != .ongoing {
+                    r.status = .ongoing
+                    rides[idx] = r
+                    changed = true
+                }
             }
         }
 
@@ -505,6 +516,10 @@ final class RideDataModel {
             NotificationCenter.default.post(name: .ridesUpdated, object: nil)
         }
     }
+
+    
+    
+
 // Seed Mock Rides Once
     private static let mockDataSeedKey = "mock_rides_seeded"
 
@@ -512,7 +527,7 @@ final class RideDataModel {
         let seeded = UserDefaults.standard.bool(forKey: RideDataModel.mockDataSeedKey)
         if seeded { return }
 
-        print("➡️ Seeding mock rides into JSON...")
+        print(" Seeding mock rides into JSON...")
 
         for ride in MockData.sampleRides {
             let created = createRide(ride)
@@ -520,7 +535,7 @@ final class RideDataModel {
         }
 
         UserDefaults.standard.set(true, forKey: RideDataModel.mockDataSeedKey)
-        print("✅ Mock rides seeded successfully!")
+        print("Mock rides seeded successfully!")
     }
 
 
