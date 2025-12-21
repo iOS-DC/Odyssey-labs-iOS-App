@@ -38,8 +38,8 @@ final class UpcomingTableViewCell: UITableViewCell {
 
     @IBOutlet weak var requestContainerView: UIView!
     @IBOutlet weak var requestsTableView: UITableView!
-    @IBOutlet weak var requestsContainerHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var requestsTableHeightConstraint: NSLayoutConstraint!
+//    @IBOutlet weak var requestsContainerHeightConstraint: NSLayoutConstraint!
+//    @IBOutlet weak var requestsTableHeightConstraint: NSLayoutConstraint!
 
     @IBOutlet weak var approvedTableView: UITableView!
     @IBOutlet weak var approvedContainerHeightConstraint: NSLayoutConstraint!
@@ -58,7 +58,7 @@ final class UpcomingTableViewCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        print("✅ UpcomingTableViewCell awakeFromNib")
+        print("UpcomingTableViewCell awakeFromNib")
 
         selectionStyle = .none
         setupUI()
@@ -66,8 +66,8 @@ final class UpcomingTableViewCell: UITableViewCell {
         // Requests container initial state
         requestContainerView.isHidden = true
         requestContainerView.isUserInteractionEnabled = false
-        requestsContainerHeightConstraint.constant = 0
-        requestsTableHeightConstraint.constant = 0
+//        requestsContainerHeightConstraint.constant = 200
+//        requestsTableHeightConstraint.constant = 200
 
         // Map initial state (KEEP 1)
         mapView.isHidden = true
@@ -118,8 +118,8 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         requestContainerView.isHidden = true
         requestContainerView.isUserInteractionEnabled = false
-        requestsContainerHeightConstraint.constant = 0
-        requestsTableHeightConstraint.constant = 0
+//        requestsContainerHeightConstraint.constant = 200
+//        requestsTableHeightConstraint.constant = 200
 
         mapView.isHidden = true
         mapHeightConstraint.constant = 1
@@ -131,8 +131,8 @@ final class UpcomingTableViewCell: UITableViewCell {
         self.trip = trip
         let ride = trip.ride
 
-        print("🧩 CONFIGURE CELL — Ride:", ride.id)
-        print("🧩 Ride status:", ride.status.rawValue)
+        print(" CONFIGURE CELL — Ride:", ride.id)
+        print(" Ride status:", ride.status.rawValue)
 
         roleLabel.text = "Hosting"
 
@@ -167,8 +167,8 @@ final class UpcomingTableViewCell: UITableViewCell {
             .listRequests(for: ride.id)
             .filter { $0.status == .pending }
 
-        print("🟡 [DEBUG] Pending requests count:", rideRequests.count)
-        print("🟡 [DEBUG] Request IDs:", rideRequests.map { $0.id })
+        print(" [DEBUG] Pending requests count:", rideRequests.count)
+        print(" [DEBUG] Request IDs:", rideRequests.map { $0.id })
 
         viewRequestButton.isHidden = rideRequests.isEmpty
         viewRequestButton.setTitle("Requests (\(rideRequests.count))", for: .normal)
@@ -184,15 +184,16 @@ final class UpcomingTableViewCell: UITableViewCell {
             }
 
         passengersLabel.text = "Passengers (\(approvedPassengers.count))"
-        approvedContainerHeightConstraint.constant =
-            approvedPassengers.isEmpty ? 0 : CGFloat(approvedPassengers.count) * 44
+        let approvedRowCount = max(approvedPassengers.count, 1)
+        approvedContainerHeightConstraint.constant = CGFloat(approvedRowCount) * 44
 
         // RESET REQUEST UI ON CONFIGURE
         isRequestsExpanded = false
         requestContainerView.isHidden = true
         requestContainerView.isUserInteractionEnabled = false
-        requestsContainerHeightConstraint.constant = 0
-        requestsTableHeightConstraint.constant = 0
+//        requestsContainerHeightConstraint.constant = 200
+//        requestsTableHeightConstraint.constant = 200
+
 
         requestsTableView.reloadData()
         approvedTableView.reloadData()
@@ -204,23 +205,19 @@ final class UpcomingTableViewCell: UITableViewCell {
     @IBAction func viewRequestsTapped(_ sender: UIButton) {
         print("🔥 viewRequestsTapped CALLED")
 
+        guard !rideRequests.isEmpty else { return }
+
         isRequestsExpanded.toggle()
-
-        let rowHeight: CGFloat = 70
-        let height = isRequestsExpanded ? CGFloat(rideRequests.count) * rowHeight : 0
-
-        print("🟠 Expanded:", isRequestsExpanded)
-        print("🟠 Applying height:", height)
 
         requestContainerView.isHidden = !isRequestsExpanded
         requestContainerView.isUserInteractionEnabled = isRequestsExpanded
-        requestsContainerHeightConstraint.constant = height
-        requestsTableHeightConstraint.constant = height
 
         requestsTableView.reloadData()
 
         delegate?.upcomingCellRequestsToggled(self)
     }
+
+
 
     @IBAction func toggleMap(_ sender: UIButton) {
         isMapExpanded.toggle()
@@ -272,13 +269,12 @@ final class UpcomingTableViewCell: UITableViewCell {
 extension UpcomingTableViewCell: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let count = tableView == requestsTableView ? rideRequests.count : approvedPassengers.count
-
         if tableView == requestsTableView {
-            print("🟢 numberOfRowsInSection (requests) =", count)
+            return rideRequests.count
+        } else {
+            return max(approvedPassengers.count, 1)
         }
 
-        return count
     }
 
     func tableView(_ tableView: UITableView,
@@ -306,8 +302,18 @@ extension UpcomingTableViewCell: UITableViewDataSource, UITableViewDelegate {
         }
 
         let cell = tableView.dequeueReusableCell(withIdentifier: "ApprovedCell", for: indexPath)
-        cell.textLabel?.text = approvedPassengers[indexPath.row]
+
+        if approvedPassengers.isEmpty {
+            cell.textLabel?.text = "No approved passengers"
+            cell.textLabel?.textAlignment = .center
+            cell.selectionStyle = .none
+        } else {
+            cell.textLabel?.text = approvedPassengers[indexPath.row]
+            cell.textLabel?.textAlignment = .left
+        }
+
         return cell
+
     }
 }
 
