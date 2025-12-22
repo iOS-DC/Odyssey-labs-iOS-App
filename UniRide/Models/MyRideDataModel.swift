@@ -1,4 +1,3 @@
-//
 //  ride.swift
 //  UniRide
 //
@@ -376,7 +375,7 @@ final class RideDataModel {
         let myReqs = requests.filter { $0.passengerUserID == userID }
         let passengerFromRequests: [MyTrip] = myReqs.compactMap { req in
             guard let ride = rides.first(where: { $0.id == req.rideID }) else { return nil }
-//            if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
+            if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
             // Exclude cancelled requests from Upcoming
             guard req.status != .cancelled else { return nil }
             guard ride.status == .published || ride.status == .ongoing else { return nil }
@@ -469,9 +468,11 @@ final class RideDataModel {
             var r = rides[idx]
 
             // Never touch draft or cancelled
-            if r.status == .draft || r.status == .cancelled {
+            // Never touch draft, cancelled, or completed rides
+            if r.status == .draft || r.status == .cancelled || r.status == .completed {
                 continue
             }
+           
 
             // Future rides → Published
             if r.departureTime > now {
@@ -540,5 +541,4 @@ final class RideDataModel {
 
 
 }
-
 

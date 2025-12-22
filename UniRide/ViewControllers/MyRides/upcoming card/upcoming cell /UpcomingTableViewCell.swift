@@ -152,7 +152,20 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         fromLabel.text = ride.source.address ?? "Unknown"
         toLabel.text = ride.destination.address ?? "Unknown"
-        seatsLabel.text = "\(ride.seatsAvailable)/\(ride.seatsTotal)"
+        
+        let pendingCount = RideDataModel.shared
+            .listRequests(for: ride.id)
+            .filter { $0.status == .pending }
+            .reduce(0) { $0 + $1.seats }
+
+        let confirmedCount = RideDataModel.shared
+            .listBookings(for: ride.id)
+            .filter { $0.status == .confirmed }
+            .reduce(0) { $0 + $1.seats }
+
+        let occupiedSeats = pendingCount + confirmedCount
+
+        seatsLabel.text = "\(occupiedSeats)/\(ride.seatsTotal)"
 
         statusLabel.text = ride.status.rawValue.capitalized
         statusLabel.textColor =
