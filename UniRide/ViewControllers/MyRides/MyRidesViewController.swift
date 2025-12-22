@@ -23,6 +23,11 @@ final class MyRidesViewController: UIViewController {
             UINib(nibName: "UpcomingPassengerTableViewCell", bundle: nil),
             forCellReuseIdentifier: "UpcomingPassengerTableViewCell"
         )
+        tableView.register(
+            UINib(nibName: "PastRideCell", bundle: nil),
+            forCellReuseIdentifier: PastRideCell.reuseIdentifier
+        )
+
 
         tableView.dataSource = self
         tableView.delegate = self
@@ -38,8 +43,20 @@ final class MyRidesViewController: UIViewController {
             name: .ridesUpdated,
             object: nil
         )
+        
+        print("PAST COUNT =", pastTrips.count)
+        for t in pastTrips {
+            print("Ride:", t.ride.id, "status:", t.ride.status)
+        }
+
 
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        reloadTrips()
+    }
+
 
     
     @objc private func ridesDidUpdate() {
@@ -61,12 +78,15 @@ final class MyRidesViewController: UIViewController {
     }
 
     private func updateForSelectedSegment() {
-        currentTrips = (segmentedControl.selectedSegmentIndex == 0)
+        guard segmentedControl.selectedSegmentIndex < 2 else { return }
+
+        currentTrips = segmentedControl.selectedSegmentIndex == 0
             ? upcomingTrips
             : pastTrips
 
         tableView.reloadData()
     }
+
     
     deinit {
         NotificationCenter.default.removeObserver(self)
@@ -79,47 +99,55 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView,
                    numberOfRowsInSection section: Int) -> Int {
-        return currentTrips.count
+        return max(currentTrips.count, 0)
     }
-
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         let trip = currentTrips[indexPath.row]
 
-        switch trip.role {
+        // UPCOMING
+        if segmentedControl.selectedSegmentIndex == 0 {
 
-        case .hosting:
+            switch trip.role {
+
+            case .hosting:
+                let cell = tableView.dequeueReusableCell(
+                    withIdentifier: UpcomingTableViewCell.reuseIdentifier,
+                    for: indexPath
+                ) as! UpcomingTableViewCell
+
+                cell.configure(with: trip)
+                cell.delegate = self
+                return cell
+
+            case .passenger:
+                let cell = tableView.dequeueReusableCell(
+                    withIdentifier: "UpcomingPassengerTableViewCell",
+                    for: indexPath
+                ) as! UpcomingPassengerTableViewCell
+
+                cell.configure(with: trip)
+                return cell
+            }
+        }
+
+        // PAST
+        else {
+            
+            print("PAST CELL RENDER:", trip.ride.id)
+
             let cell = tableView.dequeueReusableCell(
-                withIdentifier: UpcomingTableViewCell.reuseIdentifier,
+                withIdentifier: PastRideCell.reuseIdentifier,
                 for: indexPath
-            ) as! UpcomingTableViewCell
+            ) as! PastRideCell
 
             cell.configure(with: trip)
-            cell.delegate = self
-            return cell
-
-        case .passenger:
-            let cell = tableView.dequeueReusableCell(
-                withIdentifier: "UpcomingPassengerTableViewCell",
-                for: indexPath
-            ) as! UpcomingPassengerTableViewCell
-
-            cell.configure(with: trip)
-
-            // Cancel request wiring
-            cell.cancelRequestButton.tag = indexPath.row
-            cell.cancelRequestButton.removeTarget(nil, action: nil, for: .allEvents)
-            cell.cancelRequestButton.addTarget(
-                self,
-                action: #selector(cancelPassengerRequest(_:)),
-                for: .touchUpInside
-            )
-
             return cell
         }
+
     }
-    
+
 }
 
 // MARK: - Cell Delegate (HOST)
@@ -186,5 +214,8 @@ extension MyRidesViewController {
     }
    
 }
+
+
+
 
 

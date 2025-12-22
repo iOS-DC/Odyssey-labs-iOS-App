@@ -469,9 +469,11 @@ final class RideDataModel {
             var r = rides[idx]
 
             // Never touch draft or cancelled
-            if r.status == .draft || r.status == .cancelled {
+            // Never touch draft, cancelled, or completed rides
+            if r.status == .draft || r.status == .cancelled || r.status == .completed {
                 continue
             }
+           
 
             // Future rides → Published
             if r.departureTime > now {
