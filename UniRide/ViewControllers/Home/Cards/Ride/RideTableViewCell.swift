@@ -35,7 +35,7 @@ final class RideTableViewCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
         selectionStyle = .none
-
+        yearLabel.text = "3rd"
         // Card
         cardContainerView.backgroundColor = .systemBackground
         cardContainerView.layer.cornerRadius = 18
@@ -52,10 +52,10 @@ final class RideTableViewCell: UITableViewCell {
         profileImageView.layer.cornerRadius = 20
         profileImageView.clipsToBounds = true
         profileImageView.contentMode = .scaleAspectFill
-        profileImageView.tintColor = .systemTeal
-
-        // Vehicle icon
-        vehicleIconImageView.tintColor = .systemTeal
+        profileImageView.tintColor = .secondaryLabel
+        
+        vehicleIconImageView.tintColor = .secondaryLabel
+        seatsLabel.textColor = .secondaryLabel
         vehicleIconImageView.contentMode = .scaleAspectFit
 
         // Labels styling (safe defaults)
@@ -69,16 +69,15 @@ final class RideTableViewCell: UITableViewCell {
         timeLabel.font = .systemFont(ofSize: 14)
         timeLabel.textColor = .secondaryLabel
 
-        priceLabel.font = .systemFont(ofSize: 15, weight: .semibold)
-        priceLabel.textColor = .systemGreen
+        priceLabel.textColor = .label
 
         seatsLabel.font = .systemFont(ofSize: 13, weight: .medium)
-        seatsLabel.textColor = .systemTeal
+        
 
         // Join button
         joinButton.layer.cornerRadius = 18
         joinButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
-        joinButton.backgroundColor = .systemTeal
+        joinButton.backgroundColor = .systemBlue
         joinButton.setTitleColor(.white, for: .normal)
     }
 
@@ -131,7 +130,7 @@ final class RideTableViewCell: UITableViewCell {
         priceLabel.text = "₹\(price)"
 
         // MARK: Join Button
-        joinButton.setTitle("+ Join Ride", for: .normal)
+        joinButton.setTitle("Join Ride", for: .normal)
         joinButton.isEnabled = ride.seatsTotal > 0
         joinButton.alpha = ride.seatsTotal > 0 ? 1.0 : 0.5
     }

@@ -46,7 +46,7 @@ extension UIButton {
 
     /// Primary filled button (Offer / Join)
     func applyPrimaryButton(
-        color: UIColor = .systemGreen,
+        color: UIColor = .systemBlue,
         radius: CGFloat = 18
     ) {
         layer.cornerRadius = radius
@@ -107,7 +107,7 @@ extension UIButton {
         layer.masksToBounds = true
 
         if selected {
-            backgroundColor = .systemGreen
+            backgroundColor = .systemBlue
             setTitleColor(.white, for: .normal)
             layer.shadowOpacity = 0.2
             layer.shadowRadius = 6
@@ -116,7 +116,8 @@ extension UIButton {
             backgroundColor = UIColor.systemBackground.withAlphaComponent(0.9)
             setTitleColor(.label, for: .normal)
             layer.borderWidth = 1
-            layer.borderColor = UIColor.systemGray4.cgColor
+//            layer.borderColor = UIColor.systemGray4.cgColor
+            layer.borderColor = UIColor.separator.cgColor
             layer.shadowOpacity = 0
         }
     }

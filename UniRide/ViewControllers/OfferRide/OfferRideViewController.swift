@@ -39,10 +39,10 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     override func viewDidLoad() {
         super.viewDidLoad()
         setDefaultDateAndTime()
-        addIcon("mappin.and.ellipse", to: fromTextField)
-        addIcon("mappin.circle", to: toTextField)
-        addIcon("calendar", to: dateTextField)
-        addIcon("clock", to: timeTextField)
+//        addIcon("mappin.and.ellipse", to: fromTextField)
+//        addIcon("mappin.circle", to: toTextField)
+//        addIcon("calendar", to: dateTextField)
+//        addIcon("clock", to: timeTextField)
         contentView.applyCardStyle()
         setupUI()
         setupAutocomplete()
@@ -291,7 +291,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         if overlay.title == "selected" {
             //  Hero route
-            renderer.strokeColor = .systemGreen
+            renderer.strokeColor = .systemBlue
             renderer.lineWidth = 9
             renderer.alpha = 1.0
         } else {
