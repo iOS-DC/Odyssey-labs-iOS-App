@@ -56,7 +56,7 @@ class VehicleDetailsViewController: UIViewController {
 
         // Next Button
         nextButton.layer.cornerRadius = 18
-        nextButton.backgroundColor = .systemTeal
+        nextButton.backgroundColor = .systemBlue
         nextButton.setTitleColor(.white, for: .normal)
         nextButton.isEnabled = false
         nextButton.alpha = 0.5
@@ -79,8 +79,8 @@ class VehicleDetailsViewController: UIViewController {
     // MARK: - Update UI for Vehicle Cards
     func updateVehicleUI() {
 
-        let selectedColor = UIColor.systemTeal
-        let selectedBG = UIColor.systemTeal.withAlphaComponent(0.08)
+        let selectedColor = UIColor.systemBlue
+        let selectedBG = UIColor.systemBlue.withAlphaComponent(0.08)
         let normalBorder = UIColor.systemGray5.cgColor
 
         if selectedVehicle == .car {

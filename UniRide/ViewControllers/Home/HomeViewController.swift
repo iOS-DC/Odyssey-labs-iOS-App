@@ -13,6 +13,7 @@ class HomeViewController: UIViewController {
     @IBOutlet weak var greetingsLabel: UILabel!
     @IBOutlet weak var homeTableView: UITableView!
    
+    @IBOutlet weak var requestButton: UIButton!
     var upcomingRide: RideDataModel.MyTrip?
     var nearbyRides: [Ride] = []
 
@@ -22,10 +23,11 @@ class HomeViewController: UIViewController {
             super.viewDidLoad()
 
             let name = UserDataModel.shared.getCurrentUser()?.fullName ?? "User"
-            greetingsLabel.text = "Hey, \(name)"
-
-            homeTableView.backgroundColor = UIColor(named: "Color")
+            greetingsLabel.text = "Hi, \(name.split(separator: " ").first ?? "User")"
             
+            homeTableView.backgroundColor = UIColor(named: "Color")
+        requestButton.layer.borderWidth = 2
+        requestButton.layer.borderColor = UIColor.systemBlue.cgColor
             setupTable()
 
             // Listener for live location updates
@@ -95,8 +97,7 @@ class HomeViewController: UIViewController {
         } else {
             
             print("⚠️ No user location → showing limited fallback rides")
-            let all = model.getAllRides()
-                .filter { $0.status == .published && $0.driverUserID != user.id }
+            let all = model.getAllRides().filter { $0.status == .published && $0.driverUserID != user.id }
 
             nearbyRides = Array(all.prefix(5))
         }

@@ -54,8 +54,8 @@ class ProfileStep2ViewController: UIViewController {
 
         selectedHasVehicle = true
 
-        yesVehicleButton.layer.borderColor = UIColor.systemGreen.cgColor
-        yesVehicleButton.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.1)
+        yesVehicleButton.layer.borderColor = UIColor.systemBlue.cgColor
+        yesVehicleButton.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
 
         noVehicleButton.layer.borderColor = UIColor.systemGray4.cgColor
         noVehicleButton.backgroundColor = .clear
@@ -68,8 +68,8 @@ class ProfileStep2ViewController: UIViewController {
 
         selectedHasVehicle = false
 
-        noVehicleButton.layer.borderColor = UIColor.systemGreen.cgColor
-        noVehicleButton.backgroundColor = UIColor.systemGreen.withAlphaComponent(0.1)
+        noVehicleButton.layer.borderColor = UIColor.systemBlue.cgColor
+        noVehicleButton.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
 
         yesVehicleButton.layer.borderColor = UIColor.systemGray4.cgColor
         yesVehicleButton.backgroundColor = .clear

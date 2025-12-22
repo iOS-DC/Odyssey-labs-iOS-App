@@ -56,7 +56,7 @@
                                 </state>
                                 <buttonConfiguration key="configuration" style="plain" title="Button">
                                     <backgroundConfiguration key="background">
-                                        <color key="backgroundColor" red="0.0" green="0.71372549019999998" blue="0.52549019610000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <color key="backgroundColor" systemColor="systemBlueColor"/>
                                     </backgroundConfiguration>
                                     <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 </buttonConfiguration>
@@ -205,7 +205,7 @@
                                         </constraints>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Continue">
-                                            <color key="baseBackgroundColor" red="0.0" green="0.71372549019999998" blue="0.52549019610000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="verifyTapped:" destination="6gS-kM-WQA" eventType="touchUpInside" id="Ge9-Lp-Frg"/>
@@ -406,12 +406,12 @@
                                     </stackView>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="m4b-Oe-tPz">
                                         <rect key="frame" x="37.333333333333343" y="341.66666666666663" width="238.00000000000003" height="50"/>
-                                        <color key="backgroundColor" red="0.3190917969" green="0.703125" blue="0.5380859375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                        <color key="backgroundColor" systemColor="systemBlueColor"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="238" id="840-Dr-Mrc"/>
                                             <constraint firstAttribute="height" constant="50" id="Ura-Tf-9mR"/>
                                         </constraints>
-                                        <color key="tintColor" red="0.3190917969" green="0.703125" blue="0.5380859375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                        <color key="tintColor" systemColor="systemBlueColor"/>
                                         <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
                                         <state key="normal" title="Continue">
                                             <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -545,7 +545,7 @@
                                         </constraints>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Compelete Setup">
-                                            <color key="baseBackgroundColor" red="0.3190917969" green="0.703125" blue="0.5380859375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="completeSetupTapped:" destination="39d-aa-ssG" eventType="touchUpInside" id="oll-h0-yn8"/>
@@ -656,7 +656,7 @@
                                         </constraints>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Continue">
-                                            <color key="baseBackgroundColor" red="0.0" green="0.71372549019999998" blue="0.52549019610000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="continueTapped:" destination="6vv-BG-AXE" eventType="touchUpInside" id="zsz-wb-Usz"/>
@@ -835,7 +835,7 @@ addresses</string>
                                                         <rect key="frame" x="273" y="0.0" width="57" height="34.333333333333336"/>
                                                         <state key="normal" title="Button"/>
                                                         <buttonConfiguration key="configuration" style="filled" title="OTP">
-                                                            <color key="baseBackgroundColor" red="0.3190917969" green="0.703125" blue="0.5380859375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                                         </buttonConfiguration>
                                                         <connections>
                                                             <action selector="sendOTPPressed:" destination="YO0-2b-lNu" eventType="touchUpInside" id="L5r-nT-jaI"/>
@@ -872,7 +872,7 @@ addresses</string>
                                         </constraints>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Continue">
-                                            <color key="baseBackgroundColor" red="0.0" green="0.71372549019999998" blue="0.52549019610000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="continuePressed:" destination="YO0-2b-lNu" eventType="touchUpInside" id="aIM-bi-GXR"/>
@@ -925,6 +925,9 @@ addresses</string>
         <image name="person.circle" catalog="system" width="128" height="123"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemBlueColor">
+            <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemRedColor">
             <color red="1" green="0.23137254900000001" blue="0.18823529410000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

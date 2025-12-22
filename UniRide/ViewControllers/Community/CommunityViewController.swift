@@ -317,6 +317,24 @@ class CommunityViewController: UIViewController,
         return nil
     }
 
+    @IBAction func attendEventButton(_ sender: Any) {
+        guard let button = sender as? UIView else { return }
+            guard let indexPath = getCellIndexPath(sender: button) else { return }
+
+            let event = eventPosts[indexPath.row]
+            openEventDetailsScreen(event: event)    }
+    
+
+    func openEventDetailsScreen(event: EventItem) {
+        let storyboard = UIStoryboard(name: "Community", bundle: nil)
+            let vc = storyboard.instantiateViewController(withIdentifier: "EventDetailsVC") as! EventDetailsViewController
+
+            vc.event = event   // ← THIS passes the event to next screen
+
+            navigationController?.pushViewController(vc, animated: true)
+        }
+    
+
     // MARK: - DATASOURCE
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 
