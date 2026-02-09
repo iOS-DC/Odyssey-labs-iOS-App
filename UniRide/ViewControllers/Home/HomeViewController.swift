@@ -26,8 +26,8 @@ class HomeViewController: UIViewController {
             greetingsLabel.text = "Hi, \(name.split(separator: " ").first ?? "User")"
             
             homeTableView.backgroundColor = UIColor(named: "Color")
-        requestButton.layer.borderWidth = 2
-        requestButton.layer.borderColor = UIColor.systemBlue.cgColor
+//            requestButton.layer.borderWidth = 2
+//            requestButton.layer.borderColor = UIColor.systemBlue.cgColor
             setupTable()
 
             // Listener for live location updates
@@ -37,40 +37,41 @@ class HomeViewController: UIViewController {
                 name: .LocationServiceDidUpdate,
                 object: nil
             )
-        }
+    }
+    
     private func openMyRideTab() {
         guard let tabBarController = self.tabBarController else { return }
 
-        // Assuming MyRide is at index 1
+        // MyRide is at index 1
         tabBarController.selectedIndex = 1
     }
+ 
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        fetchRideData()
+        homeTableView.reloadData()
+    }
 
-        override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            fetchRideData()
-            homeTableView.reloadData()
-        }
+    // Called automatically whenever user moves
+    @objc func handleLiveLocationUpdate(_ note: Notification) {
+        guard let loc = note.userInfo?["location"] as? CLLocation else { return }
 
-        // ADDED — Called automatically whenever user moves
-        @objc func handleLiveLocationUpdate(_ note: Notification) {
-            guard let loc = note.userInfo?["location"] as? CLLocation else { return }
+        let point = LocationPoint(
+            lat: loc.coordinate.latitude,
+            lon: loc.coordinate.longitude,
+            address: nil
+        )
 
-            let point = LocationPoint(
-                lat: loc.coordinate.latitude,
-                lon: loc.coordinate.longitude,
-                address: nil
-            )
+        // Save location to user profile
+        UserDataModel.shared.updateUserLocation(point)
 
-            // Save location to user profile
-            UserDataModel.shared.updateUserLocation(point)
+        // Refresh nearby rides
+        fetchRideData()
 
-            // Refresh nearby rides
-            fetchRideData()
-
-            // Reload UI
-            homeTableView.reloadData()
-        }
+        // Reload UI
+        homeTableView.reloadData()
+    }
 
 
     func fetchRideData() {
@@ -96,7 +97,7 @@ class HomeViewController: UIViewController {
 
         } else {
             
-            print("⚠️ No user location → showing limited fallback rides")
+            print("No user location")
             let all = model.getAllRides().filter { $0.status == .published && $0.driverUserID != user.id }
 
             nearbyRides = Array(all.prefix(5))
@@ -144,19 +145,25 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 
     func numberOfSections(in tableView: UITableView) -> Int {
         if upcomingRide != nil {
-            return 3   // Upcoming + Nearby + Events
+            return 3
         }
-        return 2       // Nearby + Events
+        return 2
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
 
         if upcomingRide != nil {
-            if section == 0 { return "Upcoming Ride" }
-            if section == 1 { return "Nearby Rides" }
+            if section == 0 {
+                return "Upcoming Ride"
+            }
+            if section == 1 {
+                return "Nearby Rides"
+            }
             return "Top Events"
         } else {
-            if section == 0 { return "Nearby Rides" }
+            if section == 0 {
+                return "Nearby Rides"
+            }
             return "Top Events"
         }
     }
@@ -164,23 +171,29 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 
         if upcomingRide != nil {
-            if section == 0 { return 1 }
-            if section == 1 { return nearbyRides.count }
+            if section == 0 {
+                return 1
+            }
+            if section == 1 {
+                return nearbyRides.count
+            }
             return events.count
         } else {
-            if section == 0 { return nearbyRides.count }
+            if section == 0 {
+                return nearbyRides.count
+            }
             return events.count
         }
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-        // CASE: user HAS upcoming ride
+        
         if upcomingRide != nil {
 
             switch indexPath.section {
 
-            case 0:  // UPCOMING RIDE
+            case 0:
                 let cell = tableView.dequeueReusableCell(
                     withIdentifier: "UpcomingRideCell",
                     for: indexPath
@@ -194,7 +207,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                     }
                 return cell
 
-            case 1: // NEARBY RIDES
+            case 1:
                 let cell = tableView.dequeueReusableCell(
                     withIdentifier: "RideCell",
                     for: indexPath
@@ -205,7 +218,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 
                 return cell
 
-            case 2: // EVENTS
+            case 2:
                 let cell = tableView.dequeueReusableCell(
                     withIdentifier: "EventCell",
                     for: indexPath

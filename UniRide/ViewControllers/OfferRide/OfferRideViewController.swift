@@ -39,17 +39,12 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     override func viewDidLoad() {
         super.viewDidLoad()
         setDefaultDateAndTime()
-//        addIcon("mappin.and.ellipse", to: fromTextField)
-//        addIcon("mappin.circle", to: toTextField)
-//        addIcon("calendar", to: dateTextField)
-//        addIcon("clock", to: timeTextField)
+
         contentView.applyCardStyle()
         setupUI()
         setupAutocomplete()
         setupPickers()
         routePillsContainer.applySmallCard()
-        routePillsContainer.backgroundColor = .systemBackground
-        routePillsContainer.isHidden = true
 
     }
     private func setDefaultDateAndTime() {
@@ -128,23 +123,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         timeTextField.inputAccessoryView = timeToolbar
     }
 
-    func addIcon(_ name: String, to tf: UITextField) {
-        let icon = UIImageView(image: UIImage(systemName: name))
-        icon.tintColor = .systemGray
-        icon.frame = CGRect(x: 8, y: 0, width: 22, height: 22)
-
-        let container = UIView(frame: CGRect(x: 0, y: 0, width: 36, height: 30))
-        container.addSubview(icon)
-        icon.center = container.center
-
-        tf.leftView = container
-        tf.leftViewMode = .always
-
-        tf.layer.cornerRadius = 12
-        tf.layer.borderWidth = 1
-        tf.layer.borderColor = UIColor.systemGray4.cgColor
-    }
-
     @objc private func doneSelectingDate() {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yyyy"
@@ -199,9 +177,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             let isSelected = (route == selectedRoute)
             button.applyRoutePill(selected: isSelected)
 
-            button.addTarget(self,
-                             action: #selector(routePillTapped(_:)),
-                             for: .touchUpInside)
+            button.addTarget(self, action: #selector(routePillTapped(_:)), for: .touchUpInside)
 
             routePillsStack.addArrangedSubview(button)
         }
@@ -281,11 +257,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         }
     }
 
-
-
     // MARK: - Renderer
-    func mapView(_ mapView: MKMapView,
-                 rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
 
         let renderer = MKPolylineRenderer(overlay: overlay)
 

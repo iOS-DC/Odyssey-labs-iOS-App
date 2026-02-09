@@ -205,7 +205,7 @@
                                         </constraints>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Continue">
-                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
+                                            <color key="baseBackgroundColor" red="0.2313232422" green="0.5249023438" blue="0.9677734375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="verifyTapped:" destination="6gS-kM-WQA" eventType="touchUpInside" id="Ge9-Lp-Frg"/>
@@ -406,7 +406,7 @@
                                     </stackView>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="m4b-Oe-tPz">
                                         <rect key="frame" x="37.333333333333343" y="341.66666666666663" width="238.00000000000003" height="50"/>
-                                        <color key="backgroundColor" systemColor="systemBlueColor"/>
+                                        <color key="backgroundColor" red="0.2313232422" green="0.5249023438" blue="0.9677734375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="238" id="840-Dr-Mrc"/>
                                             <constraint firstAttribute="height" constant="50" id="Ura-Tf-9mR"/>
@@ -539,13 +539,15 @@
                                     </view>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Rqc-py-gLs">
                                         <rect key="frame" x="37.666666666666657" y="301" width="237.99999999999997" height="50"/>
+                                        <color key="backgroundColor" red="0.2313232422" green="0.5249023438" blue="0.9677734375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="50" id="PNI-wa-ycS"/>
                                             <constraint firstAttribute="width" constant="238" id="Vtx-jM-NyN"/>
                                         </constraints>
+                                        <color key="tintColor" red="0.2313232422" green="0.5249023438" blue="0.9677734375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Compelete Setup">
-                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
+                                            <color key="baseBackgroundColor" red="0.2313232422" green="0.5249023438" blue="0.9677734375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="completeSetupTapped:" destination="39d-aa-ssG" eventType="touchUpInside" id="oll-h0-yn8"/>
@@ -612,14 +614,8 @@
                         <rect key="frame" x="0.0" y="0.0" width="402" height="874"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="UniRide" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tkP-ZU-cRO">
-                                <rect key="frame" x="146.33333333333334" y="124" width="109.66666666666666" height="36"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="30"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="The Smartest Way to Campus" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hFN-No-h6L">
-                                <rect key="frame" x="81.666666666666686" y="180" width="239" height="21"/>
+                                <rect key="frame" x="81.666666666666686" y="197" width="239" height="21"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="18"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
@@ -656,7 +652,7 @@
                                         </constraints>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Continue">
-                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
+                                            <color key="baseBackgroundColor" red="0.2313232422" green="0.5249023438" blue="0.9677734375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="continueTapped:" destination="6vv-BG-AXE" eventType="touchUpInside" id="zsz-wb-Usz"/>
@@ -712,16 +708,22 @@ addresses</string>
                                     <constraint firstItem="9ea-AO-0jw" firstAttribute="top" secondItem="ICy-o8-c0J" secondAttribute="bottom" constant="15" id="zuM-CD-Qi8"/>
                                 </constraints>
                             </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="UniRide" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tkP-ZU-cRO">
+                                <rect key="frame" x="146.33333333333334" y="151" width="109.66666666666666" height="36"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="30"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="7OE-ns-YVj"/>
                         <color key="backgroundColor" red="0.93725490199999995" green="0.97254901959999995" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="Ej6-8a-iZO" firstAttribute="centerY" secondItem="Zeh-2L-scH" secondAttribute="centerY" id="3V2-vv-DEN"/>
+                            <constraint firstItem="hFN-No-h6L" firstAttribute="top" secondItem="tkP-ZU-cRO" secondAttribute="bottom" constant="10" id="8cN-gy-my4"/>
                             <constraint firstItem="tkP-ZU-cRO" firstAttribute="centerX" secondItem="Zeh-2L-scH" secondAttribute="centerX" id="ApE-31-h8E"/>
+                            <constraint firstItem="Ej6-8a-iZO" firstAttribute="top" secondItem="hFN-No-h6L" secondAttribute="bottom" constant="44" id="Eb2-kp-yaA"/>
                             <constraint firstItem="hFN-No-h6L" firstAttribute="leading" secondItem="7OE-ns-YVj" secondAttribute="leading" constant="81.670000000000002" id="GAo-54-EHX"/>
-                            <constraint firstItem="tkP-ZU-cRO" firstAttribute="top" secondItem="7OE-ns-YVj" secondAttribute="top" id="NST-sQ-Ttm"/>
                             <constraint firstItem="7OE-ns-YVj" firstAttribute="trailing" secondItem="hFN-No-h6L" secondAttribute="trailing" constant="81.329999999999998" id="O0Z-bg-4li"/>
-                            <constraint firstItem="hFN-No-h6L" firstAttribute="top" secondItem="tkP-ZU-cRO" secondAttribute="bottom" constant="20" id="TIV-Lo-KXf"/>
                             <constraint firstItem="Ej6-8a-iZO" firstAttribute="leading" secondItem="7OE-ns-YVj" secondAttribute="leading" constant="27" id="h37-5D-gAh"/>
                             <constraint firstItem="7OE-ns-YVj" firstAttribute="trailing" secondItem="Ej6-8a-iZO" secondAttribute="trailing" constant="27" id="qwl-oS-8OO"/>
                             <constraint firstItem="Ej6-8a-iZO" firstAttribute="centerX" secondItem="Zeh-2L-scH" secondAttribute="centerX" id="xof-Jg-5VS"/>
@@ -736,7 +738,7 @@ addresses</string>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="RgW-AO-I1Y" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2288.059701492537" y="95.42334096109839"/>
+            <point key="canvasLocation" x="2286.5671641791046" y="95.42334096109839"/>
         </scene>
         <!--Profile Step1 View Controller-->
         <scene sceneID="Xyn-Ok-pTj">
@@ -872,7 +874,7 @@ addresses</string>
                                         </constraints>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Continue">
-                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
+                                            <color key="baseBackgroundColor" red="0.2313232422" green="0.5249023438" blue="0.9677734375" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="continuePressed:" destination="YO0-2b-lNu" eventType="touchUpInside" id="aIM-bi-GXR"/>

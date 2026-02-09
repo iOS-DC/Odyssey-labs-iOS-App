@@ -196,14 +196,14 @@
                                                         </constraints>
                                                         <standardMapConfiguration key="preferredConfiguration"/>
                                                     </mapView>
-                                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="INh-C8-opB">
+                                                    <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="INh-C8-opB">
                                                         <rect key="frame" x="16" y="534" width="321" height="56"/>
                                                         <subviews>
                                                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillProportionally" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Xzb-Wo-PaZ">
                                                                 <rect key="frame" x="0.0" y="0.0" width="321" height="56"/>
                                                             </stackView>
                                                         </subviews>
-                                                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                         <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="56" id="45P-S8-XPe"/>
