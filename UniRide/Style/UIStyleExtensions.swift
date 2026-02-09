@@ -46,7 +46,7 @@ extension UIButton {
 
     /// Primary filled button (Offer / Join)
     func applyPrimaryButton(
-        color: UIColor = .systemBlue,
+        color: UIColor = .systemGreen,
         radius: CGFloat = 18
     ) {
         layer.cornerRadius = radius

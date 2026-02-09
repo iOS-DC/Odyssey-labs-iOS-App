@@ -12,7 +12,6 @@ class EventTableViewCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        // Transparent backgrounds
         backgroundColor = .clear
         contentView.backgroundColor = .clear
 

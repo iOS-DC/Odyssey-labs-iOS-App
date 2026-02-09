@@ -38,11 +38,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         cardContainerView.layer.cornerRadius = 20
         cardContainerView.backgroundColor = .systemBackground
     }
-
-   
-
-        
-
+    
         @objc private func handleTap() {
             onTap?()
         }
