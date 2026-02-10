@@ -68,12 +68,7 @@ final class AvailableRideViewController: UIViewController,
     }
 
     // MARK: - Join Ride
-    @objc private func joinButtonTapped(_ sender: UIButton) {
-        let index = sender.tag
-        guard index >= 0 && index < rides.count else { return }
-
-        let ride = rides[index]
-
+    private func joinRide(_ ride: Ride) {
         guard let user = UserDataModel.shared.getCurrentUser() else {
             let alert = UIAlertController(
                 title: "Sign in",
@@ -153,22 +148,15 @@ extension AvailableRideViewController {
         let ride = rides[indexPath.row]
 
         // 🔥 REAL DRIVER NAME (NO MOCK, NO CACHE GUESS)
-        let driverName =
-            UserDataModel.shared
-                .getUser(by: ride.driverUserID)?
-                .fullName
-            ?? "Driver"
+        let driverName = UserDataModel.shared.getUser(by: ride.driverUserID)?.fullName ?? ride.driverUserID.uuidString
 
         print("🚗 Ride:", ride.id, "Driver:", driverName)
 
         cell.configure(with: ride, driverName: driverName)
 
-        cell.joinButton.tag = indexPath.row
-        cell.joinButton.addTarget(
-            self,
-            action: #selector(joinButtonTapped(_:)),
-            for: .touchUpInside
-        )
+        cell.onJoinTapped = { [weak self] in
+            self?.joinRide(ride)
+        }
 
         return cell
     }

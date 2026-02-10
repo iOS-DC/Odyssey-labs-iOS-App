@@ -56,6 +56,6 @@ class EventTableViewCell: UITableViewCell {
 
         attendButton.setTitle("Attend", for: .normal)
 
-        eventImageView.image = UIImage(named: "eventPlaceholder")
+        eventImageView.image = UIImage(named: event.imageName ?? "eventPlaceholder")
     }
 }

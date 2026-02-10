@@ -28,6 +28,28 @@ struct UserProfile: Equatable, Codable {
 
     var savedHomeLocation: LocationPoint?
 
+    init(id: UUID,
+         email: String,
+         isEmailVerified: Bool = false,
+         phone: String? = nil,
+         isPhoneVerified: Bool = false,
+         fullName: String = "",
+         courseName: String? = nil,
+         year: Int? = nil,
+         photoURL: URL? = nil,
+         vehicle: Vehicle? = nil) {
+        self.id = id
+        self.email = email
+        self.isEmailVerified = isEmailVerified
+        self.phone = phone
+        self.isPhoneVerified = isPhoneVerified
+        self.fullName = fullName
+        self.courseName = courseName
+        self.year = year
+        self.photoURL = photoURL
+        self.vehicle = vehicle
+    }
+
 
     init(email: String,
          isEmailVerified: Bool = false,
@@ -71,6 +93,7 @@ final class UserDataModel {
     private init() {
         archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")
         loadUsers()
+        seedMockUsersIfNeeded()
     }
     func updateUserLocation(_ location: LocationPoint) {
         guard let id = currentUserID,
@@ -254,5 +277,47 @@ final class UserDataModel {
             print("Failed to save users.json:", error)
         }
     }
-}
 
+    // MARK: - Ensure driver profiles exist for ride owners
+    func ensureDriverProfiles(for driverIDs: [UUID]) {
+        let existing = Set(users.map { $0.id })
+        var added = 0
+
+        for id in driverIDs where !existing.contains(id) {
+            let idx = abs(id.uuidString.hashValue) % MockData.driverNames.count
+            let name = MockData.driverNames[idx]
+            let profile = UserProfile(
+                id: id,
+                email: "driver\(idx + 1)@chitkara.edu.in",
+                isEmailVerified: true,
+                fullName: name,
+                courseName: "CSE",
+                year: 3
+            )
+            users.append(profile)
+            added += 1
+        }
+
+        if added > 0 {
+            saveUsers()
+        }
+    }
+
+    // MARK: - Mock Users
+    private static let mockUsersSeedKey = "mock_users_seeded"
+
+    private func seedMockUsersIfNeeded() {
+        let seeded = UserDefaults.standard.bool(forKey: UserDataModel.mockUsersSeedKey)
+        let mockIDs = Set(MockData.driverProfiles.map { $0.id })
+        let hasAnyMock = users.contains { mockIDs.contains($0.id) }
+        if seeded && hasAnyMock { return }
+
+        for profile in MockData.driverProfiles {
+            if users.contains(where: { $0.id == profile.id }) { continue }
+            users.append(profile)
+        }
+
+        saveUsers()
+        UserDefaults.standard.set(true, forKey: UserDataModel.mockUsersSeedKey)
+    }
+}
