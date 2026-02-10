@@ -17,7 +17,7 @@ class HomeViewController: UIViewController {
     var upcomingRide: RideDataModel.MyTrip?
     var nearbyRides: [Ride] = []
 
-    var events: [EventItem] = MockData.sampleEvents
+    var events: [EventItem] = []
 
     override func viewDidLoad() {
             super.viewDidLoad()
@@ -29,6 +29,10 @@ class HomeViewController: UIViewController {
 //            requestButton.layer.borderWidth = 2
 //            requestButton.layer.borderColor = UIColor.systemBlue.cgColor
             setupTable()
+
+            // Load Top Events from the same source as Community
+            events = EventDataModel.shared.eventList()
+            events = Array(events.prefix(2))
 
             // Listener for live location updates
             NotificationCenter.default.addObserver(
@@ -45,10 +49,77 @@ class HomeViewController: UIViewController {
         // MyRide is at index 1
         tabBarController.selectedIndex = 1
     }
+
+    private func joinRide(_ ride: Ride) {
+        guard let user = UserDataModel.shared.getCurrentUser() else {
+            let alert = UIAlertController(
+                title: "Sign in",
+                message: "Please sign in to join a ride.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
+
+        let request = RideRequest(
+            rideID: ride.id,
+            passengerUserID: user.id,
+            pickupPoint: ride.source,
+            seats: 1
+        )
+
+        let createdRequest = RideDataModel.shared.createJoinRequest(request)
+
+        NotificationCenter.default.post(
+            name: .rideRequestsUpdated,
+            object: nil,
+            userInfo: ["requestID": createdRequest.id.uuidString]
+        )
+
+        // Switch to My Rides tab
+        if let tbc = tabBarController, let vcs = tbc.viewControllers {
+            for (i, vc) in vcs.enumerated() {
+                if let nav = vc as? UINavigationController,
+                   nav.viewControllers.first is MyRidesViewController {
+                    tbc.selectedIndex = i
+                    nav.popToRootViewController(animated: false)
+                    break
+                } else if vc is MyRidesViewController {
+                    tbc.selectedIndex = i
+                    break
+                }
+            }
+        }
+
+        let alert = UIAlertController(
+            title: "Requested",
+            message: "Request sent. Check My Rides → Upcoming.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func openEventDetailsScreen(event: EventItem) {
+        let storyboard = UIStoryboard(name: "Community", bundle: nil)
+        let vc = storyboard.instantiateViewController(withIdentifier: "EventDetailsVC") as! EventDetailsViewController
+        vc.event = event
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
+    @objc private func attendEventFromHome(_ sender: UIButton) {
+        let index = sender.tag
+        guard events.indices.contains(index) else { return }
+        let event = events[index]
+        openEventDetailsScreen(event: event)
+    }
  
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        events = EventDataModel.shared.eventList()
+        events = Array(events.prefix(2))
         fetchRideData()
         homeTableView.reloadData()
     }
@@ -213,8 +284,11 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                     for: indexPath
                 ) as! RideTableViewCell
                 let ride = nearbyRides[indexPath.row]
-                let driverName = MockData.driverNames[indexPath.row % MockData.driverNames.count]
+                let driverName = UserDataModel.shared.getUser(by: ride.driverUserID)?.fullName ?? ride.driverUserID.uuidString
                 cell.configure(with: ride, driverName: driverName)
+                cell.onJoinTapped = { [weak self] in
+                    self?.joinRide(ride)
+                }
 
                 return cell
 
@@ -224,6 +298,9 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                     for: indexPath
                 ) as! EventTableViewCell
                 cell.configure(with: events[indexPath.row])
+                cell.attendButton.tag = indexPath.row
+                cell.attendButton.removeTarget(nil, action: nil, for: .allEvents)
+                cell.attendButton.addTarget(self, action: #selector(attendEventFromHome(_:)), for: .touchUpInside)
                 return cell
 
             default:
@@ -240,8 +317,11 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 for: indexPath
             ) as! RideTableViewCell
             let ride = nearbyRides[indexPath.row]
-            let driverName = MockData.driverNames[indexPath.row % MockData.driverNames.count]
+            let driverName = UserDataModel.shared.getUser(by: ride.driverUserID)?.fullName ?? ride.driverUserID.uuidString
             cell.configure(with: ride, driverName: driverName)
+            cell.onJoinTapped = { [weak self] in
+                self?.joinRide(ride)
+            }
             return cell
 
         case 1: // EVENTS
@@ -250,6 +330,9 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 for: indexPath
             ) as! EventTableViewCell
             cell.configure(with: events[indexPath.row])
+            cell.attendButton.tag = indexPath.row
+            cell.attendButton.removeTarget(nil, action: nil, for: .allEvents)
+            cell.attendButton.addTarget(self, action: #selector(attendEventFromHome(_:)), for: .touchUpInside)
             return cell
 
         default:

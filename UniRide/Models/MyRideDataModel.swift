@@ -152,6 +152,7 @@ final class RideDataModel {
         loadAll()
         
         seedMockRidesIfNeeded()
+        UserDataModel.shared.ensureDriverProfiles(for: rides.map { $0.driverUserID })
     }
 
     
@@ -526,7 +527,9 @@ final class RideDataModel {
 
     func seedMockRidesIfNeeded() {
         let seeded = UserDefaults.standard.bool(forKey: RideDataModel.mockDataSeedKey)
-        if seeded { return }
+        let mockIDs = Set(MockData.driverProfiles.map { $0.id })
+        let hasAnyMockDriver = rides.contains { mockIDs.contains($0.driverUserID) }
+        if seeded && hasAnyMockDriver { return }
 
         print(" Seeding mock rides into JSON...")
 
@@ -541,4 +544,3 @@ final class RideDataModel {
 
 
 }
-

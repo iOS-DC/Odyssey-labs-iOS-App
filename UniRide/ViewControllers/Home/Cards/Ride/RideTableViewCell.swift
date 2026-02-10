@@ -27,6 +27,8 @@ final class RideTableViewCell: UITableViewCell {
     @IBOutlet weak var priceLabel: UILabel!
     @IBOutlet weak var joinButton: UIButton!
 
+    var onJoinTapped: (() -> Void)?
+
     // MARK: - Lifecycle
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -69,9 +71,10 @@ final class RideTableViewCell: UITableViewCell {
         timeLabel.font = .systemFont(ofSize: 14)
         timeLabel.textColor = .secondaryLabel
 
+        priceLabel.font = .systemFont(ofSize: 18, weight: .semibold)
         priceLabel.textColor = .label
 
-        seatsLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        seatsLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         
 
         // Join button
@@ -79,6 +82,12 @@ final class RideTableViewCell: UITableViewCell {
         joinButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
         joinButton.backgroundColor = .systemBlue
         joinButton.setTitleColor(.white, for: .normal)
+        joinButton.addTarget(self, action: #selector(joinTapped), for: .touchUpInside)
+
+        fromLabel.numberOfLines = 2
+        toLabel.numberOfLines = 2
+        fromLabel.lineBreakMode = .byWordWrapping
+        toLabel.lineBreakMode = .byWordWrapping
     }
 
     override func layoutSubviews() {
@@ -101,17 +110,19 @@ final class RideTableViewCell: UITableViewCell {
 
         // MARK: Driver Info
         nameLabel.text = driverName
-        yearLabel.text = driverYear ?? "Student"
+        yearLabel.text = driverYear ?? ""
 
         if let img = driverImage {
             profileImageView.image = img
         } else {
-            profileImageView.image = UIImage(systemName: "person.circle.fill")
+            profileImageView.image = initialsAvatar(for: driverName, size: CGSize(width: 40, height: 40))
         }
 
         // MARK: Route
-        fromLabel.text = ride.source.address ?? "From"
-        toLabel.text = ride.destination.address ?? "To"
+        let fromText = formatLocation(ride.source.address)
+        let toText = formatLocation(ride.destination.address)
+        fromLabel.text = fromText
+        toLabel.text = toText
 
         // MARK: Time
         let formatter = DateFormatter()
@@ -120,9 +131,8 @@ final class RideTableViewCell: UITableViewCell {
 
         // MARK: Vehicle + Seats
         configureVehicle(
-//            vehicleType: ride.vehicleType,
             vehicleType: "car",
-            seats: ride.seatsTotal
+            seats: ride.seatsAvailable
         )
 
         // MARK: Price
@@ -131,8 +141,28 @@ final class RideTableViewCell: UITableViewCell {
 
         // MARK: Join Button
         joinButton.setTitle("Join Ride", for: .normal)
-        joinButton.isEnabled = ride.seatsTotal > 0
-        joinButton.alpha = ride.seatsTotal > 0 ? 1.0 : 0.5
+        joinButton.isEnabled = ride.seatsAvailable > 0
+        joinButton.alpha = ride.seatsAvailable > 0 ? 1.0 : 0.5
+    }
+
+    @objc private func joinTapped() {
+        onJoinTapped?()
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        onJoinTapped = nil
+        nameLabel.text = nil
+        yearLabel.text = nil
+        fromLabel.text = nil
+        toLabel.text = nil
+        timeLabel.text = nil
+        priceLabel.text = nil
+        seatsLabel.text = nil
+        seatsLabel.textColor = .secondaryLabel
+        profileImageView.image = nil
+        joinButton.alpha = 1.0
+        joinButton.isEnabled = true
     }
 
     // MARK: - Vehicle Helper
@@ -152,6 +182,64 @@ final class RideTableViewCell: UITableViewCell {
         default:
             vehicleIconImageView.image = UIImage(systemName: "car.fill")
             seatsLabel.text = "\(seats) seats"
+        }
+
+        if seats > 0 {
+            seatsLabel.textColor = UIColor.systemGreen
+        } else {
+            seatsLabel.textColor = UIColor.systemRed
+        }
+    }
+
+    private func formatLocation(_ address: String?) -> String {
+        guard let address = address?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !address.isEmpty else {
+            return ""
+        }
+
+        let parts = address.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        if parts.count >= 2 {
+            return "\(parts[0]), \(parts[1])"
+        }
+        return address
+    }
+
+    private func initialsAvatar(for name: String, size: CGSize) -> UIImage? {
+        let initials = initialsFromName(name)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            let rect = CGRect(origin: .zero, size: size)
+            let path = UIBezierPath(ovalIn: rect)
+            UIColor.systemGray5.setFill()
+            path.fill()
+
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 16, weight: .semibold),
+                .foregroundColor: UIColor.label
+            ]
+            let text = NSString(string: initials)
+            let textSize = text.size(withAttributes: attributes)
+            let textRect = CGRect(
+                x: (size.width - textSize.width) / 2,
+                y: (size.height - textSize.height) / 2,
+                width: textSize.width,
+                height: textSize.height
+            )
+            text.draw(in: textRect, withAttributes: attributes)
+        }
+    }
+
+    private func initialsFromName(_ name: String) -> String {
+        let parts = name.split(separator: " ").filter { !$0.isEmpty }
+        if parts.count >= 2 {
+            let first = parts.first?.first.map(String.init) ?? ""
+            let last = parts.last?.first.map(String.init) ?? ""
+            return (first + last).uppercased()
+        } else if let first = parts.first?.first {
+            return String(first).uppercased()
+        } else {
+            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            return String(trimmed.prefix(2)).uppercased()
         }
     }
 }

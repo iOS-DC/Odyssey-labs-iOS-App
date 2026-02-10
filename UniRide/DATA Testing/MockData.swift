@@ -18,9 +18,46 @@ struct MockData {
         "Pranav Sood", "Kavish Rawat", "Rehaan Kapoor", "Lakshdeep Singh"
     ]
 
+    static let driverProfiles: [UserProfile] = {
+        let ids: [UUID] = [
+            UUID(uuidString: "11111111-1111-1111-1111-111111111111")!,
+            UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
+            UUID(uuidString: "44444444-4444-4444-4444-444444444444")!,
+            UUID(uuidString: "55555555-5555-5555-5555-555555555555")!,
+            UUID(uuidString: "66666666-6666-6666-6666-666666666666")!,
+            UUID(uuidString: "77777777-7777-7777-7777-777777777777")!,
+            UUID(uuidString: "88888888-8888-8888-8888-888888888888")!,
+            UUID(uuidString: "99999999-9999-9999-9999-999999999999")!,
+            UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")!,
+            UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")!,
+            UUID(uuidString: "cccccccc-cccc-cccc-cccc-cccccccccccc")!,
+            UUID(uuidString: "dddddddd-dddd-dddd-dddd-dddddddddddd")!,
+            UUID(uuidString: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")!,
+            UUID(uuidString: "ffffffff-ffff-ffff-ffff-ffffffffffff")!,
+            UUID(uuidString: "12121212-1212-1212-1212-121212121212")!,
+            UUID(uuidString: "23232323-2323-2323-2323-232323232323")!,
+            UUID(uuidString: "34343434-3434-3434-3434-343434343434")!,
+            UUID(uuidString: "45454545-4545-4545-4545-454545454545")!,
+            UUID(uuidString: "56565656-5656-5656-5656-565656565656")!
+        ]
+
+        return zip(ids, driverNames).enumerated().map { index, pair in
+            let (id, name) = pair
+            return UserProfile(
+                id: id,
+                email: "driver\(index + 1)@chitkara.edu.in",
+                isEmailVerified: true,
+                fullName: name,
+                courseName: "CSE",
+                year: 3
+            )
+        }
+    }()
+
     static let sampleRides: [Ride] = {
 
-        let userIDs = (0..<20).map { _ in UUID() }
+        let userIDs = driverProfiles.map { $0.id }
 
         // 20 realistic Ride objects
         let rides: [Ride] = [
