@@ -351,12 +351,26 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
             if indexPath.section == 1 {
                 return 220
             }   // Nearby Rides
-            return 155                                  // Events
+            return 150                                  // Events
         }
 
         // No upcoming ride
         if indexPath.section == 0 { return 220 }       // Nearby rides only
-        return 155                                     // Events
+        return 150                                     // Events
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if upcomingRide != nil {
+            if indexPath.section == 2 {
+                let event = events[indexPath.row]
+                openEventDetailsScreen(event: event)
+            }
+        } else {
+            if indexPath.section == 1 {
+                let event = events[indexPath.row]
+                openEventDetailsScreen(event: event)
+            }
+        }
     }
 
 

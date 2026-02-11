@@ -4,6 +4,7 @@
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -17,40 +18,38 @@
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="person.circle" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="RdY-Cr-7hC">
-                        <rect key="frame" x="16" y="16.666666666666668" width="48" height="46.666666666666657"/>
+                        <rect key="frame" x="16" y="16.666666666666668" width="64" height="62.666666666666657"/>
                         <color key="backgroundColor" red="0.97254901959999995" green="0.97254901959999995" blue="0.97254901959999995" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstAttribute="width" constant="48" id="3Qw-gs-msP"/>
-                            <constraint firstAttribute="height" constant="48" id="qV8-tw-MYC"/>
+                            <constraint firstAttribute="width" constant="64" id="3Qw-gs-msP"/>
+                            <constraint firstAttribute="height" constant="64" id="qV8-tw-MYC"/>
                         </constraints>
                     </imageView>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="an8-iO-hDB">
-                        <rect key="frame" x="76" y="16" width="51.333333333333343" height="21.333333333333329"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="an8-iO-hDB">
+                        <rect key="frame" x="92" y="15.999999999999996" width="212" height="62.666666666666657"/>
                         <fontDescription key="fontDescription" type="boldSystem" pointSize="17"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="252" ambiguous="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9Ek-3H-2jD">
-                        <rect key="frame" x="76" y="41.333333333333336" width="35.333333333333343" height="17"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="252" misplaced="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9Ek-3H-2jD">
+                        <rect key="frame" x="92" y="83" width="53" height="17"/>
                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="mappin.and.ellipse" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="ghu-aJ-A0k">
-                        <rect key="frame" x="76" y="61" width="16" height="17.333333333333343"/>
+                        <rect key="frame" x="92" y="102.33333333333334" width="16" height="17.333333333333343"/>
                         <constraints>
                             <constraint firstAttribute="width" constant="16" id="Gw7-gn-hcg"/>
                             <constraint firstAttribute="height" constant="16" id="sUQ-v3-uMJ"/>
                         </constraints>
                     </imageView>
-                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xZb-dY-VWO">
-                        <rect key="frame" x="105" y="98.666666666666671" width="110" height="40.000000000000014"/>
+                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="trailing" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="xZb-dY-VWO">
+                        <rect key="frame" x="209" y="128" width="95" height="20"/>
                         <constraints>
-                            <constraint firstAttribute="height" constant="40" id="Bug-gJ-Fo6"/>
-                            <constraint firstAttribute="width" constant="110" id="OnL-bE-ksT"/>
+                            <constraint firstAttribute="height" constant="20" id="Bug-gJ-Fo6"/>
                         </constraints>
-                        <state key="normal" title="Button"/>
-                        <buttonConfiguration key="configuration" style="filled" title="Attend"/>
+                        <state key="normal" title="View Details ›"/>
                         <userDefinedRuntimeAttributes>
                             <userDefinedRuntimeAttribute type="boolean" keyPath="keyPath" value="YES"/>
                             <userDefinedRuntimeAttribute type="number" keyPath="keyPath">
@@ -59,27 +58,35 @@
                         </userDefinedRuntimeAttributes>
                     </button>
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Mlk-8V-fgI">
-                        <rect key="frame" x="98" y="61.666666666666657" width="122" height="17"/>
+                        <rect key="frame" x="114" y="103" width="190" height="17"/>
                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                         <nil key="textColor"/>
                         <nil key="highlightedColor"/>
                     </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="251" text="Badge" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="n2a-1O-0Yf">
+                        <rect key="frame" x="177.33333333333334" y="82.666666666666671" width="37.666666666666657" height="14.333333333333329"/>
+                        <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="12"/>
+                        <color key="textColor" systemColor="systemBlueColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
                 </subviews>
                 <constraints>
+                    <constraint firstAttribute="trailing" relation="lessThanOrEqual" secondItem="an8-iO-hDB" secondAttribute="trailing" constant="16" id="0kE-3c-NdY"/>
                     <constraint firstItem="9Ek-3H-2jD" firstAttribute="leading" secondItem="an8-iO-hDB" secondAttribute="leading" id="9E0-mm-1JP"/>
                     <constraint firstItem="RdY-Cr-7hC" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="Ey7-Jc-ZaV"/>
                     <constraint firstItem="an8-iO-hDB" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="16" id="GNX-4J-awl"/>
-                    <constraint firstItem="xZb-dY-VWO" firstAttribute="centerX" secondItem="H2p-sc-9uM" secondAttribute="centerX" id="JXf-Jw-bBt"/>
-                    <constraint firstItem="xZb-dY-VWO" firstAttribute="top" secondItem="Mlk-8V-fgI" secondAttribute="bottom" constant="20" id="UnR-gg-E6o"/>
+                    <constraint firstItem="xZb-dY-VWO" firstAttribute="trailing" secondItem="H2p-sc-9uM" secondAttribute="trailing" constant="-16" id="JXf-Jw-bBt"/>
+                    <constraint firstItem="n2a-1O-0Yf" firstAttribute="top" secondItem="an8-iO-hDB" secondAttribute="bottom" constant="4.3300000000000001" id="OBq-4a-KQ9"/>
+                    <constraint firstItem="xZb-dY-VWO" firstAttribute="top" secondItem="Mlk-8V-fgI" secondAttribute="bottom" constant="8" id="UnR-gg-E6o"/>
                     <constraint firstItem="Mlk-8V-fgI" firstAttribute="centerY" secondItem="ghu-aJ-A0k" secondAttribute="centerY" id="Y1b-Un-8Pb"/>
                     <constraint firstItem="9Ek-3H-2jD" firstAttribute="top" secondItem="an8-iO-hDB" secondAttribute="bottom" constant="4" id="ZZx-mK-sUv"/>
                     <constraint firstItem="Mlk-8V-fgI" firstAttribute="leading" secondItem="ghu-aJ-A0k" secondAttribute="trailing" constant="6" id="aJV-hH-faB"/>
                     <constraint firstItem="ghu-aJ-A0k" firstAttribute="leading" secondItem="an8-iO-hDB" secondAttribute="leading" id="ldg-j9-Fyt"/>
                     <constraint firstItem="an8-iO-hDB" firstAttribute="leading" secondItem="RdY-Cr-7hC" secondAttribute="trailing" constant="12" id="m7S-1L-5Py"/>
-                    <constraint firstAttribute="trailing" secondItem="Mlk-8V-fgI" secondAttribute="trailing" constant="100" id="rRx-wd-4Qt"/>
-                    <constraint firstItem="9Ek-3H-2jD" firstAttribute="trailing" secondItem="an8-iO-hDB" secondAttribute="trailing" constant="-16" id="uM8-hy-3Zl"/>
+                    <constraint firstItem="n2a-1O-0Yf" firstAttribute="leading" secondItem="9Ek-3H-2jD" secondAttribute="trailing" constant="50" id="mcx-3T-tSa"/>
+                    <constraint firstAttribute="trailing" secondItem="Mlk-8V-fgI" secondAttribute="trailing" constant="16" id="rRx-wd-4Qt"/>
                     <constraint firstItem="ghu-aJ-A0k" firstAttribute="top" secondItem="9Ek-3H-2jD" secondAttribute="bottom" constant="4" id="xSm-QR-DrM"/>
-                    <constraint firstAttribute="bottom" secondItem="xZb-dY-VWO" secondAttribute="bottom" constant="21.329999999999998" id="xyJ-F7-KfX"/>
+                    <constraint firstAttribute="bottom" secondItem="xZb-dY-VWO" secondAttribute="bottom" constant="12" id="xyJ-F7-KfX"/>
                     <constraint firstItem="RdY-Cr-7hC" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="16" id="zZy-U6-m9g"/>
                 </constraints>
                 <userDefinedRuntimeAttributes>
@@ -92,6 +99,7 @@
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
             <connections>
                 <outlet property="attendButton" destination="xZb-dY-VWO" id="jsb-Tk-cFU"/>
+                <outlet property="badgeLabel" destination="n2a-1O-0Yf" id="5gO-5m-y4c"/>
                 <outlet property="cardContainerView" destination="H2p-sc-9uM" id="OMM-uO-CgY"/>
                 <outlet property="dateLabel" destination="9Ek-3H-2jD" id="xk4-ZA-MNW"/>
                 <outlet property="eventImageView" destination="RdY-Cr-7hC" id="jlr-qd-KfO"/>
@@ -104,5 +112,8 @@
     <resources>
         <image name="mappin.and.ellipse" catalog="system" width="110" height="128"/>
         <image name="person.circle" catalog="system" width="128" height="123"/>
+        <systemColor name="systemBlueColor">
+            <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
     </resources>
 </document>
