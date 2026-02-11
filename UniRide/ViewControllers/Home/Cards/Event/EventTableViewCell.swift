@@ -5,6 +5,7 @@ class EventTableViewCell: UITableViewCell {
     @IBOutlet weak var eventImageView: UIImageView!
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var dateLabel: UILabel!
+    @IBOutlet weak var badgeLabel: UILabel!
     @IBOutlet weak var locationLabel: UILabel!
     @IBOutlet weak var attendButton: UIButton!
     @IBOutlet weak var cardContainerView: UIView!
@@ -27,7 +28,26 @@ class EventTableViewCell: UITableViewCell {
         layer.shadowRadius = 8
         layer.masksToBounds = false
 
-        attendButton.layer.cornerRadius = 14
+        eventImageView.layer.cornerRadius = 12
+        eventImageView.clipsToBounds = true
+
+        titleLabel.font = .systemFont(ofSize: 17, weight: .bold)
+        titleLabel.numberOfLines = 2
+        titleLabel.lineBreakMode = .byWordWrapping
+        dateLabel.font = .systemFont(ofSize: 13)
+        dateLabel.textColor = .secondaryLabel
+        locationLabel.font = .systemFont(ofSize: 13)
+        locationLabel.textColor = .secondaryLabel
+        locationLabel.numberOfLines = 1
+
+        badgeLabel.font = .systemFont(ofSize: 12, weight: .semibold)
+        badgeLabel.textColor = .systemBlue
+
+        attendButton.setTitle("View Details ›", for: .normal)
+        attendButton.setTitleColor(.systemBlue, for: .normal)
+        attendButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        attendButton.backgroundColor = .clear
+        attendButton.layer.cornerRadius = 0
     }
 
     override func layoutSubviews() {
@@ -48,14 +68,24 @@ class EventTableViewCell: UITableViewCell {
     func configure(with event: EventItem) {
         titleLabel.text = event.title
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy - h:mm a"
-        dateLabel.text = formatter.string(from: event.startsAt)
+        let df = DateFormatter()
+        df.dateFormat = "MMM d"
+        dateLabel.text = df.string(from: event.startsAt)
+        badgeLabel.text = timingBadge(for: event.startsAt)
 
         locationLabel.text = event.location?.name ?? "Location"
 
-        attendButton.setTitle("Attend", for: .normal)
+        attendButton.setTitle("View Details ›", for: .normal)
 
         eventImageView.image = UIImage(named: event.imageName ?? "eventPlaceholder")
+    }
+
+    private func timingBadge(for date: Date) -> String {
+        let cal = Calendar.current
+        if cal.isDateInToday(date) { return "Today" }
+        if cal.isDateInTomorrow(date) { return "Tomorrow" }
+        let weekFromNow = cal.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+        if date <= weekFromNow { return "This Week" }
+        return "Soon"
     }
 }

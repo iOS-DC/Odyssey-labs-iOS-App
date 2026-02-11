@@ -21,6 +21,21 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     @IBOutlet weak var routePillsStack: UIStackView!
     @IBOutlet weak var routePillsContainer: UIView!
+    @IBOutlet weak var chooseRouteLabel: UILabel!
+    @IBOutlet weak var chooseRouteTopConstraint: NSLayoutConstraint?
+    @IBOutlet weak var chooseRouteHeightConstraint: NSLayoutConstraint?
+    @IBOutlet weak var mapTopConstraint: NSLayoutConstraint?
+    @IBOutlet weak var mapHeightConstraint: NSLayoutConstraint?
+    @IBOutlet weak var routePillsHeightConstraint: NSLayoutConstraint?
+    @IBOutlet weak var nextButton: UIButton!
+    @IBOutlet weak var dateTimeStack: UIStackView!
+    @IBOutlet weak var nextTopToMapConstraint: NSLayoutConstraint?
+    @IBOutlet weak var nextTopToPillsConstraint: NSLayoutConstraint?
+    @IBOutlet weak var titleLabel: UILabel!
+    @IBOutlet weak var fromLabelTitle: UILabel!
+    @IBOutlet weak var fromFieldContainer: UIView!
+    @IBOutlet weak var toLabelTitle: UILabel!
+    @IBOutlet weak var toFieldContainer: UIView!
     private let datePicker = UIDatePicker()
     private let timePicker = UIDatePicker()
 
@@ -36,6 +51,16 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     private var selectedRoute: MKRoute?
 
     @IBOutlet weak var contentView: UIView!
+
+    private let loadingContainer = UIStackView()
+    private let loadingSpinner = UIActivityIndicatorView(style: .medium)
+    private let loadingLabel = UILabel()
+    private var isLoadingVisible = false
+    private let emptyStateLabel = UILabel()
+    private var emptyStateHeightConstraint: NSLayoutConstraint?
+    private var nextTopToEmptyStateConstraint: NSLayoutConstraint?
+    private var formStackView: UIStackView?
+    private let nextButtonContainer = UIView()
     override func viewDidLoad() {
         super.viewDidLoad()
         setDefaultDateAndTime()
@@ -45,6 +70,11 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setupAutocomplete()
         setupPickers()
         routePillsContainer.applySmallCard()
+        setupLoadingView()
+        setupEmptyState()
+        setupFormStackLayout()
+        setInitialRouteUIState()
+        updateNextButtonState()
 
     }
     private func setDefaultDateAndTime() {
@@ -77,6 +107,110 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     }
 
+    private func setupLoadingView() {
+        loadingContainer.axis = .horizontal
+        loadingContainer.spacing = 8
+        loadingContainer.alignment = .center
+        loadingContainer.translatesAutoresizingMaskIntoConstraints = false
+        loadingContainer.alpha = 0
+
+        loadingLabel.text = "Finding best routes…"
+        loadingLabel.textColor = .secondaryLabel
+        loadingLabel.font = .systemFont(ofSize: 14, weight: .medium)
+
+        loadingSpinner.hidesWhenStopped = true
+
+        loadingContainer.addArrangedSubview(loadingSpinner)
+        loadingContainer.addArrangedSubview(loadingLabel)
+    }
+
+    private func setupFormStackLayout() {
+        guard formStackView == nil else { return }
+
+        let orderedViews: [UIView] = [
+            titleLabel,
+            fromLabelTitle,
+            fromFieldContainer,
+            toLabelTitle,
+            toFieldContainer,
+            dateTimeStack,
+            loadingContainer,
+            emptyStateLabel,
+            chooseRouteLabel,
+            mapView,
+            routePillsContainer
+        ]
+
+        // Remove legacy contentView constraints on section blocks before stacking.
+        let orderedSet = Set(orderedViews.map { ObjectIdentifier($0) } + [ObjectIdentifier(nextButton)])
+        let oldConstraints = contentView.constraints.filter { constraint in
+            let first = (constraint.firstItem as? UIView).map { orderedSet.contains(ObjectIdentifier($0)) } ?? false
+            let second = (constraint.secondItem as? UIView).map { orderedSet.contains(ObjectIdentifier($0)) } ?? false
+            return first || second
+        }
+        NSLayoutConstraint.deactivate(oldConstraints)
+
+        nextButton.removeFromSuperview()
+        nextButtonContainer.translatesAutoresizingMaskIntoConstraints = false
+        nextButtonContainer.addSubview(nextButton)
+        nextButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            nextButton.centerXAnchor.constraint(equalTo: nextButtonContainer.centerXAnchor),
+            nextButton.topAnchor.constraint(equalTo: nextButtonContainer.topAnchor),
+            nextButton.bottomAnchor.constraint(equalTo: nextButtonContainer.bottomAnchor),
+            nextButtonContainer.heightAnchor.constraint(equalToConstant: 40)
+        ])
+
+        let stack = UIStackView(arrangedSubviews: orderedViews + [nextButtonContainer])
+        stack.axis = .vertical
+        stack.spacing = 16
+        stack.alignment = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.setContentHuggingPriority(.required, for: .vertical)
+
+        stack.setCustomSpacing(20, after: titleLabel)
+        stack.setCustomSpacing(12, after: fromLabelTitle)
+        stack.setCustomSpacing(12, after: toLabelTitle)
+        stack.setCustomSpacing(16, after: dateTimeStack)
+        stack.setCustomSpacing(16, after: loadingContainer)
+        stack.setCustomSpacing(20, after: routePillsContainer)
+
+        contentView.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -20)
+        ])
+
+        formStackView = stack
+    }
+
+    private func setInitialRouteUIState() {
+        chooseRouteLabel.alpha = 0
+        chooseRouteLabel.isHidden = true
+        mapView.alpha = 0
+        mapView.isHidden = true
+        routePillsContainer.alpha = 0
+        routePillsContainer.isHidden = true
+
+        chooseRouteTopConstraint?.isActive = false
+        chooseRouteHeightConstraint?.constant = 0
+        mapTopConstraint?.isActive = false
+        mapHeightConstraint?.constant = 0
+        routePillsHeightConstraint?.constant = 0
+
+        emptyStateLabel.alpha = 1
+        emptyStateLabel.isHidden = false
+        loadingContainer.alpha = 0
+        loadingContainer.isHidden = true
+        loadingSpinner.stopAnimating()
+
+        nextTopToMapConstraint?.isActive = false
+        nextTopToPillsConstraint?.isActive = false
+        nextTopToEmptyStateConstraint?.isActive = false
+    }
+
     private func setupAutocomplete() {
         
 
@@ -88,6 +222,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         fromTextField.delegate = self
         toTextField.delegate = self
+        fromTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
+        toTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
     }
 
     // MARK: - Setup Pickers
@@ -151,6 +287,9 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     }
     private func buildRoutePills() {
         routePillsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        routePillsContainer.subviews
+            .compactMap { $0 as? UIVisualEffectView }
+            .forEach { $0.removeFromSuperview() }
         let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
         blur.frame = routePillsContainer.bounds
         blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -187,15 +326,20 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     
     @objc private func routePillTapped(_ sender: UIButton) {
+        guard routes.indices.contains(sender.tag) else { return }
         selectedRoute = routes[sender.tag]
 
         drawRoutes()
-        mapView.setVisibleRoute(selectedRoute!)
+        if let route = selectedRoute {
+            mapView.setVisibleRoute(route)
+        }
         UIView.animate(withDuration: 0.25,
                        delay: 0,
                        usingSpringWithDamping: 0.8,
                        initialSpringVelocity: 0.5) {
-            self.mapView.setVisibleRoute(self.selectedRoute!)
+            if let route = self.selectedRoute {
+                self.mapView.setVisibleRoute(route)
+            }
         }
             
         // Update pill states
@@ -222,6 +366,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
                 }
 
                 self.suggestionsTable.isHidden = true
+                self.updateNextButtonState()
                 self.tryFetchRoutes()
             }
         }
@@ -231,15 +376,26 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     private func tryFetchRoutes() {
         guard let f = fromCoord, let t = toCoord else { return }
 
+        showLoading()
         MapKitManager.shared.getRoutes(from: f, to: t) { routes in
             DispatchQueue.main.async {
                 self.routes = routes
                 self.selectedRoute = routes.first
+                guard let selected = self.selectedRoute else {
+                    self.hideLoading()
+                    self.emptyStateLabel.text = "No routes available for this trip"
+                    self.emptyStateLabel.alpha = 1
+                    self.emptyStateLabel.isHidden = false
+                    self.setInitialRouteUIState()
+                    return
+                }
 
                 self.drawRoutes()
-                self.mapView.setVisibleRoute(self.selectedRoute!)
+                self.mapView.setVisibleRoute(selected)
 
                 self.buildRoutePills()
+                self.hideLoading()
+                self.revealRouteUI()
             }
         }
     }
@@ -255,6 +411,115 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             polyline.title = (route == selectedRoute) ? "selected" : "unselected"
             mapView.addOverlay(polyline)
         }
+    }
+
+    private func showLoading() {
+        guard !isLoadingVisible else { return }
+        isLoadingVisible = true
+        loadingContainer.isHidden = false
+        loadingSpinner.startAnimating()
+        emptyStateLabel.alpha = 0
+        emptyStateLabel.isHidden = true
+
+        if UIAccessibility.isReduceMotionEnabled {
+            loadingContainer.alpha = 1
+            return
+        }
+
+        loadingContainer.transform = CGAffineTransform(translationX: 0, y: 6)
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
+            self.loadingContainer.alpha = 1
+            self.loadingContainer.transform = .identity
+        }
+    }
+
+    private func hideLoading() {
+        guard isLoadingVisible else { return }
+        isLoadingVisible = false
+
+        let finish = {
+            self.loadingContainer.alpha = 0
+            self.loadingContainer.isHidden = true
+            self.loadingSpinner.stopAnimating()
+        }
+
+        if UIAccessibility.isReduceMotionEnabled {
+            finish()
+            return
+        }
+
+        UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseIn]) {
+            self.loadingContainer.alpha = 0
+        } completion: { _ in
+            self.loadingSpinner.stopAnimating()
+        }
+    }
+
+    private func revealRouteUI() {
+        chooseRouteLabel.isHidden = false
+        mapView.isHidden = false
+        routePillsContainer.isHidden = false
+
+        chooseRouteTopConstraint?.isActive = true
+        chooseRouteHeightConstraint?.constant = 20
+        mapTopConstraint?.isActive = true
+        mapHeightConstraint?.constant = 200
+        routePillsHeightConstraint?.constant = 56
+
+        loadingContainer.isHidden = true
+        nextTopToEmptyStateConstraint?.isActive = false
+        nextTopToMapConstraint?.isActive = false
+        nextTopToPillsConstraint?.isActive = false
+
+        if UIAccessibility.isReduceMotionEnabled {
+            chooseRouteLabel.alpha = 1
+            mapView.alpha = 1
+            routePillsContainer.alpha = 1
+            emptyStateLabel.alpha = 0
+            emptyStateLabel.isHidden = true
+            emptyStateHeightConstraint?.isActive = true
+            self.view.layoutIfNeeded()
+            return
+        }
+
+        chooseRouteLabel.transform = CGAffineTransform(translationX: 0, y: 8)
+        mapView.transform = CGAffineTransform(translationX: 0, y: 8)
+        routePillsContainer.transform = CGAffineTransform(translationX: 0, y: 8)
+
+        UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut]) {
+            self.chooseRouteLabel.alpha = 1
+            self.mapView.alpha = 1
+            self.routePillsContainer.alpha = 1
+            self.emptyStateLabel.alpha = 0
+            self.chooseRouteLabel.transform = .identity
+            self.mapView.transform = .identity
+            self.routePillsContainer.transform = .identity
+            self.emptyStateHeightConstraint?.isActive = true
+            self.view.layoutIfNeeded()
+        } completion: { _ in
+            self.emptyStateLabel.isHidden = true
+        }
+    }
+
+    private func setupEmptyState() {
+        emptyStateLabel.text = "Enter pickup and destination to see available routes"
+        emptyStateLabel.textColor = .secondaryLabel
+        emptyStateLabel.font = .systemFont(ofSize: 14)
+        emptyStateLabel.textAlignment = .center
+        emptyStateLabel.numberOfLines = 0
+        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    private func updateNextButtonState() {
+        let hasFrom = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasTo = !(toTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let enabled = hasFrom && hasTo
+        nextButton.isEnabled = enabled
+        nextButton.alpha = enabled ? 1.0 : 0.4
+    }
+
+    @objc private func textFieldsDidChange() {
+        updateNextButtonState()
     }
 
     // MARK: - Renderer
@@ -307,6 +572,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     // MARK: - NEXT BUTTON
     @IBAction func nextTapped(_ sender: Any) {
+        guard let from = fromCoord, let to = toCoord else { return }
 
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
         let vc = sb.instantiateViewController(withIdentifier: "VehicleDetailsViewController") as! VehicleDetailsViewController
@@ -314,8 +580,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         vc.date = datePicker.date
         vc.time = timePicker.date
 
-        vc.source = LocationPoint(lat: fromCoord!.latitude, lon: fromCoord!.longitude, address: fromTextField.text)
-        vc.destination = LocationPoint(lat: toCoord!.latitude, lon: toCoord!.longitude, address: toTextField.text)
+        vc.source = LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text)
+        vc.destination = LocationPoint(lat: to.latitude, lon: to.longitude, address: toTextField.text)
 
         if let route = selectedRoute {
             vc.selectedRoute = MapKitManager.shared.convert(route)
@@ -324,5 +590,3 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         navigationController?.pushViewController(vc, animated: true)
     }
 }
-
-
