@@ -10,15 +10,14 @@ class ProfileViewController: UIViewController {
     @IBOutlet weak var memberSinceLabel: UILabel!
     @IBOutlet weak var ratingLabel: UILabel!
     @IBOutlet weak var ridesLabel: UILabel!
-    
+
     // These two are only TITLES ("Email", "Phone")
     @IBOutlet weak var emailLabel: UILabel!
     @IBOutlet weak var phoneLabel: UILabel!
-    
+
     // Actual text fields to show values
     @IBOutlet weak var emailTextField: UITextField!
     @IBOutlet weak var phoneTextField: UITextField!
-    
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -35,7 +34,7 @@ class ProfileViewController: UIViewController {
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        
+
         profileImageView.layer.cornerRadius = profileImageView.bounds.height / 2
         profileImageView.clipsToBounds = true
         profileImageView.contentMode = .scaleAspectFill
@@ -96,7 +95,9 @@ class ProfileViewController: UIViewController {
 
     // MARK: - Async Image Loader
     private func loadImageAsync(from url: URL) {
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+            guard let self = self else { return }
+
             if let data = data, let image = UIImage(data: data) {
                 DispatchQueue.main.async {
                     self.profileImageView.image = image
@@ -111,6 +112,7 @@ class ProfileViewController: UIViewController {
 
     // MARK: - Edit Button Action
     @objc private func editButtonTapped() {
+
         let storyboard = UIStoryboard(name: "EditProfile", bundle: nil)
 
         guard let editVC = storyboard.instantiateViewController(
@@ -123,21 +125,43 @@ class ProfileViewController: UIViewController {
         navigationController?.pushViewController(editVC, animated: true)
     }
 
-    // MARK: - Logout Button Action
+    // MARK: - Logout Button Action (WITH CONFIRMATION)
     @objc private func logoutTapped() {
+
+        let alert = UIAlertController(
+            title: "Log Out",
+            message: "Are you sure you want to log out?",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        alert.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
+            self?.performLogout()
+        })
+
+        present(alert, animated: true)
+    }
+
+    // MARK: - Perform Logout (GO TO EMAIL LOGIN)
+    private func performLogout() {
 
         UserDataModel.shared.logout()
 
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let onboardingVC = storyboard.instantiateViewController(withIdentifier: "OnboardingViewController")
+
+        let emailVC = storyboard.instantiateViewController(
+            withIdentifier: "EmailViewController"
+        )
+
+        let nav = UINavigationController(rootViewController: emailVC)
 
         if let sceneDelegate = view.window?.windowScene?.delegate as? SceneDelegate {
-            let nav = UINavigationController(rootViewController: onboardingVC)
             sceneDelegate.window?.rootViewController = nav
             sceneDelegate.window?.makeKeyAndVisible()
         }
 
-        print("🚪 User logged out → moved to Onboarding")
+        print("🚪 User logged out → moved to EmailViewController")
     }
 }
 
