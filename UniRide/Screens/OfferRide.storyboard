@@ -554,7 +554,7 @@
                         <outlet property="bikeView" destination="Otz-h4-5Iw" id="7Is-fo-vAJ"/>
                         <outlet property="carView" destination="EGx-r6-ePC" id="DsJ-MH-s2g"/>
                         <outlet property="costTextField" destination="o2P-MW-kQr" id="oiy-zQ-iNE"/>
-                        <outlet property="maxSeatsLabel" destination="5bP-qu-YBu" id="4fe-ce-KOn"/>
+                        <outlet property="maxSeatsLabel" destination="8Ga-p9-xQf" id="4fe-ce-KOn"/>
                         <outlet property="minusButton" destination="e8H-hS-43G" id="GNH-fa-cCw"/>
                         <outlet property="nextButton" destination="Zk3-Hv-7Df" id="Fq2-5D-ZSI"/>
                         <outlet property="plusButton" destination="ffv-YI-Vvc" id="4bF-WI-zkI"/>

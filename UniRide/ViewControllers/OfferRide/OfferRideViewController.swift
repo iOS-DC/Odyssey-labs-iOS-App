@@ -11,6 +11,7 @@ import UIKit
 import MapKit
 
 class OfferRideViewController: UIViewController, UITableViewDelegate, UITableViewDataSource,UITextFieldDelegate,MKMapViewDelegate {
+    private let minimumLeadTimeSeconds: TimeInterval = 10 * 60
 
     @IBOutlet weak var fromTextField: UITextField!
     @IBOutlet weak var toTextField: UITextField!
@@ -86,7 +87,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         // Set default time
         let tf = DateFormatter()
         tf.dateFormat = "hh:mm a"
-        timeTextField.text = tf.string(from: Date())
+        timeTextField.text = tf.string(from: minimumRideDateTime())
     }
 
     private func setupUI() {
@@ -247,7 +248,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         // TIME PICKER
         timePicker.datePickerMode = .time
         timePicker.preferredDatePickerStyle = .wheels
-        timePicker.date = Date()  // start with current time
+        timePicker.date = minimumRideDateTime()  // start with min allowed time
         
         let timeToolbar = UIToolbar()
         timeToolbar.sizeToFit()
@@ -257,20 +258,47 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         timeTextField.inputView = timePicker
         timeTextField.inputAccessoryView = timeToolbar
+        refreshTimeConstraintIfNeeded()
     }
 
     @objc private func doneSelectingDate() {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yyyy"
         dateTextField.text = formatter.string(from: datePicker.date)
+        refreshTimeConstraintIfNeeded()
         dateTextField.resignFirstResponder()
     }
 
     @objc private func doneSelectingTime() {
+        refreshTimeConstraintIfNeeded()
         let formatter = DateFormatter()
         formatter.dateFormat = "hh:mm a"
         timeTextField.text = formatter.string(from: timePicker.date)
         timeTextField.resignFirstResponder()
+    }
+
+    private func minimumRideDateTime() -> Date {
+        Date().addingTimeInterval(minimumLeadTimeSeconds)
+    }
+
+    private func refreshTimeConstraintIfNeeded() {
+        let minDateTime = minimumRideDateTime()
+        var didAdjustTime = false
+        if Calendar.current.isDateInToday(datePicker.date) {
+            timePicker.minimumDate = minDateTime
+            if timePicker.date < minDateTime {
+                timePicker.date = minDateTime
+                didAdjustTime = true
+            }
+        } else {
+            timePicker.minimumDate = nil
+        }
+
+        if didAdjustTime {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "hh:mm a"
+            timeTextField.text = formatter.string(from: timePicker.date)
+        }
     }
 
 
