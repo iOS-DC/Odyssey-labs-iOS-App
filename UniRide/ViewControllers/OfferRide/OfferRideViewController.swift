@@ -11,6 +11,7 @@ import UIKit
 import MapKit
 
 class OfferRideViewController: UIViewController, UITableViewDelegate, UITableViewDataSource,UITextFieldDelegate,MKMapViewDelegate {
+    private let minimumLeadTimeSeconds: TimeInterval = 10 * 60
 
     @IBOutlet weak var fromTextField: UITextField!
     @IBOutlet weak var toTextField: UITextField!
@@ -22,15 +23,12 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     @IBOutlet weak var routePillsStack: UIStackView!
     @IBOutlet weak var routePillsContainer: UIView!
     @IBOutlet weak var chooseRouteLabel: UILabel!
-    @IBOutlet weak var chooseRouteTopConstraint: NSLayoutConstraint?
-    @IBOutlet weak var chooseRouteHeightConstraint: NSLayoutConstraint?
-    @IBOutlet weak var mapTopConstraint: NSLayoutConstraint?
-    @IBOutlet weak var mapHeightConstraint: NSLayoutConstraint?
-    @IBOutlet weak var routePillsHeightConstraint: NSLayoutConstraint?
     @IBOutlet weak var nextButton: UIButton!
     @IBOutlet weak var dateTimeStack: UIStackView!
-    @IBOutlet weak var nextTopToMapConstraint: NSLayoutConstraint?
-    @IBOutlet weak var nextTopToPillsConstraint: NSLayoutConstraint?
+    @IBOutlet weak var loadingContainer: UIStackView!
+    @IBOutlet weak var loadingSpinner: UIActivityIndicatorView!
+    @IBOutlet weak var loadingLabel: UILabel!
+    @IBOutlet weak var emptyStateLabel: UILabel!
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var fromLabelTitle: UILabel!
     @IBOutlet weak var fromFieldContainer: UIView!
@@ -52,15 +50,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     @IBOutlet weak var contentView: UIView!
 
-    private let loadingContainer = UIStackView()
-    private let loadingSpinner = UIActivityIndicatorView(style: .medium)
-    private let loadingLabel = UILabel()
     private var isLoadingVisible = false
-    private let emptyStateLabel = UILabel()
-    private var emptyStateHeightConstraint: NSLayoutConstraint?
-    private var nextTopToEmptyStateConstraint: NSLayoutConstraint?
-    private var formStackView: UIStackView?
-    private let nextButtonContainer = UIView()
     override func viewDidLoad() {
         super.viewDidLoad()
         setDefaultDateAndTime()
@@ -70,9 +60,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setupAutocomplete()
         setupPickers()
         routePillsContainer.applySmallCard()
-        setupLoadingView()
-        setupEmptyState()
-        setupFormStackLayout()
         setInitialRouteUIState()
         updateNextButtonState()
 
@@ -86,7 +73,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         // Set default time
         let tf = DateFormatter()
         tf.dateFormat = "hh:mm a"
-        timeTextField.text = tf.string(from: Date())
+        timeTextField.text = tf.string(from: minimumRideDateTime())
     }
 
     private func setupUI() {
@@ -107,85 +94,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     }
 
-    private func setupLoadingView() {
-        loadingContainer.axis = .horizontal
-        loadingContainer.spacing = 8
-        loadingContainer.alignment = .center
-        loadingContainer.translatesAutoresizingMaskIntoConstraints = false
-        loadingContainer.alpha = 0
-
-        loadingLabel.text = "Finding best routes…"
-        loadingLabel.textColor = .secondaryLabel
-        loadingLabel.font = .systemFont(ofSize: 14, weight: .medium)
-
-        loadingSpinner.hidesWhenStopped = true
-
-        loadingContainer.addArrangedSubview(loadingSpinner)
-        loadingContainer.addArrangedSubview(loadingLabel)
-    }
-
-    private func setupFormStackLayout() {
-        guard formStackView == nil else { return }
-
-        let orderedViews: [UIView] = [
-            titleLabel,
-            fromLabelTitle,
-            fromFieldContainer,
-            toLabelTitle,
-            toFieldContainer,
-            dateTimeStack,
-            loadingContainer,
-            emptyStateLabel,
-            chooseRouteLabel,
-            mapView,
-            routePillsContainer
-        ]
-
-        // Remove legacy contentView constraints on section blocks before stacking.
-        let orderedSet = Set(orderedViews.map { ObjectIdentifier($0) } + [ObjectIdentifier(nextButton)])
-        let oldConstraints = contentView.constraints.filter { constraint in
-            let first = (constraint.firstItem as? UIView).map { orderedSet.contains(ObjectIdentifier($0)) } ?? false
-            let second = (constraint.secondItem as? UIView).map { orderedSet.contains(ObjectIdentifier($0)) } ?? false
-            return first || second
-        }
-        NSLayoutConstraint.deactivate(oldConstraints)
-
-        nextButton.removeFromSuperview()
-        nextButtonContainer.translatesAutoresizingMaskIntoConstraints = false
-        nextButtonContainer.addSubview(nextButton)
-        nextButton.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            nextButton.centerXAnchor.constraint(equalTo: nextButtonContainer.centerXAnchor),
-            nextButton.topAnchor.constraint(equalTo: nextButtonContainer.topAnchor),
-            nextButton.bottomAnchor.constraint(equalTo: nextButtonContainer.bottomAnchor),
-            nextButtonContainer.heightAnchor.constraint(equalToConstant: 40)
-        ])
-
-        let stack = UIStackView(arrangedSubviews: orderedViews + [nextButtonContainer])
-        stack.axis = .vertical
-        stack.spacing = 16
-        stack.alignment = .fill
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.setContentHuggingPriority(.required, for: .vertical)
-
-        stack.setCustomSpacing(20, after: titleLabel)
-        stack.setCustomSpacing(12, after: fromLabelTitle)
-        stack.setCustomSpacing(12, after: toLabelTitle)
-        stack.setCustomSpacing(16, after: dateTimeStack)
-        stack.setCustomSpacing(16, after: loadingContainer)
-        stack.setCustomSpacing(20, after: routePillsContainer)
-
-        contentView.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -20)
-        ])
-
-        formStackView = stack
-    }
-
     private func setInitialRouteUIState() {
         chooseRouteLabel.alpha = 0
         chooseRouteLabel.isHidden = true
@@ -194,21 +102,11 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         routePillsContainer.alpha = 0
         routePillsContainer.isHidden = true
 
-        chooseRouteTopConstraint?.isActive = false
-        chooseRouteHeightConstraint?.constant = 0
-        mapTopConstraint?.isActive = false
-        mapHeightConstraint?.constant = 0
-        routePillsHeightConstraint?.constant = 0
-
         emptyStateLabel.alpha = 1
         emptyStateLabel.isHidden = false
         loadingContainer.alpha = 0
         loadingContainer.isHidden = true
         loadingSpinner.stopAnimating()
-
-        nextTopToMapConstraint?.isActive = false
-        nextTopToPillsConstraint?.isActive = false
-        nextTopToEmptyStateConstraint?.isActive = false
     }
 
     private func setupAutocomplete() {
@@ -247,7 +145,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         // TIME PICKER
         timePicker.datePickerMode = .time
         timePicker.preferredDatePickerStyle = .wheels
-        timePicker.date = Date()  // start with current time
+        timePicker.date = minimumRideDateTime()  // start with min allowed time
         
         let timeToolbar = UIToolbar()
         timeToolbar.sizeToFit()
@@ -257,20 +155,47 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         timeTextField.inputView = timePicker
         timeTextField.inputAccessoryView = timeToolbar
+        refreshTimeConstraintIfNeeded()
     }
 
     @objc private func doneSelectingDate() {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yyyy"
         dateTextField.text = formatter.string(from: datePicker.date)
+        refreshTimeConstraintIfNeeded()
         dateTextField.resignFirstResponder()
     }
 
     @objc private func doneSelectingTime() {
+        refreshTimeConstraintIfNeeded()
         let formatter = DateFormatter()
         formatter.dateFormat = "hh:mm a"
         timeTextField.text = formatter.string(from: timePicker.date)
         timeTextField.resignFirstResponder()
+    }
+
+    private func minimumRideDateTime() -> Date {
+        Date().addingTimeInterval(minimumLeadTimeSeconds)
+    }
+
+    private func refreshTimeConstraintIfNeeded() {
+        let minDateTime = minimumRideDateTime()
+        var didAdjustTime = false
+        if Calendar.current.isDateInToday(datePicker.date) {
+            timePicker.minimumDate = minDateTime
+            if timePicker.date < minDateTime {
+                timePicker.date = minDateTime
+                didAdjustTime = true
+            }
+        } else {
+            timePicker.minimumDate = nil
+        }
+
+        if didAdjustTime {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "hh:mm a"
+            timeTextField.text = formatter.string(from: timePicker.date)
+        }
     }
 
 
@@ -460,16 +385,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         mapView.isHidden = false
         routePillsContainer.isHidden = false
 
-        chooseRouteTopConstraint?.isActive = true
-        chooseRouteHeightConstraint?.constant = 20
-        mapTopConstraint?.isActive = true
-        mapHeightConstraint?.constant = 200
-        routePillsHeightConstraint?.constant = 56
-
         loadingContainer.isHidden = true
-        nextTopToEmptyStateConstraint?.isActive = false
-        nextTopToMapConstraint?.isActive = false
-        nextTopToPillsConstraint?.isActive = false
 
         if UIAccessibility.isReduceMotionEnabled {
             chooseRouteLabel.alpha = 1
@@ -477,7 +393,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             routePillsContainer.alpha = 1
             emptyStateLabel.alpha = 0
             emptyStateLabel.isHidden = true
-            emptyStateHeightConstraint?.isActive = true
             self.view.layoutIfNeeded()
             return
         }
@@ -494,20 +409,10 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             self.chooseRouteLabel.transform = .identity
             self.mapView.transform = .identity
             self.routePillsContainer.transform = .identity
-            self.emptyStateHeightConstraint?.isActive = true
             self.view.layoutIfNeeded()
         } completion: { _ in
             self.emptyStateLabel.isHidden = true
         }
-    }
-
-    private func setupEmptyState() {
-        emptyStateLabel.text = "Enter pickup and destination to see available routes"
-        emptyStateLabel.textColor = .secondaryLabel
-        emptyStateLabel.font = .systemFont(ofSize: 14)
-        emptyStateLabel.textAlignment = .center
-        emptyStateLabel.numberOfLines = 0
-        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
     }
 
     private func updateNextButtonState() {
