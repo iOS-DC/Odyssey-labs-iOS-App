@@ -231,18 +231,17 @@ final class UpcomingTableViewCell: UITableViewCell {
     }
 
 
-
     @IBAction func toggleMap(_ sender: UIButton) {
+
         isMapExpanded.toggle()
 
         mapView.isHidden = !isMapExpanded
-        mapHeightConstraint.constant = isMapExpanded ? 180 : 1
+        mapHeightConstraint.constant = isMapExpanded ? 180 : 0
         sender.setTitle(isMapExpanded ? "Hide Map" : "Show Map", for: .normal)
 
-        UIView.animate(withDuration: 0.25) {
-            self.contentView.layoutIfNeeded()
-        }
+        delegate?.upcomingCellRequestsToggled(self)   // 👈 VERY IMPORTANT
     }
+
 
     @IBAction func messageTapped(_ sender: UIButton) {
         delegate?.upcomingCellDidTapMessage(self)
