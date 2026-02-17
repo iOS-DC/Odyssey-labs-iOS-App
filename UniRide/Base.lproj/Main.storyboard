@@ -416,6 +416,11 @@
                                         <state key="normal" title="Continue">
                                             <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                                <integer key="value" value="12"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
                                         <connections>
                                             <action selector="continuePressed:" destination="F5q-NO-SiE" eventType="touchUpInside" id="vpK-Ub-Xmx"/>
                                             <action selector="noVehicleTapped:" destination="F5q-NO-SiE" eventType="touchUpInside" id="6BI-wH-Jgg"/>

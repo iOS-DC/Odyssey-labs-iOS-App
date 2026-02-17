@@ -31,7 +31,6 @@ class ProfileStep2ViewController: UIViewController {
         setupVehicleDropdown()
         yesVehicleButton.applyOutlineButton()
         noVehicleButton.applyOutlineButton()
-        continueButton.applyPrimaryButton()
 
     }
 
