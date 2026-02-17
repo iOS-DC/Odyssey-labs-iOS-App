@@ -17,8 +17,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     @IBOutlet weak var toTextField: UITextField!
     @IBOutlet weak var suggestionsTable: UITableView!
     @IBOutlet weak var mapView: MKMapView!
-    @IBOutlet weak var dateTextField: UITextField!
-    @IBOutlet weak var timeTextField: UITextField!
 
     @IBOutlet weak var routePillsStack: UIStackView!
     @IBOutlet weak var routePillsContainer: UIView!
@@ -34,8 +32,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     @IBOutlet weak var fromFieldContainer: UIView!
     @IBOutlet weak var toLabelTitle: UILabel!
     @IBOutlet weak var toFieldContainer: UIView!
-    private let datePicker = UIDatePicker()
-    private let timePicker = UIDatePicker()
+    @IBOutlet weak var datePicker: UIDatePicker!
+    @IBOutlet weak var timePicker: UIDatePicker!
 
     private var fromCoord: CLLocationCoordinate2D?
     private var toCoord: CLLocationCoordinate2D?
@@ -51,6 +49,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     @IBOutlet weak var contentView: UIView!
 
     private var isLoadingVisible = false
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setDefaultDateAndTime()
@@ -65,15 +64,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     }
     private func setDefaultDateAndTime() {
-        // Set default date
-        let df = DateFormatter()
-        df.dateFormat = "dd/MM/yyyy"
-        dateTextField.text = df.string(from: Date())
-
-        // Set default time
-        let tf = DateFormatter()
-        tf.dateFormat = "hh:mm a"
-        timeTextField.text = tf.string(from: minimumRideDateTime())
+        datePicker.date = Date()
+        timePicker.date = minimumRideDateTime()
     }
 
     private func setupUI() {
@@ -126,52 +118,23 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     // MARK: - Setup Pickers
     private func setupPickers() {
-
-        // DATE PICKER
-        datePicker.datePickerMode = .date
-        datePicker.preferredDatePickerStyle = .wheels
         datePicker.minimumDate = Date()
-        datePicker.date = Date()   // start from today
-        
-        let dateToolbar = UIToolbar()
-        dateToolbar.sizeToFit()
-        dateToolbar.setItems([ UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(doneSelectingDate))
-        ], animated: true)
+        if datePicker.date < Date() {
+            datePicker.date = Date()
+        }
+        if timePicker.date < minimumRideDateTime() {
+            timePicker.date = minimumRideDateTime()
+        }
 
-        dateTextField.inputView = datePicker
-        dateTextField.inputAccessoryView = dateToolbar
-
-
-        // TIME PICKER
-        timePicker.datePickerMode = .time
-        timePicker.preferredDatePickerStyle = .wheels
-        timePicker.date = minimumRideDateTime()  // start with min allowed time
-        
-        let timeToolbar = UIToolbar()
-        timeToolbar.sizeToFit()
-        timeToolbar.setItems([
-            UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(doneSelectingTime))
-        ], animated: true)
-
-        timeTextField.inputView = timePicker
-        timeTextField.inputAccessoryView = timeToolbar
         refreshTimeConstraintIfNeeded()
     }
 
-    @objc private func doneSelectingDate() {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yyyy"
-        dateTextField.text = formatter.string(from: datePicker.date)
+    @IBAction func datePickerValueChanged(_ sender: UIDatePicker) {
         refreshTimeConstraintIfNeeded()
-        dateTextField.resignFirstResponder()
     }
 
-    @objc private func doneSelectingTime() {
+    @IBAction func timePickerValueChanged(_ sender: UIDatePicker) {
         refreshTimeConstraintIfNeeded()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "hh:mm a"
-        timeTextField.text = formatter.string(from: timePicker.date)
-        timeTextField.resignFirstResponder()
     }
 
     private func minimumRideDateTime() -> Date {
@@ -192,16 +155,13 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         }
 
         if didAdjustTime {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "hh:mm a"
-            timeTextField.text = formatter.string(from: timePicker.date)
+            // keep picker value in valid range for same-day rides
         }
     }
 
 
     // MARK: - Text Change
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-
         let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
 
         activeField = textField
@@ -210,6 +170,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         return true
     }
+
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool { true }
     private func buildRoutePills() {
         routePillsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         routePillsContainer.subviews

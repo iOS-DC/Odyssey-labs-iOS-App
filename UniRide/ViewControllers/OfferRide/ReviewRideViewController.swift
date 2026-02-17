@@ -327,7 +327,7 @@ class ReviewRideViewController: UIViewController {
              print("[ReviewRide] created ride WITHOUT selectedRoute (fallback travel time will be used).")
          }
 
-         // Navigate back to MyRides tab (assuming tab index 1 is MyRides) and pop navigation stack
+         // Navigate back to MyRides tab
          tabBarController?.selectedIndex = 1
          navigationController?.popToRootViewController(animated: true)
      }
