@@ -36,9 +36,7 @@ final class AvailableRideViewController: UIViewController,
         )
 
         tableView.separatorStyle = .none
-        tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 240
-        
+        tableView.rowHeight = 220
 
         loadAvailableRides()
     }
@@ -159,5 +157,11 @@ extension AvailableRideViewController {
         }
 
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        // Add top & bottom padding
+        let inset: CGFloat = 12
+        cell.contentView.frame = cell.contentView.frame.insetBy(dx: 0, dy: inset / 2)
     }
 }

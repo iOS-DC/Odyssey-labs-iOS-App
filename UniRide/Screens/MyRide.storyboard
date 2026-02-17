@@ -4,7 +4,6 @@
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
-        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -17,29 +16,42 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="ozt-5i-FBz" userLabel="Segmented Control">
-                                <rect key="frame" x="20" y="120" width="353" height="41"/>
+                                <rect key="frame" x="16" y="127.66666666666669" width="361" height="33"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="40" id="cf9-8Y-ICN"/>
+                                    <constraint firstAttribute="height" constant="32" id="cf9-8Y-ICN"/>
                                 </constraints>
                                 <segments>
                                     <segment title="Upcoming"/>
                                     <segment title="Past"/>
                                 </segments>
-                                <color key="selectedSegmentTintColor" red="0.082352941176470587" green="0.72156862745098038" blue="0.65098039215686276" alpha="1" colorSpace="calibratedRGB"/>
                                 <connections>
                                     <action selector="segmentChanged:" destination="Y6W-OH-hqX" eventType="valueChanged" id="T3f-Lu-WgA"/>
                                 </connections>
                             </segmentedControl>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="hl7-Ac-weu">
-                                <rect key="frame" x="0.0" y="168" width="393" height="650"/>
+                                <rect key="frame" x="0.0" y="167.66666666666669" width="393" height="650.33333333333326"/>
                                 <color key="backgroundColor" red="0.96470588235294119" green="0.98039215686274506" blue="0.98431372549019602" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </tableView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="My Rides" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3Tk-n0-Qgb">
-                                <rect key="frame" x="168" y="69" width="57" height="21"/>
+                                <rect key="frame" x="145.66666666666666" y="69" width="102" height="28.666666666666671"/>
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
                                 <color key="textColor" red="0.12156862745098039" green="0.16078431372549021" blue="0.21568627450980393" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="flt-btn-001" userLabel="Filter Button">
+                                <rect key="frame" x="327" y="160" width="56" height="30"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="30" id="flt-h-001"/>
+                                    <constraint firstAttribute="width" constant="56" id="flt-w-001"/>
+                                </constraints>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" image="line.3.horizontal.decrease.circle" catalog="system" title="Filter">
+                                    <fontDescription key="titleFontDescription" type="system" pointSize="13"/>
+                                </buttonConfiguration>
+                                <connections>
+                                    <action selector="filterButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="flt-act-001"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" red="0.96470588235294119" green="0.98039215686274506" blue="0.98431372549019602" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -47,16 +59,19 @@
                             <constraint firstItem="ozt-5i-FBz" firstAttribute="top" secondItem="3Tk-n0-Qgb" secondAttribute="bottom" constant="30" id="2np-vC-3K6"/>
                             <constraint firstItem="3Tk-n0-Qgb" firstAttribute="centerX" secondItem="5EZ-qb-Rvc" secondAttribute="centerX" id="7Kz-zu-UAP"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="hl7-Ac-weu" secondAttribute="bottom" id="7fU-sd-olT"/>
-                            <constraint firstItem="ozt-5i-FBz" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="20" id="Lvq-nr-GfR"/>
+                            <constraint firstItem="ozt-5i-FBz" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="16" id="Lvq-nr-GfR"/>
                             <constraint firstItem="hl7-Ac-weu" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="Yuo-MB-v1E"/>
-                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="ozt-5i-FBz" secondAttribute="trailing" constant="20" id="a8a-ap-XWW"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="ozt-5i-FBz" secondAttribute="trailing" constant="16" id="a8a-ap-XWW"/>
                             <constraint firstItem="hl7-Ac-weu" firstAttribute="top" secondItem="ozt-5i-FBz" secondAttribute="bottom" constant="8" id="bBJ-t6-dIB"/>
                             <constraint firstItem="hl7-Ac-weu" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="bOI-ak-6VM"/>
                             <constraint firstItem="3Tk-n0-Qgb" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="10" id="oqY-iS-yYu"/>
+                            <constraint firstItem="flt-btn-001" firstAttribute="top" secondItem="ozt-5i-FBz" secondAttribute="bottom" constant="8" id="flt-top-001"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="flt-btn-001" secondAttribute="trailing" constant="10" id="flt-trail-001"/>
                         </constraints>
                     </view>
                     <tabBarItem key="tabBarItem" title="MyRide" image="car" catalog="system" id="trU-ad-aCg"/>
                     <connections>
+                        <outlet property="filterButton" destination="flt-btn-001" id="flt-out-001"/>
                         <outlet property="segmentedControl" destination="ozt-5i-FBz" id="qja-Gk-VWB"/>
                         <outlet property="tableView" destination="hl7-Ac-weu" id="VBA-dy-rj6"/>
                     </connections>
@@ -68,8 +83,6 @@
     </scenes>
     <resources>
         <image name="car" catalog="system" width="128" height="95"/>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
+        <image name="line.3.horizontal.decrease.circle" catalog="system" width="128" height="123"/>
     </resources>
 </document>

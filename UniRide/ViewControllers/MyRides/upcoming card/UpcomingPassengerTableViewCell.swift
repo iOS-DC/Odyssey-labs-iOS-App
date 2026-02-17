@@ -93,7 +93,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         seatsLabel.text = "\(booked)/\(ride.seatsTotal) seats"
 
         // Ride status badge
-        rideStatusLabel.text = ride.status.rawValue.capitalized
+        rideStatusLabel.text = "  \(ride.status.rawValue.capitalized)  "
         let (rideBgColor, rideTextColor): (UIColor, UIColor)
         switch ride.status {
         case .published:
@@ -114,20 +114,22 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         }
         applyBadgeStyle(to: rideStatusLabel, backgroundColor: rideBgColor, textColor: rideTextColor)
 
-        // Role label
-        roleLabel.text = trip.role == .passenger ? "Passenger" : "Hosting"
+        // Role label with badge style
+        let roleText = trip.role == .passenger ? "  Passenger  " : "  Hosting  "
+        roleLabel.text = roleText
+        applyBadgeStyle(to: roleLabel, backgroundColor: .systemGray6, textColor: .darkGray)
 
         // Request / booking status badge
         if let status = trip.requestStatus {
             if status == .approved {
-                requestStatusLabel.text = "Confirmed"
+                requestStatusLabel.text = "  Confirmed  "
                 applyBadgeStyle(
                     to: requestStatusLabel,
                     backgroundColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15),
                     textColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
                 )
             } else {
-                requestStatusLabel.text = status.rawValue.capitalized
+                requestStatusLabel.text = "  \(status.rawValue.capitalized)  "
                 applyBadgeStyle(
                     to: requestStatusLabel,
                     backgroundColor: UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 0.15),
@@ -139,7 +141,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             if let me = UserDataModel.shared.getCurrentUser() {
                 let bookings = RideDataModel.shared.listBookings(for: ride.id)
                 if bookings.contains(where: { $0.passengerUserID == me.id && $0.status == .confirmed }) {
-                    requestStatusLabel.text = "Confirmed"
+                    requestStatusLabel.text = "  Confirmed  "
                     applyBadgeStyle(
                         to: requestStatusLabel,
                         backgroundColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15),
@@ -215,8 +217,11 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
         label.backgroundColor = backgroundColor
         label.textColor = textColor
-        label.layer.cornerRadius = 10
+        label.font = .systemFont(ofSize: 10, weight: .bold) // Slightly smaller font
+        label.layer.cornerRadius = 8 // Better pill look
         label.layer.masksToBounds = true
         label.textAlignment = .center
+        
+        // Horizontal padding is achieved by adding spaces to the text in configure()
     }
 }

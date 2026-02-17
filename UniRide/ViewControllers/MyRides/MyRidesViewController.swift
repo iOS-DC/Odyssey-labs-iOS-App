@@ -4,7 +4,15 @@ final class MyRidesViewController: UIViewController {
 
     @IBOutlet weak var segmentedControl: UISegmentedControl!
     @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var filterButton: UIButton?
 
+    private enum RideFilter {
+        case all
+        case completed
+        case cancelled
+    }
+
+    private var currentFilter: RideFilter = .all
     private var upcomingTrips: [RideDataModel.MyTrip] = []
     private var pastTrips: [RideDataModel.MyTrip] = []
     private var currentTrips: [RideDataModel.MyTrip] = []
@@ -75,15 +83,68 @@ final class MyRidesViewController: UIViewController {
 
     @IBAction func segmentChanged(_ sender: UISegmentedControl) {
         updateForSelectedSegment()
+        
+        // Show/hide filter button based on segment
+        UIView.animate(withDuration: 0.3) {
+            self.filterButton?.isHidden = sender.selectedSegmentIndex == 0
+        }
     }
 
     private func updateForSelectedSegment() {
         guard segmentedControl.selectedSegmentIndex < 2 else { return }
 
-        currentTrips = segmentedControl.selectedSegmentIndex == 0
-            ? upcomingTrips
-            : pastTrips
+        if segmentedControl.selectedSegmentIndex == 0 {
+            currentTrips = upcomingTrips
+        } else {
+            applyFilter()
+        }
 
+        tableView.reloadData()
+    }
+
+    // MARK: - Filter
+    @IBAction func filterButtonTapped(_ sender: UIButton) {
+        let alert = UIAlertController(
+            title: "Filter Rides",
+            message: "Select filter option",
+            preferredStyle: .actionSheet
+        )
+
+        alert.addAction(UIAlertAction(title: "All", style: .default) { [weak self] _ in
+            self?.currentFilter = .all
+            self?.applyFilter()
+        })
+
+        alert.addAction(UIAlertAction(title: "Completed", style: .default) { [weak self] _ in
+            self?.currentFilter = .completed
+            self?.applyFilter()
+        })
+
+        alert.addAction(UIAlertAction(title: "Cancelled", style: .default) { [weak self] _ in
+            self?.currentFilter = .cancelled
+            self?.applyFilter()
+        })
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+        // For iPad support
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = sender
+            popover.sourceRect = sender.bounds
+        }
+
+        present(alert, animated: true)
+    }
+
+    private func applyFilter() {
+        switch currentFilter {
+        case .all:
+            currentTrips = pastTrips
+        case .completed:
+            currentTrips = pastTrips.filter { $0.ride.status == .completed }
+        case .cancelled:
+            currentTrips = pastTrips.filter { $0.ride.status == .cancelled }
+        }
         tableView.reloadData()
     }
 

@@ -136,7 +136,8 @@ final class UpcomingTableViewCell: UITableViewCell {
         print(" CONFIGURE CELL — Ride:", ride.id)
         print(" Ride status:", ride.status.rawValue)
 
-        roleLabel.text = "Hosting"
+        roleLabel.text = "  Hosting  "
+        applyBadgeStyle(to: roleLabel, backgroundColor: .systemGray6, textColor: .darkGray)
 
         dateLabel.text = DateFormatter.localizedString(
             from: ride.departureTime,
@@ -169,8 +170,8 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         seatsLabel.text = "\(occupiedSeats)/\(ride.seatsTotal)"
 
-        // Apply badge styling to status label
-        statusLabel.text = ride.status.rawValue.capitalized
+        // Apply badge styling to status label with padding
+        statusLabel.text = "  \(ride.status.rawValue.capitalized)  "
         
         let (bgColor, textColor): (UIColor, UIColor)
         switch ride.status {
@@ -251,7 +252,7 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         mapView.isHidden = !isMapExpanded
         mapHeightConstraint.constant = isMapExpanded ? 180 : 0
-        sender.setTitle(isMapExpanded ? "Hide Map" : "Show Map", for: .normal)
+        sender.setTitle(isMapExpanded ? "Hide Route" : "Show Route", for: .normal)
 
         delegate?.upcomingCellRequestsToggled(self)   // 👈 VERY IMPORTANT
     }
@@ -294,9 +295,12 @@ final class UpcomingTableViewCell: UITableViewCell {
     private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
         label.backgroundColor = backgroundColor
         label.textColor = textColor
-        label.layer.cornerRadius = 10
+        label.font = .systemFont(ofSize: 10, weight: .bold) // Slightly smaller font
+        label.layer.cornerRadius = 8 // Better pill look
         label.layer.masksToBounds = true
         label.textAlignment = .center
+        
+        // Horizontal padding is achieved by adding spaces to the text in configure()
     }
 }
 
@@ -342,9 +346,21 @@ extension UpcomingTableViewCell: UITableViewDataSource, UITableViewDelegate {
             cell.textLabel?.text = "No approved passengers"
             cell.textLabel?.textAlignment = .center
             cell.selectionStyle = .none
+            cell.imageView?.image = nil
         } else {
-            cell.textLabel?.text = approvedPassengers[indexPath.row]
+            let passengerName = approvedPassengers[indexPath.row]
+            cell.textLabel?.text = passengerName
             cell.textLabel?.textAlignment = .left
+            cell.textLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+            
+            // Profile circle
+            let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .regular)
+            cell.imageView?.image = UIImage(systemName: "person.circle.fill", withConfiguration: config)
+            cell.imageView?.tintColor = .systemGray4
+            
+            // Circle styling
+            cell.imageView?.layer.cornerRadius = 12
+            cell.imageView?.layer.masksToBounds = true
         }
 
         return cell
