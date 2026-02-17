@@ -40,14 +40,12 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
         selectionStyle = .none
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
 
-        // Card styling
+        // Match Home page card styling - flat design with 20pt corners
         cardView.layer.cornerRadius = 20
-        cardView.layer.masksToBounds = false
-        cardView.layer.shadowOpacity = 0.12
-        cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        cardView.layer.shadowRadius = 8
-        cardView.layer.shadowColor = UIColor.black.cgColor
+        cardView.backgroundColor = .systemBackground
 
         // Image view
         hostImageView.clipsToBounds = true
@@ -94,25 +92,47 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let booked = ride.seatsTotal - ride.seatsAvailable
         seatsLabel.text = "\(booked)/\(ride.seatsTotal) seats"
 
-        // Ride lifecycle
+        // Ride status badge
         rideStatusLabel.text = ride.status.rawValue.capitalized
+        let (rideBgColor, rideTextColor): (UIColor, UIColor)
         switch ride.status {
-        case .published: rideStatusLabel.textColor = .systemGreen
-        case .ongoing: rideStatusLabel.textColor = .systemBlue
-        case .completed: rideStatusLabel.textColor = .secondaryLabel
-        case .cancelled: rideStatusLabel.textColor = .systemRed
-        case .draft: rideStatusLabel.textColor = .systemOrange
+        case .published:
+            rideBgColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15)
+            rideTextColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+        case .ongoing:
+            rideBgColor = UIColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 0.15)
+            rideTextColor = UIColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 1.0)
+        case .completed:
+            rideBgColor = UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 0.10)
+            rideTextColor = UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 1.0)
+        case .cancelled:
+            rideBgColor = UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 0.15)
+            rideTextColor = UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 1.0)
+        case .draft:
+            rideBgColor = UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 0.15)
+            rideTextColor = UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0)
         }
+        applyBadgeStyle(to: rideStatusLabel, backgroundColor: rideBgColor, textColor: rideTextColor)
 
         // Role label
         roleLabel.text = trip.role == .passenger ? "Passenger" : "Hosting"
 
-        // Request / booking status
+        // Request / booking status badge
         if let status = trip.requestStatus {
             if status == .approved {
                 requestStatusLabel.text = "Confirmed"
+                applyBadgeStyle(
+                    to: requestStatusLabel,
+                    backgroundColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15),
+                    textColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                )
             } else {
                 requestStatusLabel.text = status.rawValue.capitalized
+                applyBadgeStyle(
+                    to: requestStatusLabel,
+                    backgroundColor: UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 0.15),
+                    textColor: UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0)
+                )
             }
         } else {
             // Defensive: if there's a confirmed booking for the current user, show Confirmed
@@ -120,11 +140,18 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
                 let bookings = RideDataModel.shared.listBookings(for: ride.id)
                 if bookings.contains(where: { $0.passengerUserID == me.id && $0.status == .confirmed }) {
                     requestStatusLabel.text = "Confirmed"
+                    applyBadgeStyle(
+                        to: requestStatusLabel,
+                        backgroundColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15),
+                        textColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                    )
                 } else {
                     requestStatusLabel.text = "-"
+                    requestStatusLabel.backgroundColor = .clear
                 }
             } else {
                 requestStatusLabel.text = "-"
+                requestStatusLabel.backgroundColor = .clear
             }
         }
 
@@ -182,5 +209,14 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         if h > 0 && m > 0 { return "\(h)h \(m)m" }
         else if h > 0 { return "\(h)h" }
         else { return "\(m)m" }
+    }
+    
+    // MARK: - Badge Styling
+    private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
+        label.backgroundColor = backgroundColor
+        label.textColor = textColor
+        label.layer.cornerRadius = 10
+        label.layer.masksToBounds = true
+        label.textAlignment = .center
     }
 }
