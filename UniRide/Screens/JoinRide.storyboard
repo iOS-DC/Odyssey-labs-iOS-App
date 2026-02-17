@@ -170,7 +170,7 @@
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Where And When" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Yja-PQ-dN2">
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Where and when" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Yja-PQ-dN2">
                                         <rect key="frame" x="20" y="20" width="195" height="28.666666666666671"/>
                                         <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
                                         <nil key="textColor"/>
@@ -184,7 +184,7 @@
                                         </constraints>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Find Ride">
-                                            <color key="baseBackgroundColor" red="0.062745098040000002" green="0.79215686269999996" blue="0.69019607839999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="didTapFindRide:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="YK5-3e-0rR"/>
@@ -195,8 +195,10 @@
                                 <constraints>
                                     <constraint firstItem="ana-ml-QAg" firstAttribute="top" secondItem="Bpz-ee-gbp" secondAttribute="bottom" constant="20" id="9wg-Wq-cFw"/>
                                     <constraint firstItem="Bpz-ee-gbp" firstAttribute="leading" secondItem="tx5-Ru-dIN" secondAttribute="leading" constant="20" id="Bwp-dj-JUi"/>
+                                    <constraint firstAttribute="trailing" secondItem="Bpz-ee-gbp" secondAttribute="trailing" constant="20" id="G4q-eR-X3h"/>
                                     <constraint firstItem="Yja-PQ-dN2" firstAttribute="top" secondItem="tx5-Ru-dIN" secondAttribute="top" constant="20" id="IY3-XW-AhI"/>
                                     <constraint firstItem="Q4N-KX-Nl0" firstAttribute="leading" secondItem="tx5-Ru-dIN" secondAttribute="leading" constant="20" id="Rcv-Ox-sEx"/>
+                                    <constraint firstAttribute="trailing" secondItem="Q4N-KX-Nl0" secondAttribute="trailing" constant="20" id="Sf0-u2-qvC"/>
                                     <constraint firstAttribute="trailing" secondItem="ana-ml-QAg" secondAttribute="trailing" constant="20" id="T39-8Q-XBy"/>
                                     <constraint firstItem="Fen-sD-HCh" firstAttribute="top" secondItem="ana-ml-QAg" secondAttribute="bottom" constant="45" id="Vl4-d3-i8i"/>
                                     <constraint firstItem="EzF-Od-W1c" firstAttribute="leading" secondItem="tx5-Ru-dIN" secondAttribute="leading" constant="20" id="bNq-Ue-9dP"/>
@@ -205,25 +207,24 @@
                                     <constraint firstItem="Q4N-KX-Nl0" firstAttribute="top" secondItem="BMF-g9-Q11" secondAttribute="bottom" constant="10" id="mTf-pW-uZJ"/>
                                     <constraint firstItem="EzF-Od-W1c" firstAttribute="top" secondItem="Q4N-KX-Nl0" secondAttribute="bottom" constant="20" id="tdo-GZ-ZpO"/>
                                     <constraint firstItem="Fen-sD-HCh" firstAttribute="centerX" secondItem="tx5-Ru-dIN" secondAttribute="centerX" id="vSZ-yn-NTv"/>
-                                    <constraint firstItem="BMF-g9-Q11" firstAttribute="top" secondItem="Yja-PQ-dN2" secondAttribute="bottom" constant="40" id="ws0-9W-ZpK"/>
+                                    <constraint firstItem="BMF-g9-Q11" firstAttribute="top" secondItem="Yja-PQ-dN2" secondAttribute="bottom" constant="16" id="ws0-9W-ZpK"/>
                                     <constraint firstItem="BMF-g9-Q11" firstAttribute="leading" secondItem="tx5-Ru-dIN" secondAttribute="leading" constant="20" id="xsY-1W-kAI"/>
                                     <constraint firstItem="ana-ml-QAg" firstAttribute="leading" secondItem="tx5-Ru-dIN" secondAttribute="leading" constant="20" id="y4H-Zl-MHE"/>
                                 </constraints>
                                 <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="boolean" keyPath="keyPath" value="YES"/>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="keyPath">
-                                        <integer key="value" value="24"/>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <real key="value" value="24"/>
                                     </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
                                 </userDefinedRuntimeAttributes>
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <color key="backgroundColor" red="0.96435546880000003" green="0.97998046880000001" blue="0.98388671880000001" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <constraints>
-                            <constraint firstItem="tx5-Ru-dIN" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="131" id="AYi-84-G59"/>
-                            <constraint firstItem="tx5-Ru-dIN" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="DPD-9f-qOh"/>
+                            <constraint firstItem="tx5-Ru-dIN" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="20" id="DPD-9f-qOh"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="tx5-Ru-dIN" secondAttribute="bottom" constant="157" id="cdB-NR-f5f"/>
-                            <constraint firstItem="tx5-Ru-dIN" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="w0i-nV-HEH"/>
+                            <constraint firstItem="tx5-Ru-dIN" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" constant="-20" id="w0i-nV-HEH"/>
                             <constraint firstItem="tx5-Ru-dIN" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="40" id="wdT-lI-ZSs"/>
                         </constraints>
                     </view>
