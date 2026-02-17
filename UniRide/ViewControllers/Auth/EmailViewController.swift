@@ -1,9 +1,3 @@
-//
-//  EmailViewController.swift
-//  UniRide
-//
-//  Created by Krish Bahukhandi on 14/11/25.
-//
 
 
 
@@ -20,7 +14,7 @@ class EmailViewController: UIViewController {
 
             containerCard.applyCardStyle()
             emailTextField.applyRoundedField()
-            continueButton.applyPrimaryButton()
+            
     }
     @IBOutlet weak var containerCard: UIView!
     
