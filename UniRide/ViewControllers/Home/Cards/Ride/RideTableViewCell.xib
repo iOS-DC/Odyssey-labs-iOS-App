@@ -163,14 +163,14 @@
                 </subviews>
                 <constraints>
                     <constraint firstAttribute="trailing" secondItem="Iha-Ii-evl" secondAttribute="trailing" constant="16" id="1Qe-HR-2Os"/>
-                    <constraint firstItem="1sy-b3-S3R" firstAttribute="top" secondItem="Iha-Ii-evl" secondAttribute="top" constant="80" id="8W6-Pd-MkS"/>
+                    <constraint firstItem="1sy-b3-S3R" firstAttribute="top" secondItem="Iha-Ii-evl" secondAttribute="top" constant="96" id="8W6-Pd-MkS"/>
                     <constraint firstAttribute="trailing" secondItem="Ip4-AO-tib" secondAttribute="trailing" constant="16" id="Big-X4-J5s"/>
                     <constraint firstItem="Ip4-AO-tib" firstAttribute="leading" secondItem="aeC-Fu-DIl" secondAttribute="leading" constant="16" id="Grt-iT-6c2"/>
-                    <constraint firstAttribute="bottom" secondItem="Ip4-AO-tib" secondAttribute="bottom" constant="8" id="PnD-XA-Kfb"/>
+                    <constraint firstAttribute="bottom" secondItem="Ip4-AO-tib" secondAttribute="bottom" constant="16" id="PnD-XA-Kfb"/>
                     <constraint firstAttribute="trailing" secondItem="1sy-b3-S3R" secondAttribute="trailing" constant="16" id="RXL-lz-MaK"/>
                     <constraint firstItem="Iha-Ii-evl" firstAttribute="leading" secondItem="aeC-Fu-DIl" secondAttribute="leading" constant="16" id="jJQ-E2-teQ"/>
                     <constraint firstItem="1sy-b3-S3R" firstAttribute="leading" secondItem="aeC-Fu-DIl" secondAttribute="leading" constant="16" id="lVF-Bo-ilF"/>
-                    <constraint firstItem="Ip4-AO-tib" firstAttribute="top" secondItem="1sy-b3-S3R" secondAttribute="bottom" constant="23.670000000000002" id="ncS-jP-nyU"/>
+                    <constraint firstItem="Ip4-AO-tib" firstAttribute="top" secondItem="1sy-b3-S3R" secondAttribute="bottom" constant="32" id="ncS-jP-nyU"/>
                     <constraint firstItem="Iha-Ii-evl" firstAttribute="top" secondItem="aeC-Fu-DIl" secondAttribute="top" constant="16" id="zcb-GW-lXU"/>
                 </constraints>
             </tableViewCellContentView>

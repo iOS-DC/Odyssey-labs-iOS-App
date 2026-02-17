@@ -43,21 +43,12 @@ final class MyRidesViewController: UIViewController {
             name: .ridesUpdated,
             object: nil
         )
-        
-        print("PAST COUNT =", pastTrips.count)
-        for t in pastTrips {
-            print("Ride:", t.ride.id, "status:", t.ride.status)
-        }
-
-
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         reloadTrips()
     }
-
-
     
     @objc private func ridesDidUpdate() {
         reloadTrips()
@@ -134,9 +125,6 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
 
         // PAST
         else {
-            
-            print("PAST CELL RENDER:", trip.ride.id)
-
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: PastRideCell.reuseIdentifier,
                 for: indexPath
@@ -159,27 +147,12 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
     }
 
     func upcomingCellDidTapMessage(_ cell: UpcomingTableViewCell) {
-        print("Message tapped")
-
-//        let sb = UIStoryboard(name: "Messages", bundle: nil)
-//        guard let vc = sb.instantiateViewController(
-//            withIdentifier: "MessageViewController"
-//        ) as? MessageViewController else {
-//            print("VC not found")
-//            return
-//        }
-//
-//        if let nav = navigationController {
-//            nav.pushViewController(vc, animated: true)
-//        } else {
-//            vc.modalPresentationStyle = .fullScreen
-//            present(vc, animated: true)
-//        }
+        // TODO: Implement messaging functionality
     }
 
 
     func upcomingCellDidTapCall(_ cell: UpcomingTableViewCell) {
-        print("Call tapped (future call)")
+        // TODO: Implement call functionality
     }
 
     func upcomingCellDidTapCancelRide(_ cell: UpcomingTableViewCell) {
@@ -214,8 +187,3 @@ extension MyRidesViewController {
     }
    
 }
-
-
-
-
-

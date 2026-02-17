@@ -46,11 +46,25 @@ class JoinRideViewController: UIViewController,
 
         setupDatePicker()
         setupTimePicker()
+        setDefaultDateAndTime()
 
         findRideButton.layer.cornerRadius = 22
         
         view.bringSubviewToFront(findRideButton)
           
+    }
+
+    // MARK: - Default Values
+    private func setDefaultDateAndTime() {
+        // Set default date to today
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd/MM/yyyy"
+        dateTextField.text = dateFormatter.string(from: Date())
+        
+        // Set default time to current time
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "hh:mm a"
+        timeTextField.text = timeFormatter.string(from: Date())
     }
 
    

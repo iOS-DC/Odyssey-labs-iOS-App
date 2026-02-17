@@ -1,12 +1,3 @@
-////
-////  OfferRideViewController.swift
-////  UniRide
-////
-////  Created by Krish Bahukhandi on 21/11/25.
-////
-
-
-
 import UIKit
 import MapKit
 

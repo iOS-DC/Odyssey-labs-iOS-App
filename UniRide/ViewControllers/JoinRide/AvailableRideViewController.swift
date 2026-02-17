@@ -37,7 +37,7 @@ final class AvailableRideViewController: UIViewController,
 
         tableView.separatorStyle = .none
         tableView.rowHeight = UITableView.automaticDimension
-        tableView.estimatedRowHeight = 240
+        tableView.estimatedRowHeight = 280
         
 
         loadAvailableRides()
