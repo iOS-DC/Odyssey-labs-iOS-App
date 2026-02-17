@@ -107,7 +107,9 @@ class EventDetailsViewController: UIViewController {
         actionButtonsStack.heightAnchor.constraint(equalToConstant: 50).isActive = true
         
         configureButton(offerRideButton, title: "Offer Ride", color: .systemBlue)
-        configureButton(joinRideButton, title: "Join Ride", color: .systemGreen)
+        // Match "Find Ride" teal color from Join Tab
+        let joinColor = UIColor(red: 0.06, green: 0.79, blue: 0.69, alpha: 1.0)
+        configureButton(joinRideButton, title: "Join Ride", color: joinColor)
         
         offerRideButton.addTarget(self, action: #selector(offerRideTapped), for: .touchUpInside)
         joinRideButton.addTarget(self, action: #selector(joinRide), for: .touchUpInside)
@@ -172,11 +174,17 @@ class EventDetailsViewController: UIViewController {
     }
 
     @objc @IBAction func offerRideTapped(_ sender: Any) {
-        print("offer ride tapped")
+        let storyboard = UIStoryboard(name: "OfferRide", bundle: nil)
+        if let vc = storyboard.instantiateViewController(withIdentifier: "OfferRideViewController") as? OfferRideViewController {
+            navigationController?.pushViewController(vc, animated: true)
+        }
     }
     
     @objc @IBAction func joinRide(_ sender: Any) {
-        print("join ride tapped")
+        let storyboard = UIStoryboard(name: "JoinRide", bundle: nil)
+        if let vc = storyboard.instantiateViewController(withIdentifier: "JoinRideViewController") as? JoinRideViewController {
+            navigationController?.pushViewController(vc, animated: true)
+        }
     }
 }
 

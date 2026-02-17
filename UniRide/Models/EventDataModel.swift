@@ -97,13 +97,17 @@ final class EventDataModel {
         eventsURL = documentsDirectory.appendingPathComponent("community_events.json")
         attendanceURL = documentsDirectory.appendingPathComponent("community_event_attendance.json")
 
-        loadAll()
-
+        // loadAll()
+        
+        // Force mock data for demo purposes
+        events = EventDataModel.mockEvents()
+        saveEvents()
+        
         // If app is first time OR JSON was empty → load mock data
-        if events.isEmpty {
-            events = EventDataModel.mockEvents()
-            saveEvents()
-        }
+        // if events.isEmpty {
+        //     events = EventDataModel.mockEvents()
+        //     saveEvents()
+        // }
     }
 
     // MARK: - PUBLIC ACCESS
@@ -121,6 +125,8 @@ final class EventDataModel {
     // MARK: - Mock Events (UI feed)
     static func mockEvents() -> [EventItem] {
         let user = UUID()
+        let tomorrow = Date().addingTimeInterval(86400)
+        let nextWeek = Date().addingTimeInterval(86400 * 7)
 
         return [
             EventItem(
@@ -129,7 +135,7 @@ final class EventDataModel {
                 details: """
                 Get ready for the most awaited cultural fest of the year! Rangrez 2025 is here to mesmerize you with a blend of art, music, and dance. 🎨✨
                 
-                Experience electrifying performances by top artist! From classical symphonies to rock fusion, we have it all. Don't miss the grand finale night featuring a surprise celebrity guest! 🎸🎤
+                Experience electrifying performances by top artists! From classical symphonies to rock fusion, we have it all. Don't miss the grand finale night featuring a surprise celebrity guest! 🎸🎤
                 
                 There will be food stalls offering cuisines from around the world, art exhibitions showcasing student talent, and interactive gaming zones. Come with your friends and make memories that will last a lifetime.
                 
@@ -162,8 +168,38 @@ final class EventDataModel {
                 Whether you are a tech geek or just curious, there is something for everyone. Network with industry leaders and win exciting prizes in our hackathons.
                 """,
                 location: EventLocation(name: "Chitkara University"),
-                startsAt: Date().addingTimeInterval(86400 * 5),
+                startsAt: tomorrow,
                 imageName: "eventImage2"
+            ),
+            
+            EventItem(
+                createdByUserID: user,
+                title: "Sports Meet 2025",
+                details: """
+                Unleash your inner athlete at the Annual Sports Meet! 🏆
+                
+                Compete in a variety of sports including Cricket, Football, Basketball, Athletics, and Indoor Games. Show your team spirit and fight for glory! 🏏⚽️🏀
+                
+                Registration is open now at the Sports Complex.
+                """,
+                location: EventLocation(name: "Sports Complex"),
+                startsAt: nextWeek,
+                imageName: "eventImage3"
+            ),
+            
+            EventItem(
+                createdByUserID: user,
+                title: "Hackathon 2025",
+                details: """
+                Code your way to glory in our 24-hour Hackathon! 💻☕️
+                
+                Build innovative solutions to real-world problems. Mentors from top tech companies will be there to guide you.
+                
+                Prizes worth ₹50,000 to be won!
+                """,
+                location: EventLocation(name: "Engineering Block"),
+                startsAt: nextWeek.addingTimeInterval(86400 * 2),
+                imageName: "eventImage4"
             )
         ]
     }

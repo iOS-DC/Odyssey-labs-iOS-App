@@ -304,10 +304,10 @@
                                 <rect key="frame" x="0.0" y="735" width="393" height="400"/>
                                 <subviews>
                                     <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="sba-kh-w8Q">
-                                        <rect key="frame" x="16" y="16" width="393" height="268"/>
+                                        <rect key="frame" x="16" y="16" width="361" height="268"/>
                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                         <imageView key="tableHeaderView" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" id="hLN-N2-faP">
-                                            <rect key="frame" x="0.0" y="0.0" width="393" height="128"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="361" height="128"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         </imageView>
                                     </tableView>
@@ -318,7 +318,7 @@
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="S5b-BZ-chi">
-                                        <rect key="frame" x="16" y="292" width="393" height="40"/>
+                                        <rect key="frame" x="16" y="292" width="361" height="40"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="40" id="4sT-Ca-4Ww"/>
                                         </constraints>
@@ -358,7 +358,7 @@
                                     <constraint firstItem="S5b-BZ-chi" firstAttribute="leading" secondItem="ibS-oJ-o4I" secondAttribute="leading" constant="16" id="BA6-A3-2hQ"/>
                                     <constraint firstAttribute="height" constant="400" id="Cq4-eb-SYb"/>
                                     <constraint firstItem="sba-kh-w8Q" firstAttribute="leading" secondItem="ibS-oJ-o4I" secondAttribute="leading" constant="16" id="Nfh-rf-1A6"/>
-                                    <constraint firstItem="sba-kh-w8Q" firstAttribute="trailing" secondItem="ibS-oJ-o4I" secondAttribute="trailing" constant="16" id="PVc-Bd-s1b"/>
+                                    <constraint firstItem="sba-kh-w8Q" firstAttribute="trailing" secondItem="ibS-oJ-o4I" secondAttribute="trailing" constant="-16" id="PVc-Bd-s1b"/>
                                     <constraint firstAttribute="trailing" secondItem="NFm-dL-pgZ" secondAttribute="trailing" constant="16" id="UcA-uM-QvP"/>
                                     <constraint firstItem="sba-kh-w8Q" firstAttribute="top" secondItem="ibS-oJ-o4I" secondAttribute="top" constant="16" id="VRw-Aj-LwB"/>
                                     <constraint firstItem="PFo-be-Wqu" firstAttribute="centerX" secondItem="ibS-oJ-o4I" secondAttribute="centerX" id="egw-dk-HbV"/>
@@ -366,7 +366,7 @@
                                     <constraint firstAttribute="bottom" secondItem="NFm-dL-pgZ" secondAttribute="bottom" constant="16" id="o2h-Y0-1iN"/>
                                     <constraint firstItem="S5b-BZ-chi" firstAttribute="bottom" secondItem="IFG-0d-joa" secondAttribute="top" constant="-12" id="omq-eq-Xua"/>
                                     <constraint firstItem="sba-kh-w8Q" firstAttribute="bottom" secondItem="S5b-BZ-chi" secondAttribute="top" constant="-8" id="uZ9-Tb-KGV"/>
-                                    <constraint firstItem="S5b-BZ-chi" firstAttribute="trailing" secondItem="ibS-oJ-o4I" secondAttribute="trailing" constant="16" id="ye7-fc-acs"/>
+                                    <constraint firstItem="S5b-BZ-chi" firstAttribute="trailing" secondItem="ibS-oJ-o4I" secondAttribute="trailing" constant="-16" id="ye7-fc-acs"/>
                                     <constraint firstItem="PFo-be-Wqu" firstAttribute="top" secondItem="sba-kh-w8Q" secondAttribute="top" id="zRf-SG-xnP"/>
                                 </constraints>
                             </view>
@@ -639,7 +639,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="eventImage" width="2560" height="1432"/>
+        <image name="eventImage" width="128" height="128"/>
         <image name="multiply" catalog="system" width="128" height="111"/>
         <image name="person.3.fill" catalog="system" width="128" height="66"/>
         <image name="person.circle" catalog="system" width="128" height="123"/>

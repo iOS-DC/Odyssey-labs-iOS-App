@@ -29,6 +29,8 @@ class CommunityViewController: UIViewController,
     var currentPostIndex: Int = 0
     var selectedPostIndex: Int?
     var selectedComments: [String] = []
+    
+    private var newPostBarButton: UIBarButtonItem?
 
     // MARK: - Models
     struct Post {
@@ -102,6 +104,9 @@ class CommunityViewController: UIViewController,
         setupPopupUI()
         setupNewPostUI()
         setupShareUI()
+        
+        // Save reference to button
+        newPostBarButton = navigationItem.rightBarButtonItem
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -352,11 +357,9 @@ class CommunityViewController: UIViewController,
         
         // Hide "New Post" button (plus) when in Events tab
         if segmentedControl.selectedSegmentIndex == 1 {
-            navigationItem.rightBarButtonItem?.isEnabled = false
-            navigationItem.rightBarButtonItem?.tintColor = .clear
+            navigationItem.rightBarButtonItem = nil
         } else {
-            navigationItem.rightBarButtonItem?.isEnabled = true
-            navigationItem.rightBarButtonItem?.tintColor = nil // Reset to default (or specific color if needed)
+            navigationItem.rightBarButtonItem = newPostBarButton
         }
     }
     func hideSharePopup() {
