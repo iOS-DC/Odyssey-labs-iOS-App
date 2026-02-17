@@ -1,182 +1,221 @@
-//
-//  MyRidesViewController.swift
-//  UniRide
-//
-
 import UIKit
 
-class MyRidesViewController: UIViewController {
-    
+final class MyRidesViewController: UIViewController {
+
     @IBOutlet weak var segmentedControl: UISegmentedControl!
     @IBOutlet weak var tableView: UITableView!
-    
+
     private var upcomingTrips: [RideDataModel.MyTrip] = []
     private var pastTrips: [RideDataModel.MyTrip] = []
     private var currentTrips: [RideDataModel.MyTrip] = []
-    
-    // local testing flag
-    private let seedForTesting = false
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        segmentedControl.selectedSegmentIndex = 0
-        
+
+        // Hosting cell
         tableView.register(
             UINib(nibName: "UpcomingTableViewCell", bundle: nil),
-            forCellReuseIdentifier: "UpcomingRideCell"
+            forCellReuseIdentifier: UpcomingTableViewCell.reuseIdentifier
         )
-        
+
+        // Passenger cell
         tableView.register(
             UINib(nibName: "UpcomingPassengerTableViewCell", bundle: nil),
             forCellReuseIdentifier: "UpcomingPassengerTableViewCell"
         )
+        tableView.register(
+            UINib(nibName: "PastRideCell", bundle: nil),
+            forCellReuseIdentifier: PastRideCell.reuseIdentifier
+        )
+
 
         tableView.dataSource = self
         tableView.delegate = self
         tableView.separatorStyle = .none
-        tableView.rowHeight = 180
-        tableView.estimatedRowHeight = 180
+
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 260
+
+        reloadTrips()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(ridesDidUpdate),
+            name: .ridesUpdated,
+            object: nil
+        )
         
-        // observe requests/booking changes
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(handleRequestsUpdated(_:)),
-                                               name: .rideRequestsUpdated,
-                                               object: nil)
-//        
-        if seedForTesting {
-            seedMockIfEmpty()
+        print("PAST COUNT =", pastTrips.count)
+        for t in pastTrips {
+            print("Ride:", t.ride.id, "status:", t.ride.status)
         }
-        
-        reloadTripsFromModel()
-        updateForSelectedSegment()
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self, name: .rideRequestsUpdated, object: nil)
+
+
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        reloadTripsFromModel()
+        reloadTrips()
+    }
+
+
+    
+    @objc private func ridesDidUpdate() {
+        reloadTrips()
+    }
+
+    // MARK: - Data
+    private func reloadTrips() {
+        guard let user = UserDataModel.shared.getCurrentUser() else { return }
+
+        upcomingTrips = RideDataModel.shared.myUpcoming(userID: user.id)
+        pastTrips = RideDataModel.shared.myPast(userID: user.id)
+
         updateForSelectedSegment()
     }
-    
-    private func seedMockIfEmpty() {
-        guard let user = UserDataModel.shared.getCurrentUser() else { return }
-        let src = LocationPoint(lat: 30.516, lon: 76.659, address: "Chitkara University")
-        let dst = LocationPoint(lat: 30.35, lon: 76.92, address: "Sector 43, Chandigarh")
-        let r = Ride(
-            driverUserID: user.id,
-            source: src,
-            destination: dst,
-            departureTime: Date().addingTimeInterval(3600),
-            seatsTotal: 3,
-            farePerSeat: 60
-        )
-        let created = RideDataModel.shared.createRide(r)
-        RideDataModel.shared.publishRide(id: created.id)
-    }
-    
-    private func reloadTripsFromModel() {
-        guard let currentUser = UserDataModel.shared.getCurrentUser() else {
-            upcomingTrips = []
-            pastTrips = []
-            currentTrips = []
-            DispatchQueue.main.async { self.tableView.reloadData() }
-            return
-        }
-        
-        let userID = currentUser.id
-        let model = RideDataModel.shared
-        
-        upcomingTrips = model.myUpcoming(userID: userID)
-        pastTrips = model.myPast(userID: userID)
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.updateForSelectedSegment()
-        }
-    }
-    
-    func updateForSelectedSegment() {
-        if segmentedControl.selectedSegmentIndex == 0 {
-            currentTrips = upcomingTrips
-        } else {
-            currentTrips = pastTrips
-        }
-        tableView.reloadData()
-    }
-    
+
     @IBAction func segmentChanged(_ sender: UISegmentedControl) {
         updateForSelectedSegment()
     }
+
+    private func updateForSelectedSegment() {
+        guard segmentedControl.selectedSegmentIndex < 2 else { return }
+
+        currentTrips = segmentedControl.selectedSegmentIndex == 0
+            ? upcomingTrips
+            : pastTrips
+
+        tableView.reloadData()
+    }
+
     
-    @objc private func cancelRideTapped(_ sender: UIButton) {
-        let index = sender.tag
-        guard index < currentTrips.count else { return }
-        let trip = currentTrips[index]
-        guard trip.role == .hosting else { return }
-        RideDataModel.shared.cancelRide(id: trip.ride.id)
-        reloadTripsFromModel()
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
-    @objc private func cancelRequestTapped(_ sender: UIButton) {
-        print("Cancel request tapped at row:", sender.tag)
-    }
-    
-    // called when AvailableRideVC posts .rideRequestsUpdated
-    @objc private func handleRequestsUpdated(_ note: Notification) {
-        reloadTripsFromModel()
-        updateForSelectedSegment()
-    }
 }
 
+// MARK: - TableView
 extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
-    
+
     func tableView(_ tableView: UITableView,
                    numberOfRowsInSection section: Int) -> Int {
-        return currentTrips.count
+        return max(currentTrips.count, 0)
     }
-    
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
+
         let trip = currentTrips[indexPath.row]
-        
-        switch trip.role {
-        case .hosting:
-            guard let cell = tableView.dequeueReusableCell(
-                withIdentifier: "UpcomingRideCell",
-                for: indexPath
-            ) as? UpcomingTableViewCell else {
-                return UITableViewCell()
+
+        // UPCOMING
+        if segmentedControl.selectedSegmentIndex == 0 {
+
+            switch trip.role {
+
+            case .hosting:
+                let cell = tableView.dequeueReusableCell(
+                    withIdentifier: UpcomingTableViewCell.reuseIdentifier,
+                    for: indexPath
+                ) as! UpcomingTableViewCell
+
+                cell.configure(with: trip)
+                cell.delegate = self
+                return cell
+
+            case .passenger:
+                let cell = tableView.dequeueReusableCell(
+                    withIdentifier: "UpcomingPassengerTableViewCell",
+                    for: indexPath
+                ) as! UpcomingPassengerTableViewCell
+
+                cell.configure(with: trip)
+                return cell
             }
-            cell.configure(with: trip)
-            cell.cancelRideButton.tag = indexPath.row
-            cell.cancelRideButton.addTarget(self,
-                                            action: #selector(cancelRideTapped(_:)),
-                                            for: .touchUpInside)
-            return cell
+        }
+
+        // PAST
+        else {
             
-        case .passenger:
-            guard let cell = tableView.dequeueReusableCell(
-              withIdentifier: "UpcomingPassengerTableViewCell",
-              for: indexPath
-            ) as? UpcomingPassengerTableViewCell else {
-                return UITableViewCell()
-            }
+            print("PAST CELL RENDER:", trip.ride.id)
+
+            let cell = tableView.dequeueReusableCell(
+                withIdentifier: PastRideCell.reuseIdentifier,
+                for: indexPath
+            ) as! PastRideCell
 
             cell.configure(with: trip)
-            cell.cancelRequestButton.tag = indexPath.row
-            cell.cancelRequestButton.addTarget(self,
-                                              action: #selector(cancelRequestTapped(_:)),
-                                              for: .touchUpInside)
             return cell
         }
+
+    }
+
+}
+
+// MARK: - Cell Delegate (HOST)
+extension MyRidesViewController: UpcomingTableViewCellDelegate {
+
+    func upcomingCellRequestsToggled(_ cell: UpcomingTableViewCell) {
+        tableView.beginUpdates()
+        tableView.endUpdates()
+    }
+
+    func upcomingCellDidTapMessage(_ cell: UpcomingTableViewCell) {
+        print("Message tapped")
+
+//        let sb = UIStoryboard(name: "Messages", bundle: nil)
+//        guard let vc = sb.instantiateViewController(
+//            withIdentifier: "MessageViewController"
+//        ) as? MessageViewController else {
+//            print("VC not found")
+//            return
+//        }
+//
+//        if let nav = navigationController {
+//            nav.pushViewController(vc, animated: true)
+//        } else {
+//            vc.modalPresentationStyle = .fullScreen
+//            present(vc, animated: true)
+//        }
+    }
+
+
+    func upcomingCellDidTapCall(_ cell: UpcomingTableViewCell) {
+        print("Call tapped (future call)")
+    }
+
+    func upcomingCellDidTapCancelRide(_ cell: UpcomingTableViewCell) {
+        guard let index = tableView.indexPath(for: cell)?.row else { return }
+        let trip = currentTrips[index]
+
+        RideDataModel.shared.cancelRide(id: trip.ride.id)
+        reloadTrips()
     }
     
-    func tableView(_ tableView: UITableView,
-                   didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-    }
 }
+
+// MARK: - Passenger Actions
+extension MyRidesViewController {
+
+    @objc private func cancelPassengerRequest(_ sender: UIButton) {
+        let index = sender.tag
+        guard index < currentTrips.count else { return }
+
+        let trip = currentTrips[index]
+        guard trip.role == .passenger,
+              let requestID = trip.requestID,
+              let me = UserDataModel.shared.getCurrentUser()
+        else { return }
+
+        RideDataModel.shared.cancelMyRequest(
+            requestID: requestID,
+            passengerUserID: me.id
+        )
+
+        reloadTrips()
+    }
+   
+}
+
+
+
+
+

@@ -1,10 +1,3 @@
-//
-//  OnboardingViewController.swift
-//  UniRide
-//
-//  Created by Krish Bahukhandi on 10/11/25.
-//
-
 import UIKit
 
 struct OnboardingSlide {
@@ -13,83 +6,137 @@ struct OnboardingSlide {
     let subtitle: String
 }
 
-class OnboardingViewController: UIViewController {
+final class OnboardingViewController: UIViewController {
 
-    @IBOutlet weak var imageView: UIImageView!
-    @IBOutlet weak var titleLabel: UILabel!
-    @IBOutlet weak var subtitleLabel: UILabel!
-    @IBOutlet weak var pageControl: UIPageControl!
-    @IBOutlet weak var nextButton: UIButton!
+    // MARK: - IBOutlets
+    @IBOutlet private weak var imageView: UIImageView!
+    @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var subtitleLabel: UILabel!
+    @IBOutlet private weak var pageControl: UIPageControl!
+    @IBOutlet private weak var nextButton: UIButton!
 
+    // MARK: - Data
     private let slides: [OnboardingSlide] = [
-        .init(imageName: "onboard_1",
-              title: "Find rides with your college community",
-              subtitle: "Connect with fellow students for safe, affordable rides"),
-        .init(imageName: "onboard_2",
-              title: "Save money & help the planet",
-              subtitle: "Split costs and reduce carbon footprint together"),
-        .init(imageName: "onboard_3",
-              title: "Stay safe with verified profiles",
-              subtitle: "All members verified through college email")
+        .init(
+            imageName: "onboard_1",
+            title: "Find rides with your college community",
+            subtitle: "Connect with fellow students for safe, affordable rides"
+        ),
+        .init(
+            imageName: "onboard_2",
+            title: "Save money & help the planet",
+            subtitle: "Split costs and reduce carbon footprint together"
+        ),
+        .init(
+            imageName: "onboard_3",
+            title: "Stay safe with verified profiles",
+            subtitle: "All members verified through college email"
+        )
     ]
 
-    private var index: Int = 0
+    private var currentIndex = 0
 
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupUI()
-        applySlide(animated: false)
+        configureUI()
+        updateSlide(animated: false)
     }
 
-    private func setupUI() {
+    // MARK: - UI Setup
+    private func configureUI() {
         pageControl.numberOfPages = slides.count
-        pageControl.currentPage = 0
-        nextButton.layer.cornerRadius = 12
-        nextButton.clipsToBounds = true
+        pageControl.currentPage = currentIndex
+
+        nextButton.layer.cornerRadius = 20
+
+        imageView.layer.cornerRadius = 20
+        imageView.clipsToBounds = true
+
+        navigationItem.hidesBackButton = true
     }
 
-    private func applySlide(animated: Bool) {
-        let slide = slides[index]
-        pageControl.currentPage = index
-        nextButton.setTitle(index == slides.count - 1 ? "Get Started" : "Next", for: .normal)
+    // MARK: - Slide Update
+    private func updateSlide(animated: Bool) {
 
-        let update = {
-            self.imageView.image = UIImage(named: slide.imageName)
-            self.titleLabel.text = slide.title
-            self.subtitleLabel.text = slide.subtitle
-        }
+        let slide = slides[currentIndex]
+
+        pageControl.currentPage = currentIndex
+
+        let buttonTitle = currentIndex == slides.count - 1
+            ? "Get Started"
+            : "Next"
+
+        nextButton.setTitle(buttonTitle, for: .normal)
 
         if animated {
-            UIView.transition(with: view, duration: 0.25, options: .transitionCrossDissolve, animations: update, completion: nil)
+            animateSlideChange(slide)
         } else {
-            update()
+            apply(slide)
         }
     }
 
-    @IBAction func nextTapped(_ sender: UIButton) {
-        if index < slides.count - 1 {
-            index += 1
-            applySlide(animated: true)
-        } else {
-            finishOnboarding()
+    private func apply(_ slide: OnboardingSlide) {
+        imageView.image = UIImage(named: slide.imageName)
+        titleLabel.text = slide.title
+        subtitleLabel.text = slide.subtitle
+    }
+
+    private func animateSlideChange(_ slide: OnboardingSlide) {
+
+        UIView.transition(with: imageView,
+                          duration: 0.3,
+                          options: .transitionCrossDissolve) {
+            self.imageView.image = UIImage(named: slide.imageName)
+        }
+
+        UIView.transition(with: titleLabel,
+                          duration: 0.3,
+                          options: .transitionCrossDissolve) {
+            self.titleLabel.text = slide.title
+        }
+
+        UIView.transition(with: subtitleLabel,
+                          duration: 0.3,
+                          options: .transitionCrossDissolve) {
+            self.subtitleLabel.text = slide.subtitle
         }
     }
 
-    @IBAction func skipTapped(_ sender: UIButton) {
-        finishOnboarding()
+    // MARK: - Actions
+    @IBAction private func nextTapped(_ sender: UIButton) {
+        advance()
     }
 
-    @IBAction func pageChanged(_ sender: UIPageControl) {
-        index = sender.currentPage
-        applySlide(animated: true)
+    @IBAction private func skipTapped(_ sender: UIButton) {
+        completeOnboarding()
     }
 
-    private func finishOnboarding() {
+    @IBAction private func pageChanged(_ sender: UIPageControl) {
+        currentIndex = sender.currentPage
+        updateSlide(animated: true)
+    }
+
+    private func advance() {
+        if currentIndex < slides.count - 1 {
+            currentIndex += 1
+            updateSlide(animated: true)
+        } else {
+            completeOnboarding()
+        }
+    }
+
+    // MARK: - Finish Flow
+    private func completeOnboarding() {
+
         UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
 
-        let sb = UIStoryboard(name: "Main", bundle: nil)
-        let email = sb.instantiateViewController(withIdentifier: "EmailViewController")
-        let nav = UINavigationController(rootViewController: email)
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let emailVC = storyboard.instantiateViewController(
+            withIdentifier: "EmailViewController"
+        )
+
+        let nav = UINavigationController(rootViewController: emailVC)
 
         if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
            let window = sceneDelegate.window {
@@ -97,6 +144,5 @@ class OnboardingViewController: UIViewController {
             window.makeKeyAndVisible()
         }
     }
-
-
 }
+

@@ -8,43 +8,45 @@
 import UIKit
 import MapKit
 
-
-class AvailableRideViewController: UIViewController,
-                                   UITableViewDataSource,
-                                   UITableViewDelegate {
+final class AvailableRideViewController: UIViewController,
+                                         UITableViewDataSource,
+                                         UITableViewDelegate {
 
     @IBOutlet weak var tableView: UITableView!
+
     // Coming from JoinRideViewController
     var fromCoordinate: CLLocationCoordinate2D?
-       var toCoordinate: CLLocationCoordinate2D?
-       var date: Date?
-       var time: Date?
+    var toCoordinate: CLLocationCoordinate2D?
+    var date: Date?
+    var time: Date?
 
-       var rides: [Ride] = []
+    var rides: [Ride] = []
 
-//       //  Add this inside the class (but outside functions)
-//       private static var didSeedMockData = false
+    override func viewDidLoad() {
+        super.viewDidLoad()
 
-       override func viewDidLoad() {
-           super.viewDidLoad()
-           title = "Available Rides"
+        title = "Available Rides"
 
-           tableView.delegate = self
-           tableView.dataSource = self
+        tableView.delegate = self
+        tableView.dataSource = self
 
-           let nib = UINib(nibName: "RideTableViewCell", bundle: nil)
-           tableView.register(nib, forCellReuseIdentifier: "RideTableViewCell")
+        tableView.register(
+            UINib(nibName: "RideTableViewCell", bundle: nil),
+            forCellReuseIdentifier: "RideTableViewCell"
+        )
 
-           tableView.separatorStyle = .none
-           tableView.rowHeight = UITableView.automaticDimension
-           tableView.estimatedRowHeight = 200
+        tableView.separatorStyle = .none
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 240
+        
 
-           loadDummyRidesForNow()
-       }
+        loadAvailableRides()
+    }
 
-    private func loadDummyRidesForNow() {
+    // MARK: - Load Rides
+    private func loadAvailableRides() {
         guard let fromCoord = fromCoordinate else {
-            print("No fromCoordinate passed in")
+            print("❌ No pickup coordinate received")
             rides = []
             tableView.reloadData()
             return
@@ -56,67 +58,76 @@ class AvailableRideViewController: UIViewController,
             address: nil
         )
 
-        // Only rides within 2.5 km of pickup
-        let nearby = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 1500)
+        // 🔥 REAL DATA (NO MOCK)
+        let nearbyRides = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 1500)
 
-        print("Nearby rides found:", nearby.count)
+        print("✅ Nearby rides found:", nearbyRides.count)
 
-        self.rides = nearby
+        self.rides = nearbyRides
         tableView.reloadData()
     }
 
-    @objc private func joinButtonTapped(_ sender: UIButton) {
-        let index = sender.tag
-          guard index >= 0 && index < rides.count else { return }
-          let ride = rides[index]
+    // MARK: - Join Ride
+    private func joinRide(_ ride: Ride) {
+        guard let user = UserDataModel.shared.getCurrentUser() else {
+            let alert = UIAlertController(
+                title: "Sign in",
+                message: "Please sign in to join a ride.",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
 
-          guard let user = UserDataModel.shared.getCurrentUser() else {
-              let a = UIAlertController(title: "Sign in", message: "Please sign in to join a ride.", preferredStyle: .alert)
-              a.addAction(UIAlertAction(title: "OK", style: .default))
-              present(a, animated: true)
-              return
-          }
+        let pickup = ride.source
+        let seatsRequested = 1
 
-          let pickup = ride.source
-          let seatsRequested = 1
+        let request = RideRequest(
+            rideID: ride.id,
+            passengerUserID: user.id,
+            pickupPoint: pickup,
+            seats: seatsRequested
+        )
 
-          let req = RideRequest(
-              rideID: ride.id,
-              passengerUserID: user.id,
-              pickupPoint: pickup,
-              seats: seatsRequested
-          )
+        let createdRequest = RideDataModel.shared.createJoinRequest(request)
 
-          let createdReq = RideDataModel.shared.createJoinRequest(req)
-          print("Created request:", createdReq.id)
+        print("✅ Join request created:", createdRequest.id)
+        print("📊 Total requests for ride:",
+              RideDataModel.shared.listRequests(for: ride.id).count)
 
-          // debug: print model counts
-          print("DEBUG: total requests now =", RideDataModel.shared.listRequests(for: ride.id).count)
-          print("DEBUG: all requests total =", RideDataModel.shared.listRequests(for: ride.id).count)
+        NotificationCenter.default.post(
+            name: .rideRequestsUpdated,
+            object: nil,
+            userInfo: ["requestID": createdRequest.id.uuidString]
+        )
 
-          // post notification so MyRides can reload
-          NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil, userInfo: ["requestID": createdReq.id.uuidString])
+        // Switch to My Rides tab
+        if let tbc = tabBarController, let vcs = tbc.viewControllers {
+            for (i, vc) in vcs.enumerated() {
+                if let nav = vc as? UINavigationController,
+                   nav.viewControllers.first is MyRidesViewController {
+                    tbc.selectedIndex = i
+                    nav.popToRootViewController(animated: false)
+                    break
+                } else if vc is MyRidesViewController {
+                    tbc.selectedIndex = i
+                    break
+                }
+            }
+        }
 
-          // switch app to My Rides tab (works whether MyRides is inside a nav controller or not)
-          if let tbc = self.tabBarController, let vcs = tbc.viewControllers {
-              for (i, vc) in vcs.enumerated() {
-                  if let nav = vc as? UINavigationController, let top = nav.viewControllers.first, top is MyRidesViewController {
-                      tbc.selectedIndex = i
-                      nav.popToRootViewController(animated: false)
-                      break
-                  } else if vc is MyRidesViewController {
-                      tbc.selectedIndex = i
-                      break
-                  }
-              }
-          }
+        let alert = UIAlertController(
+            title: "Requested",
+            message: "Request sent. Check My Rides → Upcoming.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+}
 
-          let alert = UIAlertController(title: "Requested", message: "Request sent. Check My Rides → Upcoming.", preferredStyle: .alert)
-          alert.addAction(UIAlertAction(title: "OK", style: .default))
-          present(alert, animated: true)
-      }
-   }
-
+// MARK: - TableView
 extension AvailableRideViewController {
 
     func tableView(_ tableView: UITableView,
@@ -135,16 +146,17 @@ extension AvailableRideViewController {
         }
 
         let ride = rides[indexPath.row]
-        let driverName = MockData.driverNames[indexPath.row % MockData.driverNames.count]
+
+        // 🔥 REAL DRIVER NAME (NO MOCK, NO CACHE GUESS)
+        let driverName = UserDataModel.shared.getUser(by: ride.driverUserID)?.fullName ?? ride.driverUserID.uuidString
+
+        print("🚗 Ride:", ride.id, "Driver:", driverName)
 
         cell.configure(with: ride, driverName: driverName)
 
-
-        // hook join button
-        cell.joinButton.tag = indexPath.row
-        cell.joinButton.addTarget(self,
-                                  action: #selector(joinButtonTapped(_:)),
-                                  for: .touchUpInside)
+        cell.onJoinTapped = { [weak self] in
+            self?.joinRide(ride)
+        }
 
         return cell
     }

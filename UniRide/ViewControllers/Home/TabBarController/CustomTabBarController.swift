@@ -9,14 +9,16 @@
 import UIKit
 
 final class CustomTabBarController: UITabBarController, UITabBarControllerDelegate {
-
+    override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            // Trigger location permission when screen is fully visible
+            LocationService.shared.requestWhenInUse()
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
         self.delegate = self
         
-        // 🔥 Start live location tracking globally
-        LocationService.shared.requestWhenInUse()
-        LocationService.shared.startLiveUpdates()
+        
     }
 
     // When switching tabs, always reset the navigation stack

@@ -178,7 +178,7 @@
                             </scrollView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <color key="backgroundColor" red="0.95686274509803915" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <constraints>
                             <constraint firstItem="F4o-6H-u62" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" id="Hiu-7K-fwW"/>
                             <constraint firstItem="F4o-6H-u62" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="sCZ-0d-Z4K"/>
