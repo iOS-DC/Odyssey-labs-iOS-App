@@ -32,11 +32,12 @@ final class PastRideCell: UITableViewCell {
         super.awakeFromNib()
 
         selectionStyle = .none
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
 
-        cardView.layer.cornerRadius = 12
-        cardView.layer.shadowOpacity = 0.08
-        cardView.layer.shadowRadius = 6
-        cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        // Match Home page card styling - flat design with 20pt corners
+        cardView.layer.cornerRadius = 20
+        cardView.backgroundColor = .systemBackground
 
         approvedTableView.delegate = self
         approvedTableView.dataSource = self
@@ -63,8 +64,17 @@ final class PastRideCell: UITableViewCell {
         let isHost = trip.role == .hosting
 
         roleLabel.text = isHost ? "Hosting" : "Passenger"
-        statusLabel.text = ride.status == .completed ? "Completed" : "Cancelled"
-        statusLabel.textColor = ride.status == .completed ? .systemGreen : .systemRed
+        
+        // Configure status badge
+        let isCompleted = ride.status == .completed
+        statusLabel.text = isCompleted ? "Completed" : "Cancelled"
+        
+        // Apply badge styling
+        applyBadgeStyle(
+            to: statusLabel,
+            backgroundColor: isCompleted ? UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15) : UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 0.15),
+            textColor: isCompleted ? UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0) : UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 1.0)
+        )
 
         dateLabel.text = DateFormatter.localizedString(
             from: ride.departureTime,
@@ -113,6 +123,15 @@ final class PastRideCell: UITableViewCell {
 
         approvedTableView.reloadData()
 //        delegate?.pastRideCellNeedsResize(self)
+    }
+    
+    // MARK: - Badge Styling
+    private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
+        label.backgroundColor = backgroundColor
+        label.textColor = textColor
+        label.layer.cornerRadius = 10
+        label.layer.masksToBounds = true
+        label.textAlignment = .center
     }
 }
 

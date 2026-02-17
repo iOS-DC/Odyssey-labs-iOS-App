@@ -100,10 +100,12 @@ final class UpcomingTableViewCell: UITableViewCell {
     }
 
     private func setupUI() {
-        cardView.layer.cornerRadius = 12
-        cardView.layer.shadowOpacity = 0.08
-        cardView.layer.shadowRadius = 6
-        cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        
+        // Match Home page card styling - flat design with 20pt corners
+        cardView.layer.cornerRadius = 20
+        cardView.backgroundColor = .systemBackground
     }
 
     override func prepareForReuse() {
@@ -167,11 +169,23 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         seatsLabel.text = "\(occupiedSeats)/\(ride.seatsTotal)"
 
+        // Apply badge styling to status label
         statusLabel.text = ride.status.rawValue.capitalized
-        statusLabel.textColor =
-            ride.status == .published ? .systemGreen :
-            ride.status == .ongoing ? .systemBlue :
-            .secondaryLabel
+        
+        let (bgColor, textColor): (UIColor, UIColor)
+        switch ride.status {
+        case .published:
+            bgColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15)
+            textColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+        case .ongoing:
+            bgColor = UIColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 0.15)
+            textColor = UIColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 1.0)
+        default:
+            bgColor = UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 0.15)
+            textColor = UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 1.0)
+        }
+        
+        applyBadgeStyle(to: statusLabel, backgroundColor: bgColor, textColor: textColor)
 
         // ======================
         // REQUESTS
@@ -274,6 +288,15 @@ final class UpcomingTableViewCell: UITableViewCell {
             edgePadding: UIEdgeInsets(top: 30, left: 30, bottom: 30, right: 30),
             animated: false
         )
+    }
+    
+    // MARK: - Badge Styling
+    private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
+        label.backgroundColor = backgroundColor
+        label.textColor = textColor
+        label.layer.cornerRadius = 10
+        label.layer.masksToBounds = true
+        label.textAlignment = .center
     }
 }
 
