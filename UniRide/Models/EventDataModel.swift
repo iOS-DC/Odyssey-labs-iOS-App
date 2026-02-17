@@ -97,13 +97,17 @@ final class EventDataModel {
         eventsURL = documentsDirectory.appendingPathComponent("community_events.json")
         attendanceURL = documentsDirectory.appendingPathComponent("community_event_attendance.json")
 
-        loadAll()
-
+        // loadAll()
+        
+        // Force mock data for demo purposes
+        events = EventDataModel.mockEvents()
+        saveEvents()
+        
         // If app is first time OR JSON was empty → load mock data
-        if events.isEmpty {
-            events = EventDataModel.mockEvents()
-            saveEvents()
-        }
+        // if events.isEmpty {
+        //     events = EventDataModel.mockEvents()
+        //     saveEvents()
+        // }
     }
 
     // MARK: - PUBLIC ACCESS
@@ -121,24 +125,81 @@ final class EventDataModel {
     // MARK: - Mock Events (UI feed)
     static func mockEvents() -> [EventItem] {
         let user = UUID()
+        let tomorrow = Date().addingTimeInterval(86400)
+        let nextWeek = Date().addingTimeInterval(86400 * 7)
 
         return [
             EventItem(
                 createdByUserID: user,
                 title: "Rangrez 2025",
-                details: "Cultural fest and music night",
+                details: """
+                Get ready for the most awaited cultural fest of the year! Rangrez 2025 is here to mesmerize you with a blend of art, music, and dance. 🎨✨
+                
+                Experience electrifying performances by top artists! From classical symphonies to rock fusion, we have it all. Don't miss the grand finale night featuring a surprise celebrity guest! 🎸🎤
+                
+                There will be food stalls offering cuisines from around the world, art exhibitions showcasing student talent, and interactive gaming zones. Come with your friends and make memories that will last a lifetime.
+                
+                📍 Venue: Chitkara University Main Ground
+                🕒 Time: 4:00 PM onwards
+                🎟️ Entry: Free for students with ID cards.
+                
+                This is more than just an event; it's a celebration of creativity and spirit. See you there!
+                """,
                 location: EventLocation(name: "Chitkara University"),
                 startsAt: Date(),
-                imageName: "eventImage"     // MUST exist in assets
+                imageName: "eventImage"
             ),
 
             EventItem(
                 createdByUserID: user,
                 title: "Techno Fest 2025",
-                details: "Tech Expo + EDM",
+                details: """
+                Step into the future with Techno Fest 2025! 🚀
+                
+                Join us for a 3-day extravaganza of innovation and technology. Witness cutting-edge robotics, AI demonstrations, and coding marathons. 🤖💻
+                
+                Workshops on:
+                - Blockchain Development
+                - Ethical Hacking
+                - Drone Racing
+                
+                The event concludes with an EDM night that will blow your mind! 🎧🔥
+                
+                Whether you are a tech geek or just curious, there is something for everyone. Network with industry leaders and win exciting prizes in our hackathons.
+                """,
                 location: EventLocation(name: "Chitkara University"),
-                startsAt: Date().addingTimeInterval(86400 * 5),
-                imageName: "eventImage2"    // second image
+                startsAt: tomorrow,
+                imageName: "eventImage2"
+            ),
+            
+            EventItem(
+                createdByUserID: user,
+                title: "Sports Meet 2025",
+                details: """
+                Unleash your inner athlete at the Annual Sports Meet! 🏆
+                
+                Compete in a variety of sports including Cricket, Football, Basketball, Athletics, and Indoor Games. Show your team spirit and fight for glory! 🏏⚽️🏀
+                
+                Registration is open now at the Sports Complex.
+                """,
+                location: EventLocation(name: "Sports Complex"),
+                startsAt: nextWeek,
+                imageName: "eventImage3"
+            ),
+            
+            EventItem(
+                createdByUserID: user,
+                title: "Hackathon 2025",
+                details: """
+                Code your way to glory in our 24-hour Hackathon! 💻☕️
+                
+                Build innovative solutions to real-world problems. Mentors from top tech companies will be there to guide you.
+                
+                Prizes worth ₹50,000 to be won!
+                """,
+                location: EventLocation(name: "Engineering Block"),
+                startsAt: nextWeek.addingTimeInterval(86400 * 2),
+                imageName: "eventImage4"
             )
         ]
     }

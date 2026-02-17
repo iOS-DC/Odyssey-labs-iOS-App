@@ -24,5 +24,11 @@
 			</array>
 		</dict>
 	</dict>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+		<string>instagram</string>
+		<string>fb</string>
+	</array>
 </dict>
 </plist>
