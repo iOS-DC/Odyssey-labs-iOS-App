@@ -175,9 +175,17 @@
                                 </constraints>
                             </tableView>
                             <button opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="pw5-A7-20w">
-                                <rect key="frame" x="12" y="153.66666666666663" width="88" height="34.333333333333343"/>
+                                <rect key="frame" x="12" y="153.66666666666663" width="130" height="34.333333333333343"/>
+                                <color key="backgroundColor" red="0.95294117647058818" green="0.95686274509803915" blue="0.96470588235294119" alpha="1" colorSpace="calibratedRGB"/>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title="View Requests"/>
+                                <buttonConfiguration key="configuration" style="plain" title="View Requests">
+                                    <color key="baseForegroundColor" systemColor="systemBlueColor"/>
+                                </buttonConfiguration>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="8"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
                                 <connections>
                                     <action selector="viewRequestsTapped:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="jNA-RX-OlC"/>
                                 </connections>
