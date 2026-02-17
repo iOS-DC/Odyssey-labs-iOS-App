@@ -126,19 +126,44 @@ final class EventDataModel {
             EventItem(
                 createdByUserID: user,
                 title: "Rangrez 2025",
-                details: "Cultural fest and music night",
+                details: """
+                Get ready for the most awaited cultural fest of the year! Rangrez 2025 is here to mesmerize you with a blend of art, music, and dance. 🎨✨
+                
+                Experience electrifying performances by top artist! From classical symphonies to rock fusion, we have it all. Don't miss the grand finale night featuring a surprise celebrity guest! 🎸🎤
+                
+                There will be food stalls offering cuisines from around the world, art exhibitions showcasing student talent, and interactive gaming zones. Come with your friends and make memories that will last a lifetime.
+                
+                📍 Venue: Chitkara University Main Ground
+                🕒 Time: 4:00 PM onwards
+                🎟️ Entry: Free for students with ID cards.
+                
+                This is more than just an event; it's a celebration of creativity and spirit. See you there!
+                """,
                 location: EventLocation(name: "Chitkara University"),
                 startsAt: Date(),
-                imageName: "eventImage"     // MUST exist in assets
+                imageName: "eventImage"
             ),
 
             EventItem(
                 createdByUserID: user,
                 title: "Techno Fest 2025",
-                details: "Tech Expo + EDM",
+                details: """
+                Step into the future with Techno Fest 2025! 🚀
+                
+                Join us for a 3-day extravaganza of innovation and technology. Witness cutting-edge robotics, AI demonstrations, and coding marathons. 🤖💻
+                
+                Workshops on:
+                - Blockchain Development
+                - Ethical Hacking
+                - Drone Racing
+                
+                The event concludes with an EDM night that will blow your mind! 🎧🔥
+                
+                Whether you are a tech geek or just curious, there is something for everyone. Network with industry leaders and win exciting prizes in our hackathons.
+                """,
                 location: EventLocation(name: "Chitkara University"),
                 startsAt: Date().addingTimeInterval(86400 * 5),
-                imageName: "eventImage2"    // second image
+                imageName: "eventImage2"
             )
         ]
     }
