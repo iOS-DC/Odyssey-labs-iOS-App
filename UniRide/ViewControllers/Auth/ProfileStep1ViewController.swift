@@ -31,6 +31,7 @@ final class ProfileStep1ViewController: UIViewController {
         setupCourseDropDownMenu()
         setupYearDropDownMenu()
     }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         enforceContinueButtonWidth()
@@ -49,7 +50,6 @@ final class ProfileStep1ViewController: UIViewController {
 
         otpTextField.applyRoundedField()
         otpTextField.keyboardType = .numberPad
-        otpTextField.textAlignment = .center
         otpTextField.textAlignment = .left
         otpTextField.font = .systemFont(ofSize: 16, weight: .regular)
         otpTextField.textColor = .label
@@ -60,10 +60,9 @@ final class ProfileStep1ViewController: UIViewController {
         otpTextField.layer.borderWidth = 1
         otpTextField.layer.cornerRadius = 12
 
-
-        // Buttons
+        // ✅ Buttons — SAME UI STYLE
         sendOTPButton.applyOutlineButton()
-        continueButton.applyPrimaryButton()
+        continueButton.applyOutlineButton()
 
         continueButton.isEnabled = false
         continueButton.alpha = 0.5
@@ -116,7 +115,6 @@ final class ProfileStep1ViewController: UIViewController {
         yearDropDownButton.showsMenuAsPrimaryAction = true
     }
 
-
     // MARK: - OTP
     @IBAction func sendOTPPressed(_ sender: UIButton) {
 
@@ -128,19 +126,17 @@ final class ProfileStep1ViewController: UIViewController {
         do {
             try UserDataModel.shared.startPhoneVerification(phone: phone)
 
-            otpStatusLabel.isHidden = true
-
             showOTPStatus("✓ OTP sent", color: .systemGreen)
 
             otpTextField.text = ""
             otpTextField.isHidden = false
 
-            UIView.animate(withDuration: 0.35, delay: 0, options: [.curveEaseOut]) {
+            UIView.animate(withDuration: 0.35) {
                 self.otpTextField.alpha = 1
             }
 
             otpTextField.becomeFirstResponder()
-            
+
             continueButton.isEnabled = true
             continueButton.alpha = 1
 
@@ -148,16 +144,6 @@ final class ProfileStep1ViewController: UIViewController {
             showOTPStatus(error.localizedDescription, color: .systemRed)
         }
     }
-    private func enforceContinueButtonWidth() {
-
-        continueButton.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            continueButton.widthAnchor.constraint(equalToConstant: 238),
-            continueButton.centerXAnchor.constraint(equalTo: containerCard.centerXAnchor)
-        ])
-    }
-
 
     // MARK: - Continue
     @IBAction func continuePressed(_ sender: UIButton) {
@@ -173,19 +159,16 @@ final class ProfileStep1ViewController: UIViewController {
         }
 
         do {
-            
             try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
 
             showOTPStatus("✓ Phone number verified", color: .systemGreen)
 
-            // Save profile data
             UserDataModel.shared.editCurrentUser(
                 fullName: fullNameTextField.text,
                 courseName: dropDownButton.title(for: .normal),
                 year: Int(yearDropDownButton.title(for: .normal) ?? "1")
             )
 
-            // Move to next screen
             goToNextPage()
 
         } catch {
@@ -194,6 +177,14 @@ final class ProfileStep1ViewController: UIViewController {
     }
 
     // MARK: - Helpers
+    private func enforceContinueButtonWidth() {
+        continueButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            continueButton.widthAnchor.constraint(equalToConstant: 238),
+            continueButton.centerXAnchor.constraint(equalTo: containerCard.centerXAnchor)
+        ])
+    }
+
     private func showOTPStatus(_ text: String, color: UIColor) {
         otpStatusLabel.text = text
         otpStatusLabel.textColor = color
