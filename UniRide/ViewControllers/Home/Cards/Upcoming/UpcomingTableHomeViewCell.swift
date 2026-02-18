@@ -38,10 +38,10 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         cardContainerView.layer.cornerRadius = 20
         cardContainerView.backgroundColor = .systemBackground
 
-        fromLabel.numberOfLines = 2
-        toLabel.numberOfLines = 2
-        fromLabel.lineBreakMode = .byWordWrapping
-        toLabel.lineBreakMode = .byWordWrapping
+        fromLabel.numberOfLines = 1
+        toLabel.numberOfLines = 1
+        fromLabel.lineBreakMode = .byTruncatingTail
+        toLabel.lineBreakMode = .byTruncatingTail
 
         // Layout priorities to prevent truncation on small devices
         fromLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -65,7 +65,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
             let fromText = formatLocation(ride.source.address)
             let toText = formatLocation(ride.destination.address)
             fromLabel.text = fromText
-            toLabel.text = (fromText == toText) ? "Nearby (same area)" : toText
+            toLabel.text = (fromText == toText) ? "Nearby" : toText
 
             let formatter = DateFormatter()
             formatter.dateFormat = "hh:mm a"
@@ -76,15 +76,11 @@ class UpcomingTableHomeViewCell: UITableViewCell {
 
         private func formatLocation(_ address: String?) -> String {
             guard let address = address?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  !address.isEmpty else {
-                return "Campus"
-            }
-
-            let parts = address.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            if parts.count >= 2 {
-                return "\(parts[0]), \(parts[1])"
-            }
+                  !address.isEmpty else { return "Campus" }
+            // Return only the first word — e.g. "Chitkara University Road" → "Chitkara"
             return address
+                .components(separatedBy: CharacterSet(charactersIn: " ,"))
+                .first(where: { !$0.isEmpty }) ?? address
         }
 
 }

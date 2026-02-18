@@ -25,7 +25,7 @@ final class PastRideCell: UITableViewCell {
     @IBOutlet weak var approvedContainerHeightConstraint: NSLayoutConstraint!
 
 
-    private var namesToShow: [String] = []
+    private var usersToShow: [UserProfile?] = []
 
     // MARK: - Lifecycle
     override func awakeFromNib() {
@@ -35,25 +35,38 @@ final class PastRideCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
 
-        // Match Home page card styling - flat design with 20pt corners
-        cardView.layer.cornerRadius = 20
+        // Unified card styling to match Home page
+        cardView.layer.cornerRadius = 18
         cardView.backgroundColor = .systemBackground
+        cardView.layer.masksToBounds = true
+
+        // Shadow styling
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.08
+        layer.shadowOffset = CGSize(width: 0, height: 4)
+        layer.shadowRadius = 8
+        layer.masksToBounds = false
 
         approvedTableView.delegate = self
+        approvedTableView.register(ApprovedPassengerCell.self, forCellReuseIdentifier: ApprovedPassengerCell.identifier)
+        approvedTableView.rowHeight = 50
         approvedTableView.dataSource = self
         approvedTableView.isScrollEnabled = false
-        approvedTableView.rowHeight = 44
         approvedTableView.tableFooterView = UIView()
+    }
 
-        approvedTableView.register(
-            UITableViewCell.self,
-            forCellReuseIdentifier: "NameCell"
-        )
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Compute shadow path based on cardView frame
+        layer.shadowPath = UIBezierPath(
+            roundedRect: cardView.frame,
+            cornerRadius: cardView.layer.cornerRadius
+        ).cgPath
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        namesToShow.removeAll()
+        usersToShow.removeAll()
         approvedContainerHeightConstraint.constant = 0
     }
 
@@ -65,9 +78,9 @@ final class PastRideCell: UITableViewCell {
 
         roleLabel.text = isHost ? "Hosting" : "Passenger"
         
-        // Configure status badge
+        // Configure status badge — add padding spaces for pill breathing room
         let isCompleted = ride.status == .completed
-        statusLabel.text = isCompleted ? "Completed" : "Cancelled"
+        statusLabel.text = isCompleted ? "  Completed  " : "  Cancelled  "
         
         // Apply badge styling
         applyBadgeStyle(
@@ -94,12 +107,12 @@ final class PastRideCell: UITableViewCell {
                 .listBookings(for: ride.id)
                 .filter { $0.status == .confirmed }
 
-            namesToShow = approved.compactMap {
-                UserDataModel.shared.getUser(by: $0.passengerUserID)?.fullName
+            usersToShow = approved.map {
+                UserDataModel.shared.getUser(by: $0.passengerUserID)
             }
 
-            if namesToShow.isEmpty {
-                namesToShow = ["No approved passengers"]
+            if usersToShow.isEmpty {
+                usersToShow = [] // Will show "No approved passengers" logic later
             }
 
             passengersLabel.text = "Passengers (\(approved.count))"
@@ -109,16 +122,15 @@ final class PastRideCell: UITableViewCell {
             totalAmountLabel.text = "Received Rs. \(price * Double(approved.count))"
         } else {
             passengersLabel.text = "Rider"
-            namesToShow = [
-                UserDataModel.shared.getUser(by: ride.driverUserID)?.fullName
-                ?? "Rider unavailable"
+            usersToShow = [
+                UserDataModel.shared.getUser(by: ride.driverUserID)
             ]
             priceLabel.text = "Rs. \(ride.farePerSeat)"
             totalAmountLabel.text = ""
         }
 
         // ✅ CRITICAL FIX (NO NaN)
-        let rowCount = max(namesToShow.count, 1)
+        let rowCount = max(usersToShow.count, 1)
         approvedContainerHeightConstraint.constant = CGFloat(rowCount) * 44
 
         approvedTableView.reloadData()
@@ -129,6 +141,7 @@ final class PastRideCell: UITableViewCell {
     private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
         label.backgroundColor = backgroundColor
         label.textColor = textColor
+        label.font = .systemFont(ofSize: 11, weight: .bold)
         label.layer.cornerRadius = 10
         label.layer.masksToBounds = true
         label.textAlignment = .center
@@ -139,21 +152,22 @@ final class PastRideCell: UITableViewCell {
 extension PastRideCell: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return namesToShow.count
+        return max(usersToShow.count, 1)
     }
 
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-        let cell = tableView.dequeueReusableCell(
-            withIdentifier: "NameCell",
-            for: indexPath
-        )
-
-        let name = namesToShow[indexPath.row]
-        cell.textLabel?.text = name
-        cell.textLabel?.textAlignment = name.contains("No") ? .center : .left
-        cell.selectionStyle = .none
+        let cell = tableView.dequeueReusableCell(withIdentifier: ApprovedPassengerCell.identifier, for: indexPath) as! ApprovedPassengerCell
+        
+        if usersToShow.isEmpty {
+            cell.configure(name: "No approved passengers", photoURL: nil)
+        } else if let passenger = usersToShow[indexPath.row] {
+            cell.configure(name: passenger.fullName, photoURL: passenger.photoURL)
+        } else {
+            cell.configure(name: "User unavailable", photoURL: nil)
+        }
+        
         return cell
     }
 }

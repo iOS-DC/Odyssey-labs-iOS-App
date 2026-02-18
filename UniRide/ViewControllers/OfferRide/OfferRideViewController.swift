@@ -117,23 +117,24 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         fromTextField.delegate = self
         toTextField.delegate = self
-        fromTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
-        toTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
+        fromTextField.addAction(UIAction { [weak self] _ in
+            self?.updateNextButtonState()
+        }, for: .editingChanged)
+        toTextField.addAction(UIAction { [weak self] _ in
+            self?.updateNextButtonState()
+        }, for: .editingChanged)
     }
 
     // MARK: - Setup Pickers
-    // Makes sure user can't pick dates/times in the past
+    // Makes sure user can't pick dates/times in the past.
     private func setupPickers() {
         datePicker.minimumDate = Date()
-        if datePicker.date < Date() {
-            datePicker.date = Date()
-        }
-        if timePicker.date < minimumRideDateTime() {
-            timePicker.date = minimumRideDateTime()
-        }
-
+        if datePicker.date < Date() { datePicker.date = Date() }
+        if timePicker.date < minimumRideDateTime() { timePicker.date = minimumRideDateTime() }
         refreshTimeConstraintIfNeeded()
     }
+
+
 
     // When user picks a different date, update the time constraints
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) {
@@ -216,7 +217,23 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             let isSelected = (route == selectedRoute)
             button.applyRoutePill(selected: isSelected)
 
-            button.addTarget(self, action: #selector(routePillTapped(_:)), for: .touchUpInside)
+            let capturedIndex = index
+            button.addAction(UIAction { [weak self] _ in
+                guard let self, self.routes.indices.contains(capturedIndex) else { return }
+                self.selectedRoute = self.routes[capturedIndex]
+                self.drawRoutes()
+                if let route = self.selectedRoute {
+                    self.mapView.setVisibleRoute(route)
+                }
+                UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5) {
+                    if let route = self.selectedRoute {
+                        self.mapView.setVisibleRoute(route)
+                    }
+                }
+                for case let btn as UIButton in self.routePillsStack.arrangedSubviews {
+                    btn.applyRoutePill(selected: btn.tag == capturedIndex)
+                }
+            }, for: .touchUpInside)
 
             routePillsStack.addArrangedSubview(button)
         }
@@ -224,30 +241,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         routePillsContainer.isHidden = false
     }
 
-    
-    // Handles when user taps a route pill - highlights it and updates the map
-    @objc private func routePillTapped(_ sender: UIButton) {
-        guard routes.indices.contains(sender.tag) else { return }
-        selectedRoute = routes[sender.tag]
 
-        drawRoutes()
-        if let route = selectedRoute {
-            mapView.setVisibleRoute(route)
-        }
-        UIView.animate(withDuration: 0.25,
-                       delay: 0,
-                       usingSpringWithDamping: 0.8,
-                       initialSpringVelocity: 0.5) {
-            if let route = self.selectedRoute {
-                self.mapView.setVisibleRoute(route)
-            }
-        }
-            
-        // Update pill states
-        for case let btn as UIButton in routePillsStack.arrangedSubviews {
-            btn.applyRoutePill(selected: btn.tag == sender.tag)
-        }
-    }
 
     // MARK: - Suggestion Selected
     // When user taps a location from the autocomplete dropdown
@@ -406,10 +400,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         nextButton.alpha = enabled ? 1.0 : 0.4
     }
 
-    // Listens for changes in text fields to enable/disable next button
-    @objc private func textFieldsDidChange() {
-        updateNextButtonState()
-    }
+
 
     // MARK: - Renderer
     // Styles the route lines - selected route is thick blue, others are thin gray

@@ -155,7 +155,7 @@ class HomeViewController: UIViewController {
         let model = RideDataModel.shared
 
         let upcoming = model.myUpcoming(userID: user.id)
-        upcomingRide = upcoming.first
+        upcomingRide = upcoming.first(where: { $0.ride.status == .published })
 
         // user has a saved location
         if let homeLoc = user.savedHomeLocation {
@@ -284,8 +284,16 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                     for: indexPath
                 ) as! RideTableViewCell
                 let ride = nearbyRides[indexPath.row]
-                let driverName = UserDataModel.shared.getUser(by: ride.driverUserID)?.fullName ?? ride.driverUserID.uuidString
-                cell.configure(with: ride, driverName: driverName)
+                let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
+                let driverName = driver?.fullName ?? ride.driverUserID.uuidString
+                let driverYear = driver?.year != nil ? "\(driver!.year!) Year" : nil
+                
+                cell.configure(
+                    with: ride,
+                    driverName: driverName,
+                    driverYear: driverYear,
+                    photoURL: driver?.photoURL
+                )
                 cell.onJoinTapped = { [weak self] in
                     self?.joinRide(ride)
                 }
@@ -317,8 +325,16 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 for: indexPath
             ) as! RideTableViewCell
             let ride = nearbyRides[indexPath.row]
-            let driverName = UserDataModel.shared.getUser(by: ride.driverUserID)?.fullName ?? ride.driverUserID.uuidString
-            cell.configure(with: ride, driverName: driverName)
+            let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
+            let driverName = driver?.fullName ?? ride.driverUserID.uuidString
+            let driverYear = driver?.year != nil ? "\(driver!.year!) Year" : nil
+            
+            cell.configure(
+                with: ride,
+                driverName: driverName,
+                driverYear: driverYear,
+                photoURL: driver?.photoURL
+            )
             cell.onJoinTapped = { [weak self] in
                 self?.joinRide(ride)
             }

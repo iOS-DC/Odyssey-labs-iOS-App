@@ -105,18 +105,14 @@ final class RideTableViewCell: UITableViewCell {
         with ride: Ride,
         driverName: String,
         driverYear: String? = nil,
-        driverImage: UIImage? = nil
+        photoURL: URL? = nil
     ) {
 
         // MARK: Driver Info
         nameLabel.text = driverName
         yearLabel.text = driverYear ?? ""
 
-        if let img = driverImage {
-            profileImageView.image = img
-        } else {
-            profileImageView.image = initialsAvatar(for: driverName, size: CGSize(width: 40, height: 40))
-        }
+        profileImageView.loadAndFallback(from: photoURL, name: driverName)
 
         // MARK: Route
         let fromText = formatLocation(ride.source.address)
@@ -203,43 +199,5 @@ final class RideTableViewCell: UITableViewCell {
         }
         return address
     }
-
-    private func initialsAvatar(for name: String, size: CGSize) -> UIImage? {
-        let initials = initialsFromName(name)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { ctx in
-            let rect = CGRect(origin: .zero, size: size)
-            let path = UIBezierPath(ovalIn: rect)
-            UIColor.systemGray5.setFill()
-            path.fill()
-
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 16, weight: .semibold),
-                .foregroundColor: UIColor.label
-            ]
-            let text = NSString(string: initials)
-            let textSize = text.size(withAttributes: attributes)
-            let textRect = CGRect(
-                x: (size.width - textSize.width) / 2,
-                y: (size.height - textSize.height) / 2,
-                width: textSize.width,
-                height: textSize.height
-            )
-            text.draw(in: textRect, withAttributes: attributes)
-        }
-    }
-
-    private func initialsFromName(_ name: String) -> String {
-        let parts = name.split(separator: " ").filter { !$0.isEmpty }
-        if parts.count >= 2 {
-            let first = parts.first?.first.map(String.init) ?? ""
-            let last = parts.last?.first.map(String.init) ?? ""
-            return (first + last).uppercased()
-        } else if let first = parts.first?.first {
-            return String(first).uppercased()
-        } else {
-            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            return String(trimmed.prefix(2)).uppercased()
-        }
-    }
 }
+
