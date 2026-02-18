@@ -218,6 +218,7 @@
                                                                                     <constraint firstItem="1vn-PD-8wC" firstAttribute="leading" secondItem="BCg-D9-4dN" secondAttribute="leading" constant="8" id="drS-4F-0Ze"/>
                                                                                     <constraint firstAttribute="height" constant="52" id="lHf-qS-Uni"/>
                                                                                     <constraint firstItem="1vn-PD-8wC" firstAttribute="centerY" secondItem="BCg-D9-4dN" secondAttribute="centerY" id="qSE-o7-kc5"/>
+                                                                                    <constraint firstAttribute="trailing" secondItem="I8R-LL-KbK" secondAttribute="trailing" constant="6" id="vSP-z9-tPK"/>
                                                                                 </constraints>
                                                                                 <userDefinedRuntimeAttributes>
                                                                                     <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
