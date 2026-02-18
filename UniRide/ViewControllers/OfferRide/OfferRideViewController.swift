@@ -50,6 +50,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     private var isLoadingVisible = false
 
+    // Sets up everything when the screen first loads
     override func viewDidLoad() {
         super.viewDidLoad()
         setDefaultDateAndTime()
@@ -63,11 +64,13 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         updateNextButtonState()
 
     }
+    // Sets the date to today and time to 10 minutes from now (minimum lead time)
     private func setDefaultDateAndTime() {
         datePicker.date = Date()
         timePicker.date = minimumRideDateTime()
     }
 
+    // Configures the styling for the suggestions table and map view with rounded corners and shadows
     private func setupUI() {
         suggestionsTable.dataSource = self
         suggestionsTable.delegate = self
@@ -86,6 +89,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     }
 
+    // Hides the map and route options until user enters locations
     private func setInitialRouteUIState() {
         chooseRouteLabel.alpha = 0
         chooseRouteLabel.isHidden = true
@@ -101,6 +105,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         loadingSpinner.stopAnimating()
     }
 
+    // Hooks up location autocomplete so suggestions appear when user types
     private func setupAutocomplete() {
         
 
@@ -117,6 +122,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     }
 
     // MARK: - Setup Pickers
+    // Makes sure user can't pick dates/times in the past
     private func setupPickers() {
         datePicker.minimumDate = Date()
         if datePicker.date < Date() {
@@ -129,18 +135,22 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         refreshTimeConstraintIfNeeded()
     }
 
+    // When user picks a different date, update the time constraints
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) {
         refreshTimeConstraintIfNeeded()
     }
 
+    // When user picks a different time, update the constraints
     @IBAction func timePickerValueChanged(_ sender: UIDatePicker) {
         refreshTimeConstraintIfNeeded()
     }
 
+    // Returns the earliest time a ride can be scheduled (10 minutes from now)
     private func minimumRideDateTime() -> Date {
         Date().addingTimeInterval(minimumLeadTimeSeconds)
     }
 
+    // If they pick today, enforce the 10-minute minimum. For future dates, no time restrictions
     private func refreshTimeConstraintIfNeeded() {
         let minDateTime = minimumRideDateTime()
         var didAdjustTime = false
@@ -161,6 +171,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
 
     // MARK: - Text Change
+    // Called whenever user types in the from/to field - triggers location suggestions
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
 
@@ -171,7 +182,9 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         return true
     }
 
+    // Always allow user to edit the text fields
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool { true }
+    // Creates those pill buttons showing different route options (Fastest, Shortest, etc.)
     private func buildRoutePills() {
         routePillsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         routePillsContainer.subviews
@@ -212,6 +225,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     }
 
     
+    // Handles when user taps a route pill - highlights it and updates the map
     @objc private func routePillTapped(_ sender: UIButton) {
         guard routes.indices.contains(sender.tag) else { return }
         selectedRoute = routes[sender.tag]
@@ -236,6 +250,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     }
 
     // MARK: - Suggestion Selected
+    // When user taps a location from the autocomplete dropdown
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 
         let completion = suggestions[indexPath.row]
@@ -260,6 +275,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     }
 
     // MARK: - Fetch Routes
+    // Grabs route options from MapKit once both locations are selected
     private func tryFetchRoutes() {
         guard let f = fromCoord, let t = toCoord else { return }
 
@@ -289,6 +305,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
 
 
+    // Draws all the route lines on the map, highlighting the selected one
     private func drawRoutes() {
         mapView.isHidden = false
         mapView.removeOverlays(mapView.overlays)
@@ -300,6 +317,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         }
     }
 
+    // Shows the loading spinner while fetching routes
     private func showLoading() {
         guard !isLoadingVisible else { return }
         isLoadingVisible = true
@@ -320,6 +338,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         }
     }
 
+    // Hides the loading spinner once routes are loaded
     private func hideLoading() {
         guard isLoadingVisible else { return }
         isLoadingVisible = false
@@ -342,6 +361,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         }
     }
 
+    // Smoothly animates in the map and route options after routes load
     private func revealRouteUI() {
         chooseRouteLabel.isHidden = false
         mapView.isHidden = false
@@ -377,6 +397,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         }
     }
 
+    // Enables next button only when both from and to fields have values
     private func updateNextButtonState() {
         let hasFrom = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasTo = !(toTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -385,11 +406,13 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         nextButton.alpha = enabled ? 1.0 : 0.4
     }
 
+    // Listens for changes in text fields to enable/disable next button
     @objc private func textFieldsDidChange() {
         updateNextButtonState()
     }
 
     // MARK: - Renderer
+    // Styles the route lines - selected route is thick blue, others are thin gray
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
 
         let renderer = MKPolylineRenderer(overlay: overlay)
@@ -413,10 +436,12 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     }
 
     // MARK: - Table DataSource
+    // Returns how many location suggestions to show
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return suggestions.count
     }
 
+    // Fills each suggestion cell with location name and address
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "sCell")
@@ -426,6 +451,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         return cell
     }
 
+    // Positions the suggestions dropdown right below whichever text field is active
     private func updateSuggestionTablePosition() {
         guard let tf = activeField else { return }
 
@@ -438,6 +464,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     }
 
     // MARK: - NEXT BUTTON
+    // Moves to vehicle details screen with all the route info
     @IBAction func nextTapped(_ sender: Any) {
         guard let from = fromCoord, let to = toCoord else { return }
 
