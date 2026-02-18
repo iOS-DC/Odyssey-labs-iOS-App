@@ -1,4 +1,5 @@
 import UIKit
+import SwiftUI
 
 final class MyRidesViewController: UIViewController {
 
@@ -257,22 +258,25 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
     }
 
     func upcomingCellDidTapMessage(_ cell: UpcomingTableViewCell) {
-        print("Message tapped")
+        guard let index = tableView.indexPath(for: cell)?.row,
+              index < currentTrips.count else { return }
 
-//        let sb = UIStoryboard(name: "Messages", bundle: nil)
-//        guard let vc = sb.instantiateViewController(
-//            withIdentifier: "MessageViewController"
-//        ) as? MessageViewController else {
-//            print("VC not found")
-//            return
-//        }
-//
-//        if let nav = navigationController {
-//            nav.pushViewController(vc, animated: true)
-//        } else {
-//            vc.modalPresentationStyle = .fullScreen
-//            present(vc, animated: true)
-//        }
+        let trip = currentTrips[index]
+        let from = trip.ride.source.address ?? "From"
+        let to   = trip.ride.destination.address ?? "To"
+
+        let vm = ChatViewModel(
+            rideID: trip.ride.id.uuidString,
+            rideTitle: "\(from) → \(to)"
+        )
+        let host = UIHostingController(rootView: GroupChatView(viewModel: vm))
+        host.modalPresentationStyle = .pageSheet
+        if let sheet = host.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+        present(host, animated: true)
     }
 
 
