@@ -38,11 +38,11 @@
                                 <color key="textColor" red="0.12156862745098039" green="0.16078431372549021" blue="0.21568627450980393" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="flt-btn-001" userLabel="Filter Button">
-                                <rect key="frame" x="327" y="160" width="56" height="30"/>
+                             <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="flt-btn-001" userLabel="Filter Button">
+                                <rect key="frame" x="297" y="167.66666666666669" width="80" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="30" id="flt-h-001"/>
-                                    <constraint firstAttribute="width" constant="56" id="flt-w-001"/>
+                                    <constraint firstAttribute="width" constant="80" id="flt-w-001"/>
                                 </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" image="line.3.horizontal.decrease.circle" catalog="system" title="Filter">
@@ -62,11 +62,11 @@
                             <constraint firstItem="ozt-5i-FBz" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="16" id="Lvq-nr-GfR"/>
                             <constraint firstItem="hl7-Ac-weu" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="Yuo-MB-v1E"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="ozt-5i-FBz" secondAttribute="trailing" constant="16" id="a8a-ap-XWW"/>
-                            <constraint firstItem="hl7-Ac-weu" firstAttribute="top" secondItem="ozt-5i-FBz" secondAttribute="bottom" constant="8" id="bBJ-t6-dIB"/>
+                            <constraint firstItem="hl7-Ac-weu" firstAttribute="top" secondItem="ozt-5i-FBz" secondAttribute="bottom" constant="40" id="bBJ-t6-dIB"/>
                             <constraint firstItem="hl7-Ac-weu" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="bOI-ak-6VM"/>
                             <constraint firstItem="3Tk-n0-Qgb" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="10" id="oqY-iS-yYu"/>
                             <constraint firstItem="flt-btn-001" firstAttribute="top" secondItem="ozt-5i-FBz" secondAttribute="bottom" constant="8" id="flt-top-001"/>
-                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="flt-btn-001" secondAttribute="trailing" constant="10" id="flt-trail-001"/>
+                            <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="flt-btn-001" secondAttribute="trailing" constant="16" id="flt-trail-001"/>
                         </constraints>
                     </view>
                     <tabBarItem key="tabBarItem" title="MyRide" image="car" catalog="system" id="trU-ad-aCg"/>

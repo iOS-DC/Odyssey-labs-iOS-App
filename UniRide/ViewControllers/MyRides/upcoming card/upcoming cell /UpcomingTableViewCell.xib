@@ -177,6 +177,9 @@
                             <button opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="pw5-A7-20w">
                                 <rect key="frame" x="12" y="153.66666666666663" width="130" height="34.333333333333343"/>
                                 <color key="backgroundColor" red="0.95294117647058818" green="0.95686274509803915" blue="0.96470588235294119" alpha="1" colorSpace="calibratedRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="34.329999999999998" id="h-view-req-btn"/>
+                                </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="View Requests">
                                     <color key="baseForegroundColor" systemColor="systemBlueColor"/>
@@ -217,7 +220,7 @@
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
                                     <constraint firstItem="UmS-A0-JCr" firstAttribute="leading" secondItem="BZ3-Fw-CN7" secondAttribute="leading" id="0B0-0J-l08"/>
-                                    <constraint firstAttribute="height" constant="200" id="Fof-rB-DGd"/>
+                                    <constraint firstAttribute="height" constant="140" id="Fof-rB-GDd"/>
                                     <constraint firstItem="UmS-A0-JCr" firstAttribute="top" secondItem="BZ3-Fw-CN7" secondAttribute="top" id="Km2-mQ-dE8"/>
                                     <constraint firstAttribute="bottom" secondItem="UmS-A0-JCr" secondAttribute="bottom" id="VJQ-cD-IWO"/>
                                     <constraint firstAttribute="trailing" secondItem="UmS-A0-JCr" secondAttribute="trailing" id="sja-4P-HU6"/>
@@ -230,12 +233,12 @@
                             <constraint firstItem="isW-HD-3c7" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="20" id="1Ph-Nc-L6b"/>
                             <constraint firstItem="gS8-Lg-iTa" firstAttribute="top" secondItem="D9v-9f-Ikl" secondAttribute="top" constant="16" id="2cW-UI-hjF"/>
                             <constraint firstAttribute="bottom" secondItem="MqO-bM-fGV" secondAttribute="bottom" constant="10" id="2gG-ab-lVm"/>
-                            <constraint firstItem="dtu-2E-2EU" firstAttribute="top" secondItem="pw5-A7-20w" secondAttribute="bottom" constant="12" id="3Br-3C-gO4"/>
+                            <constraint firstItem="dtu-2E-2EU" firstAttribute="top" secondItem="YU0-gf-YJI" secondAttribute="bottom" constant="12" id="3Br-3C-gO4"/>
                             <constraint firstItem="gPw-Qd-dmV" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="20" id="3iu-RF-J6h"/>
                             <constraint firstItem="MNa-bJ-pNW" firstAttribute="leading" secondItem="OQt-xS-B3K" secondAttribute="trailing" constant="8" id="5NQ-SW-poV"/>
                             <constraint firstItem="TK3-ha-Aac" firstAttribute="top" secondItem="gS8-Lg-iTa" secondAttribute="bottom" constant="18" id="6BX-XC-Kx1"/>
                             <constraint firstItem="isW-HD-3c7" firstAttribute="top" secondItem="gS8-Lg-iTa" secondAttribute="bottom" constant="18" id="83N-vt-dTs"/>
-                            <constraint firstItem="pw5-A7-20w" firstAttribute="top" secondItem="YU0-gf-YJI" secondAttribute="bottom" constant="8" id="E3g-bu-jZ8"/>
+                            <constraint firstItem="pw5-A7-20w" firstAttribute="top" secondItem="OQt-xS-B3K" secondAttribute="bottom" constant="12" id="E3g-bu-jZ8"/>
                             <constraint firstItem="cPc-UZ-AsZ" firstAttribute="top" secondItem="dtu-2E-2EU" secondAttribute="bottom" constant="12" id="GPK-G0-UgV"/>
                             <constraint firstItem="cPc-UZ-AsZ" firstAttribute="centerX" secondItem="D9v-9f-Ikl" secondAttribute="centerX" id="GYl-tZ-PPb"/>
                             <constraint firstItem="b3K-SC-fYV" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="20" id="Jb5-Pq-KNs"/>
@@ -268,7 +271,7 @@
                             <constraint firstItem="OQt-xS-B3K" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="20" id="qk9-uS-Vks"/>
                             <constraint firstItem="5Z3-Wd-ys2" firstAttribute="top" secondItem="SKb-7o-GLi" secondAttribute="bottom" constant="13.33" id="qkJ-7q-l5O"/>
                             <constraint firstItem="TK3-ha-Aac" firstAttribute="leading" secondItem="34E-aQ-NG4" secondAttribute="trailing" constant="12" id="rSm-ew-qRR"/>
-                            <constraint firstItem="gPw-Qd-dmV" firstAttribute="top" secondItem="OQt-xS-B3K" secondAttribute="bottom" constant="12" id="saM-YT-Hgr"/>
+                            <constraint firstItem="gPw-Qd-dmV" firstAttribute="top" secondItem="BZ3-Fw-CN7" secondAttribute="bottom" constant="12" id="saM-YT-Hgr"/>
                             <constraint firstItem="AKp-bE-hTf" firstAttribute="top" secondItem="D9v-9f-Ikl" secondAttribute="top" constant="12" id="uJO-AL-eu0"/>
                             <constraint firstItem="Vo7-I1-U9m" firstAttribute="leading" secondItem="MNa-bJ-pNW" secondAttribute="trailing" constant="8" id="vtU-jF-XaE"/>
                             <constraint firstItem="dtu-2E-2EU" firstAttribute="centerX" secondItem="D9v-9f-Ikl" secondAttribute="centerX" id="wBl-fr-rCb"/>
@@ -280,8 +283,8 @@
                 <constraints>
                     <constraint firstAttribute="bottom" secondItem="D9v-9f-Ikl" secondAttribute="bottom" constant="8" id="60b-3R-Dy1"/>
                     <constraint firstItem="D9v-9f-Ikl" firstAttribute="top" secondItem="H2p-sc-9uM" secondAttribute="top" constant="8" id="Xbh-LD-qw8"/>
-                    <constraint firstAttribute="trailing" secondItem="D9v-9f-Ikl" secondAttribute="trailing" constant="12" id="kfm-xe-8FD"/>
-                    <constraint firstItem="D9v-9f-Ikl" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="12" id="tu9-g5-0XH"/>
+                    <constraint firstAttribute="trailing" secondItem="D9v-9f-Ikl" secondAttribute="trailing" constant="16" id="kfm-xe-8FD"/>
+                    <constraint firstItem="D9v-9f-Ikl" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="16" id="tu9-g5-0XH"/>
                 </constraints>
             </tableViewCellContentView>
             <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
@@ -299,7 +302,10 @@
                 <outlet property="mapView" destination="cPc-UZ-AsZ" id="pB4-Dc-mff"/>
                 <outlet property="messageButton" destination="KtP-x6-58P" id="Mah-F4-rLA"/>
                 <outlet property="passengersLabel" destination="gPw-Qd-dmV" id="3Ox-h1-pSW"/>
+                <outlet property="passengersTopConstraint" destination="saM-YT-Hgr" id="s-pass-top"/>
                 <outlet property="requestContainerView" destination="BZ3-Fw-CN7" id="XEL-x7-aTD"/>
+                <outlet property="requestsContainerHeightConstraint" destination="Fof-rB-GDd" id="9Vp-s1-qYZ"/>
+                <outlet property="requestsContainerTopConstraint" destination="0gx-Cy-uPZ" id="s-req-cont-top"/>
                 <outlet property="requestsTableView" destination="UmS-A0-JCr" id="TV4-tf-Vpk"/>
                 <outlet property="roleLabel" destination="gS8-Lg-iTa" id="c7K-Z5-aqw"/>
                 <outlet property="seatsLabel" destination="SKb-7o-GLi" id="PyB-DU-Wfu"/>
@@ -308,8 +314,9 @@
                 <outlet property="statusLabel" destination="5Z3-Wd-ys2" id="AVB-lG-IJB"/>
                 <outlet property="toLabel" destination="TK3-ha-Aac" id="eVW-Or-oEa"/>
                 <outlet property="viewRequestButton" destination="pw5-A7-20w" id="iJk-AE-QgG"/>
+                <outlet property="viewRequestsHeightConstraint" destination="h-view-req-btn" id="5Uf-6p-u7a"/>
+                <outlet property="viewRequestsTopConstraint" destination="E3g-bu-jZ8" id="s-view-req-top"/>
             </connections>
-            <point key="canvasLocation" x="46" y="90"/>
         </tableViewCell>
     </objects>
     <resources>
