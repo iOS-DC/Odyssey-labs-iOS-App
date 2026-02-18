@@ -56,7 +56,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setDefaultDateAndTime()
 
         contentView.applyCardStyle()
-        setupUI()
         setupAutocomplete()
         setupPickers()
         routePillsContainer.applySmallCard()
@@ -68,25 +67,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     private func setDefaultDateAndTime() {
         datePicker.date = Date()
         timePicker.date = minimumRideDateTime()
-    }
-
-    // Configures the styling for the suggestions table and map view with rounded corners and shadows
-    private func setupUI() {
-        suggestionsTable.dataSource = self
-        suggestionsTable.delegate = self
-        suggestionsTable.translatesAutoresizingMaskIntoConstraints = true
-        suggestionsTable.layer.cornerRadius = 12
-        suggestionsTable.layer.shadowOpacity = 0.1
-        suggestionsTable.layer.shadowRadius = 6
-        suggestionsTable.backgroundColor = .lightGray
-        mapView.delegate = self
-        
-        mapView.layer.cornerRadius = 16
-        mapView.layer.shadowColor = UIColor.black.cgColor
-        mapView.layer.shadowOpacity = 0.08
-        mapView.layer.shadowRadius = 10
-        mapView.layer.shadowOffset = CGSize(width: 0, height: 4)
-
     }
 
     // Hides the map and route options until user enters locations
@@ -107,22 +87,11 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     // Hooks up location autocomplete so suggestions appear when user types
     private func setupAutocomplete() {
-        
-
         MapKitManager.shared.onSuggestionsUpdate = { results in
             self.suggestions = results
             self.suggestionsTable.reloadData()
             self.suggestionsTable.isHidden = results.isEmpty
         }
-
-        fromTextField.delegate = self
-        toTextField.delegate = self
-        fromTextField.addAction(UIAction { [weak self] _ in
-            self?.updateNextButtonState()
-        }, for: .editingChanged)
-        toTextField.addAction(UIAction { [weak self] _ in
-            self?.updateNextButtonState()
-        }, for: .editingChanged)
     }
 
     // MARK: - Setup Pickers
@@ -185,12 +154,14 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     // Always allow user to edit the text fields
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool { true }
+
+    @IBAction private func locationFieldEditingChanged(_ sender: UITextField) {
+        updateNextButtonState()
+    }
     // Creates those pill buttons showing different route options (Fastest, Shortest, etc.)
     private func buildRoutePills() {
         routePillsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        routePillsContainer.subviews
-            .compactMap { $0 as? UIVisualEffectView }
-            .forEach { $0.removeFromSuperview() }
+        routePillsContainer.subviews.compactMap { $0 as? UIVisualEffectView }.forEach { $0.removeFromSuperview() }
         let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
         blur.frame = routePillsContainer.bounds
         blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
