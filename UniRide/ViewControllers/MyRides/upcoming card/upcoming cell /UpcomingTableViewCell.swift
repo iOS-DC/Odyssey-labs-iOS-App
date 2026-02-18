@@ -38,8 +38,11 @@ final class UpcomingTableViewCell: UITableViewCell {
 
     @IBOutlet weak var requestContainerView: UIView!
     @IBOutlet weak var requestsTableView: UITableView!
-//    @IBOutlet weak var requestsContainerHeightConstraint: NSLayoutConstraint!
-//    @IBOutlet weak var requestsTableHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var requestsContainerHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var viewRequestsHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var viewRequestsTopConstraint: NSLayoutConstraint!
+    @IBOutlet weak var requestsContainerTopConstraint: NSLayoutConstraint!
+    @IBOutlet weak var passengersTopConstraint: NSLayoutConstraint!
 
     @IBOutlet weak var approvedTableView: UITableView!
     @IBOutlet weak var approvedContainerHeightConstraint: NSLayoutConstraint!
@@ -47,7 +50,7 @@ final class UpcomingTableViewCell: UITableViewCell {
     // MARK: - State
     private var trip: RideDataModel.MyTrip?
     private var rideRequests: [RideRequest] = []
-    private var approvedPassengers: [String] = []
+    private var approvedPassengers: [UserProfile] = []
 
     private var isRequestsExpanded = false
     private var isMapExpanded = false
@@ -66,8 +69,11 @@ final class UpcomingTableViewCell: UITableViewCell {
         // Requests container initial state
         requestContainerView.isHidden = true
         requestContainerView.isUserInteractionEnabled = false
-//        requestsContainerHeightConstraint.constant = 200
-//        requestsTableHeightConstraint.constant = 200
+        requestsContainerHeightConstraint.constant = 0
+        viewRequestsHeightConstraint.constant = 0
+        viewRequestsTopConstraint.constant = 0
+        requestsContainerTopConstraint.constant = 0
+        passengersTopConstraint.constant = 0
 
         // Map initial state (KEEP 1)
         mapView.isHidden = true
@@ -76,11 +82,14 @@ final class UpcomingTableViewCell: UITableViewCell {
         // Tables
         requestsTableView.delegate = self
         requestsTableView.dataSource = self
-        requestsTableView.isScrollEnabled = false
+        requestsTableView.isScrollEnabled = true  // Enable scrolling for 1-2 items
         requestsTableView.rowHeight = 70
 
-        approvedTableView.delegate = self
+        approvedTableView.register(ApprovedPassengerCell.self, forCellReuseIdentifier: ApprovedPassengerCell.identifier)
+        approvedTableView.register(UITableViewCell.self, forCellReuseIdentifier: "EmptyCell") // For text-only empty state
+        approvedTableView.rowHeight = 50
         approvedTableView.dataSource = self
+        approvedTableView.delegate = self
         approvedTableView.isScrollEnabled = false
 
         mapView.delegate = self
@@ -103,9 +112,26 @@ final class UpcomingTableViewCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
         
-        // Match Home page card styling - flat design with 20pt corners
-        cardView.layer.cornerRadius = 20
+        // Unified card styling to match Home page
+        cardView.layer.cornerRadius = 18
         cardView.backgroundColor = .systemBackground
+        cardView.layer.masksToBounds = true
+
+        // Shadow styling
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.08
+        layer.shadowOffset = CGSize(width: 0, height: 4)
+        layer.shadowRadius = 8
+        layer.masksToBounds = false
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Compute shadow path based on cardView frame
+        layer.shadowPath = UIBezierPath(
+            roundedRect: cardView.frame,
+            cornerRadius: cardView.layer.cornerRadius
+        ).cgPath
     }
 
     override func prepareForReuse() {
@@ -120,8 +146,11 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         requestContainerView.isHidden = true
         requestContainerView.isUserInteractionEnabled = false
-//        requestsContainerHeightConstraint.constant = 200
-//        requestsTableHeightConstraint.constant = 200
+        requestsContainerHeightConstraint.constant = 0
+        viewRequestsHeightConstraint.constant = 0
+        viewRequestsTopConstraint.constant = 0
+        requestsContainerTopConstraint.constant = 0
+        passengersTopConstraint.constant = 0
 
         mapView.isHidden = true
         mapHeightConstraint.constant = 1
@@ -196,10 +225,12 @@ final class UpcomingTableViewCell: UITableViewCell {
             .filter { $0.status == .pending }
 
         print(" [DEBUG] Pending requests count:", rideRequests.count)
-        print(" [DEBUG] Request IDs:", rideRequests.map { $0.id })
-
-        viewRequestButton.isHidden = rideRequests.isEmpty
+        
+        let hasRequests = !rideRequests.isEmpty
+        viewRequestButton.isHidden = !hasRequests
         viewRequestButton.setTitle("Requests (\(rideRequests.count))", for: .normal)
+        viewRequestsHeightConstraint.constant = hasRequests ? 34 : 0
+        viewRequestsTopConstraint.constant = hasRequests ? 12 : 0
 
         // ======================
         // APPROVED PASSENGERS
@@ -208,20 +239,29 @@ final class UpcomingTableViewCell: UITableViewCell {
             .listBookings(for: ride.id)
             .filter { $0.status == .confirmed }
             .compactMap {
-                UserDataModel.shared.getUser(by: $0.passengerUserID)?.fullName
+                UserDataModel.shared.getUser(by: $0.passengerUserID)
             }
 
         passengersLabel.text = "Passengers (\(approvedPassengers.count))"
         let approvedRowCount = max(approvedPassengers.count, 1)
         approvedContainerHeightConstraint.constant = CGFloat(approvedRowCount) * 44
 
-        // RESET REQUEST UI ON CONFIGURE
-        isRequestsExpanded = false
-        requestContainerView.isHidden = true
-        requestContainerView.isUserInteractionEnabled = false
-//        requestsContainerHeightConstraint.constant = 200
-//        requestsTableHeightConstraint.constant = 200
-
+        // Manage container and spacing
+        if hasRequests {
+            requestContainerView.isHidden = !isRequestsExpanded
+            requestContainerView.isUserInteractionEnabled = isRequestsExpanded
+            
+            let reqCount = min(rideRequests.count, 2)
+            requestsContainerHeightConstraint.constant = isRequestsExpanded ? CGFloat(reqCount * 70) : 0
+            requestsContainerTopConstraint.constant = isRequestsExpanded ? 8 : 0
+            passengersTopConstraint.constant = isRequestsExpanded ? 12 : 8 // Small gap from button if collapsed
+        } else {
+            requestContainerView.isHidden = true
+            requestContainerView.isUserInteractionEnabled = false
+            requestsContainerHeightConstraint.constant = 0
+            requestsContainerTopConstraint.constant = 0
+            passengersTopConstraint.constant = 0 // Fully collapsed
+        }
 
         requestsTableView.reloadData()
         approvedTableView.reloadData()
@@ -239,6 +279,11 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         requestContainerView.isHidden = !isRequestsExpanded
         requestContainerView.isUserInteractionEnabled = isRequestsExpanded
+        
+        let reqCount = min(rideRequests.count, 2)
+        requestsContainerHeightConstraint.constant = isRequestsExpanded ? CGFloat(reqCount * 70) : 0
+        requestsContainerTopConstraint.constant = isRequestsExpanded ? 8 : 0
+        passengersTopConstraint.constant = isRequestsExpanded ? 12 : 8
 
         requestsTableView.reloadData()
 
@@ -331,39 +376,35 @@ extension UpcomingTableViewCell: UITableViewDataSource, UITableViewDelegate {
             print("🟢 Request ID =", req.id)
 
             let ride = trip!.ride
+            let passenger = UserDataModel.shared.getUser(by: req.passengerUserID)
+            let name = passenger?.fullName ?? "Passenger"
+            
             cell.configure(
-                name: UserDataModel.shared.getUser(by: req.passengerUserID)?.fullName ?? "Passenger",
-                route: "\(ride.source.address ?? "From") → \(ride.destination.address ?? "To")"
+                name: name,
+                route: "\(ride.source.address ?? "From") → \(ride.destination.address ?? "To")",
+                photoURL: passenger?.photoURL
             )
 
             cell.delegate = self
             return cell
         }
 
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ApprovedCell", for: indexPath)
-
         if approvedPassengers.isEmpty {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "EmptyCell", for: indexPath)
             cell.textLabel?.text = "No approved passengers"
             cell.textLabel?.textAlignment = .center
-            cell.selectionStyle = .none
-            cell.imageView?.image = nil
-        } else {
-            let passengerName = approvedPassengers[indexPath.row]
-            cell.textLabel?.text = passengerName
-            cell.textLabel?.textAlignment = .left
             cell.textLabel?.font = .systemFont(ofSize: 14, weight: .medium)
-            
-            // Profile circle
-            let config = UIImage.SymbolConfiguration(pointSize: 24, weight: .regular)
-            cell.imageView?.image = UIImage(systemName: "person.circle.fill", withConfiguration: config)
-            cell.imageView?.tintColor = .systemGray4
-            
-            // Circle styling
-            cell.imageView?.layer.cornerRadius = 12
-            cell.imageView?.layer.masksToBounds = true
+            cell.textLabel?.textColor = .secondaryLabel
+            cell.imageView?.image = nil
+            cell.selectionStyle = .none
+            cell.backgroundColor = .clear
+            return cell
+        } else {
+            let cell = tableView.dequeueReusableCell(withIdentifier: ApprovedPassengerCell.identifier, for: indexPath) as! ApprovedPassengerCell
+            let passenger = approvedPassengers[indexPath.row]
+            cell.configure(name: passenger.fullName, photoURL: passenger.photoURL)
+            return cell
         }
-
-        return cell
 
     }
 }

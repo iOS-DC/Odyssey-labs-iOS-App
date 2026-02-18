@@ -43,19 +43,32 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
 
-        // Match Home page card styling - flat design with 20pt corners
-        cardView.layer.cornerRadius = 20
+        // Unified card styling to match Home page
+        cardView.layer.cornerRadius = 18
         cardView.backgroundColor = .systemBackground
+        cardView.layer.masksToBounds = true
+
+        // Shadow styling
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.08
+        layer.shadowOffset = CGSize(width: 0, height: 4)
+        layer.shadowRadius = 8
+        layer.masksToBounds = false
 
         // Image view
         hostImageView.clipsToBounds = true
         hostImageView.contentMode = .scaleAspectFill
-        hostImageView.image = UIImage(systemName: "person.crop.circle.fill")
-        hostImageView.tintColor = .systemGray3
+        hostImageView.tintColor = .systemGray4
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        // Compute shadow path based on cardView frame
+        layer.shadowPath = UIBezierPath(
+            roundedRect: cardView.frame,
+            cornerRadius: cardView.layer.cornerRadius
+        ).cgPath
+        
         // ensure circular image after layout
         hostImageView.layer.cornerRadius = hostImageView.bounds.height / 2
     }
@@ -185,16 +198,11 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             }
             hostNameLabel.text = display
 
-            if let imgName = avatarName, let image = UIImage(named: imgName) {
-                hostImageView.image = image
-            } else {
-                hostImageView.image = UIImage(systemName: "person.crop.circle.fill")
-                hostImageView.tintColor = .systemGray3
-            }
+            hostImageView.loadAndFallback(from: host.photoURL, name: display)
         } else {
-            hostNameLabel.text = "Host (\(driverID.uuidString.prefix(6)))"
-            hostImageView.image = UIImage(systemName: "person.crop.circle.fill")
-            hostImageView.tintColor = .systemGray3
+            let fallbackName = "Host"
+            hostNameLabel.text = fallbackName
+            hostImageView.loadAndFallback(from: nil, name: fallbackName)
             print("[DEBUG] UpcomingPassengerCell: host not found for driverUserID =", driverID.uuidString)
         }
 

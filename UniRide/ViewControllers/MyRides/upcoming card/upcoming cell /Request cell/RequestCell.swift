@@ -17,13 +17,12 @@ final class RequestCell: UITableViewCell {
 
     weak var delegate: RequestCellDelegate?
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        setupUI()
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        profileImageView.layer.cornerRadius = profileImageView.bounds.height / 2
     }
 
     private func setupUI() {
-        profileImageView.layer.cornerRadius = 20
         profileImageView.clipsToBounds = true
 
         approveButton.setImage(
@@ -39,10 +38,11 @@ final class RequestCell: UITableViewCell {
         denyButton.tintColor = .systemRed
     }
 
-    func configure(name: String, route: String) {
+    func configure(name: String, route: String, photoURL: URL? = nil) {
         nameLabel.text = name
         routeLabel.text = route
-        profileImageView.image = UIImage(systemName: "person.circle.fill")
+        
+        profileImageView.loadAndFallback(from: photoURL, name: name)
     }
 
     @IBAction func approveTapped(_ sender: UIButton) {

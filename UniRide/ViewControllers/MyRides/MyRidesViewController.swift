@@ -43,7 +43,12 @@ final class MyRidesViewController: UIViewController {
 
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 260
+        
+        // Add content inset to table view to provide space for the filter button
+        // when it's visible in the "Past" segment.
+        tableView.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 20, right: 0)
 
+        setupFilterButton()
         reloadTrips()
         NotificationCenter.default.addObserver(
             self,
@@ -149,6 +154,28 @@ final class MyRidesViewController: UIViewController {
     }
 
     
+    private func setupFilterButton() {
+        guard let btn = filterButton else { return }
+        
+        // Align style with Home page elements
+        btn.layer.cornerRadius = 15
+        btn.backgroundColor = .systemBlue.withAlphaComponent(0.1)
+        btn.tintColor = .systemBlue
+        
+        btn.setTitle(" Filter", for: .normal)
+        btn.setImage(UIImage(systemName: "line.3.horizontal.decrease.circle"), for: .normal)
+        btn.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        
+        // Ensure horizontal alignment as requested
+        btn.contentHorizontalAlignment = .center
+        
+        // Add shadow for premium feel
+        btn.layer.shadowColor = UIColor.black.cgColor
+        btn.layer.shadowOpacity = 0.1
+        btn.layer.shadowOffset = CGSize(width: 0, height: 2)
+        btn.layer.shadowRadius = 4
+    }
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
@@ -206,7 +233,12 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
             cell.configure(with: trip)
             return cell
         }
+    }
 
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        // Add top & bottom padding to match Home page behavior
+        let inset: CGFloat = 12
+        cell.contentView.frame = cell.contentView.frame.insetBy(dx: 0, dy: inset / 2)
     }
 
 }

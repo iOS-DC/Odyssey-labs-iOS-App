@@ -122,3 +122,61 @@ extension UIButton {
         }
     }
 }
+
+// MARK: - Avatar Generation
+extension UIImage {
+    static func generatedAvatar(for name: String, size: CGSize) -> UIImage? {
+        let initials = name.split(separator: " ")
+            .compactMap { $0.first }
+            .prefix(2)
+            .map { String($0).uppercased() }
+            .joined()
+        
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            let rect = CGRect(origin: .zero, size: size)
+            let path = UIBezierPath(ovalIn: rect)
+            UIColor.systemGray5.setFill()
+            path.fill()
+
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: size.height * 0.4, weight: .semibold),
+                .foregroundColor: UIColor.label
+            ]
+            let text = NSString(string: initials)
+            let textSize = text.size(withAttributes: attributes)
+            let textRect = CGRect(
+                x: (size.width - textSize.width) / 2,
+                y: (size.height - textSize.height) / 2,
+                width: textSize.width,
+                height: textSize.height
+            )
+            text.draw(in: textRect, withAttributes: attributes)
+        }
+    }
+}
+
+extension UIImageView {
+    func loadAndFallback(from url: URL?, name: String) {
+        // Clear current image to avoid flicker
+        self.image = nil
+        
+        guard let url = url else {
+            self.image = UIImage.generatedAvatar(for: name, size: self.bounds.size.width > 0 ? self.bounds.size : CGSize(width: 40, height: 40))
+            return
+        }
+        
+        // Use a background task to load data
+        DispatchQueue.global(qos: .userInitiated).async {
+            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                DispatchQueue.main.async {
+                    self.image = image
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.image = UIImage.generatedAvatar(for: name, size: self.bounds.size.width > 0 ? self.bounds.size : CGSize(width: 40, height: 40))
+                }
+            }
+        }
+    }
+}
