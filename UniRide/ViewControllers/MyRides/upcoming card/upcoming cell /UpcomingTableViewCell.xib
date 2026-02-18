@@ -50,7 +50,7 @@
                                     <constraint firstAttribute="height" constant="26" id="status-h-up"/>
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="100" id="status-minw-up"/>
                                 </constraints>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="13"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="12"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                                 <userDefinedRuntimeAttributes>
@@ -62,7 +62,7 @@
                             </label>
 
                             <!-- Seats label (right, below status) -->
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="right" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0 / 2" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SKb-7o-GLi">
+                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="right" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0 / 2" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SKb-7o-GLi">
                                 <rect key="frame" x="274" y="72" width="26" height="14"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="12"/>
                                 <color key="textColor" systemColor="tertiaryLabelColor"/>
@@ -71,52 +71,52 @@
 
                             <!-- Route: From → Arrow → To -->
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Banur" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="isW-HD-3c7">
-                                <rect key="frame" x="16" y="100" width="55" height="26"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="20"/>
+                                <rect key="frame" x="16" y="100" width="55" height="22"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="16"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="arrow.right" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="34E-aQ-NG4">
-                                <rect key="frame" x="79" y="101" width="22" height="22"/>
+                                <rect key="frame" x="79" y="101" width="18" height="18"/>
                                 <color key="tintColor" systemColor="labelColor"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="22" id="flt-arr-h"/>
-                                    <constraint firstAttribute="width" constant="22" id="flt-arr-w"/>
+                                    <constraint firstAttribute="height" constant="18" id="flt-arr-h"/>
+                                    <constraint firstAttribute="width" constant="18" id="flt-arr-w"/>
                                 </constraints>
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="249" verticalHuggingPriority="251" text="Chitkara University Road" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.7" translatesAutoresizingMaskIntoConstraints="NO" id="TK3-ha-Aac">
-                                <rect key="frame" x="109" y="100" width="191" height="26"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="20"/>
+                                <rect key="frame" x="109" y="100" width="191" height="22"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="16"/>
                                 <nil key="highlightedColor"/>
                             </label>
 
                             <!-- Time row: startTime • duration – endTime -->
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="11:00" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="OQt-xS-B3K">
                                 <rect key="frame" x="16" y="138" width="38" height="18"/>
-                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="15"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="13"/>
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text=" • " lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MNa-bJ-pNW">
                                 <rect key="frame" x="58" y="138" width="15" height="18"/>
-                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="15"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="13"/>
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="39 min" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Vo7-I1-U9m">
                                 <rect key="frame" x="77" y="138" width="49" height="18"/>
-                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="15"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="13"/>
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text=" – " lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="zBK-hp-VWe">
                                 <rect key="frame" x="130" y="138" width="17" height="18"/>
-                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="15"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="13"/>
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="13:00" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4d5-2x-6vU">
                                 <rect key="frame" x="150" y="138" width="40" height="18"/>
-                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="15"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="13"/>
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
@@ -124,7 +124,7 @@
                             <!-- Passengers label -->
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Passengers: 0 / 2" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gPw-Qd-dmV">
                                 <rect key="frame" x="16" y="168" width="121" height="18"/>
-                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="15"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="13"/>
                                 <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
@@ -171,7 +171,7 @@
                                 </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="filled" image="map" catalog="system" imagePlacement="leading" title="Show Map" imagePadding="8">
-                                    <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="16"/>
+                                    <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="14"/>
                                     <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                 </buttonConfiguration>
@@ -204,7 +204,7 @@
                                         <color key="backgroundColor" red="0.93" green="0.93" blue="0.94" alpha="1" colorSpace="calibratedRGB"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="plain" title="Message">
-                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="16"/>
+                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="14"/>
                                             <color key="baseForegroundColor" systemColor="systemBlueColor"/>
                                         </buttonConfiguration>
                                         <userDefinedRuntimeAttributes>
@@ -222,7 +222,7 @@
                                         <color key="backgroundColor" systemColor="systemBlueColor"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Call">
-                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="16"/>
+                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="14"/>
                                             <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                             <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                         </buttonConfiguration>
@@ -251,7 +251,7 @@
                                 </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="filled" title="Cancel Ride">
-                                    <fontDescription key="titleFontDescription" type="boldSystem" pointSize="17"/>
+                                    <fontDescription key="titleFontDescription" type="boldSystem" pointSize="15"/>
                                     <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     <color key="baseBackgroundColor" systemColor="systemRedColor"/>
                                 </buttonConfiguration>
@@ -308,13 +308,13 @@
                             <constraint firstItem="SKb-7o-GLi" firstAttribute="top" secondItem="5Z3-Wd-ys2" secondAttribute="bottom" constant="4" id="mON-Tp-KrD"/>
                             <constraint firstAttribute="trailing" secondItem="SKb-7o-GLi" secondAttribute="trailing" constant="16" id="d7X-dP-cX4"/>
 
-                            <!-- Route row: fromLabel, arrow, toLabel — below seatsLabel -->
-                            <constraint firstItem="isW-HD-3c7" firstAttribute="top" secondItem="SKb-7o-GLi" secondAttribute="bottom" constant="14" id="83N-vt-dTs"/>
+                            <!-- Route row: fromLabel, arrow, toLabel — below statusLabel (seatsLabel hidden) -->
+                            <constraint firstItem="isW-HD-3c7" firstAttribute="top" secondItem="5Z3-Wd-ys2" secondAttribute="bottom" constant="14" id="83N-vt-dTs"/>
                             <constraint firstItem="isW-HD-3c7" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="16" id="1Ph-Nc-L6b"/>
                             <constraint firstItem="34E-aQ-NG4" firstAttribute="leading" secondItem="isW-HD-3c7" secondAttribute="trailing" constant="8" id="Rdk-HY-Tvm"/>
                             <constraint firstItem="34E-aQ-NG4" firstAttribute="centerY" secondItem="isW-HD-3c7" secondAttribute="centerY" id="icE-sj-oMU"/>
                             <constraint firstItem="TK3-ha-Aac" firstAttribute="leading" secondItem="34E-aQ-NG4" secondAttribute="trailing" constant="8" id="rSm-ew-qRR"/>
-                            <constraint firstItem="TK3-ha-Aac" firstAttribute="top" secondItem="SKb-7o-GLi" secondAttribute="bottom" constant="14" id="6BX-XC-Kx1"/>
+                            <constraint firstItem="TK3-ha-Aac" firstAttribute="top" secondItem="5Z3-Wd-ys2" secondAttribute="bottom" constant="14" id="6BX-XC-Kx1"/>
                             <constraint firstAttribute="trailing" secondItem="TK3-ha-Aac" secondAttribute="trailing" constant="16" id="toLbl-trail"/>
 
                             <!-- Time row: below fromLabel -->

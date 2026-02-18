@@ -4,7 +4,6 @@
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
         <capability name="Map view configurations" minToolsVersion="14.0"/>
-        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -125,7 +124,7 @@
                                                                                 <rect key="frame" x="0.0" y="23" width="148.66666666666666" height="47"/>
                                                                                 <subviews>
                                                                                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="calendar" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="C0f-4f-vup">
-                                                                                        <rect key="frame" x="10" y="17.000000000000036" width="16" height="13.000000000000004"/>
+                                                                                        <rect key="frame" x="8" y="17.000000000000036" width="16" height="13.000000000000004"/>
                                                                                         <color key="tintColor" systemColor="secondaryLabelColor"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="height" constant="16" id="S2N-l3-2kL"/>
@@ -133,7 +132,7 @@
                                                                                         </constraints>
                                                                                     </imageView>
                                                                                     <datePicker clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="leading" contentVerticalAlignment="center" datePickerMode="date" translatesAutoresizingMaskIntoConstraints="NO" id="cGf-cE-k1n">
-                                                                                        <rect key="frame" x="32.000000000000007" y="6.3333333333333712" width="110.66666666666669" height="34"/>
+                                                                                        <rect key="frame" x="26.000000000000007" y="6.3333333333333712" width="116.66666666666669" height="34"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="height" constant="34" id="Dte-Mn-h6S"/>
                                                                                         </constraints>
@@ -144,9 +143,9 @@
                                                                                 </subviews>
                                                                                 <constraints>
                                                                                     <constraint firstItem="cGf-cE-k1n" firstAttribute="centerY" secondItem="S1c-wv-bC1" secondAttribute="centerY" id="0si-lS-pRm"/>
-                                                                                    <constraint firstItem="cGf-cE-k1n" firstAttribute="leading" secondItem="C0f-4f-vup" secondAttribute="trailing" constant="6" id="9xK-OU-io4"/>
-                                                                                    <constraint firstItem="C0f-4f-vup" firstAttribute="leading" secondItem="S1c-wv-bC1" secondAttribute="leading" constant="10" id="AA8-ZP-83K"/>
-                                                                                    <constraint firstAttribute="height" constant="47" id="LFA-zM-3FQ"/>
+                                                                                    <constraint firstItem="cGf-cE-k1n" firstAttribute="leading" secondItem="S1c-wv-bC1" secondAttribute="leading" constant="26" id="9xK-OU-io4"/>
+                                                                                    <constraint firstItem="C0f-4f-vup" firstAttribute="leading" secondItem="S1c-wv-bC1" secondAttribute="leading" constant="8" id="AA8-ZP-83K"/>
+                                                                                    <constraint firstAttribute="height" constant="52" id="LFA-zM-3FQ"/>
                                                                                     <constraint firstItem="C0f-4f-vup" firstAttribute="centerY" secondItem="S1c-wv-bC1" secondAttribute="centerY" id="o0k-XV-6zN"/>
                                                                                     <constraint firstAttribute="trailing" secondItem="cGf-cE-k1n" secondAttribute="trailing" constant="6" id="vSP-z9-jXO"/>
                                                                                 </constraints>
@@ -188,7 +187,7 @@
                                                                                 <rect key="frame" x="0.0" y="23" width="148.33333333333334" height="47"/>
                                                                                 <subviews>
                                                                                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="clock" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="1vn-PD-8wC">
-                                                                                        <rect key="frame" x="10" y="16.000000000000036" width="16" height="14.666666666666668"/>
+                                                                                        <rect key="frame" x="8" y="16.000000000000036" width="16" height="14.666666666666668"/>
                                                                                         <color key="tintColor" systemColor="secondaryLabelColor"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="height" constant="16" id="IDv-EH-BQN"/>
@@ -196,7 +195,7 @@
                                                                                         </constraints>
                                                                                     </imageView>
                                                                                     <datePicker contentMode="scaleToFill" contentHorizontalAlignment="leading" contentVerticalAlignment="center" datePickerMode="time" translatesAutoresizingMaskIntoConstraints="NO" id="I8R-LL-KbK">
-                                                                                        <rect key="frame" x="31.999999999999993" y="6.3333333333333712" width="110.33333333333331" height="34"/>
+                                                                                        <rect key="frame" x="25.999999999999993" y="6.3333333333333712" width="116.33333333333331" height="34"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="height" constant="34" id="Tim-gq-T5b"/>
                                                                                         </constraints>
@@ -205,12 +204,11 @@
                                                                                         </connections>
                                                                                     </datePicker>
                                                                                 </subviews>
-                                                                                <color key="backgroundColor" name="Color"/>
                                                                                 <constraints>
                                                                                     <constraint firstItem="I8R-LL-KbK" firstAttribute="centerY" secondItem="BCg-D9-4dN" secondAttribute="centerY" id="1zc-zJ-fMZ"/>
-                                                                                    <constraint firstItem="I8R-LL-KbK" firstAttribute="leading" secondItem="1vn-PD-8wC" secondAttribute="trailing" constant="6" id="N0q-YT-v9m"/>
-                                                                                    <constraint firstItem="1vn-PD-8wC" firstAttribute="leading" secondItem="BCg-D9-4dN" secondAttribute="leading" constant="10" id="drS-4F-0Ze"/>
-                                                                                    <constraint firstAttribute="height" constant="47" id="lHf-qS-Uni"/>
+                                                                                    <constraint firstItem="I8R-LL-KbK" firstAttribute="leading" secondItem="BCg-D9-4dN" secondAttribute="leading" constant="26" id="N0q-YT-v9m"/>
+                                                                                    <constraint firstItem="1vn-PD-8wC" firstAttribute="leading" secondItem="BCg-D9-4dN" secondAttribute="leading" constant="8" id="drS-4F-0Ze"/>
+                                                                                    <constraint firstAttribute="height" constant="52" id="lHf-qS-Uni"/>
                                                                                     <constraint firstItem="1vn-PD-8wC" firstAttribute="centerY" secondItem="BCg-D9-4dN" secondAttribute="centerY" id="qSE-o7-kc5"/>
                                                                                 </constraints>
                                                                                 <userDefinedRuntimeAttributes>
@@ -228,7 +226,6 @@
                                                                         </constraints>
                                                                     </stackView>
                                                                 </subviews>
-                                                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                                 <constraints>
                                                                     <constraint firstItem="KcJ-xi-oxO" firstAttribute="top" secondItem="nJm-UQ-n5R" secondAttribute="top" id="QR3-Oz-JHq"/>
                                                                     <constraint firstAttribute="bottom" secondItem="KcJ-xi-oxO" secondAttribute="bottom" id="QsY-zc-zL6"/>
@@ -887,9 +884,6 @@
         <image name="location.circle" catalog="system" width="128" height="123"/>
         <image name="mappin.and.ellipse" catalog="system" width="110" height="128"/>
         <image name="motorcycle.fill" catalog="system" width="128" height="76"/>
-        <namedColor name="Color">
-            <color red="0.96899998188018799" green="0.98000001907348633" blue="0.98400002717971802" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <systemColor name="secondaryLabelColor">
             <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>

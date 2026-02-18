@@ -126,18 +126,15 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     }
 
     // MARK: - Setup Pickers
-    // Makes sure user can't pick dates/times in the past
+    // Makes sure user can't pick dates/times in the past.
     private func setupPickers() {
         datePicker.minimumDate = Date()
-        if datePicker.date < Date() {
-            datePicker.date = Date()
-        }
-        if timePicker.date < minimumRideDateTime() {
-            timePicker.date = minimumRideDateTime()
-        }
-
+        if datePicker.date < Date() { datePicker.date = Date() }
+        if timePicker.date < minimumRideDateTime() { timePicker.date = minimumRideDateTime() }
         refreshTimeConstraintIfNeeded()
     }
+
+
 
     // When user picks a different date, update the time constraints
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) {
