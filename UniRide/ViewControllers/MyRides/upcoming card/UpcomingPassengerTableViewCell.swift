@@ -105,70 +105,69 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let booked = ride.seatsTotal - ride.seatsAvailable
         seatsLabel.text = "\(booked)/\(ride.seatsTotal) seats"
 
-        // Ride status badge
-        rideStatusLabel.text = "  \(ride.status.rawValue.capitalized)  "
-        let (rideBgColor, rideTextColor): (UIColor, UIColor)
-        switch ride.status {
-        case .published:
-            rideBgColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15)
-            rideTextColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
-        case .ongoing:
-            rideBgColor = UIColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 0.15)
-            rideTextColor = UIColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 1.0)
-        case .completed:
-            rideBgColor = UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 0.10)
-            rideTextColor = UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 1.0)
-        case .cancelled:
-            rideBgColor = UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 0.15)
-            rideTextColor = UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 1.0)
-        case .draft:
-            rideBgColor = UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 0.15)
-            rideTextColor = UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0)
-        }
-        applyBadgeStyle(to: rideStatusLabel, backgroundColor: rideBgColor, textColor: rideTextColor)
+        // Hide the old ride status badge — we show request status instead
+        rideStatusLabel.isHidden = true
 
-        // Role label with badge style
-        let roleText = trip.role == .passenger ? "  Passenger  " : "  Hosting  "
-        roleLabel.text = roleText
-        applyBadgeStyle(to: roleLabel, backgroundColor: .systemGray6, textColor: .darkGray)
+        // Role label
+        roleLabel.text = "  Passenger  "
+        roleLabel.backgroundColor = UIColor.systemGray6
+        roleLabel.textColor = .secondaryLabel
+        roleLabel.font = .systemFont(ofSize: 12, weight: .semibold)
+        roleLabel.layer.cornerRadius = 13
+        roleLabel.layer.masksToBounds = true
 
-        // Request / booking status badge
+        // Request / booking status badge — solid filled pill like hosting card
+        let isConfirmed: Bool
         if let status = trip.requestStatus {
-            if status == .approved {
-                requestStatusLabel.text = "  Confirmed  "
-                applyBadgeStyle(
-                    to: requestStatusLabel,
-                    backgroundColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15),
-                    textColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
-                )
-            } else {
-                requestStatusLabel.text = "  \(status.rawValue.capitalized)  "
-                applyBadgeStyle(
-                    to: requestStatusLabel,
-                    backgroundColor: UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 0.15),
-                    textColor: UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0)
-                )
-            }
+            isConfirmed = (status == .approved)
         } else {
-            // Defensive: if there's a confirmed booking for the current user, show Confirmed
-            if let me = UserDataModel.shared.getCurrentUser() {
-                let bookings = RideDataModel.shared.listBookings(for: ride.id)
-                if bookings.contains(where: { $0.passengerUserID == me.id && $0.status == .confirmed }) {
-                    requestStatusLabel.text = "  Confirmed  "
-                    applyBadgeStyle(
-                        to: requestStatusLabel,
-                        backgroundColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 0.15),
-                        textColor: UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
-                    )
-                } else {
-                    requestStatusLabel.text = "-"
-                    requestStatusLabel.backgroundColor = .clear
+            // Fallback: check bookings directly
+            let me = UserDataModel.shared.getCurrentUser()
+            let bookings = RideDataModel.shared.listBookings(for: ride.id)
+            isConfirmed = me != nil && bookings.contains(where: { $0.passengerUserID == me!.id && $0.status == .confirmed })
+        }
+
+        if isConfirmed {
+            requestStatusLabel.text = "  ✓ Confirmed  "
+            requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+            requestStatusLabel.textColor = .white
+            // Update cancel button title for confirmed booking
+            var config = cancelRequestButton.configuration ?? UIButton.Configuration.filled()
+            config.title = "Cancel Booking"
+            cancelRequestButton.configuration = config
+        } else {
+            let statusText: String
+            let bgColor: UIColor
+            if let status = trip.requestStatus {
+                switch status {
+                case .pending:
+                    statusText = "  Pending  "
+                    bgColor = UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0)
+                case .denied:
+                    statusText = "  Denied  "
+                    bgColor = UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 1.0)
+                case .cancelled:
+                    statusText = "  Cancelled  "
+                    bgColor = UIColor(red: 0.60, green: 0.60, blue: 0.60, alpha: 1.0)
+                default:
+                    statusText = "  \(status.rawValue.capitalized)  "
+                    bgColor = UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0)
                 }
             } else {
-                requestStatusLabel.text = "-"
-                requestStatusLabel.backgroundColor = .clear
+                statusText = "  Pending  "
+                bgColor = UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0)
             }
+            requestStatusLabel.text = statusText
+            requestStatusLabel.backgroundColor = bgColor
+            requestStatusLabel.textColor = .white
+            var config = cancelRequestButton.configuration ?? UIButton.Configuration.filled()
+            config.title = "Cancel Request"
+            cancelRequestButton.configuration = config
         }
+        requestStatusLabel.font = .systemFont(ofSize: 13, weight: .bold)
+        requestStatusLabel.layer.cornerRadius = 13
+        requestStatusLabel.layer.masksToBounds = true
+        requestStatusLabel.textAlignment = .center
 
         // Host info — look up user by driverUserID
         // Host info — look up user by driverUserID (KVC-free)
