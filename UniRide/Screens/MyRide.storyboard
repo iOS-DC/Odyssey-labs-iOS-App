@@ -41,13 +41,11 @@
                              <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="flt-btn-001" userLabel="Filter Button">
                                 <rect key="frame" x="297" y="167.66666666666669" width="80" height="30"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="30" id="flt-h-001"/>
-                                    <constraint firstAttribute="width" constant="80" id="flt-w-001"/>
+                                    <constraint firstAttribute="height" constant="36" id="flt-h-001"/>
+                                    <constraint firstAttribute="width" constant="36" id="flt-w-001"/>
                                 </constraints>
                                 <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" image="line.3.horizontal.decrease.circle" catalog="system" title="Filter">
-                                    <fontDescription key="titleFontDescription" type="system" pointSize="13"/>
-                                </buttonConfiguration>
+                                <buttonConfiguration key="configuration" style="plain" image="line.3.horizontal.decrease.circle" catalog="system"/>
                                 <connections>
                                     <action selector="filterButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="flt-act-001"/>
                                 </connections>

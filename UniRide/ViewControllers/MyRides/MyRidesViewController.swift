@@ -157,19 +157,15 @@ final class MyRidesViewController: UIViewController {
     private func setupFilterButton() {
         guard let btn = filterButton else { return }
         
-        // Align style with Home page elements
-        btn.layer.cornerRadius = 15
+        btn.layer.cornerRadius = 18
         btn.backgroundColor = .systemBlue.withAlphaComponent(0.1)
         btn.tintColor = .systemBlue
         
-        btn.setTitle(" Filter", for: .normal)
+        // Icon only — no title
+        btn.setTitle(nil, for: .normal)
         btn.setImage(UIImage(systemName: "line.3.horizontal.decrease.circle"), for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
         
-        // Ensure horizontal alignment as requested
-        btn.contentHorizontalAlignment = .center
-        
-        // Add shadow for premium feel
+        // Shadow for premium feel
         btn.layer.shadowColor = UIColor.black.cgColor
         btn.layer.shadowOpacity = 0.1
         btn.layer.shadowOffset = CGSize(width: 0, height: 2)
@@ -216,6 +212,15 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
                 ) as! UpcomingPassengerTableViewCell
 
                 cell.configure(with: trip)
+
+                // Wire up cancel button — tag = row so the action can find the right trip
+                cell.cancelRequestButton.tag = indexPath.row
+                cell.cancelRequestButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                cell.cancelRequestButton.addTarget(
+                    self,
+                    action: #selector(cancelPassengerRequest(_:)),
+                    for: .touchUpInside
+                )
                 return cell
             }
         }
@@ -282,6 +287,19 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         RideDataModel.shared.cancelRide(id: trip.ride.id)
         reloadTrips()
     }
+
+    func upcomingCellDidTapPassenger(_ cell: UpcomingTableViewCell, passenger: UserProfile, ride: Ride) {
+        let vc = PassengerDetailViewController(passenger: passenger, ride: ride)
+        vc.onRemovePassenger = { [weak self] in
+            self?.reloadTrips()
+        }
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+        present(vc, animated: true)
+    }
     
 }
 
@@ -294,16 +312,42 @@ extension MyRidesViewController {
 
         let trip = currentTrips[index]
         guard trip.role == .passenger,
-              let requestID = trip.requestID,
               let me = UserDataModel.shared.getCurrentUser()
         else { return }
 
-        RideDataModel.shared.cancelMyRequest(
-            requestID: requestID,
-            passengerUserID: me.id
-        )
+        let alertTitle = trip.requestStatus == .approved ? "Cancel Booking" : "Cancel Request"
+        let alertMsg   = trip.requestStatus == .approved
+            ? "Are you sure you want to cancel your confirmed booking?"
+            : "Are you sure you want to cancel this ride request?"
+        let actionTitle = trip.requestStatus == .approved ? "Cancel Booking" : "Cancel Request"
 
-        reloadTrips()
+        let alert = UIAlertController(title: alertTitle, message: alertMsg, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Keep", style: .cancel))
+        alert.addAction(UIAlertAction(title: actionTitle, style: .destructive) { [weak self] _ in
+            guard let self else { return }
+
+            if trip.requestStatus == .approved {
+                // Confirmed booking — find it by rideID + passengerUserID and cancel it
+                let bookings = RideDataModel.shared.listBookings(for: trip.ride.id)
+                if let booking = bookings.first(where: {
+                    $0.passengerUserID == me.id && $0.status == .confirmed
+                }) {
+                    RideDataModel.shared.cancelBooking(
+                        bookingID: booking.id,
+                        by: me.id
+                    )
+                }
+            } else if let requestID = trip.requestID {
+                // Pending/denied request — cancel it directly
+                RideDataModel.shared.cancelMyRequest(
+                    requestID: requestID,
+                    passengerUserID: me.id
+                )
+            }
+
+            self.reloadTrips()
+        })
+        present(alert, animated: true)
     }
    
 }

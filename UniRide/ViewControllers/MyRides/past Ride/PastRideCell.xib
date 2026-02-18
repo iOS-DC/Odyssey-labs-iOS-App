@@ -10,107 +10,175 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <tableViewCell contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="PastRideCell" rowHeight="204" id="KGk-i7-Jjw" customClass="PastRideCell" customModule="UniRide" customModuleProvider="target">
-            <rect key="frame" x="0.0" y="0.0" width="320" height="204"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="PastRideCell" id="KGk-i7-Jjw" customClass="PastRideCell" customModule="UniRide" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="320" height="240"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
-                <rect key="frame" x="0.0" y="0.0" width="320" height="204"/>
+                <rect key="frame" x="0.0" y="0.0" width="320" height="240"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
+                    <!-- Card View -->
                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="QP4-HB-UEx" userLabel="card view">
-                        <rect key="frame" x="16" y="8" width="288" height="188"/>
+                        <rect key="frame" x="16" y="8" width="288" height="224"/>
                         <userDefinedRuntimeAttributes>
                             <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                <integer key="value" value="20"/>
+                                <integer key="value" value="18"/>
                             </userDefinedRuntimeAttribute>
                         </userDefinedRuntimeAttributes>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="13.00" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mHR-yD-8ef">
-                                <rect key="frame" x="230.33333333333334" y="34.333333333333336" width="39.666666666666657" height="19.333333333333336"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Hosting" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Vti-lP-iqt">
-                                <rect key="frame" x="16" y="16" width="44" height="14.333333333333336"/>
+
+                            <!-- ROW 1: Role label (left) + Date label (right) -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Hosting" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Vti-lP-iqt">
+                                <rect key="frame" x="16" y="16" width="44" height="14"/>
                                 <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="12"/>
-                                <color key="textColor" red="0.41960784313725491" green="0.44705882352941179" blue="0.50196078431372548" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="textColor" red="0.42" green="0.45" blue="0.50" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Banur" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="kIo-nI-ciP">
-                                <rect key="frame" x="122" y="50.333333333333329" width="45" height="19.333333333333329"/>
-                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="16"/>
-                                <color key="textColor" red="0.12156862745098039" green="0.16078431372549021" blue="0.21568627450980393" alpha="1" colorSpace="calibratedRGB"/>
+
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="right" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="18 Feb 2026" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5dx-EX-odD">
+                                <rect key="frame" x="180" y="16" width="92" height="14"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="11"/>
+                                <color key="textColor" systemColor="tertiaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Mon,Jan 16" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5dx-EX-odD">
-                                <rect key="frame" x="207" y="12" width="65" height="14.333333333333336"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                <color key="textColor" red="0.41960784313725491" green="0.44705882352941179" blue="0.50196078431372548" alpha="1" colorSpace="calibratedRGB"/>
+
+                            <!-- ROW 2: Time label (left) + Status badge (right) -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="11:19" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mHR-yD-8ef">
+                                <rect key="frame" x="16" y="36" width="50" height="16"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="13"/>
+                                <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="passengers " lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hpP-ZM-aRF">
-                                <rect key="frame" x="16" y="85.666666666666671" width="88" height="20"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
-                                <nil key="textColor"/>
+
+                            <!-- Status badge: right-aligned, own row -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="249" verticalHuggingPriority="251" text="Completed" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="y0Y-C4-Nys">
+                                <rect key="frame" x="188" y="33" width="84" height="22"/>
+                                <fontDescription key="fontDescription" type="system" weight="bold" pointSize="11"/>
+                                <color key="textColor" red="0.06" green="0.73" blue="0.51" alpha="1" colorSpace="calibratedRGB"/>
+                                <nil key="highlightedColor"/>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <integer key="value" value="11"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds">
+                                        <boolean key="value" value="YES"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                                <color key="backgroundColor" red="0.06" green="0.73" blue="0.51" alpha="0.12" colorSpace="calibratedRGB"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="85" id="status-minw-001"/>
+                                    <constraint firstAttribute="height" constant="24" id="status-h-001"/>
+                                </constraints>
+                            </label>
+
+                            <!-- ROW 3: Route — fromLabel → arrow → toLabel -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="251" text="Banur" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="zD5-b7-36L">
+                                <rect key="frame" x="16" y="68" width="70" height="22"/>
+                                <fontDescription key="fontDescription" type="system" weight="bold" pointSize="17"/>
+                                <color key="textColor" red="0.12" green="0.16" blue="0.22" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Rs. 45 per passeger" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="C2g-I4-9Yq">
-                                <rect key="frame" x="8" y="156" width="146" height="20"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
-                                <nil key="textColor"/>
+
+                            <!-- Arrow image between from and to -->
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="arrow.right" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="arr-img-001">
+                                <rect key="frame" x="94" y="70" width="18" height="18"/>
+                                <color key="tintColor" systemColor="labelColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="18" id="arr-w-001"/>
+                                    <constraint firstAttribute="height" constant="18" id="arr-h-001"/>
+                                </constraints>
+                            </imageView>
+
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="249" verticalHuggingPriority="251" text="Chitkara University Road" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="YES" minimumScaleFactor="0.7" translatesAutoresizingMaskIntoConstraints="NO" id="kIo-nI-ciP">
+                                <rect key="frame" x="120" y="68" width="152" height="22"/>
+                                <fontDescription key="fontDescription" type="system" weight="bold" pointSize="17"/>
+                                <color key="textColor" red="0.12" green="0.16" blue="0.22" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="recived total Rs. 45 " lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MMQ-wB-yew">
-                                <rect key="frame" x="135" y="156" width="145" height="20"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
-                                <nil key="textColor"/>
+
+                            <!-- ROW 4: Passengers label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Passengers (0)" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hpP-ZM-aRF">
+                                <rect key="frame" x="16" y="102" width="140" height="17"/>
+                                <fontDescription key="fontDescription" type="system" weight="medium" pointSize="14"/>
+                                <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" ambiguous="YES" alwaysBounceVertical="YES" scrollEnabled="NO" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="slz-Q8-u7W">
-                                <rect key="frame" x="16" y="113.66666666666666" width="256" height="16.666666666666657"/>
+
+                            <!-- ROW 5: Approved passengers table -->
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" scrollEnabled="NO" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="slz-Q8-u7W">
+                                <rect key="frame" x="16" y="127" width="256" height="44"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="16.670000000000002" id="pf6-Vo-ibt"/>
+                                    <constraint firstAttribute="height" constant="44" id="pf6-Vo-ibt"/>
                                 </constraints>
                             </tableView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Completed" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="y0Y-C4-Nys">
-                                <rect key="frame" x="214" y="50.333333333333343" width="66" height="15"/>
-                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="12"/>
-                                <color key="textColor" red="0.062745098039215685" green="0.72549019607843135" blue="0.50588235294117645" alpha="1" colorSpace="calibratedRGB"/>
+
+                            <!-- ROW 6: Price (left) + Total received (right) -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Rs. 45 per passenger" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="C2g-I4-9Yq">
+                                <rect key="frame" x="16" y="185" width="130" height="17"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Chitkara" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="zD5-b7-36L">
-                                <rect key="frame" x="16" y="50.333333333333329" width="64" height="19.333333333333329"/>
-                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="16"/>
-                                <color key="textColor" red="0.12156862745098039" green="0.16078431372549021" blue="0.21568627450980393" alpha="1" colorSpace="calibratedRGB"/>
+
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="right" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Received Rs. 0.0" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MMQ-wB-yew">
+                                <rect key="frame" x="152" y="185" width="120" height="17"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                <color key="textColor" systemColor="secondaryLabelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+
                         </subviews>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
-                            <constraint firstItem="zD5-b7-36L" firstAttribute="top" secondItem="Vti-lP-iqt" secondAttribute="bottom" constant="20" id="2eM-7Q-mQW"/>
-                            <constraint firstItem="mHR-yD-8ef" firstAttribute="top" secondItem="5dx-EX-odD" secondAttribute="bottom" constant="8" id="81I-AO-GAN"/>
-                            <constraint firstItem="kIo-nI-ciP" firstAttribute="top" secondItem="Vti-lP-iqt" secondAttribute="bottom" constant="20" id="Ao7-VU-0eO"/>
+                            <!-- ROW 1: roleLabel top + leading -->
                             <constraint firstItem="Vti-lP-iqt" firstAttribute="top" secondItem="QP4-HB-UEx" secondAttribute="top" constant="16" id="BaD-PS-eEc"/>
-                            <constraint firstItem="slz-Q8-u7W" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="16" id="E9A-nK-aIR"/>
-                            <constraint firstItem="slz-Q8-u7W" firstAttribute="top" secondItem="hpP-ZM-aRF" secondAttribute="bottom" constant="8" id="Hhn-9w-0jk"/>
-                            <constraint firstItem="hpP-ZM-aRF" firstAttribute="top" secondItem="zD5-b7-36L" secondAttribute="bottom" constant="16" id="Mrl-kR-2OA"/>
-                            <constraint firstAttribute="trailing" secondItem="mHR-yD-8ef" secondAttribute="trailing" constant="18" id="R3G-8o-5Fk"/>
-                            <constraint firstItem="kIo-nI-ciP" firstAttribute="leading" secondItem="zD5-b7-36L" secondAttribute="trailing" constant="42" id="RWy-EY-diw"/>
-                            <constraint firstItem="y0Y-C4-Nys" firstAttribute="top" secondItem="Vti-lP-iqt" secondAttribute="bottom" constant="20" id="Tf1-ap-L4P"/>
-                            <constraint firstItem="hpP-ZM-aRF" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="20" id="Tzy-81-JbH"/>
-                            <constraint firstAttribute="trailing" secondItem="slz-Q8-u7W" secondAttribute="trailing" constant="20" id="XTp-ns-rgY"/>
-                            <constraint firstAttribute="trailing" secondItem="5dx-EX-odD" secondAttribute="trailing" constant="20" id="gnO-Ma-7ap"/>
-                            <constraint firstItem="zD5-b7-36L" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="20" id="iRQ-dF-dSr"/>
+                            <constraint firstItem="Vti-lP-iqt" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="16" id="kZO-r9-Laj"/>
+
+                            <!-- ROW 1: dateLabel top + trailing -->
                             <constraint firstItem="5dx-EX-odD" firstAttribute="top" secondItem="QP4-HB-UEx" secondAttribute="top" constant="16" id="jVx-L7-tBK"/>
-                            <constraint firstItem="Vti-lP-iqt" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="20" id="kZO-r9-Laj"/>
-                            <constraint firstAttribute="bottom" secondItem="MMQ-wB-yew" secondAttribute="bottom" constant="16" id="pjy-C2-QL0"/>
-                            <constraint firstItem="C2g-I4-9Yq" firstAttribute="top" secondItem="slz-Q8-u7W" secondAttribute="bottom" constant="18" id="rDt-Gk-rEl"/>
+                            <constraint firstAttribute="trailing" secondItem="5dx-EX-odD" secondAttribute="trailing" constant="16" id="gnO-Ma-7ap"/>
+
+                            <!-- ROW 2: timeLabel top (below roleLabel) + leading -->
+                            <constraint firstItem="mHR-yD-8ef" firstAttribute="top" secondItem="Vti-lP-iqt" secondAttribute="bottom" constant="6" id="time-top-001"/>
+                            <constraint firstItem="mHR-yD-8ef" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="16" id="time-lead-001"/>
+
+                            <!-- ROW 2: statusLabel top (below dateLabel) + trailing -->
+                            <constraint firstItem="y0Y-C4-Nys" firstAttribute="top" secondItem="5dx-EX-odD" secondAttribute="bottom" constant="4" id="status-top-001"/>
+                            <constraint firstAttribute="trailing" secondItem="y0Y-C4-Nys" secondAttribute="trailing" constant="16" id="xFA-W6-KE6"/>
+
+                            <!-- ROW 3: fromLabel top (below timeLabel + gap) + leading -->
+                            <constraint firstItem="zD5-b7-36L" firstAttribute="top" secondItem="mHR-yD-8ef" secondAttribute="bottom" constant="14" id="from-top-001"/>
+                            <constraint firstItem="zD5-b7-36L" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="16" id="iRQ-dF-dSr"/>
+
+                            <!-- Arrow: centerY = fromLabel centerY, leading = fromLabel trailing + 8 -->
+                            <constraint firstItem="arr-img-001" firstAttribute="centerY" secondItem="zD5-b7-36L" secondAttribute="centerY" id="arr-cy-001"/>
+                            <constraint firstItem="arr-img-001" firstAttribute="leading" secondItem="zD5-b7-36L" secondAttribute="trailing" constant="8" id="arr-lead-001"/>
+
+                            <!-- toLabel: centerY = fromLabel centerY, leading = arrow trailing + 8, trailing = card trailing - 16 -->
+                            <constraint firstItem="kIo-nI-ciP" firstAttribute="centerY" secondItem="zD5-b7-36L" secondAttribute="centerY" id="to-cy-001"/>
+                            <constraint firstItem="kIo-nI-ciP" firstAttribute="leading" secondItem="arr-img-001" secondAttribute="trailing" constant="8" id="to-lead-001"/>
+                            <constraint firstAttribute="trailing" secondItem="kIo-nI-ciP" secondAttribute="trailing" constant="16" id="to-trail-001"/>
+
+                            <!-- ROW 4: passengersLabel top (below fromLabel) + leading -->
+                            <constraint firstItem="hpP-ZM-aRF" firstAttribute="top" secondItem="zD5-b7-36L" secondAttribute="bottom" constant="12" id="Mrl-kR-2OA"/>
+                            <constraint firstItem="hpP-ZM-aRF" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="16" id="Tzy-81-JbH"/>
+
+                            <!-- ROW 5: approvedTable top (below passengersLabel) + leading + trailing -->
+                            <constraint firstItem="slz-Q8-u7W" firstAttribute="top" secondItem="hpP-ZM-aRF" secondAttribute="bottom" constant="8" id="Hhn-9w-0jk"/>
+                            <constraint firstItem="slz-Q8-u7W" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="16" id="E9A-nK-aIR"/>
+                            <constraint firstAttribute="trailing" secondItem="slz-Q8-u7W" secondAttribute="trailing" constant="16" id="XTp-ns-rgY"/>
+
+                            <!-- ROW 6: priceLabel top (below table) + leading -->
+                            <constraint firstItem="C2g-I4-9Yq" firstAttribute="top" secondItem="slz-Q8-u7W" secondAttribute="bottom" constant="14" id="rDt-Gk-rEl"/>
+                            <constraint firstItem="C2g-I4-9Yq" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="16" id="yFk-Ds-7jG"/>
+
+                            <!-- ROW 6: totalAmountLabel centerY = priceLabel centerY, trailing -->
+                            <constraint firstItem="MMQ-wB-yew" firstAttribute="centerY" secondItem="C2g-I4-9Yq" secondAttribute="centerY" id="total-cy-001"/>
+                            <constraint firstAttribute="trailing" secondItem="MMQ-wB-yew" secondAttribute="trailing" constant="16" id="yYt-ua-mUj"/>
+
+                            <!-- Card bottom = priceLabel bottom + 16 -->
                             <constraint firstAttribute="bottom" secondItem="C2g-I4-9Yq" secondAttribute="bottom" constant="16" id="tZG-Wq-uXK"/>
-                            <constraint firstAttribute="trailing" secondItem="y0Y-C4-Nys" secondAttribute="trailing" constant="20" id="xFA-W6-KE6"/>
-                            <constraint firstItem="C2g-I4-9Yq" firstAttribute="leading" secondItem="QP4-HB-UEx" secondAttribute="leading" constant="20" id="yFk-Ds-7jG"/>
-                            <constraint firstAttribute="trailing" secondItem="MMQ-wB-yew" secondAttribute="trailing" constant="20" id="yYt-ua-mUj"/>
                         </constraints>
                     </view>
                 </subviews>
@@ -136,12 +204,21 @@
                 <outlet property="toLabel" destination="kIo-nI-ciP" id="aYX-Pu-4of"/>
                 <outlet property="totalAmountLabel" destination="MMQ-wB-yew" id="Qw3-1i-Ul3"/>
             </connections>
-            <point key="canvasLocation" x="16.793893129770993" y="82.394366197183103"/>
         </tableViewCell>
     </objects>
     <resources>
+        <image name="arrow.right" catalog="system" width="128" height="95"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="labelColor">
+            <color red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="secondaryLabelColor">
+            <color red="0.24" green="0.24" blue="0.26" alpha="0.6" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="tertiaryLabelColor">
+            <color red="0.24" green="0.24" blue="0.26" alpha="0.3" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

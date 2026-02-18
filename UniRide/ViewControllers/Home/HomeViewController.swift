@@ -155,7 +155,7 @@ class HomeViewController: UIViewController {
         let model = RideDataModel.shared
 
         let upcoming = model.myUpcoming(userID: user.id)
-        upcomingRide = upcoming.first
+        upcomingRide = upcoming.first(where: { $0.ride.status == .published })
 
         // user has a saved location
         if let homeLoc = user.savedHomeLocation {

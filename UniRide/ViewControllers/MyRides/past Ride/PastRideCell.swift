@@ -78,9 +78,9 @@ final class PastRideCell: UITableViewCell {
 
         roleLabel.text = isHost ? "Hosting" : "Passenger"
         
-        // Configure status badge
+        // Configure status badge — add padding spaces for pill breathing room
         let isCompleted = ride.status == .completed
-        statusLabel.text = isCompleted ? "Completed" : "Cancelled"
+        statusLabel.text = isCompleted ? "  Completed  " : "  Cancelled  "
         
         // Apply badge styling
         applyBadgeStyle(
@@ -141,6 +141,7 @@ final class PastRideCell: UITableViewCell {
     private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
         label.backgroundColor = backgroundColor
         label.textColor = textColor
+        label.font = .systemFont(ofSize: 11, weight: .bold)
         label.layer.cornerRadius = 10
         label.layer.masksToBounds = true
         label.textAlignment = .center

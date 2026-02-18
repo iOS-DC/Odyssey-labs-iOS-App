@@ -399,28 +399,43 @@ final class RideDataModel {
         reconcileAllRideStatuses(now: now)
 
         var out: [MyTrip] = []
+        var addedRideIDs = Set<UUID>()
 
         // Host: rides that are completed or cancelled
         out += rides
             .filter { $0.driverUserID == userID && ($0.status == .completed || $0.status == .cancelled) }
             .map { MyTrip(role: .hosting, ride: $0) }
 
-        // Passenger bookings: include if ride is completed or cancelled (booking exists)
-        let myB = bookings.filter { $0.passengerUserID == userID }
-        out += myB.compactMap { b in rides.first { $0.id == b.rideID } }
-            .filter { $0.status == .completed || $0.status == .cancelled }
-            .map { MyTrip(role: .passenger, ride: $0) }
+        let myBookings = bookings.filter { $0.passengerUserID == userID }
 
-        // Passenger cancelled requests (show cancelled requests as past)
+        // Passenger: confirmed bookings where the ride itself ended (completed/cancelled)
+        for b in myBookings where b.status == .confirmed {
+            guard let ride = rides.first(where: { $0.id == b.rideID }) else { continue }
+            guard ride.status == .completed || ride.status == .cancelled else { continue }
+            guard !addedRideIDs.contains(ride.id) else { continue }
+            out.append(MyTrip(role: .passenger, ride: ride, requestID: nil, requestStatus: .approved))
+            addedRideIDs.insert(ride.id)
+        }
+
+        // Passenger: bookings the passenger themselves cancelled (ride may still be published/ongoing)
+        // Show these as past with a cancelled-looking entry
+        for b in myBookings where b.status == .cancelled {
+            guard let ride = rides.first(where: { $0.id == b.rideID }) else { continue }
+            guard !addedRideIDs.contains(ride.id) else { continue }
+            // Snapshot the ride with .cancelled status so PastRideCell shows "Cancelled"
+            var cancelledRide = ride
+            cancelledRide.status = .cancelled
+            out.append(MyTrip(role: .passenger, ride: cancelledRide, requestID: nil, requestStatus: .cancelled))
+            addedRideIDs.insert(ride.id)
+        }
+
+        // Passenger cancelled requests (pending requests the user cancelled)
         let cancelledReqs = requests.filter { $0.passengerUserID == userID && $0.status == .cancelled }
         for req in cancelledReqs {
-            if let ride = rides.first(where: { $0.id == req.rideID }) {
-                let m = MyTrip(role: .passenger, ride: ride, requestID: req.id, requestStatus: req.status)
-                out.append(m)
-            } else {
-                // If the ride itself was deleted, still show a placeholder MyTrip with minimal info:
-                // (optional - current code requires a ride; you can create a fallback if needed)
-            }
+            guard let ride = rides.first(where: { $0.id == req.rideID }) else { continue }
+            guard !addedRideIDs.contains(ride.id) else { continue }
+            out.append(MyTrip(role: .passenger, ride: ride, requestID: req.id, requestStatus: req.status))
+            addedRideIDs.insert(ride.id)
         }
 
         return out.sorted { $0.ride.departureTime > $1.ride.departureTime }
