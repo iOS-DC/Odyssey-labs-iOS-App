@@ -105,7 +105,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         // The compact UIDatePicker has internal left padding (~6pt) that makes the
         // clock icon appear further from the picker than in JoinRide.
         // Shift the picker left to cancel that internal inset.
-        timePicker.transform = CGAffineTransform(translationX: -6, y: 0)
+        timePicker.transform = CGAffineTransform(translationX: -20, y: 0)
     }
 
 
