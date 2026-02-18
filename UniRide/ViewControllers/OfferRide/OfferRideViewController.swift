@@ -101,6 +101,11 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         if datePicker.date < Date() { datePicker.date = Date() }
         if timePicker.date < minimumRideDateTime() { timePicker.date = minimumRideDateTime() }
         refreshTimeConstraintIfNeeded()
+
+        // The compact UIDatePicker has internal left padding (~6pt) that makes the
+        // clock icon appear further from the picker than in JoinRide.
+        // Shift the picker left to cancel that internal inset.
+        timePicker.transform = CGAffineTransform(translationX: -6, y: 0)
     }
 
 
