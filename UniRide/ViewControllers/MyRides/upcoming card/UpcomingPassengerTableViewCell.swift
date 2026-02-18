@@ -55,7 +55,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         layer.shadowRadius = 8
         layer.masksToBounds = false
 
-        // Image view
+        // Image view — corner radius is set in XIB via userDefinedRuntimeAttributes
         hostImageView.clipsToBounds = true
         hostImageView.contentMode = .scaleAspectFill
         hostImageView.tintColor = .systemGray4
@@ -68,9 +68,6 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             roundedRect: cardView.frame,
             cornerRadius: cardView.layer.cornerRadius
         ).cgPath
-        
-        // ensure circular image after layout
-        hostImageView.layer.cornerRadius = hostImageView.bounds.height / 2
     }
 
     // MARK: - Configure

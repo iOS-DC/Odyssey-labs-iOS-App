@@ -1,0 +1,206 @@
+import SwiftUI
+
+struct GroupChatView: View {
+
+    @ObservedObject var viewModel: ChatViewModel
+    @State private var inputText: String = ""
+    @FocusState private var isInputFocused: Bool
+
+    private let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // MARK: - Messages
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 12) {
+                            ForEach(viewModel.messages) { message in
+                                MessageBubble(
+                                    message: message,
+                                    timeFormatter: timeFormatter
+                                )
+                                .id(message.id)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                    }
+                    .onChange(of: viewModel.messages.count) { _ in
+                        if let last = viewModel.messages.last {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                proxy.scrollTo(last.id, anchor: .bottom)
+                            }
+                        }
+                    }
+                    .onAppear {
+                        if let last = viewModel.messages.last {
+                            proxy.scrollTo(last.id, anchor: .bottom)
+                        }
+                    }
+                }
+
+                // MARK: - Input Bar
+                inputBar
+            }
+            .navigationTitle(viewModel.rideTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 1) {
+                        Text(viewModel.rideTitle)
+                            .font(.system(size: 15, weight: .semibold))
+                            .lineLimit(1)
+                        Text("Group Chat")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .background(Color(.systemGroupedBackground))
+        }
+    }
+
+    // MARK: - Input Bar
+    private var inputBar: some View {
+        HStack(spacing: 10) {
+            TextField("Message...", text: $inputText)
+                .focused($isInputFocused)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Color(.systemBackground))
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(Color(.systemGray4), lineWidth: 1)
+                )
+
+            Button {
+                sendMessage()
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .resizable()
+                    .frame(width: 38, height: 38)
+                    .foregroundColor(inputText.trimmingCharacters(in: .whitespaces).isEmpty
+                                     ? Color(.systemGray3)
+                                     : .blue)
+            }
+            .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty)
+            .animation(.easeInOut(duration: 0.15), value: inputText)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            Color(.systemBackground)
+                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: -2)
+        )
+    }
+
+    private func sendMessage() {
+        viewModel.sendMessage(inputText)
+        inputText = ""
+        viewModel.simulateReply()
+    }
+}
+
+// MARK: - Message Bubble
+private struct MessageBubble: View {
+
+    let message: ChatMessage
+    let timeFormatter: DateFormatter
+
+    var body: some View {
+        HStack {
+            if message.isCurrentUser { Spacer(minLength: 60) }
+
+            VStack(alignment: message.isCurrentUser ? .trailing : .leading, spacing: 3) {
+                // Sender name (only for others)
+                if !message.isCurrentUser {
+                    Text(message.senderName)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .padding(.leading, 4)
+                }
+
+                // Bubble
+                Text(message.text)
+                    .font(.system(size: 16))
+                    .foregroundColor(message.isCurrentUser ? .white : .primary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(message.isCurrentUser ? Color.blue : Color(.systemGray6))
+                    .clipShape(BubbleShape(isCurrentUser: message.isCurrentUser))
+
+                // Timestamp
+                Text(timeFormatter.string(from: message.timestamp))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .padding(message.isCurrentUser ? .trailing : .leading, 4)
+            }
+
+            if !message.isCurrentUser { Spacer(minLength: 60) }
+        }
+    }
+}
+
+// MARK: - Bubble Shape (one corner flat)
+private struct BubbleShape: Shape {
+
+    let isCurrentUser: Bool
+
+    func path(in rect: CGRect) -> Path {
+        let r: CGFloat = 18
+        let flatCorner: CGFloat = 4
+
+        var path = Path()
+
+        if isCurrentUser {
+            // Flat bottom-right corner
+            path.move(to: CGPoint(x: rect.minX + r, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY))
+            path.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + r),
+                        radius: r, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - flatCorner))
+            path.addArc(center: CGPoint(x: rect.maxX - flatCorner, y: rect.maxY - flatCorner),
+                        radius: flatCorner, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.minX + r, y: rect.maxY))
+            path.addArc(center: CGPoint(x: rect.minX + r, y: rect.maxY - r),
+                        radius: r, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
+            path.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + r),
+                        radius: r, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        } else {
+            // Flat bottom-left corner
+            path.move(to: CGPoint(x: rect.minX + r, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX - r, y: rect.minY))
+            path.addArc(center: CGPoint(x: rect.maxX - r, y: rect.minY + r),
+                        radius: r, startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - r))
+            path.addArc(center: CGPoint(x: rect.maxX - r, y: rect.maxY - r),
+                        radius: r, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.minX + flatCorner, y: rect.maxY))
+            path.addArc(center: CGPoint(x: rect.minX + flatCorner, y: rect.maxY - flatCorner),
+                        radius: flatCorner, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + r))
+            path.addArc(center: CGPoint(x: rect.minX + r, y: rect.minY + r),
+                        radius: r, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        }
+
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Preview
+#Preview {
+    GroupChatView(
+        viewModel: ChatViewModel(
+            rideID: "preview",
+            rideTitle: "Downtown → Airport"
+        )
+    )
+}

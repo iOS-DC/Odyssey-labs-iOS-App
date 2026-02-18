@@ -277,7 +277,6 @@
                                     <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
                                         <real key="value" value="24"/>
                                     </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
                                 </userDefinedRuntimeAttributes>
                             </view>
                         </subviews>
@@ -291,6 +290,7 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="contentView" destination="tx5-Ru-dIN" id="cVw-JR-psg"/>
                         <outlet property="datePicker" destination="Vxr-sP-J0E" id="ZOD-1n-Fhz"/>
                         <outlet property="findRideButton" destination="Fen-sD-HCh" id="peN-tQ-YlY"/>
                         <outlet property="fromTextField" destination="CAA-ry-gWI" id="feo-u2-GLQ"/>

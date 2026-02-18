@@ -11,14 +11,14 @@
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
         <tableViewCell contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="UpcomingPassengerTableViewCell" id="KGk-i7-Jjw" customClass="UpcomingPassengerTableViewCell" customModule="UniRide">
-            <rect key="frame" x="0.0" y="0.0" width="340" height="310"/>
+            <rect key="frame" x="0.0" y="0.0" width="340" height="340"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
             <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
-                <rect key="frame" x="0.0" y="0.0" width="340" height="310"/>
+                <rect key="frame" x="0.0" y="0.0" width="340" height="340"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="9uu-gT-Qld" userLabel="cardView">
-                        <rect key="frame" x="12" y="8" width="316" height="294"/>
+                        <rect key="frame" x="12" y="8" width="316" height="324"/>
                         <subviews>
 
                             <!-- Row 1: Passenger badge (left) + Date label (right) -->
@@ -44,7 +44,6 @@
                             </label>
 
                             <!-- Row 2: Request status badge (right, below date) -->
-                            <!-- This replaces the old "Published" badge -->
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="249" verticalHuggingPriority="251" text="  ✓ Confirmed  " lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="JiA-0U-0CD">
                                 <rect key="frame" x="200" y="38" width="100" height="26"/>
                                 <color key="backgroundColor" red="0.06" green="0.73" blue="0.51" alpha="1" colorSpace="calibratedRGB"/>
@@ -123,9 +122,30 @@
                                 <nil key="highlightedColor"/>
                             </label>
 
-                            <!-- Message + Call buttons (hosting card style) -->
+                            <!-- Rider row: circular profile pic + rider name (13pt, 3 less than 16pt location labels) -->
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="zTq-Wm-isH">
+                                <rect key="frame" x="16" y="170" width="32" height="32"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="32" id="9cv-9Q-67k"/>
+                                    <constraint firstAttribute="height" constant="32" id="h9d-tN-qcJ"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <real key="value" value="16"/>
+                                    </userDefinedRuntimeAttribute>
+                                    <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="YES"/>
+                                </userDefinedRuntimeAttributes>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Rider Name" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7al-FD-spb">
+                                <rect key="frame" x="56" y="177" width="200" height="18"/>
+                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="13"/>
+                                <color key="textColor" systemColor="labelColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+
+                            <!-- Message + Call buttons -->
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="iiI-i7-4U7">
-                                <rect key="frame" x="16" y="174" width="284" height="48"/>
+                                <rect key="frame" x="16" y="218" width="284" height="48"/>
                                 <subviews>
                                     <!-- Message: grey bg, blue text -->
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Tgt-I7-NT3">
@@ -166,9 +186,9 @@
                                 </constraints>
                             </stackView>
 
-                            <!-- Cancel Request button: full-width red, hosting card style -->
+                            <!-- Cancel Request button: full-width red -->
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tqa-fG-Xo3">
-                                <rect key="frame" x="16" y="234" width="284" height="52"/>
+                                <rect key="frame" x="16" y="278" width="284" height="52"/>
                                 <color key="backgroundColor" systemColor="systemRedColor"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="52" id="cancel-psg-h"/>
@@ -187,20 +207,6 @@
                                 </userDefinedRuntimeAttributes>
                             </button>
 
-                            <!-- Hidden legacy outlets (kept for outlet compatibility) -->
-                            <imageView hidden="YES" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="zTq-Wm-isH">
-                                <rect key="frame" x="16" y="0.0" width="35" height="35"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="35" id="9cv-9Q-67k"/>
-                                    <constraint firstAttribute="height" constant="35" id="h9d-tN-qcJ"/>
-                                </constraints>
-                            </imageView>
-                            <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7al-FD-spb">
-                                <rect key="frame" x="16" y="0.0" width="40" height="17"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="14"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                             <!-- Hidden rideStatusLabel kept for outlet compatibility -->
                             <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fVf-3y-EAg">
                                 <rect key="frame" x="16" y="0.0" width="44" height="14"/>
@@ -246,8 +252,15 @@
                             <constraint firstItem="4im-P1-2Dt" firstAttribute="leading" secondItem="dash-psg" secondAttribute="trailing" constant="4" id="end-psg-lead"/>
                             <constraint firstItem="4im-P1-2Dt" firstAttribute="top" secondItem="KB1-wu-1Ge" secondAttribute="bottom" constant="8" id="end-psg-top"/>
 
-                            <!-- Message/Call stack: below time row -->
-                            <constraint firstItem="iiI-i7-4U7" firstAttribute="top" secondItem="yri-q2-Dc1" secondAttribute="bottom" constant="16" id="msgcall-psg-top"/>
+                            <!-- Rider row: profile pic + name, below time row -->
+                            <constraint firstItem="zTq-Wm-isH" firstAttribute="top" secondItem="yri-q2-Dc1" secondAttribute="bottom" constant="12" id="img-psg-top"/>
+                            <constraint firstItem="zTq-Wm-isH" firstAttribute="leading" secondItem="9uu-gT-Qld" secondAttribute="leading" constant="16" id="img-psg-lead"/>
+                            <constraint firstItem="7al-FD-spb" firstAttribute="leading" secondItem="zTq-Wm-isH" secondAttribute="trailing" constant="8" id="name-psg-lead"/>
+                            <constraint firstItem="7al-FD-spb" firstAttribute="centerY" secondItem="zTq-Wm-isH" secondAttribute="centerY" id="name-psg-cy"/>
+                            <constraint firstAttribute="trailing" secondItem="7al-FD-spb" secondAttribute="trailing" constant="16" id="name-psg-trail"/>
+
+                            <!-- Message/Call stack: below rider row -->
+                            <constraint firstItem="iiI-i7-4U7" firstAttribute="top" secondItem="zTq-Wm-isH" secondAttribute="bottom" constant="14" id="msgcall-psg-top"/>
                             <constraint firstItem="iiI-i7-4U7" firstAttribute="leading" secondItem="9uu-gT-Qld" secondAttribute="leading" constant="16" id="msgcall-psg-lead"/>
                             <constraint firstAttribute="trailing" secondItem="iiI-i7-4U7" secondAttribute="trailing" constant="16" id="msgcall-psg-trail"/>
 
@@ -259,11 +272,7 @@
                             <!-- cardView bottom -->
                             <constraint firstAttribute="bottom" secondItem="tqa-fG-Xo3" secondAttribute="bottom" constant="16" id="card-psg-bot"/>
 
-                            <!-- Hidden elements pinned to top (zero-size) -->
-                            <constraint firstItem="zTq-Wm-isH" firstAttribute="top" secondItem="9uu-gT-Qld" secondAttribute="top" id="img-psg-top"/>
-                            <constraint firstItem="zTq-Wm-isH" firstAttribute="leading" secondItem="9uu-gT-Qld" secondAttribute="leading" constant="16" id="img-psg-lead"/>
-                            <constraint firstItem="7al-FD-spb" firstAttribute="top" secondItem="9uu-gT-Qld" secondAttribute="top" id="name-psg-top"/>
-                            <constraint firstItem="7al-FD-spb" firstAttribute="leading" secondItem="9uu-gT-Qld" secondAttribute="leading" constant="16" id="name-psg-lead"/>
+                            <!-- Hidden rideStatusLabel pinned to top (zero-size) -->
                             <constraint firstItem="fVf-3y-EAg" firstAttribute="top" secondItem="9uu-gT-Qld" secondAttribute="top" id="ridestatus-psg-top"/>
                             <constraint firstItem="fVf-3y-EAg" firstAttribute="leading" secondItem="9uu-gT-Qld" secondAttribute="leading" constant="16" id="ridestatus-psg-lead"/>
                         </constraints>

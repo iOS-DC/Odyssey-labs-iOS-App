@@ -8,6 +8,7 @@ class JoinRideViewController: UIViewController,
                               MKLocalSearchCompleterDelegate {
     
     // MARK: - Outlets
+    @IBOutlet weak var contentView: UIView!
     @IBOutlet weak var fromTextField: UITextField!
     @IBOutlet weak var toTextField: UITextField!
     @IBOutlet weak var datePicker: UIDatePicker!
@@ -43,6 +44,7 @@ class JoinRideViewController: UIViewController,
         setDefaultDateAndTime()
         setupPickers()
 
+        contentView.applyCardStyle(corner: 24)
         findRideButton.layer.cornerRadius = 22
         view.bringSubviewToFront(findRideButton)
     }

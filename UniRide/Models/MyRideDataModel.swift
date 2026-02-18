@@ -371,12 +371,21 @@ final class RideDataModel {
 
         let bookingRideIDs = Set(passengerFromBookings.map { $0.ride.id })
 
+        // Also track rides where the passenger has a CANCELLED booking —
+        // we must not re-add them via the requests path (the approved request still exists).
+        let cancelledBookingRideIDs = Set(
+            bookings
+                .filter { $0.passengerUserID == userID && $0.status == .cancelled }
+                .compactMap { b in rides.first(where: { $0.id == b.rideID })?.id }
+        )
+
         // From requests (pending/denied/etc.) — include if user requested it and request not cancelled,
         // and ride is published or ongoing
         let myReqs = requests.filter { $0.passengerUserID == userID }
         let passengerFromRequests: [MyTrip] = myReqs.compactMap { req in
             guard let ride = rides.first(where: { $0.id == req.rideID }) else { return nil }
-            if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
+            if bookingRideIDs.contains(ride.id) { return nil } // already added via confirmed booking
+            if cancelledBookingRideIDs.contains(ride.id) { return nil } // booking was cancelled — show in Past
             // Exclude cancelled requests from Upcoming
             guard req.status != .cancelled else { return nil }
             guard ride.status == .published || ride.status == .ongoing else { return nil }
