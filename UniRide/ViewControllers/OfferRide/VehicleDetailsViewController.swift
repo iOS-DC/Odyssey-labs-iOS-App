@@ -32,37 +32,8 @@ class VehicleDetailsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        setupUI()
         updateVehicleUI()
         updateSeatsUI()
-    }
-
-    func setupUI() {
-
-        // Main Card
-        ContainerView.layer.cornerRadius = 20
-        ContainerView.layer.shadowColor = UIColor.black.cgColor
-        ContainerView.layer.shadowOpacity = 0.08
-        ContainerView.layer.shadowRadius = 12
-        ContainerView.layer.shadowOffset = CGSize(width: 0, height: 4)
-
-        // Cost TextField
-        costTextField.keyboardType = .numberPad
-        costTextField.placeholder = "Enter fare"
-        costTextField.layer.cornerRadius = 12
-        costTextField.layer.borderWidth = 1
-        costTextField.layer.borderColor = UIColor.systemGray4.cgColor
-
-        // Next Button
-        nextButton.layer.cornerRadius = 18
-        nextButton.backgroundColor = .systemBlue
-        nextButton.setTitleColor(.white, for: .normal)
-        nextButton.isEnabled = false
-        nextButton.alpha = 0.5
-
-        // Suggested Fare Label
-        suggestedFareLabel.text = "Suggested fare: ₹—"
     }
 
     // MARK: - Animate Selection
