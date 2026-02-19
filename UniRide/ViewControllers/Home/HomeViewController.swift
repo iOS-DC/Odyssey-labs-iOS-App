@@ -228,12 +228,12 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 return "Upcoming Ride"
             }
             if section == 1 {
-                return "Nearby Rides"
+                return "Rides Available"
             }
             return "Top Events"
         } else {
             if section == 0 {
-                return "Nearby Rides"
+                return "Rides Available"
             }
             return "Top Events"
         }
