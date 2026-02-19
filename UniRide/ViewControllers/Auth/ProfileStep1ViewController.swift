@@ -1,9 +1,9 @@
 import UIKit
 
-let courseDurations: [String: Int] = [
-    "CSE": 4, "ECE": 4, "Mechanical": 4, "Civil": 4,
-    "Electrical": 4, "Chemical Engineering": 4,
-    "Arts": 3, "BCA": 3, "BBA": 3, "MBA": 2, "MCA": 2
+let departmentOptions = [
+    "CSE", "ECE", "Mechanical", "Civil",
+    "Electrical", "Chemical Engineering",
+    "Arts", "BCA", "BBA", "MBA", "MCA"
 ]
 
 final class ProfileStep1ViewController: UIViewController {
@@ -23,12 +23,23 @@ final class ProfileStep1ViewController: UIViewController {
     @IBOutlet weak var otpTextField: UITextField!
 
     @IBOutlet weak var continueButton: UIButton!
+    
+    private let roleSegmentedControl: UISegmentedControl = {
+        let sc = UISegmentedControl(items: ["Student", "Faculty"])
+        sc.selectedSegmentIndex = 0
+        sc.backgroundColor = .systemGray6
+        sc.selectedSegmentTintColor = .systemBlue
+        sc.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        sc.setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
+        return sc
+    }()
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        setupCourseDropDownMenu()
+        setupRoleSelection()
+        setupDepartmentDropDownMenu()
         setupYearDropDownMenu()
     }
 
@@ -74,36 +85,52 @@ final class ProfileStep1ViewController: UIViewController {
         // Stack spacing
         stackView.setCustomSpacing(6, after: otpStatusLabel)
         stackView.setCustomSpacing(12, after: otpTextField)
+
+        // Inject Role Segmented Control into stack view after full name
+        if let index = stackView.arrangedSubviews.firstIndex(of: fullNameTextField) {
+            stackView.insertArrangedSubview(roleSegmentedControl, at: index + 1)
+        }
     }
 
-    // MARK: - Course Dropdown
-    private func setupCourseDropDownMenu() {
-        let options = Array(courseDurations.keys).sorted() + ["Reset"]
+    private func setupRoleSelection() {
+        roleSegmentedControl.addTarget(self, action: #selector(roleChanged), for: .valueChanged)
+    }
+
+    @objc private func roleChanged() {
+        let isStudent = roleSegmentedControl.selectedSegmentIndex == 0
+        yearDropDownButton.isHidden = !isStudent
+        if !isStudent {
+            yearDropDownButton.setTitle("N/A", for: .normal)
+        } else {
+            yearDropDownButton.setTitle("Select Year", for: .normal)
+        }
+    }
+
+    // MARK: - Department Dropdown
+    private func setupDepartmentDropDownMenu() {
+        let options = departmentOptions.sorted() + ["Reset"]
 
         dropDownButton.menu = UIMenu(
-            title: "Select your course",
+            title: "Select department",
             children: options.map { option in
                 UIAction(title: option) { [weak self] _ in
                     guard let self else { return }
                     if option == "Reset" {
-                        self.dropDownButton.setTitle("Select Course", for: .normal)
-                        self.setupYearDropDownMenu()
+                        self.dropDownButton.setTitle("Select Department", for: .normal)
                         return
                     }
                     self.dropDownButton.setTitle(option, for: .normal)
-                    if let duration = courseDurations[option] {
-                        self.setupYearDropDownMenu(defaultYears: Array(1...duration))
-                    }
                 }
             }
         )
         dropDownButton.showsMenuAsPrimaryAction = true
     }
 
-    private func setupYearDropDownMenu(defaultYears: [Int] = [1, 2, 3, 4]) {
+    private func setupYearDropDownMenu() {
+        let years = [1, 2, 3, 4]
         yearDropDownButton.menu = UIMenu(
             title: "Select year",
-            children: defaultYears.map { year in
+            children: years.map { year in
                 UIAction(title: "\(year)") { [weak self] _ in
                     self?.yearDropDownButton.setTitle("\(year)", for: .normal)
                 }
@@ -150,10 +177,15 @@ final class ProfileStep1ViewController: UIViewController {
             try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
             showOTPStatus("✓ Phone number verified", color: .systemGreen)
 
+            let role: UserRole = roleSegmentedControl.selectedSegmentIndex == 0 ? .student : .faculty
+            let yearText = yearDropDownButton.title(for: .normal)
+            let year = role == .student ? Int(yearText ?? "1") : nil
+
             UserDataModel.shared.editCurrentUser(
                 fullName: fullNameTextField.text,
+                role: role,
                 courseName: dropDownButton.title(for: .normal),
-                year: Int(yearDropDownButton.title(for: .normal) ?? "1")
+                year: year
             )
             goToNextPage()
         } catch {

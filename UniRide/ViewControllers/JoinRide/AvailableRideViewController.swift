@@ -145,12 +145,11 @@ extension AvailableRideViewController {
 
         let ride = rides[indexPath.row]
 
-        // 🔥 REAL DRIVER NAME (NO MOCK, NO CACHE GUESS)
-        let driverName = UserDataModel.shared.getUser(by: ride.driverUserID)?.fullName ?? ride.driverUserID.uuidString
+        let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
 
-        print("🚗 Ride:", ride.id, "Driver:", driverName)
+        print("🚗 Ride:", ride.id, "Driver:", driver?.fullName ?? "Unknown")
 
-        cell.configure(with: ride, driverName: driverName)
+        cell.configure(with: ride, driver: driver)
 
         cell.onJoinTapped = { [weak self] in
             self?.joinRide(ride)

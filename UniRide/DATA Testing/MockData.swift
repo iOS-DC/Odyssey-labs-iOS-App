@@ -49,8 +49,9 @@ struct MockData {
                 email: "driver\(index + 1)@chitkara.edu.in",
                 isEmailVerified: true,
                 fullName: name,
+                role: index < 15 ? .student : .faculty,
                 courseName: "CSE",
-                year: 3
+                year: index < 15 ? (index % 4) + 1 : nil
             )
         }
     }()
@@ -62,7 +63,7 @@ struct MockData {
         // 20 realistic Ride objects
         let rides: [Ride] = [
             Ride(driverUserID: userIDs[0],
-                 source: LocationPoint(lat: 30.5163, lon: 76.6598, address: "Chitkara University Gate"),
+                 source: LocationPoint(lat: 30.5163, lon: 76.6598, address: "Chitkara University"),
                  destination: LocationPoint(lat: 30.7046, lon: 76.7179, address: "Sector 17, Chandigarh"),
                  waypoints: [], selectedRoute: nil,
                  departureTime: Date().addingTimeInterval(1800),

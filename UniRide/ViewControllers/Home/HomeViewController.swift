@@ -157,22 +157,14 @@ class HomeViewController: UIViewController {
         let upcoming = model.myUpcoming(userID: user.id)
         upcomingRide = upcoming.first(where: { $0.ride.status == .published })
 
-        // user has a saved location
-        if let homeLoc = user.savedHomeLocation {
-            
-            nearbyRides = model.ridesNear(homeLoc, maxMeters: 300).filter {
-                $0.driverUserID != user.id
-            }
-            
-            nearbyRides = Array(nearbyRides.prefix(3))
-
-        } else {
-            
-            print("No user location")
-            let all = model.getAllRides().filter { $0.status == .published && $0.driverUserID != user.id }
-
-            nearbyRides = Array(all.prefix(5))
+        // Use live location if available, otherwise use a default Chitkara location for nearby rides
+        let searchLocation = user.savedHomeLocation ?? LocationPoint(lat: 30.5163, lon: 76.6598, address: "Chitkara University")
+        
+        nearbyRides = model.ridesNear(searchLocation, maxMeters: 5000).filter {
+            $0.driverUserID != user.id
         }
+        
+        nearbyRides = Array(nearbyRides.prefix(5))
     }
 
 
@@ -285,15 +277,8 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 ) as! RideTableViewCell
                 let ride = nearbyRides[indexPath.row]
                 let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
-                let driverName = driver?.fullName ?? ride.driverUserID.uuidString
-                let driverYear = driver?.year != nil ? "\(driver!.year!) Year" : nil
                 
-                cell.configure(
-                    with: ride,
-                    driverName: driverName,
-                    driverYear: driverYear,
-                    photoURL: driver?.photoURL
-                )
+                cell.configure(with: ride, driver: driver)
                 cell.onJoinTapped = { [weak self] in
                     self?.joinRide(ride)
                 }
@@ -326,15 +311,8 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
             ) as! RideTableViewCell
             let ride = nearbyRides[indexPath.row]
             let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
-            let driverName = driver?.fullName ?? ride.driverUserID.uuidString
-            let driverYear = driver?.year != nil ? "\(driver!.year!) Year" : nil
             
-            cell.configure(
-                with: ride,
-                driverName: driverName,
-                driverYear: driverYear,
-                photoURL: driver?.photoURL
-            )
+            cell.configure(with: ride, driver: driver)
             cell.onJoinTapped = { [weak self] in
                 self?.joinRide(ride)
             }
