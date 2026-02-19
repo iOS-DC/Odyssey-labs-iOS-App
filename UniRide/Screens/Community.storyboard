@@ -170,7 +170,7 @@
                                                             <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
-                                                        <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="9tA-PT-Hlm">
+                                                        <stackView opaque="NO" contentMode="scaleToFill" axis="horizontal" distribution="fill" alignment="trailing" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="9tA-PT-Hlm">
                                                             <rect key="frame" x="8" y="127.33333333333334" width="377" height="35"/>
                                                             <subviews>
                                                                 <button opaque="NO" tag="10" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Alc-Cj-k1B">
@@ -186,18 +186,7 @@
                                                                         <action selector="attendEventButton:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="oQL-Zw-pBk"/>
                                                                     </connections>
                                                                 </button>
-                                                                <button opaque="NO" tag="11" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="11H-Uq-Ese">
-                                                                    <rect key="frame" x="192.66666666666663" y="0.0" width="184.33333333333337" height="35"/>
-                                                                    <constraints>
-                                                                        <constraint firstAttribute="height" constant="35" id="Rru-OU-lkc"/>
-                                                                        <constraint firstAttribute="width" constant="120" id="pgz-Z4-AMF"/>
-                                                                    </constraints>
-                                                                    <state key="normal" title="Button"/>
-                                                                    <buttonConfiguration key="configuration" style="tinted" title="Share"/>
-                                                                    <connections>
-                                                                        <action selector="EventShareButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="PKs-Ot-qxs"/>
-                                                                    </connections>
-                                                                </button>
+
                                                             </subviews>
                                                         </stackView>
                                                     </subviews>

@@ -765,13 +765,7 @@ class CommunityViewController: UIViewController,
             attendButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
         }
 
-        let shareButton = cell.viewWithTag(11) as! UIButton
-        shareButton.setTitle("Share (\(event.shareCount))", for: .normal)
-        shareButton.layer.cornerRadius = 17.5
-        shareButton.clipsToBounds = true
-        shareButton.backgroundColor = .systemGray6
-        shareButton.setTitleColor(.label, for: .normal)
-        shareButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+
 
         return cell
     }
