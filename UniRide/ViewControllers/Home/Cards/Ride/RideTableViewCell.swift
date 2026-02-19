@@ -113,15 +113,34 @@ final class RideTableViewCell: UITableViewCell {
         
         if let role = driver?.role {
             if role == .student {
-                let year = driver?.year != nil ? "\(driver!.year!) Year" : "Student"
+                var yearText = "Student"
+                if let y = driver?.year {
+                   switch y {
+                   case 1: yearText = "1st Year"
+                   case 2: yearText = "2nd Year"
+                   case 3: yearText = "3rd Year"
+                   default: yearText = "\(y)th Year"
+                   }
+                }
                 let dept = driver?.courseName ?? ""
-                yearLabel.text = "\(year) \(dept) Student"
+                // e.g. "3rd Year CSE Student"
+                yearLabel.text = "\(yearText) \(dept) Student"
             } else {
                 let dept = driver?.courseName ?? ""
                 yearLabel.text = "Faculty of \(dept)"
             }
         } else {
-            yearLabel.text = driver?.year != nil ? "\(driver!.year!) Year" : ""
+             // Fallback if role is nil but year is present
+            if let y = driver?.year {
+                 switch y {
+                   case 1: yearLabel.text = "1st Year Student"
+                   case 2: yearLabel.text = "2nd Year Student"
+                   case 3: yearLabel.text = "3rd Year Student"
+                   default: yearLabel.text = "\(y)th Year Student"
+                 }
+            } else {
+                yearLabel.text = "Student"
+            }
         }
 
         profileImageView.loadAndFallback(from: photoURL, name: driverName)

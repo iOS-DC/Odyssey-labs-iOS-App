@@ -19,13 +19,16 @@ final class AvailableRideViewController: UIViewController,
     var toCoordinate: CLLocationCoordinate2D?
     var date: Date?
     var time: Date?
+    
+    // Coming from EventDetailsViewController
+    var event: EventItem?
 
     var rides: [Ride] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = "Available Rides"
+        title = event != nil ? "Rides to \(event!.title)" : "Available Rides"
 
         tableView.delegate = self
         tableView.dataSource = self
@@ -43,8 +46,17 @@ final class AvailableRideViewController: UIViewController,
 
     // MARK: - Load Rides
     private func loadAvailableRides() {
+        // 1. If we have an event, load mock event rides
+        if let event = event {
+            print("🎉 Loading mock rides for event: \(event.title)")
+            rides = MockData.mockRidesForEvent(event)
+            tableView.reloadData()
+            return
+        }
+        
+        // 2. Otherwise, normal coordinate-based search
         guard let fromCoord = fromCoordinate else {
-            print("❌ No pickup coordinate received")
+            print("❌ No pickup coordinate and no event received")
             rides = []
             tableView.reloadData()
             return
