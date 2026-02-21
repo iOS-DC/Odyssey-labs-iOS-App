@@ -103,14 +103,45 @@ final class RideTableViewCell: UITableViewCell {
     // MARK: - Configure (FULLY DYNAMIC)
     func configure(
         with ride: Ride,
-        driverName: String,
-        driverYear: String? = nil,
-        photoURL: URL? = nil
+        driver: UserProfile?
     ) {
+        let driverName = driver?.fullName ?? "Unknown Driver"
+        let photoURL = driver?.photoURL
 
         // MARK: Driver Info
         nameLabel.text = driverName
-        yearLabel.text = driverYear ?? ""
+        
+        if let role = driver?.role {
+            if role == .student {
+                var yearText = "Student"
+                if let y = driver?.year {
+                   switch y {
+                   case 1: yearText = "1st Year"
+                   case 2: yearText = "2nd Year"
+                   case 3: yearText = "3rd Year"
+                   default: yearText = "\(y)th Year"
+                   }
+                }
+                let dept = driver?.courseName ?? ""
+                // e.g. "3rd Year CSE Student"
+                yearLabel.text = "\(yearText) \(dept) Student"
+            } else {
+                let dept = driver?.courseName ?? ""
+                yearLabel.text = "Faculty of \(dept)"
+            }
+        } else {
+             // Fallback if role is nil but year is present
+            if let y = driver?.year {
+                 switch y {
+                   case 1: yearLabel.text = "1st Year Student"
+                   case 2: yearLabel.text = "2nd Year Student"
+                   case 3: yearLabel.text = "3rd Year Student"
+                   default: yearLabel.text = "\(y)th Year Student"
+                 }
+            } else {
+                yearLabel.text = "Student"
+            }
+        }
 
         profileImageView.loadAndFallback(from: photoURL, name: driverName)
 

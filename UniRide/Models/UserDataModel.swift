@@ -13,6 +13,11 @@ struct Vehicle: Codable, Equatable {
     var seats: Int
 }
 
+// User Role
+enum UserRole: String, Codable {
+    case student, faculty
+}
+
 // User Profile Structure
 struct UserProfile: Equatable, Codable {
     let id: UUID
@@ -21,7 +26,8 @@ struct UserProfile: Equatable, Codable {
     var phone: String?
     var isPhoneVerified: Bool
     var fullName: String
-    var courseName: String?
+    var role: UserRole?
+    var courseName: String? // This will be used as "Department"
     var year: Int?
     var photoURL: URL?
     var vehicle: Vehicle?
@@ -34,6 +40,7 @@ struct UserProfile: Equatable, Codable {
          phone: String? = nil,
          isPhoneVerified: Bool = false,
          fullName: String = "",
+         role: UserRole? = nil,
          courseName: String? = nil,
          year: Int? = nil,
          photoURL: URL? = nil,
@@ -44,6 +51,7 @@ struct UserProfile: Equatable, Codable {
         self.phone = phone
         self.isPhoneVerified = isPhoneVerified
         self.fullName = fullName
+        self.role = role
         self.courseName = courseName
         self.year = year
         self.photoURL = photoURL
@@ -56,6 +64,7 @@ struct UserProfile: Equatable, Codable {
          phone: String? = nil,
          isPhoneVerified: Bool = false,
          fullName: String = "",
+         role: UserRole? = nil,
          courseName: String? = nil,
          year: Int? = nil,
          photoURL: URL? = nil,
@@ -66,6 +75,7 @@ struct UserProfile: Equatable, Codable {
         self.phone = phone
         self.isPhoneVerified = isPhoneVerified
         self.fullName = fullName
+        self.role = role
         self.courseName = courseName
         self.year = year
         self.photoURL = photoURL
@@ -182,7 +192,7 @@ final class UserDataModel {
         phoneOTPs[phone] = nil
     }
     
-    func createNewUser(fullName: String, course: String, year: Int, phone: String) {
+    func createNewUser(fullName: String, role: UserRole, department: String, year: Int?, phone: String) {
 
         let newUser = UserProfile(
             email: "",
@@ -190,7 +200,8 @@ final class UserDataModel {
             phone: phone,
             isPhoneVerified: true,
             fullName: fullName,
-            courseName: course,
+            role: role,
+            courseName: department,
             year: year,
             photoURL: nil,
             vehicle: nil
@@ -215,6 +226,7 @@ final class UserDataModel {
 
     func editCurrentUser(
         fullName: String? = nil,
+        role: UserRole? = nil,
         courseName: String? = nil,
         year: Int? = nil,
         photoURL: URL? = nil,
@@ -225,6 +237,7 @@ final class UserDataModel {
 
         var user = users[index]
         if let n = fullName { user.fullName = n }
+        if let r = role { user.role = r }
         if let c = courseName { user.courseName = c }
         if let y = year { user.year = y }
         if let p = photoURL { user.photoURL = p }
@@ -291,6 +304,7 @@ final class UserDataModel {
                 email: "driver\(idx + 1)@chitkara.edu.in",
                 isEmailVerified: true,
                 fullName: name,
+                role: .student,
                 courseName: "CSE",
                 year: 3
             )
