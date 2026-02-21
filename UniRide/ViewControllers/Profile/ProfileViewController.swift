@@ -69,12 +69,26 @@ class ProfileViewController: UIViewController {
 
         // MARK: BASIC INFO
         nameLabel.text = profile.fullName.isEmpty ? "Your Name" : profile.fullName
-        departmentLabel.text = profile.courseName ?? "Not set"
-
-        if let year = profile.year {
-            yearLabel.text = "Year \(year)"
+        
+        if let role = profile.role {
+            if role == .student {
+                departmentLabel.text = "\(profile.courseName ?? "") Student"
+                if let year = profile.year {
+                    yearLabel.text = "Year \(year)"
+                } else {
+                    yearLabel.text = "Year Not set"
+                }
+            } else {
+                departmentLabel.text = "Faculty"
+                yearLabel.text = profile.courseName ?? "Department Not set"
+            }
         } else {
-            yearLabel.text = "Not set"
+            departmentLabel.text = profile.courseName ?? "Not set"
+            if let year = profile.year {
+                yearLabel.text = "Year \(year)"
+            } else {
+                yearLabel.text = "Not set"
+            }
         }
 
         memberSinceLabel.text = "Member Since 2025"

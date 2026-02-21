@@ -103,20 +103,47 @@ final class RideTableViewCell: UITableViewCell {
     // MARK: - Configure (FULLY DYNAMIC)
     func configure(
         with ride: Ride,
-        driverName: String,
-        driverYear: String? = nil,
-        driverImage: UIImage? = nil
+        driver: UserProfile?
     ) {
+        let driverName = driver?.fullName ?? "Unknown Driver"
+        let photoURL = driver?.photoURL
 
         // MARK: Driver Info
         nameLabel.text = driverName
-        yearLabel.text = driverYear ?? ""
-
-        if let img = driverImage {
-            profileImageView.image = img
+        
+        if let role = driver?.role {
+            if role == .student {
+                var yearText = "Student"
+                if let y = driver?.year {
+                   switch y {
+                   case 1: yearText = "1st Year"
+                   case 2: yearText = "2nd Year"
+                   case 3: yearText = "3rd Year"
+                   default: yearText = "\(y)th Year"
+                   }
+                }
+                let dept = driver?.courseName ?? ""
+                // e.g. "3rd Year CSE Student"
+                yearLabel.text = "\(yearText) \(dept) Student"
+            } else {
+                let dept = driver?.courseName ?? ""
+                yearLabel.text = "Faculty of \(dept)"
+            }
         } else {
-            profileImageView.image = initialsAvatar(for: driverName, size: CGSize(width: 40, height: 40))
+             // Fallback if role is nil but year is present
+            if let y = driver?.year {
+                 switch y {
+                   case 1: yearLabel.text = "1st Year Student"
+                   case 2: yearLabel.text = "2nd Year Student"
+                   case 3: yearLabel.text = "3rd Year Student"
+                   default: yearLabel.text = "\(y)th Year Student"
+                 }
+            } else {
+                yearLabel.text = "Student"
+            }
         }
+
+        profileImageView.loadAndFallback(from: photoURL, name: driverName)
 
         // MARK: Route
         let fromText = formatLocation(ride.source.address)
@@ -203,43 +230,5 @@ final class RideTableViewCell: UITableViewCell {
         }
         return address
     }
-
-    private func initialsAvatar(for name: String, size: CGSize) -> UIImage? {
-        let initials = initialsFromName(name)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { ctx in
-            let rect = CGRect(origin: .zero, size: size)
-            let path = UIBezierPath(ovalIn: rect)
-            UIColor.systemGray5.setFill()
-            path.fill()
-
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 16, weight: .semibold),
-                .foregroundColor: UIColor.label
-            ]
-            let text = NSString(string: initials)
-            let textSize = text.size(withAttributes: attributes)
-            let textRect = CGRect(
-                x: (size.width - textSize.width) / 2,
-                y: (size.height - textSize.height) / 2,
-                width: textSize.width,
-                height: textSize.height
-            )
-            text.draw(in: textRect, withAttributes: attributes)
-        }
-    }
-
-    private func initialsFromName(_ name: String) -> String {
-        let parts = name.split(separator: " ").filter { !$0.isEmpty }
-        if parts.count >= 2 {
-            let first = parts.first?.first.map(String.init) ?? ""
-            let last = parts.last?.first.map(String.init) ?? ""
-            return (first + last).uppercased()
-        } else if let first = parts.first?.first {
-            return String(first).uppercased()
-        } else {
-            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            return String(trimmed.prefix(2)).uppercased()
-        }
-    }
 }
+

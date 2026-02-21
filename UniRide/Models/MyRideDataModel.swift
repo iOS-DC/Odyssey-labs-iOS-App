@@ -371,12 +371,21 @@ final class RideDataModel {
 
         let bookingRideIDs = Set(passengerFromBookings.map { $0.ride.id })
 
+        // Also track rides where the passenger has a CANCELLED booking —
+        // we must not re-add them via the requests path (the approved request still exists).
+        let cancelledBookingRideIDs = Set(
+            bookings
+                .filter { $0.passengerUserID == userID && $0.status == .cancelled }
+                .compactMap { b in rides.first(where: { $0.id == b.rideID })?.id }
+        )
+
         // From requests (pending/denied/etc.) — include if user requested it and request not cancelled,
         // and ride is published or ongoing
         let myReqs = requests.filter { $0.passengerUserID == userID }
         let passengerFromRequests: [MyTrip] = myReqs.compactMap { req in
             guard let ride = rides.first(where: { $0.id == req.rideID }) else { return nil }
-            if bookingRideIDs.contains(ride.id) { return nil } // already added via booking
+            if bookingRideIDs.contains(ride.id) { return nil } // already added via confirmed booking
+            if cancelledBookingRideIDs.contains(ride.id) { return nil } // booking was cancelled — show in Past
             // Exclude cancelled requests from Upcoming
             guard req.status != .cancelled else { return nil }
             guard ride.status == .published || ride.status == .ongoing else { return nil }
@@ -399,28 +408,43 @@ final class RideDataModel {
         reconcileAllRideStatuses(now: now)
 
         var out: [MyTrip] = []
+        var addedRideIDs = Set<UUID>()
 
         // Host: rides that are completed or cancelled
         out += rides
             .filter { $0.driverUserID == userID && ($0.status == .completed || $0.status == .cancelled) }
             .map { MyTrip(role: .hosting, ride: $0) }
 
-        // Passenger bookings: include if ride is completed or cancelled (booking exists)
-        let myB = bookings.filter { $0.passengerUserID == userID }
-        out += myB.compactMap { b in rides.first { $0.id == b.rideID } }
-            .filter { $0.status == .completed || $0.status == .cancelled }
-            .map { MyTrip(role: .passenger, ride: $0) }
+        let myBookings = bookings.filter { $0.passengerUserID == userID }
 
-        // Passenger cancelled requests (show cancelled requests as past)
+        // Passenger: confirmed bookings where the ride itself ended (completed/cancelled)
+        for b in myBookings where b.status == .confirmed {
+            guard let ride = rides.first(where: { $0.id == b.rideID }) else { continue }
+            guard ride.status == .completed || ride.status == .cancelled else { continue }
+            guard !addedRideIDs.contains(ride.id) else { continue }
+            out.append(MyTrip(role: .passenger, ride: ride, requestID: nil, requestStatus: .approved))
+            addedRideIDs.insert(ride.id)
+        }
+
+        // Passenger: bookings the passenger themselves cancelled (ride may still be published/ongoing)
+        // Show these as past with a cancelled-looking entry
+        for b in myBookings where b.status == .cancelled {
+            guard let ride = rides.first(where: { $0.id == b.rideID }) else { continue }
+            guard !addedRideIDs.contains(ride.id) else { continue }
+            // Snapshot the ride with .cancelled status so PastRideCell shows "Cancelled"
+            var cancelledRide = ride
+            cancelledRide.status = .cancelled
+            out.append(MyTrip(role: .passenger, ride: cancelledRide, requestID: nil, requestStatus: .cancelled))
+            addedRideIDs.insert(ride.id)
+        }
+
+        // Passenger cancelled requests (pending requests the user cancelled)
         let cancelledReqs = requests.filter { $0.passengerUserID == userID && $0.status == .cancelled }
         for req in cancelledReqs {
-            if let ride = rides.first(where: { $0.id == req.rideID }) {
-                let m = MyTrip(role: .passenger, ride: ride, requestID: req.id, requestStatus: req.status)
-                out.append(m)
-            } else {
-                // If the ride itself was deleted, still show a placeholder MyTrip with minimal info:
-                // (optional - current code requires a ride; you can create a fallback if needed)
-            }
+            guard let ride = rides.first(where: { $0.id == req.rideID }) else { continue }
+            guard !addedRideIDs.contains(ride.id) else { continue }
+            out.append(MyTrip(role: .passenger, ride: ride, requestID: req.id, requestStatus: req.status))
+            addedRideIDs.insert(ride.id)
         }
 
         return out.sorted { $0.ride.departureTime > $1.ride.departureTime }

@@ -181,8 +181,11 @@ class EventDetailsViewController: UIViewController {
     }
     
     @objc @IBAction func joinRide(_ sender: Any) {
+        // Navigate directly to AvailableRideViewController with this event
         let storyboard = UIStoryboard(name: "JoinRide", bundle: nil)
-        if let vc = storyboard.instantiateViewController(withIdentifier: "JoinRideViewController") as? JoinRideViewController {
+        
+        if let vc = storyboard.instantiateViewController(withIdentifier: "AvailableRideViewController") as? AvailableRideViewController {
+            vc.event = self.event
             navigationController?.pushViewController(vc, animated: true)
         }
     }

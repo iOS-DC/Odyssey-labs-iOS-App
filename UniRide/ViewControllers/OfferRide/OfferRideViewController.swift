@@ -56,7 +56,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setDefaultDateAndTime()
 
         contentView.applyCardStyle()
-        setupUI()
         setupAutocomplete()
         setupPickers()
         routePillsContainer.applySmallCard()
@@ -68,25 +67,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     private func setDefaultDateAndTime() {
         datePicker.date = Date()
         timePicker.date = minimumRideDateTime()
-    }
-
-    // Configures the styling for the suggestions table and map view with rounded corners and shadows
-    private func setupUI() {
-        suggestionsTable.dataSource = self
-        suggestionsTable.delegate = self
-        suggestionsTable.translatesAutoresizingMaskIntoConstraints = true
-        suggestionsTable.layer.cornerRadius = 12
-        suggestionsTable.layer.shadowOpacity = 0.1
-        suggestionsTable.layer.shadowRadius = 6
-        suggestionsTable.backgroundColor = .lightGray
-        mapView.delegate = self
-        
-        mapView.layer.cornerRadius = 16
-        mapView.layer.shadowColor = UIColor.black.cgColor
-        mapView.layer.shadowOpacity = 0.08
-        mapView.layer.shadowRadius = 10
-        mapView.layer.shadowOffset = CGSize(width: 0, height: 4)
-
     }
 
     // Hides the map and route options until user enters locations
@@ -107,33 +87,28 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     // Hooks up location autocomplete so suggestions appear when user types
     private func setupAutocomplete() {
-        
-
         MapKitManager.shared.onSuggestionsUpdate = { results in
             self.suggestions = results
             self.suggestionsTable.reloadData()
             self.suggestionsTable.isHidden = results.isEmpty
         }
-
-        fromTextField.delegate = self
-        toTextField.delegate = self
-        fromTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
-        toTextField.addTarget(self, action: #selector(textFieldsDidChange), for: .editingChanged)
     }
 
     // MARK: - Setup Pickers
-    // Makes sure user can't pick dates/times in the past
+    // Makes sure user can't pick dates/times in the past.
     private func setupPickers() {
         datePicker.minimumDate = Date()
-        if datePicker.date < Date() {
-            datePicker.date = Date()
-        }
-        if timePicker.date < minimumRideDateTime() {
-            timePicker.date = minimumRideDateTime()
-        }
-
+        if datePicker.date < Date() { datePicker.date = Date() }
+        if timePicker.date < minimumRideDateTime() { timePicker.date = minimumRideDateTime() }
         refreshTimeConstraintIfNeeded()
+
+        // The compact UIDatePicker has internal left padding (~6pt) that makes the
+        // clock icon appear further from the picker than in JoinRide.
+        // Shift the picker left to cancel that internal inset.
+        timePicker.transform = CGAffineTransform(translationX: -20, y: 0)
     }
+
+
 
     // When user picks a different date, update the time constraints
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) {
@@ -184,12 +159,14 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     // Always allow user to edit the text fields
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool { true }
+
+    @IBAction private func locationFieldEditingChanged(_ sender: UITextField) {
+        updateNextButtonState()
+    }
     // Creates those pill buttons showing different route options (Fastest, Shortest, etc.)
     private func buildRoutePills() {
         routePillsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        routePillsContainer.subviews
-            .compactMap { $0 as? UIVisualEffectView }
-            .forEach { $0.removeFromSuperview() }
+        routePillsContainer.subviews.compactMap { $0 as? UIVisualEffectView }.forEach { $0.removeFromSuperview() }
         let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
         blur.frame = routePillsContainer.bounds
         blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -216,7 +193,23 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             let isSelected = (route == selectedRoute)
             button.applyRoutePill(selected: isSelected)
 
-            button.addTarget(self, action: #selector(routePillTapped(_:)), for: .touchUpInside)
+            let capturedIndex = index
+            button.addAction(UIAction { [weak self] _ in
+                guard let self, self.routes.indices.contains(capturedIndex) else { return }
+                self.selectedRoute = self.routes[capturedIndex]
+                self.drawRoutes()
+                if let route = self.selectedRoute {
+                    self.mapView.setVisibleRoute(route)
+                }
+                UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5) {
+                    if let route = self.selectedRoute {
+                        self.mapView.setVisibleRoute(route)
+                    }
+                }
+                for case let btn as UIButton in self.routePillsStack.arrangedSubviews {
+                    btn.applyRoutePill(selected: btn.tag == capturedIndex)
+                }
+            }, for: .touchUpInside)
 
             routePillsStack.addArrangedSubview(button)
         }
@@ -224,30 +217,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         routePillsContainer.isHidden = false
     }
 
-    
-    // Handles when user taps a route pill - highlights it and updates the map
-    @objc private func routePillTapped(_ sender: UIButton) {
-        guard routes.indices.contains(sender.tag) else { return }
-        selectedRoute = routes[sender.tag]
 
-        drawRoutes()
-        if let route = selectedRoute {
-            mapView.setVisibleRoute(route)
-        }
-        UIView.animate(withDuration: 0.25,
-                       delay: 0,
-                       usingSpringWithDamping: 0.8,
-                       initialSpringVelocity: 0.5) {
-            if let route = self.selectedRoute {
-                self.mapView.setVisibleRoute(route)
-            }
-        }
-            
-        // Update pill states
-        for case let btn as UIButton in routePillsStack.arrangedSubviews {
-            btn.applyRoutePill(selected: btn.tag == sender.tag)
-        }
-    }
 
     // MARK: - Suggestion Selected
     // When user taps a location from the autocomplete dropdown
@@ -406,10 +376,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         nextButton.alpha = enabled ? 1.0 : 0.4
     }
 
-    // Listens for changes in text fields to enable/disable next button
-    @objc private func textFieldsDidChange() {
-        updateNextButtonState()
-    }
+
 
     // MARK: - Renderer
     // Styles the route lines - selected route is thick blue, others are thin gray
