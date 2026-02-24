@@ -157,8 +157,10 @@ class HomeViewController: UIViewController {
         let upcoming = model.myUpcoming(userID: user.id)
         upcomingRide = upcoming.first(where: { $0.ride.status == .published })
 
-        // Use live location if available, otherwise use a default Chitkara location for nearby rides
-        let searchLocation = user.savedHomeLocation ?? LocationPoint(lat: 30.5163, lon: 76.6598, address: "Chitkara University")
+        // Prefer live location, then closest configured home location, then campus fallback
+        let searchLocation = user.lastKnownLocation
+            ?? UserDataModel.shared.preferredHomeLocation()
+            ?? UserDataModel.shared.getCampusLocation()
         
         nearbyRides = model.ridesNear(searchLocation, maxMeters: 5000).filter {
             $0.driverUserID != user.id

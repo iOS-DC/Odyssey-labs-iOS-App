@@ -14,6 +14,11 @@ final class MapKitManager: NSObject {
     static let shared = MapKitManager()
 
     private let completer = MKLocalSearchCompleter()
+    // Bias all search/autocomplete to India.
+    private let indiaRegion = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 22.9734, longitude: 78.6569),
+        span: MKCoordinateSpan(latitudeDelta: 40, longitudeDelta: 40)
+    )
 
     // Autocomplete callback
     var onSuggestionsUpdate: (([MKLocalSearchCompletion]) -> Void)?
@@ -21,7 +26,8 @@ final class MapKitManager: NSObject {
     private override init() {
         super.init()
         completer.delegate = self
-        completer.resultTypes = .address
+        completer.region = indiaRegion
+        completer.resultTypes = [.address, .pointOfInterest]
     }
 
     func updateQuery(_ text: String) {
@@ -32,9 +38,14 @@ final class MapKitManager: NSObject {
     func resolveCompletion(_ completion: MKLocalSearchCompletion, completionHandler: @escaping (MKMapItem?) -> Void) {
 
         let request = MKLocalSearch.Request(completion: completion)
+        request.region = indiaRegion
+        request.resultTypes = [.address, .pointOfInterest]
+        request.pointOfInterestFilter = .includingAll
 
         MKLocalSearch(request: request).start {
-            response, error in completionHandler(response?.mapItems.first)
+            response, _ in
+            let itemInIndia = response?.mapItems.first(where: { $0.placemark.isoCountryCode == "IN" })
+            completionHandler(itemInIndia)
         }
     }
 

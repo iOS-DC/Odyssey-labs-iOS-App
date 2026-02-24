@@ -47,7 +47,7 @@
                                                     </label>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Name:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="chJ-N0-sap">
                                                         <rect key="frame" x="151.66666666666666" y="132" width="49.666666666666657" height="20.333333333333343"/>
-                                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="22"/>
                                                         <nil key="textColor"/>
                                                         <nil key="highlightedColor"/>
                                                     </label>
@@ -75,7 +75,7 @@
                                                         <nil key="highlightedColor"/>
                                                     </label>
                                                 </subviews>
-                                                <color key="backgroundColor" red="0.95686274509803915" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                 <constraints>
                                                     <constraint firstAttribute="bottom" secondItem="czd-we-lD5" secondAttribute="bottom" constant="20" id="1vB-t2-KXQ"/>
                                                     <constraint firstItem="fB8-0A-dLb" firstAttribute="centerX" secondItem="xmw-9k-eV9" secondAttribute="centerX" id="9Bb-zw-b8P"/>
@@ -107,30 +107,58 @@
                                                         <nil key="textColor"/>
                                                         <nil key="highlightedColor"/>
                                                     </label>
-                                                    <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="WNl-pV-tcX">
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="abc@chitkara.edu.in" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WNl-pV-tcX">
                                                         <rect key="frame" x="16" y="76.333333333333314" width="321" height="40"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="40" id="9dF-A5-ySH"/>
                                                         </constraints>
-                                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                        <textInputTraits key="textInputTraits"/>
-                                                    </textField>
-                                                    <textField opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="j9r-SS-ypZ">
+                                                        <fontDescription key="fontDescription" type="system" weight="medium" pointSize="16"/>
+                                                        <nil key="textColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0987654321" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="j9r-SS-ypZ">
                                                         <rect key="frame" x="16" y="160.66666666666669" width="321" height="40"/>
                                                         <constraints>
                                                             <constraint firstAttribute="height" constant="40" id="SR6-M4-2oU"/>
                                                         </constraints>
-                                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                        <textInputTraits key="textInputTraits"/>
-                                                    </textField>
+                                                        <fontDescription key="fontDescription" type="system" weight="medium" pointSize="16"/>
+                                                        <nil key="textColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Phone Number:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RQD-zm-btJ">
                                                         <rect key="frame" x="16" y="136.33333333333331" width="321" height="20.333333333333343"/>
                                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                         <nil key="textColor"/>
                                                         <nil key="highlightedColor"/>
                                                     </label>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Home Location:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hTL-bl-001">
+                                                        <rect key="frame" x="16" y="212" width="280" height="21"/>
+                                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                        <nil key="textColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+
+
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Tap edit to set home" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hVL-bl-003">
+                                                        <rect key="frame" x="16" y="236" width="321" height="21"/>
+                                                        <fontDescription key="fontDescription" type="system" weight="medium" pointSize="16"/>
+                                                        <nil key="textColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="right" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eHB-tn-002">
+                                                        <rect key="frame" x="277" y="202" width="60" height="40"/>
+                                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="15"/>
+                                                        <state key="normal" title="Edit"/>
+                                                        <connections>
+                                                            <action selector="editHomeLocationTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside"/>
+                                                        </connections>
+                                                        <constraints>
+                                                            <constraint firstAttribute="height" constant="40" id="chE-ht-id2"/>
+                                                            <constraint firstAttribute="width" constant="60" id="chE-dW-id1"/>
+                                                        </constraints>
+                                                    </button>
                                                 </subviews>
-                                                <color key="backgroundColor" red="0.95686274509803915" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                 <constraints>
                                                     <constraint firstAttribute="trailing" secondItem="WNl-pV-tcX" secondAttribute="trailing" constant="16" id="2ad-xa-467"/>
                                                     <constraint firstItem="GPB-8Y-FZw" firstAttribute="top" secondItem="ZdN-cd-9yA" secondAttribute="bottom" constant="12" id="4WB-zH-cLo"/>
@@ -146,10 +174,19 @@
                                                     <constraint firstItem="RQD-zm-btJ" firstAttribute="top" secondItem="WNl-pV-tcX" secondAttribute="bottom" constant="20" id="ufk-2v-XbT"/>
                                                     <constraint firstItem="RQD-zm-btJ" firstAttribute="leading" secondItem="xIO-Aj-i6l" secondAttribute="leading" constant="16" id="ww7-Or-XXF"/>
                                                     <constraint firstItem="ZdN-cd-9yA" firstAttribute="top" secondItem="xIO-Aj-i6l" secondAttribute="top" constant="16" id="yGj-mN-fzi"/>
+                                                    <constraint firstItem="hTL-bl-001" firstAttribute="top" secondItem="j9r-SS-ypZ" secondAttribute="bottom" constant="12" id="con-st-001"/>
+                                                    <constraint firstItem="hTL-bl-001" firstAttribute="leading" secondItem="xIO-Aj-i6l" secondAttribute="leading" constant="16" id="con-st-002"/>
+                                                    <constraint firstItem="eHB-tn-002" firstAttribute="centerY" secondItem="hTL-bl-001" secondAttribute="centerY" id="con-st-003"/>
+                                                    <constraint firstAttribute="trailing" secondItem="eHB-tn-002" secondAttribute="trailing" constant="16" id="con-st-004"/>
+                                                    <constraint firstItem="eHB-tn-002" firstAttribute="leading" secondItem="hTL-bl-001" secondAttribute="trailing" constant="16" id="con-st-005"/>
+                                                    <constraint firstItem="hVL-bl-003" firstAttribute="top" secondItem="hTL-bl-001" secondAttribute="bottom" constant="4" id="con-st-006"/>
+                                                    <constraint firstItem="hVL-bl-003" firstAttribute="leading" secondItem="xIO-Aj-i6l" secondAttribute="leading" constant="16" id="con-st-007"/>
+                                                    <constraint firstAttribute="trailing" secondItem="hVL-bl-003" secondAttribute="trailing" constant="16" id="con-st-008"/>
+                                                    <constraint firstAttribute="bottom" secondItem="hVL-bl-003" secondAttribute="bottom" constant="24" id="con-st-009"/>
                                                 </constraints>
                                             </view>
                                         </subviews>
-                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
                                             <constraint firstAttribute="trailing" secondItem="xmw-9k-eV9" secondAttribute="trailing" constant="20" id="0hk-My-KjU"/>
                                             <constraint firstItem="xmw-9k-eV9" firstAttribute="top" secondItem="2TY-E1-UA6" secondAttribute="top" constant="20" id="D1W-1i-sGm"/>
@@ -173,7 +210,7 @@
                             </scrollView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="JIr-P1-gzv" firstAttribute="bottom" secondItem="vDu-zF-Fre" secondAttribute="bottom" id="Dpk-8O-e90"/>
                             <constraint firstItem="JIr-P1-gzv" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" id="KWy-Of-1Ry"/>
@@ -188,13 +225,16 @@
                     </navigationItem>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
+                        <outlet property="basicInfoCard" destination="xmw-9k-eV9" id="bas-1N-fo1"/>
+                        <outlet property="contactInfoCard" destination="xIO-Aj-i6l" id="con-Ta-InF"/>
                         <outlet property="departmentLabel" destination="koX-yA-rhF" id="QbN-mj-aCA"/>
                         <outlet property="emailLabel" destination="GPB-8Y-FZw" id="Xgc-79-a1T"/>
-                        <outlet property="emailTextField" destination="WNl-pV-tcX" id="3zD-ym-zda"/>
+                        <outlet property="emailLabelValue" destination="WNl-pV-tcX" id="3zD-ym-zda"/>
                         <outlet property="memberSinceLabel" destination="06E-oH-cuE" id="1z0-Ls-SOR"/>
                         <outlet property="nameLabel" destination="chJ-N0-sap" id="kFd-if-c9t"/>
                         <outlet property="phoneLabel" destination="RQD-zm-btJ" id="bCk-mG-tzm"/>
-                        <outlet property="phoneTextField" destination="j9r-SS-ypZ" id="48L-Yy-tAI"/>
+                        <outlet property="phoneLabelValue" destination="j9r-SS-ypZ" id="48L-Yy-tAI"/>
+                        <outlet property="homeLocationLabelValue" destination="hVL-bl-003" id="1hV-L4-val"/>
                         <outlet property="profileImageView" destination="tiT-QF-PA1" id="XUt-5z-x8h"/>
                         <outlet property="ratingLabel" destination="U7w-l6-Abf" id="mbD-DL-L9C"/>
                         <outlet property="ridesLabel" destination="Y3X-Qz-JEg" id="4x4-6u-IWH"/>
@@ -231,6 +271,9 @@
         <image name="person.crop.circle.fill" catalog="system" width="128" height="123"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemGroupedBackgroundColor">
+            <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemPurpleColor">
             <color red="0.68627450980000004" green="0.32156862749999998" blue="0.87058823529999996" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

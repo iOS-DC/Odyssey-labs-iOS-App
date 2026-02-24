@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="5jQ-3w-jP6">
+    <device id="retina6_3" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="fQR-dG-Etn">
+            <objects>
+                <viewController storyboardIdentifier="RoleSelectionViewController" id="5jQ-3w-jP6" customClass="RoleSelectionViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Q9L-fF-Gnq">
+                        <rect key="frame" x="0.0" y="0.0" width="402" height="874"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="I am a..." textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Q4J-cN-tW3">
+                                <rect key="frame" x="24" y="135" width="108" height="43"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="36"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Select your role at the university" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="WjH-4E-gjc">
+                                <rect key="frame" x="24" y="186" width="260" height="32"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" red="0.5137254902" green="0.54901960780000004" blue="0.59215686270000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            </label>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="0Ln-9I-WiH">
+                                <rect key="frame" x="16" y="234" width="370" height="387"/>
+                                <subviews>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="vKj-AQ-nv8">
+                                        <rect key="frame" x="16" y="20" width="338" height="256"/>
+                                        <subviews>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="gIX-vW-EgN">
+                                                <rect key="frame" x="0.0" y="0.0" width="338" height="88"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="88" id="sr1-SD-q0L"/>
+                                                </constraints>
+                                                <state key="normal" title="Student"/>
+                                                <connections>
+                                                    <action selector="studentTapped:" destination="5jQ-3w-jP6" eventType="touchUpInside" id="HIo-Px-f9j"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="el0-wj-ARq">
+                                                <rect key="frame" x="0.0" y="104" width="338" height="88"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="88" id="9nB-Qb-qod"/>
+                                                </constraints>
+                                                <state key="normal" title="Faculty"/>
+                                                <connections>
+                                                    <action selector="facultyTapped:" destination="5jQ-3w-jP6" eventType="touchUpInside" id="7mI-sg-qEs"/>
+                                                </connections>
+                                            </button>
+                                        </subviews>
+                                    </stackView>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eV0-S3-x6V">
+                                        <rect key="frame" x="16" y="300" width="338" height="52"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="52" id="a6V-Pd-ZZ3"/>
+                                        </constraints>
+                                        <state key="normal" title="Continue"/>
+                                        <connections>
+                                            <action selector="continueTapped:" destination="5jQ-3w-jP6" eventType="touchUpInside" id="Jg7-qY-iHO"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstItem="vKj-AQ-nv8" firstAttribute="top" secondItem="0Ln-9I-WiH" secondAttribute="top" constant="20" id="2xF-vt-nzT"/>
+                                    <constraint firstItem="vKj-AQ-nv8" firstAttribute="leading" secondItem="0Ln-9I-WiH" secondAttribute="leading" constant="16" id="pCC-LQ-3aa"/>
+                                    <constraint firstAttribute="trailing" secondItem="vKj-AQ-nv8" secondAttribute="trailing" constant="16" id="bOH-aR-qCg"/>
+                                    <constraint firstItem="eV0-S3-x6V" firstAttribute="top" secondItem="vKj-AQ-nv8" secondAttribute="bottom" constant="24" id="P2N-HJ-7Q0"/>
+                                    <constraint firstItem="eV0-S3-x6V" firstAttribute="leading" secondItem="0Ln-9I-WiH" secondAttribute="leading" constant="16" id="H2q-lF-b5S"/>
+                                    <constraint firstAttribute="trailing" secondItem="eV0-S3-x6V" secondAttribute="trailing" constant="16" id="N5E-XK-EfP"/>
+                                    <constraint firstAttribute="bottom" secondItem="eV0-S3-x6V" secondAttribute="bottom" constant="20" id="FWs-AW-cE3"/>
+                                </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <real key="value" value="20"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="cqk-Lu-D3N"/>
+                        <color key="backgroundColor" red="0.93725490199999995" green="0.97254901959999995" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="Q4J-cN-tW3" firstAttribute="top" secondItem="cqk-Lu-D3N" secondAttribute="top" constant="56" id="53k-Mc-LBd"/>
+                            <constraint firstItem="WjH-4E-gjc" firstAttribute="top" secondItem="Q4J-cN-tW3" secondAttribute="bottom" constant="8" id="8mJ-hE-Ldg"/>
+                            <constraint firstItem="Q4J-cN-tW3" firstAttribute="leading" secondItem="cqk-Lu-D3N" secondAttribute="leading" constant="24" id="DxN-Xm-VhM"/>
+                            <constraint firstItem="WjH-4E-gjc" firstAttribute="leading" secondItem="cqk-Lu-D3N" secondAttribute="leading" constant="24" id="Mn5-PE-zmw"/>
+                            <constraint firstItem="0Ln-9I-WiH" firstAttribute="top" secondItem="WjH-4E-gjc" secondAttribute="bottom" constant="16" id="QTY-jT-Nkd"/>
+                            <constraint firstItem="0Ln-9I-WiH" firstAttribute="leading" secondItem="cqk-Lu-D3N" secondAttribute="leading" constant="16" id="S7I-iX-rjR"/>
+                            <constraint firstItem="cqk-Lu-D3N" firstAttribute="trailing" secondItem="0Ln-9I-WiH" secondAttribute="trailing" constant="16" id="lzU-Es-qZH"/>
+                            <constraint firstAttribute="bottom" relation="lessThanOrEqual" secondItem="0Ln-9I-WiH" secondAttribute="bottom" constant="24" id="rN6-Nf-Pnz"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" id="K8V-6P-hqR"/>
+                    <connections>
+                        <outlet property="containerCard" destination="0Ln-9I-WiH" id="8VQ-cu-zXD"/>
+                        <outlet property="continueButton" destination="eV0-S3-x6V" id="dp0-A3-2oN"/>
+                        <outlet property="facultyButton" destination="el0-wj-ARq" id="dAA-g0-rV6"/>
+                        <outlet property="studentButton" destination="gIX-vW-EgN" id="w6G-BM-zJq"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="T25-Tq-03A" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="156" y="18"/>
+        </scene>
+    </scenes>
+</document>

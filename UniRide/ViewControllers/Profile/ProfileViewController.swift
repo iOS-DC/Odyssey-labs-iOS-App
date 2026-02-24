@@ -3,6 +3,8 @@ import UIKit
 class ProfileViewController: UIViewController {
 
     // MARK: - IBOutlets
+    @IBOutlet weak var basicInfoCard: UIView!
+    @IBOutlet weak var contactInfoCard: UIView!
     @IBOutlet weak var profileImageView: UIImageView!
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var departmentLabel: UILabel!
@@ -15,15 +17,22 @@ class ProfileViewController: UIViewController {
     @IBOutlet weak var emailLabel: UILabel!
     @IBOutlet weak var phoneLabel: UILabel!
 
-    // Actual text fields to show values
-    @IBOutlet weak var emailTextField: UITextField!
-    @IBOutlet weak var phoneTextField: UITextField!
+    // Actual labels to show values
+    @IBOutlet weak var emailLabelValue: UILabel!
+    @IBOutlet weak var phoneLabelValue: UILabel!
+    @IBOutlet weak var homeLocationLabelValue: UILabel!
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavBar()
         loadProfile()
+        applyStyles()
+    }
+
+    private func applyStyles() {
+        basicInfoCard.applyCardStyle()
+        contactInfoCard.applyCardStyle()
     }
 
     // 🔥 Automatically refresh profile when returning from Edit Profile
@@ -96,8 +105,14 @@ class ProfileViewController: UIViewController {
         ridesLabel.text = "12 rides"
 
         // MARK: CONTACT INFO
-        emailTextField.text = profile.email
-        phoneTextField.text = profile.phone ?? ""
+        emailLabelValue.text = profile.email
+        phoneLabelValue.text = profile.phone ?? ""
+        
+        if let home = UserDataModel.shared.preferredHomeLocation() {
+            homeLocationLabelValue.text = home.address
+        } else {
+            homeLocationLabelValue.text = "Tap Edit to set home"
+        }
 
         // MARK: PROFILE IMAGE
         if let url = profile.photoURL {
@@ -137,6 +152,15 @@ class ProfileViewController: UIViewController {
         }
 
         navigationController?.pushViewController(editVC, animated: true)
+    }
+
+    // MARK: - Edit Home Action
+    @IBAction func editHomeLocationTapped(_ sender: UIButton) {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        if let step3VC = storyboard.instantiateViewController(withIdentifier: "ProfileStep3ViewController") as? ProfileStep3ViewController {
+            step3VC.isEditingMode = true
+            navigationController?.pushViewController(step3VC, animated: true)
+        }
     }
 
     // MARK: - Logout Button Action (WITH CONFIRMATION)

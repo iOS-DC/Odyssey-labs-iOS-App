@@ -3,6 +3,7 @@ import UIKit
 class EditProfileViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     // MARK: - IBOutlets
+    @IBOutlet weak var cardBackgroundView: UIView!
     @IBOutlet weak var profileImageView: UIImageView!
     @IBOutlet weak var nameTextField: UITextField!
     @IBOutlet weak var yearTextField: UITextField!
@@ -34,6 +35,19 @@ class EditProfileViewController: UIViewController, UIImagePickerControllerDelega
         let tap = UITapGestureRecognizer(target: self, action: #selector(selectImage))
         profileImageView.isUserInteractionEnabled = true
         profileImageView.addGestureRecognizer(tap)
+
+        // Apply Card Styling
+        cardBackgroundView?.applyCardStyle()
+
+        // Style Text Fields
+        let textFields = [nameTextField, yearTextField, mailTextField, phoneTextField]
+        for field in textFields {
+            field?.borderStyle = .roundedRect
+            field?.backgroundColor = .systemBackground
+            field?.layer.cornerRadius = 8
+            field?.layer.borderColor = UIColor.systemGray5.cgColor
+            field?.layer.borderWidth = 1.0
+        }
     }
 
     // MARK: - Load Existing Profile Data

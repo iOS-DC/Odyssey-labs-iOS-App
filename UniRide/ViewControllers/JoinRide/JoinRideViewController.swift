@@ -43,6 +43,7 @@ class JoinRideViewController: UIViewController,
 
         setDefaultDateAndTime()
         setupPickers()
+        prefillLocationsIfPossible()
 
         contentView.applyCardStyle(corner: 24)
         findRideButton.layer.cornerRadius = 22
@@ -57,6 +58,14 @@ class JoinRideViewController: UIViewController,
 
     private func setupPickers() {
         datePicker.minimumDate = Date()
+    }
+
+    private func prefillLocationsIfPossible() {
+        guard let prefill = UserDataModel.shared.suggestedCommutePrefill() else { return }
+        fromTextField.text = prefill.from.address ?? "Chitkara University"
+        toTextField.text = prefill.to.address ?? "Home"
+        fromCoordinate = CLLocationCoordinate2D(latitude: prefill.from.lat, longitude: prefill.from.lon)
+        toCoordinate = CLLocationCoordinate2D(latitude: prefill.to.lat, longitude: prefill.to.lon)
     }
 
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) {

@@ -28,7 +28,7 @@
                                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="z3G-Qh-7YY">
                                                         <rect key="frame" x="0.0" y="0.0" width="353" height="626"/>
                                                         <subviews>
-                                                            <stackView opaque="NO" contentMode="scaleToFill" misplaced="YES" axis="vertical" distribution="equalSpacing" alignment="center" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="ijk-Kr-OA3">
+                                                            <stackView opaque="NO" contentMode="scaleToFill" misplaced="YES" axis="vertical" distribution="equalSpacing" alignment="center" spacing="20" translatesAutoresizingMaskIntoConstraints="NO" id="ijk-Kr-OA3">
                                                                 <rect key="frame" x="0.0" y="-8" width="353" height="626"/>
                                                                 <subviews>
                                                                     <imageView autoresizesSubviews="NO" opaque="NO" clipsSubviews="YES" clearsContextBeforeDrawing="NO" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="xvE-tJ-lpx">
@@ -41,9 +41,6 @@
                                                                     </imageView>
                                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ZOo-2z-D3x">
                                                                         <rect key="frame" x="110.33333333333333" y="142" width="132.33333333333337" height="34.333333333333343"/>
-                                                                        <color key="backgroundColor" systemColor="systemBlueColor"/>
-                                                                        <color key="tintColor" red="0.99999600649999998" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                                                        <state key="normal" title="Button"/>
                                                                         <buttonConfiguration key="configuration" style="plain" title="Change Photo" titleAlignment="center"/>
                                                                         <connections>
                                                                             <action selector="changePhotoTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="1Gk-XA-Z9a"/>
@@ -137,7 +134,9 @@
                                                                         </constraints>
                                                                         <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                         <state key="normal" title="Button"/>
-                                                                        <buttonConfiguration key="configuration" style="plain" title="SAVE"/>
+                                                                        <buttonConfiguration key="configuration" style="filled" title="Save" cornerStyle="capsule">
+                                                                            <fontDescription key="titleFontDescription" type="boldSystem" pointSize="17"/>
+                                                                        </buttonConfiguration>
                                                                         <connections>
                                                                             <action selector="saveButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="uBN-Lk-lCY"/>
                                                                         </connections>
@@ -156,7 +155,7 @@
                                                 </subviews>
                                             </stackView>
                                         </subviews>
-                                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
                                             <constraint firstItem="cLf-pk-n3k" firstAttribute="leading" secondItem="u7a-bX-1p7" secondAttribute="leading" constant="20" id="4AR-WT-FAM"/>
                                             <constraint firstAttribute="trailing" secondItem="cLf-pk-n3k" secondAttribute="trailing" constant="20" id="Enn-Qe-UVO"/>
@@ -178,7 +177,7 @@
                             </scrollView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
-                        <color key="backgroundColor" red="0.95686274509803915" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
                         <constraints>
                             <constraint firstItem="F4o-6H-u62" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" id="Hiu-7K-fwW"/>
                             <constraint firstItem="F4o-6H-u62" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="sCZ-0d-Z4K"/>
@@ -188,6 +187,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="TWW-8T-txt"/>
                     <connections>
+                        <outlet property="cardBackgroundView" destination="z3G-Qh-7YY" id="vE2-Ab-c9J"/>
                         <outlet property="mailTextField" destination="OpI-vP-V7s" id="Pnp-Nc-doR"/>
                         <outlet property="nameTextField" destination="iES-lX-oC2" id="Tu9-hL-RCM"/>
                         <outlet property="phoneTextField" destination="AuS-Mr-6ch" id="sOI-Ar-ud9"/>

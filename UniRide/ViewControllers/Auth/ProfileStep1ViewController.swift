@@ -7,7 +7,6 @@ let departmentOptions = [
 ]
 
 final class ProfileStep1ViewController: UIViewController {
-
     // MARK: - IBOutlets
     @IBOutlet weak var containerCard: UIView!
     @IBOutlet weak var stackView: UIStackView!
@@ -23,29 +22,45 @@ final class ProfileStep1ViewController: UIViewController {
     @IBOutlet weak var otpTextField: UITextField!
 
     @IBOutlet weak var continueButton: UIButton!
+    @IBOutlet private weak var headerTitleLabel: UILabel!
+    @IBOutlet private weak var headerSubtitleLabel: UILabel!
     
-    private let roleSegmentedControl: UISegmentedControl = {
-        let sc = UISegmentedControl(items: ["Student", "Faculty"])
-        sc.selectedSegmentIndex = 0
-        sc.backgroundColor = .systemGray6
-        sc.selectedSegmentTintColor = .systemBlue
-        sc.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
-        sc.setTitleTextAttributes([.foregroundColor: UIColor.black], for: .normal)
-        return sc
+    @IBOutlet weak var courseLabel: UILabel!
+    @IBOutlet weak var yearLabel: UILabel!
+
+    // Set by RoleSelectionViewController
+    var lockedRole: UserRole?
+
+    private let employeeIDTextField: UITextField = {
+        let tf = UITextField()
+        tf.placeholder = "Employee ID"
+        tf.translatesAutoresizingMaskIntoConstraints = false
+        tf.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        return tf
     }()
+
+    private var activeRole: UserRole {
+        if let lockedRole { return lockedRole }
+        if let saved = UserDataModel.shared.getCurrentUser()?.role { return saved }
+        return .student
+    }
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Tell us about yourself"
+        applyOnboardingChrome(step: 4, total: 7)
+
         setupUI()
-        setupRoleSelection()
         setupDepartmentDropDownMenu()
         setupYearDropDownMenu()
+        updateFormForRole()
+        preloadSavedState()
+        validateContinueAvailability()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Update shadow path after layout so it matches the card's bounds
         containerCard.layer.shadowPath = UIBezierPath(
             roundedRect: containerCard.bounds,
             cornerRadius: containerCard.layer.cornerRadius
@@ -54,56 +69,63 @@ final class ProfileStep1ViewController: UIViewController {
 
     // MARK: - UI Setup
     private func setupUI() {
-        // Card shadow (cornerRadius is set in storyboard)
         containerCard.layer.masksToBounds = false
         containerCard.layer.shadowColor = UIColor.black.cgColor
         containerCard.layer.shadowOpacity = 0.1
         containerCard.layer.shadowRadius = 8
         containerCard.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        // TextFields (cornerRadius + border set in storyboard)
-        fullNameTextField.setLeftPaddingPoints(14)
+        fullNameTextField.applyRoundedField()
         phoneTextField.keyboardType = .numberPad
+        phoneTextField.applyRoundedField()
+        employeeIDTextField.applyRoundedField()
 
         otpTextField.keyboardType = .numberPad
-        otpTextField.setLeftPaddingPoints(14)
+        otpTextField.applyRoundedField()
 
-        // Buttons
         sendOTPButton.applyOutlineButton()
-        continueButton.applyOutlineButton()
+        continueButton.applyPrimaryButton(color: .systemBlue)
+        applyPrimaryOnboardingCTAStyle(continueButton)
 
-        // Continue button starts disabled
         continueButton.isEnabled = false
         continueButton.alpha = 0.5
 
-        // OTP section hidden initially
+        fullNameTextField.addTarget(self, action: #selector(formDidChange), for: .editingChanged)
+        phoneTextField.addTarget(self, action: #selector(formDidChange), for: .editingChanged)
+
+        // OTP is handled by dedicated OTP screen.
+        sendOTPButton.isHidden = true
+        sendOTPButton.isEnabled = false
         otpTextField.isHidden = true
         otpTextField.alpha = 0
+        otpTextField.isEnabled = false
         otpStatusLabel.isHidden = true
         otpStatusLabel.font = .systemFont(ofSize: 13, weight: .medium)
 
-        // Stack spacing
-        stackView.setCustomSpacing(6, after: otpStatusLabel)
-        stackView.setCustomSpacing(12, after: otpTextField)
-
-        // Inject Role Segmented Control into stack view after full name
-        if let index = stackView.arrangedSubviews.firstIndex(of: fullNameTextField) {
-            stackView.insertArrangedSubview(roleSegmentedControl, at: index + 1)
+        if !stackView.arrangedSubviews.contains(employeeIDTextField),
+           let phoneIndex = stackView.arrangedSubviews.firstIndex(of: phoneTextField) {
+            stackView.insertArrangedSubview(employeeIDTextField, at: phoneIndex)
         }
+        employeeIDTextField.addTarget(self, action: #selector(formDidChange), for: .editingChanged)
     }
 
-    private func setupRoleSelection() {
-        roleSegmentedControl.addTarget(self, action: #selector(roleChanged), for: .valueChanged)
-    }
+    private func updateFormForRole() {
+        let isStudent = activeRole == .student
+        headerTitleLabel.text = "Tell us about yourself"
+        headerSubtitleLabel.text = isStudent
+            ? "Help us create your student profile"
+            : "Help us create your faculty profile"
 
-    @objc private func roleChanged() {
-        let isStudent = roleSegmentedControl.selectedSegmentIndex == 0
+        courseLabel.text = isStudent ? "Course" : "Department"
+        dropDownButton.setTitle(isStudent ? "Select Course" : "Select Department", for: .normal)
+        
+        yearLabel.isHidden = !isStudent
         yearDropDownButton.isHidden = !isStudent
-        if !isStudent {
-            yearDropDownButton.setTitle("N/A", for: .normal)
-        } else {
-            yearDropDownButton.setTitle("Select Year", for: .normal)
-        }
+        employeeIDTextField.isHidden = true // Hidden for both student and faculty
+    }
+
+    @objc private func formDidChange() {
+        validateContinueAvailability()
     }
 
     // MARK: - Department Dropdown
@@ -117,9 +139,10 @@ final class ProfileStep1ViewController: UIViewController {
                     guard let self else { return }
                     if option == "Reset" {
                         self.dropDownButton.setTitle("Select Department", for: .normal)
-                        return
+                    } else {
+                        self.dropDownButton.setTitle(option, for: .normal)
                     }
-                    self.dropDownButton.setTitle(option, for: .normal)
+                    self.validateContinueAvailability()
                 }
             }
         )
@@ -133,61 +156,46 @@ final class ProfileStep1ViewController: UIViewController {
             children: years.map { year in
                 UIAction(title: "\(year)") { [weak self] _ in
                     self?.yearDropDownButton.setTitle("\(year)", for: .normal)
+                    self?.validateContinueAvailability()
                 }
             }
         )
         yearDropDownButton.showsMenuAsPrimaryAction = true
     }
 
-    // MARK: - OTP
+    // MARK: - OTP (legacy hidden on this screen)
     @IBAction func sendOTPPressed(_ sender: UIButton) {
-        guard let phone = phoneTextField.text, phone.count >= 10 else {
-            showOTPStatus("Enter a valid phone number", color: .systemRed)
-            return
-        }
-
-        do {
-            try UserDataModel.shared.startPhoneVerification(phone: phone)
-            showOTPStatus("✓ OTP sent", color: .systemGreen)
-
-            otpTextField.text = ""
-            otpTextField.isHidden = false
-            UIView.animate(withDuration: 0.35) { self.otpTextField.alpha = 1 }
-            otpTextField.becomeFirstResponder()
-
-            continueButton.isEnabled = true
-            continueButton.alpha = 1
-        } catch {
-            showOTPStatus(error.localizedDescription, color: .systemRed)
-        }
+        // intentionally unused: phone verification is handled on dedicated OTP screen
     }
 
     // MARK: - Continue
     @IBAction func continuePressed(_ sender: UIButton) {
-        guard let phone = phoneTextField.text, phone.count >= 10 else {
+        let phone = (phoneTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard phone.count >= 10 else {
             showOTPStatus("Enter a valid phone number", color: .systemRed)
             return
         }
-        guard let otp = otpTextField.text, !otp.isEmpty else {
-            showOTPStatus("Please enter OTP", color: .systemRed)
-            return
-        }
+
+        let role = activeRole
+        let yearText = yearDropDownButton.title(for: .normal)
+        let year = role == .student ? Int(yearText ?? "") : nil
+
+        UserDataModel.shared.editCurrentUser(
+            fullName: fullNameTextField.text,
+            role: role,
+            courseName: role == .student ? dropDownButton.title(for: .normal) : nil,
+            year: year,
+            employeeID: role == .faculty ? employeeIDTextField.text : nil
+        )
 
         do {
-            try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: otp)
-            showOTPStatus("✓ Phone number verified", color: .systemGreen)
+            try UserDataModel.shared.startPhoneVerification(phone: phone)
+            showOTPStatus("OTP sent. Verify phone on next step.", color: .systemGreen)
 
-            let role: UserRole = roleSegmentedControl.selectedSegmentIndex == 0 ? .student : .faculty
-            let yearText = yearDropDownButton.title(for: .normal)
-            let year = role == .student ? Int(yearText ?? "1") : nil
-
-            UserDataModel.shared.editCurrentUser(
-                fullName: fullNameTextField.text,
-                role: role,
-                courseName: dropDownButton.title(for: .normal),
-                year: year
-            )
-            goToNextPage()
+            let vc = storyboard?.instantiateViewController(withIdentifier: "OTPViewController") as! OTPViewController
+            vc.verificationMode = .phone
+            vc.phoneNumber = phone
+            navigationController?.pushViewController(vc, animated: true)
         } catch {
             showOTPStatus(error.localizedDescription, color: .systemRed)
         }
@@ -200,10 +208,46 @@ final class ProfileStep1ViewController: UIViewController {
         otpStatusLabel.isHidden = false
     }
 
-    private func goToNextPage() {
-        let vc = storyboard?.instantiateViewController(
-            identifier: "ProfileStep2ViewController"
-        ) as! ProfileStep2ViewController
-        navigationController?.pushViewController(vc, animated: true)
+    private func validateContinueAvailability() {
+        let name = (fullNameTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let phone = (phoneTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasPhone = phone.count >= 10
+        let dept = dropDownButton.title(for: .normal) ?? ""
+        let hasDepartment = dept != "Select Department" && dept != "Select Course"
+
+        if activeRole == .student {
+            let hasYear = Int(yearDropDownButton.title(for: .normal) ?? "") != nil
+            let enabled = !name.isEmpty && hasDepartment && hasYear && hasPhone
+            continueButton.isEnabled = enabled
+            continueButton.alpha = enabled ? 1.0 : 0.5
+            return
+        }
+
+        let enabled = !name.isEmpty && hasDepartment && hasPhone
+        continueButton.isEnabled = enabled
+        continueButton.alpha = enabled ? 1.0 : 0.5
+    }
+
+    private func preloadSavedState() {
+        guard let user = UserDataModel.shared.getCurrentUser() else { return }
+
+        if !(user.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+            fullNameTextField.text = user.fullName
+        }
+        if let phone = user.phone, !phone.isEmpty {
+            phoneTextField.text = phone
+        }
+
+        if activeRole == .student {
+            if let department = user.courseName,
+               !department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                dropDownButton.setTitle(department, for: .normal)
+            }
+            if let year = user.year {
+                yearDropDownButton.setTitle("\(year)", for: .normal)
+            }
+        } else if let eid = user.employeeID, !eid.isEmpty {
+            employeeIDTextField.text = eid
+        }
     }
 }

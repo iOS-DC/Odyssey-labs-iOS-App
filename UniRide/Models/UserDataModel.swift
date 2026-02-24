@@ -29,10 +29,13 @@ struct UserProfile: Equatable, Codable {
     var role: UserRole?
     var courseName: String? // This will be used as "Department"
     var year: Int?
+    var employeeID: String?
     var photoURL: URL?
     var vehicle: Vehicle?
 
     var savedHomeLocation: LocationPoint?
+    var savedHomeLocations: [LocationPoint]?
+    var lastKnownLocation: LocationPoint?
 
     init(id: UUID,
          email: String,
@@ -43,8 +46,12 @@ struct UserProfile: Equatable, Codable {
          role: UserRole? = nil,
          courseName: String? = nil,
          year: Int? = nil,
+         employeeID: String? = nil,
          photoURL: URL? = nil,
-         vehicle: Vehicle? = nil) {
+         vehicle: Vehicle? = nil,
+         savedHomeLocation: LocationPoint? = nil,
+         savedHomeLocations: [LocationPoint]? = nil,
+         lastKnownLocation: LocationPoint? = nil) {
         self.id = id
         self.email = email
         self.isEmailVerified = isEmailVerified
@@ -54,8 +61,12 @@ struct UserProfile: Equatable, Codable {
         self.role = role
         self.courseName = courseName
         self.year = year
+        self.employeeID = employeeID
         self.photoURL = photoURL
         self.vehicle = vehicle
+        self.savedHomeLocation = savedHomeLocation
+        self.savedHomeLocations = savedHomeLocations
+        self.lastKnownLocation = lastKnownLocation
     }
 
 
@@ -67,8 +78,12 @@ struct UserProfile: Equatable, Codable {
          role: UserRole? = nil,
          courseName: String? = nil,
          year: Int? = nil,
+         employeeID: String? = nil,
          photoURL: URL? = nil,
-         vehicle: Vehicle? = nil) {
+         vehicle: Vehicle? = nil,
+         savedHomeLocation: LocationPoint? = nil,
+         savedHomeLocations: [LocationPoint]? = nil,
+         lastKnownLocation: LocationPoint? = nil) {
         self.id = UUID()
         self.email = email
         self.isEmailVerified = isEmailVerified
@@ -78,8 +93,12 @@ struct UserProfile: Equatable, Codable {
         self.role = role
         self.courseName = courseName
         self.year = year
+        self.employeeID = employeeID
         self.photoURL = photoURL
         self.vehicle = vehicle
+        self.savedHomeLocation = savedHomeLocation
+        self.savedHomeLocations = savedHomeLocations
+        self.lastKnownLocation = lastKnownLocation
     }
 
     static func == (lhs: UserProfile, rhs: UserProfile) -> Bool {
@@ -99,6 +118,11 @@ final class UserDataModel {
 
     private var emailOTPs: [String: String] = [:]
     private var phoneOTPs: [String: String] = [:]
+    private let campusLocation = LocationPoint(
+        lat: 30.5163,
+        lon: 76.6598,
+        address: "Chitkara University"
+    )
 
     private init() {
         archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")
@@ -110,9 +134,81 @@ final class UserDataModel {
               let index = users.firstIndex(where: { $0.id == id }) else { return }
 
         var user = users[index]
-        user.savedHomeLocation = location
+        user.lastKnownLocation = location
         users[index] = user
         saveUsers()
+    }
+
+    func getCampusLocation() -> LocationPoint {
+        campusLocation
+    }
+
+    func getHomeLocations(for userID: UUID? = nil) -> [LocationPoint] {
+        let user = (userID == nil) ? getCurrentUser() : users.first(where: { $0.id == userID })
+        guard let user else { return [] }
+
+        var homes = user.savedHomeLocations ?? []
+        if homes.isEmpty, let single = user.savedHomeLocation {
+            homes = [single]
+        }
+        return Array(homes.prefix(3))
+    }
+
+    func setHomeLocations(_ locations: [LocationPoint]) {
+        guard let id = currentUserID,
+              let index = users.firstIndex(where: { $0.id == id }) else { return }
+
+        var user = users[index]
+        let trimmed = Array(locations.prefix(3))
+        user.savedHomeLocations = trimmed
+        user.savedHomeLocation = trimmed.first
+        users[index] = user
+        saveUsers()
+    }
+
+    func preferredHomeLocation() -> LocationPoint? {
+        guard let user = getCurrentUser() else { return nil }
+        let homes = getHomeLocations(for: user.id)
+        guard !homes.isEmpty else { return nil }
+
+        guard let live = user.lastKnownLocation else {
+            return homes.first
+        }
+
+        return homes.min(by: { distanceMeters($0, live) < distanceMeters($1, live) })
+    }
+
+    func isProfileSetupComplete(for user: UserProfile) -> Bool {
+        let hasName = !user.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasRole = user.role != nil
+        let hasPhone = user.isPhoneVerified && !(user.phone ?? "").isEmpty
+        let hasEmployeeID = user.role != .faculty || !((user.employeeID ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        let hasHome = !(getHomeLocations(for: user.id).isEmpty)
+        return hasName && hasRole && hasPhone && hasEmployeeID && hasHome
+    }
+
+    func suggestedCommutePrefill() -> (from: LocationPoint, to: LocationPoint)? {
+        guard let user = getCurrentUser(),
+              let home = preferredHomeLocation() else { return nil }
+
+        let campus = campusLocation
+        guard let live = user.lastKnownLocation else {
+            return (from: campus, to: home)
+        }
+
+        if distanceMeters(live, campus) <= 1500 {
+            return (from: campus, to: home)
+        } else if distanceMeters(live, home) <= 3000 {
+            return (from: home, to: campus)
+        } else {
+            return (from: campus, to: home)
+        }
+    }
+
+    private func distanceMeters(_ a: LocationPoint, _ b: LocationPoint) -> Double {
+        let dx = (a.lon - b.lon) * 111_320 * cos((a.lat + b.lat) * 0.5 * .pi / 180)
+        let dy = (a.lat - b.lat) * 110_540
+        return sqrt(dx * dx + dy * dy)
     }
 
     // FUNCTION CALLING IN THE EMAILVIEW CONTROLLER for storing the email and printing the otp
@@ -122,7 +218,7 @@ final class UserDataModel {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-        let otp = String(Int.random(in: 1000...9999))
+        let otp = String(Int.random(in: 100000...999999))
         emailOTPs[email] = otp
         print("DEBUG Email OTP for \(email): \(otp)")
     }
@@ -165,7 +261,7 @@ final class UserDataModel {
             throw NSError(domain: "Phone", code: 400,
                           userInfo: [NSLocalizedDescriptionKey: "Enter a valid phone number"])
         }
-        let otp = String(Int.random(in: 1000...9999))
+        let otp = String(Int.random(in: 100000...999999))
         phoneOTPs[phone] = otp
         print("DEBUG Phone OTP for \(phone): \(otp)")
     }
@@ -229,6 +325,7 @@ final class UserDataModel {
         role: UserRole? = nil,
         courseName: String? = nil,
         year: Int? = nil,
+        employeeID: String? = nil,
         photoURL: URL? = nil,
         vehicle: Vehicle? = nil
     ) {
@@ -240,6 +337,7 @@ final class UserDataModel {
         if let r = role { user.role = r }
         if let c = courseName { user.courseName = c }
         if let y = year { user.year = y }
+        if let e = employeeID { user.employeeID = e }
         if let p = photoURL { user.photoURL = p }
         if let v = vehicle { user.vehicle = v }
 

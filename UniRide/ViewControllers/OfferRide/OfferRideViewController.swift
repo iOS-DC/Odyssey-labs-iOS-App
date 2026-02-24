@@ -60,6 +60,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setupPickers()
         routePillsContainer.applySmallCard()
         setInitialRouteUIState()
+        prefillLocationsIfPossible()
         updateNextButtonState()
 
     }
@@ -92,6 +93,18 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             self.suggestionsTable.reloadData()
             self.suggestionsTable.isHidden = results.isEmpty
         }
+    }
+
+    private func prefillLocationsIfPossible() {
+        guard let prefill = UserDataModel.shared.suggestedCommutePrefill() else { return }
+
+        fromTextField.text = prefill.from.address ?? "Chitkara University"
+        toTextField.text = prefill.to.address ?? "Home"
+        fromCoord = CLLocationCoordinate2D(latitude: prefill.from.lat, longitude: prefill.from.lon)
+        toCoord = CLLocationCoordinate2D(latitude: prefill.to.lat, longitude: prefill.to.lon)
+
+        updateNextButtonState()
+        tryFetchRoutes()
     }
 
     // MARK: - Setup Pickers

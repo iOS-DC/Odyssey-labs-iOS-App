@@ -12,16 +12,32 @@ class EmailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-            containerCard.applyCardStyle()
-            emailTextField.applyRoundedField()
-            
+        title = "College Verification"
+        applyOnboardingChrome(step: 1, total: 7)
+        containerCard.applyCardStyle()
+        emailTextField.applyRoundedField()
+        continueButton.applyPrimaryButton(color: .systemBlue)
+        applyPrimaryOnboardingCTAStyle(continueButton)
+        emailTextField.keyboardType = .emailAddress
+        emailTextField.autocapitalizationType = .none
+        emailTextField.autocorrectionType = .no
+        continueButton.isEnabled = false
+        continueButton.alpha = 0.5
+        emailTextField.addTarget(self, action: #selector(emailChanged), for: .editingChanged)
     }
     @IBOutlet weak var containerCard: UIView!
+    
+    @objc private func emailChanged() {
+        let raw = (emailTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let isValid = raw.hasSuffix("@chitkara.edu.in") || raw.hasSuffix("@chitkarauniversity.edu.in")
+        continueButton.isEnabled = isValid
+        continueButton.alpha = isValid ? 1.0 : 0.5
+    }
     
     
     @IBAction func continueTapped(_ sender: UIButton) {
         errorLabel.isHidden = true
-        let raw = emailTextField.text ?? ""
+        let raw = (emailTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         
         do {
             try UserDataModel.shared.startEmailVerification(email: raw)
@@ -30,7 +46,8 @@ class EmailViewController: UIViewController {
             UserDefaults.standard.set(raw, forKey: "lastEmailForOTP")
 
 
-            let otpVC = storyboard!.instantiateViewController(withIdentifier: "OTPViewController")
+            let otpVC = storyboard!.instantiateViewController(withIdentifier: "OTPViewController") as! OTPViewController
+            otpVC.verificationMode = .email
      
             let nav = UINavigationController(rootViewController: otpVC)
             nav.modalPresentationStyle = .fullScreen
