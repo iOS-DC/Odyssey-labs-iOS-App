@@ -101,7 +101,7 @@ final class RoleSelectionViewController: UIViewController {
 
     @IBAction private func continueTapped(_ sender: UIButton) {
         guard let selectedRole else { return }
-        UserDataModel.shared.editCurrentUser(role: selectedRole)
+        RegistrationBuilder.shared.role = selectedRole
 
         let main = UIStoryboard(name: "Main", bundle: nil)
         guard let vc = main.instantiateViewController(withIdentifier: "ProfileStep1ViewController") as? ProfileStep1ViewController else { return }

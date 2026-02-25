@@ -1,6 +1,6 @@
 import UIKit
 
-class VehicleDetailsViewController: UIViewController {
+class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     // MARK: - Outlets
     @IBOutlet weak var ContainerView: UIView!
@@ -34,6 +34,17 @@ class VehicleDetailsViewController: UIViewController {
         super.viewDidLoad()
         updateVehicleUI()
         updateSeatsUI()
+
+        // Fare field: numbers only, max 5 digits (₹99,999)
+        costTextField.delegate = self
+        costTextField.keyboardType = .numberPad
+        // Enforce a taller, clearly visible field height
+        costTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        costTextField.layer.cornerRadius = 10
+        costTextField.layer.borderWidth = 1
+        costTextField.layer.borderColor = UIColor.systemGray4.cgColor
+        costTextField.backgroundColor = UIColor(white: 0.97, alpha: 1)
+        costTextField.setLeftPaddingPoints(12)
     }
 
     // MARK: - Animate Selection
@@ -117,6 +128,29 @@ class VehicleDetailsViewController: UIViewController {
 
         costTextField.text = "\(fare)"
         suggestedFareLabel.text = "Suggested fare: ₹\(fare)"
+    }
+
+    // MARK: - Fare TextField Delegate
+    func textField(_ textField: UITextField,
+                   shouldChangeCharactersIn range: NSRange,
+                   replacementString string: String) -> Bool {
+        guard textField == costTextField else { return true }
+
+        // Allow deletions
+        if string.isEmpty { return true }
+
+        // Only digits allowed
+        let allowedChars = CharacterSet.decimalDigits
+        guard string.unicodeScalars.allSatisfy({ allowedChars.contains($0) }) else { return false }
+
+        // Cap at 5 digits (max ₹99,999)
+        let current = (textField.text ?? "") as NSString
+        let newText = current.replacingCharacters(in: range, with: string)
+        return newText.count <= 5
+    }
+
+    func textFieldDidChangeSelection(_ textField: UITextField) {
+        if textField == costTextField { validateNextButton() }
     }
 
     // MARK: - Next Button Activation

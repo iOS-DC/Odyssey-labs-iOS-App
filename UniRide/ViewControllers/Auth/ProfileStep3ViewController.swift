@@ -35,7 +35,9 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
         if isEditingMode {
             navigationItem.rightBarButtonItem = nil
         }
-        if let stored = UserDataModel.shared.getHomeLocations().first {
+        
+        let existingHome = RegistrationBuilder.shared.homeLocation ?? UserDataModel.shared.getHomeLocations().first
+        if let stored = existingHome {
             homeLocation = stored
         }
         applyStyles()
@@ -145,6 +147,10 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
     }
 
     @objc private func textFieldDidChange(_ textField: UITextField) {
+        homeLocation = nil
+        completeSetupButton.isEnabled = false
+        completeSetupButton.alpha = 0.5
+        
         let query = textField.text ?? ""
         if query.isEmpty {
             suggestionsTable.isHidden = true
@@ -208,13 +214,17 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
 
     // MARK: - Actions
     @IBAction func completeSetupTapped(_ sender: UIButton) {
-        if let home = homeLocation {
-            UserDataModel.shared.setHomeLocations([home])
-        }
         if isEditingMode {
+            if let home = homeLocation {
+                UserDataModel.shared.setHomeLocations([home])
+            }
             navigationController?.popViewController(animated: true)
         } else {
-            goToTabBar()
+            // End of Onboarding: build user and register
+            if let home = homeLocation {
+                RegistrationBuilder.shared.homeLocation = home
+            }
+            commitRegistrationAndFinish()
         }
     }
 
@@ -222,7 +232,18 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
         if isEditingMode {
             navigationController?.popViewController(animated: true)
         } else {
+            commitRegistrationAndFinish()
+        }
+    }
+    
+    private func commitRegistrationAndFinish() {
+        do {
+            let finalUser = try RegistrationBuilder.shared.buildUser()
+            UserDataModel.shared.registerNewUser(profile: finalUser)
+            RegistrationBuilder.shared.reset()
             goToTabBar()
+        } catch {
+            showAlert("Missing Information", error.localizedDescription)
         }
     }
 

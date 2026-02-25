@@ -72,6 +72,26 @@ class UpcomingTableHomeViewCell: UITableViewCell {
             timeLabel.text = formatter.string(from: ride.departureTime)
 
             viewDetailsButton.setTitle("View More Details", for: .normal)
+
+            // Live indicator — show "● Live" in green when trip is ongoing
+            let tag = 8821
+            (cardContainerView.viewWithTag(tag) as? UILabel)?.removeFromSuperview()
+            if ride.status == .ongoing {
+                let badge = UILabel()
+                badge.tag = tag
+                badge.text = "  ● Live  "
+                badge.font = .systemFont(ofSize: 11, weight: .bold)
+                badge.textColor = .white
+                badge.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                badge.layer.cornerRadius = 10
+                badge.layer.masksToBounds = true
+                badge.translatesAutoresizingMaskIntoConstraints = false
+                cardContainerView.addSubview(badge)
+                NSLayoutConstraint.activate([
+                    badge.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -12),
+                    badge.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 10)
+                ])
+            }
         }
 
         private func formatLocation(_ address: String?) -> String {

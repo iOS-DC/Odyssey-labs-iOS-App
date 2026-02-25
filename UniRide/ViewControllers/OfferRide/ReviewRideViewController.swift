@@ -64,6 +64,14 @@ class ReviewRideViewController: UIViewController {
 
 
     func fillSummary() {
+        // Only fare/total labels need multi-line wrapping
+        fareLabel.numberOfLines = 0
+        fareLabel.lineBreakMode = .byWordWrapping
+        totalLabel.numberOfLines = 0
+        totalLabel.lineBreakMode = .byWordWrapping
+
+        // Ensure the "To" subtitle is always visible
+        toLabel.isHidden = false
 
         fromLabel.text = "From \(summary.from.address ?? "")"
         toLabel.text = "To \(summary.to.address ?? "")"
@@ -72,7 +80,7 @@ class ReviewRideViewController: UIViewController {
         timeLabel.text = DateFormatterHelper.shared.formattedTime(summary.time)
 
         vehicleLabel.text = summary.vehicleType
-        seatsLabel.text = "\(summary.seats) seats available"
+        seatsLabel.text = "\(summary.seats) seat\(summary.seats == 1 ? "" : "s") available"
 
         fareLabel.text = "₹\(Int(summary.farePerSeat)) per person"
         totalLabel.text = "Total: ₹\(Int(summary.totalFare))"

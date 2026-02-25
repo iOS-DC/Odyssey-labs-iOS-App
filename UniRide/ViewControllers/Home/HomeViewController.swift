@@ -236,17 +236,11 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 
         if upcomingRide != nil {
-            if section == 0 {
-                return 1
-            }
-            if section == 1 {
-                return nearbyRides.count
-            }
+            if section == 0 { return 1 }
+            if section == 1 { return max(nearbyRides.count, nearbyRides.isEmpty ? 1 : 0) }
             return events.count
         } else {
-            if section == 0 {
-                return nearbyRides.count
-            }
+            if section == 0 { return max(nearbyRides.count, nearbyRides.isEmpty ? 1 : 0) }
             return events.count
         }
     }
@@ -273,18 +267,36 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 return cell
 
             case 1:
+                // Empty state if no nearby rides
+                if nearbyRides.isEmpty {
+                    let cell = UITableViewCell()
+                    cell.selectionStyle = .none
+                    let esv = EmptyStateView(
+                        systemImage: "car.fill",
+                        title: "No nearby rides",
+                        body: "No rides found near your location right now.\nTry offering a ride!",
+                        tintColor: .systemGreen
+                    )
+                    esv.translatesAutoresizingMaskIntoConstraints = false
+                    cell.contentView.addSubview(esv)
+                    NSLayoutConstraint.activate([
+                        esv.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
+                        esv.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
+                        esv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
+                        esv.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
+                    ])
+                    return cell
+                }
                 let cell = tableView.dequeueReusableCell(
                     withIdentifier: "RideCell",
                     for: indexPath
                 ) as! RideTableViewCell
                 let ride = nearbyRides[indexPath.row]
                 let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
-                
                 cell.configure(with: ride, driver: driver)
                 cell.onJoinTapped = { [weak self] in
-                    self?.joinRide(ride)
+                    self?.openRideDetail(ride: ride, driver: driver)
                 }
-
                 return cell
 
             case 2:
@@ -307,18 +319,37 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         switch indexPath.section {
 
         case 0: // NEARBY RIDES
-            let cell = tableView.dequeueReusableCell(
+            // Empty state if no nearby rides
+            if nearbyRides.isEmpty {
+                let cell = UITableViewCell()
+                cell.selectionStyle = .none
+                let esv = EmptyStateView(
+                    systemImage: "car.fill",
+                    title: "No nearby rides",
+                    body: "No rides found near your location right now.\nTry offering a ride!",
+                    tintColor: .systemGreen
+                )
+                esv.translatesAutoresizingMaskIntoConstraints = false
+                cell.contentView.addSubview(esv)
+                NSLayoutConstraint.activate([
+                    esv.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
+                    esv.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
+                    esv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
+                    esv.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
+                ])
+                return cell
+            }
+            let rideCell = tableView.dequeueReusableCell(
                 withIdentifier: "RideCell",
                 for: indexPath
             ) as! RideTableViewCell
             let ride = nearbyRides[indexPath.row]
             let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
-            
-            cell.configure(with: ride, driver: driver)
-            cell.onJoinTapped = { [weak self] in
-                self?.joinRide(ride)
+            rideCell.configure(with: ride, driver: driver)
+            rideCell.onJoinTapped = { [weak self] in
+                self?.openRideDetail(ride: ride, driver: driver)
             }
-            return cell
+            return rideCell
 
         case 1: // EVENTS
             let cell = tableView.dequeueReusableCell(
@@ -340,33 +371,44 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
 
         if upcomingRide != nil {
-
-            if indexPath.section == 0 {
-                return 90
-            }   // Upcoming Ride
+            if indexPath.section == 0 { return 90 }          // Upcoming Ride
             if indexPath.section == 1 {
-                return 220
-            }   // Nearby Rides
-            return 150                                  // Events
+                return nearbyRides.isEmpty ? 200 : 220        // Empty state or ride card
+            }
+            return 150                                        // Events
         }
 
         // No upcoming ride
-        if indexPath.section == 0 { return 220 }       // Nearby rides only
-        return 150                                     // Events
+        if indexPath.section == 0 {
+            return nearbyRides.isEmpty ? 200 : 220            // Empty state or ride card
+        }
+        return 150                                            // Events
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
         if upcomingRide != nil {
-            if indexPath.section == 2 {
-                let event = events[indexPath.row]
-                openEventDetailsScreen(event: event)
+            if indexPath.section == 1 {
+                let ride = nearbyRides[indexPath.row]
+                openRideDetail(ride: ride, driver: UserDataModel.shared.getUser(by: ride.driverUserID))
+            } else if indexPath.section == 2 {
+                openEventDetailsScreen(event: events[indexPath.row])
             }
         } else {
-            if indexPath.section == 1 {
-                let event = events[indexPath.row]
-                openEventDetailsScreen(event: event)
+            if indexPath.section == 0 {
+                let ride = nearbyRides[indexPath.row]
+                openRideDetail(ride: ride, driver: UserDataModel.shared.getUser(by: ride.driverUserID))
+            } else if indexPath.section == 1 {
+                openEventDetailsScreen(event: events[indexPath.row])
             }
         }
+    }
+
+    private func openRideDetail(ride: Ride, driver: UserProfile?) {
+        let vc = RideDetailViewController()
+        vc.ride = ride
+        vc.driver = driver
+        navigationController?.pushViewController(vc, animated: true)
     }
 
 

@@ -41,6 +41,7 @@ final class ProfileStep1ViewController: UIViewController {
 
     private var activeRole: UserRole {
         if let lockedRole { return lockedRole }
+        if let builderRole = RegistrationBuilder.shared.role { return builderRole }
         if let saved = UserDataModel.shared.getCurrentUser()?.role { return saved }
         return .student
     }
@@ -180,13 +181,15 @@ final class ProfileStep1ViewController: UIViewController {
         let yearText = yearDropDownButton.title(for: .normal)
         let year = role == .student ? Int(yearText ?? "") : nil
 
-        UserDataModel.shared.editCurrentUser(
-            fullName: fullNameTextField.text,
-            role: role,
-            courseName: role == .student ? dropDownButton.title(for: .normal) : nil,
-            year: year,
-            employeeID: role == .faculty ? employeeIDTextField.text : nil
-        )
+        RegistrationBuilder.shared.fullName = fullNameTextField.text
+        RegistrationBuilder.shared.role = role
+        if role == .student {
+            RegistrationBuilder.shared.courseName = dropDownButton.title(for: .normal)
+            RegistrationBuilder.shared.year = year
+        } else {
+            RegistrationBuilder.shared.employeeID = employeeIDTextField.text
+        }
+        RegistrationBuilder.shared.phone = phone
 
         do {
             try UserDataModel.shared.startPhoneVerification(phone: phone)
@@ -229,25 +232,49 @@ final class ProfileStep1ViewController: UIViewController {
     }
 
     private func preloadSavedState() {
-        guard let user = UserDataModel.shared.getCurrentUser() else { return }
-
-        if !(user.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
-            fullNameTextField.text = user.fullName
+        // First try the builder, if rebuilding during onboarding steps
+        if let name = RegistrationBuilder.shared.fullName, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            fullNameTextField.text = name
         }
-        if let phone = user.phone, !phone.isEmpty {
+        if let phone = RegistrationBuilder.shared.phone, !phone.isEmpty {
             phoneTextField.text = phone
         }
 
         if activeRole == .student {
-            if let department = user.courseName,
+            if let department = RegistrationBuilder.shared.courseName,
                !department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 dropDownButton.setTitle(department, for: .normal)
             }
-            if let year = user.year {
+            if let year = RegistrationBuilder.shared.year {
                 yearDropDownButton.setTitle("\(year)", for: .normal)
             }
-        } else if let eid = user.employeeID, !eid.isEmpty {
+        } else if let eid = RegistrationBuilder.shared.employeeID, !eid.isEmpty {
             employeeIDTextField.text = eid
+        }
+        
+        // Next check existing user data
+        if let user = UserDataModel.shared.getCurrentUser() {
+            if fullNameTextField.text?.isEmpty ?? true, !(user.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                fullNameTextField.text = user.fullName
+            }
+            if phoneTextField.text?.isEmpty ?? true, let phone = user.phone, !phone.isEmpty {
+                phoneTextField.text = phone
+            }
+
+            if activeRole == .student {
+                if dropDownButton.title(for: .normal) == "Select Department" || dropDownButton.title(for: .normal) == "Select Course" {
+                    if let department = user.courseName, !department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        dropDownButton.setTitle(department, for: .normal)
+                    }
+                }
+                if yearDropDownButton.title(for: .normal) == "Select year" {
+                    if let year = user.year {
+                        yearDropDownButton.setTitle("\(year)", for: .normal)
+                    }
+                }
+            } else if employeeIDTextField.text?.isEmpty ?? true, let eid = user.employeeID, !eid.isEmpty {
+                employeeIDTextField.text = eid
+            }
         }
     }
 }

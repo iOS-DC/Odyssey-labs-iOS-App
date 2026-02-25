@@ -203,6 +203,24 @@ final class RideDataModel {
         return updateRide(r)
     }
 
+    /// Manually start a published ride. Returns true if succeeded.
+    @discardableResult
+    func startRide(id: UUID) -> Bool {
+        guard var r = getRide(id) else { return false }
+        guard r.status == .published else { return false }
+        r.status = .ongoing
+        return updateRide(r)
+    }
+
+    /// Manually end an ongoing ride (mark completed). Returns true if succeeded.
+    @discardableResult
+    func endRide(id: UUID) -> Bool {
+        guard var r = getRide(id) else { return false }
+        guard r.status == .ongoing else { return false }
+        r.status = .completed
+        return updateRide(r)
+    }
+
     @discardableResult
     func deleteRide(id: UUID) -> Bool {
         let initialCount = rides.count
@@ -267,6 +285,15 @@ final class RideDataModel {
         // Notify UI that requests/bookings/rides changed
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+
+        // In-app notification → passenger
+        let route = "\(ride.source.address) → \(ride.destination.address)"
+        AppNotificationModel.shared.send(
+            to: rq.passengerUserID,
+            title: "Booking Approved ✅",
+            body: "Your request for \(route) has been approved. You're all set!",
+            type: .requestApproved
+        )
     }
 
     func denyRequest(requestID: UUID, hostUserID: UUID) {
@@ -284,6 +311,15 @@ final class RideDataModel {
         saveRequests()
 
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+
+        // In-app notification → passenger
+        let route = "\(ride.source.address) → \(ride.destination.address)"
+        AppNotificationModel.shared.send(
+            to: rq.passengerUserID,
+            title: "Booking Request Declined",
+            body: "Your request for \(route) was not approved by the driver. Try another ride!",
+            type: .requestDenied
+        )
     }
 
     func cancelMyRequest(requestID: UUID, passengerUserID: UUID) {
@@ -320,6 +356,19 @@ final class RideDataModel {
 
         saveBookings()
 
+        // ── Notify the driver if a passenger cancelled ──
+        if userID == bk.passengerUserID {
+            let passengerName = UserDataModel.shared.getUser(by: bk.passengerUserID)?.fullName ?? "A passenger"
+            let from = ride.source.address ?? "Origin"
+            let to   = ride.destination.address ?? "Destination"
+            AppNotificationModel.shared.send(
+                to: ride.driverUserID,
+                title: "Booking Cancelled",
+                body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
+                type: .passengerCancelled
+            )
+        }
+
         // Notify UI to update lists
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
@@ -336,6 +385,19 @@ final class RideDataModel {
             .filter { $0.status == .published }
             .filter { distM($0.source, point) <= maxMeters }
             .sorted { $0.departureTime < $1.departureTime }
+    }
+
+    /// All rides driven by a user with a specific status (used by ReviewDataModel for total rides)
+    func rides(driverID: UUID, status: RideStatus) -> [Ride] {
+        rides.filter { $0.driverUserID == driverID && $0.status == status }
+    }
+
+    /// All completed rides where this user was a confirmed passenger
+    func completedRides(passengerID: UUID) -> [Ride] {
+        let confirmedRideIDs = bookings
+            .filter { $0.passengerUserID == passengerID && $0.status == .confirmed }
+            .map { $0.rideID }
+        return rides.filter { confirmedRideIDs.contains($0.id) && $0.status == .completed }
     }
 
 
@@ -499,8 +561,9 @@ final class RideDataModel {
             }
            
 
-            // Future rides → Published
+            // Future rides → keep as published (but never reset a manually-started ongoing ride)
             if r.departureTime > now {
+                if r.status == .ongoing { continue } // driver manually started — respect the decision
                 if r.status != .published {
                     r.status = .published
                     rides[idx] = r
@@ -547,15 +610,24 @@ final class RideDataModel {
     
 
 // Seed Mock Rides Once
-    private static let mockDataSeedKey = "mock_rides_seeded"
+    private static let mockDataSeedKey = "mock_rides_seeded_v2"
 
     func seedMockRidesIfNeeded() {
-        let seeded = UserDefaults.standard.bool(forKey: RideDataModel.mockDataSeedKey)
         let mockIDs = Set(MockData.driverProfiles.map { $0.id })
-        let hasAnyMockDriver = rides.contains { mockIDs.contains($0.driverUserID) }
-        if seeded && hasAnyMockDriver { return }
 
-        print(" Seeding mock rides into JSON...")
+        // Re-seed if there are no active (published/ongoing) mock rides left.
+        // This ensures Rides Available never goes empty after a day passes.
+        let hasActiveMockRides = rides.contains {
+            mockIDs.contains($0.driverUserID) &&
+            ($0.status == .published || $0.status == .ongoing)
+        }
+        if hasActiveMockRides { return }
+
+        // Purge all stale mock rides (completed/cancelled from previous seed)
+        rides.removeAll { mockIDs.contains($0.driverUserID) }
+        saveRides()
+
+        print("🌱 Re-seeding mock rides with fresh departure times...")
 
         for ride in MockData.sampleRides {
             let created = createRide(ride)
@@ -563,7 +635,7 @@ final class RideDataModel {
         }
 
         UserDefaults.standard.set(true, forKey: RideDataModel.mockDataSeedKey)
-        print("Mock rides seeded successfully!")
+        print("✅ Mock rides seeded — \(MockData.sampleRides.count) rides added.")
     }
 
 

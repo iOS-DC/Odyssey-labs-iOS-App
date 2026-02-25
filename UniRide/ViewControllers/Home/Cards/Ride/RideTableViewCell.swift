@@ -68,8 +68,12 @@ final class RideTableViewCell: UITableViewCell {
         fromLabel.font = .systemFont(ofSize: 15, weight: .medium)
         toLabel.font = .systemFont(ofSize: 15, weight: .medium)
 
-        timeLabel.font = .systemFont(ofSize: 14)
+        timeLabel.font = .systemFont(ofSize: 13)
         timeLabel.textColor = .secondaryLabel
+        // Never let the time label be squeezed by the button
+        timeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        timeLabel.adjustsFontSizeToFitWidth = true
+        timeLabel.minimumScaleFactor = 0.8
 
         priceLabel.font = .systemFont(ofSize: 18, weight: .semibold)
         priceLabel.textColor = .label
@@ -77,7 +81,7 @@ final class RideTableViewCell: UITableViewCell {
         seatsLabel.font = .systemFont(ofSize: 15, weight: .semibold)
         
 
-        // Join button
+        // Join/View Details button
         joinButton.layer.cornerRadius = 18
         joinButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
         joinButton.backgroundColor = .systemBlue
@@ -166,8 +170,8 @@ final class RideTableViewCell: UITableViewCell {
         let price = Int(ride.farePerSeat)
         priceLabel.text = "₹\(price)"
 
-        // MARK: Join Button
-        joinButton.setTitle("Join Ride", for: .normal)
+        // MARK: Join / View Details Button
+        joinButton.setTitle("Details  →", for: .normal)
         joinButton.isEnabled = ride.seatsAvailable > 0
         joinButton.alpha = ride.seatsAvailable > 0 ? 1.0 : 0.5
     }

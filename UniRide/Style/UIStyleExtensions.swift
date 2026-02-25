@@ -14,9 +14,9 @@ extension UIView {
 
     /// Standard app card (used across Home, Offer Ride, Join Ride)
     func applyCardStyle(
-        corner: CGFloat = 16,
-        shadowOpacity: Float = 0.1,
-        shadowRadius: CGFloat = 8
+        corner: CGFloat = 20,
+        shadowOpacity: Float = 0.08,
+        shadowRadius: CGFloat = 12
     ) {
         layer.cornerRadius = corner
         layer.masksToBounds = false
@@ -24,19 +24,19 @@ extension UIView {
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = shadowOpacity
         layer.shadowRadius = shadowRadius
-        layer.shadowOffset = CGSize(width: 0, height: 4)
+        layer.shadowOffset = CGSize(width: 0, height: 6)
         backgroundColor = .systemBackground
     }
 
     /// Smaller card (filters, dropdowns, suggestions)
-    func applySmallCard(corner: CGFloat = 12) {
+    func applySmallCard(corner: CGFloat = 16) {
         layer.cornerRadius = corner
         layer.masksToBounds = false
 
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.08
-        layer.shadowRadius = 6
-        layer.shadowOffset = CGSize(width: 0, height: 3)
+        layer.shadowOpacity = 0.06
+        layer.shadowRadius = 8
+        layer.shadowOffset = CGSize(width: 0, height: 4)
         backgroundColor = .systemBackground
     }
 }
@@ -46,7 +46,7 @@ extension UIButton {
 
     /// Primary filled button (Offer / Join)
     func applyPrimaryButton(
-        color: UIColor = .systemGreen,
+        color: UIColor = .systemBlue,
         radius: CGFloat = 18
     ) {
         layer.cornerRadius = radius

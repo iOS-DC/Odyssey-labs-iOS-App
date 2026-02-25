@@ -145,12 +145,23 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
 
                 let user = try UserDataModel.shared.verifyEmailOTP(email: email, code: code)
 
-                if !UserDataModel.shared.isProfileSetupComplete(for: user) {
+                if let returningUser = user {
+                    if UserDataModel.shared.isProfileSetupComplete(for: returningUser) {
+                        goToTabBar()
+                    } else {
+                        // User exists but hasn't completed setup (legacy edge case)
+                        RegistrationBuilder.shared.email = email
+                        RegistrationBuilder.shared.isEmailVerified = true
+                        let roleStoryboard = UIStoryboard(name: "RoleSelection", bundle: nil)
+                        let vc = roleStoryboard.instantiateViewController(withIdentifier: "RoleSelectionViewController")
+                        navigationController?.pushViewController(vc, animated: true)
+                    }
+                } else {
+                    RegistrationBuilder.shared.email = email
+                    RegistrationBuilder.shared.isEmailVerified = true
                     let roleStoryboard = UIStoryboard(name: "RoleSelection", bundle: nil)
                     let vc = roleStoryboard.instantiateViewController(withIdentifier: "RoleSelectionViewController")
                     navigationController?.pushViewController(vc, animated: true)
-                } else {
-                    goToTabBar()
                 }
             case .phone:
                 let phone = (phoneNumber ?? "")
@@ -160,14 +171,14 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
                     errorLabel.isHidden = false
                     return
                 }
-                try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: code)
+                let isValid = try UserDataModel.shared.verifyPhoneOTP(phone: phone, code: code)
+                guard isValid else { return }
                 
-                if let user = UserDataModel.shared.getCurrentUser(), UserDataModel.shared.isProfileSetupComplete(for: user) {
-                    goToTabBar()
-                } else {
-                    let vc = storyboard!.instantiateViewController(withIdentifier: "ProfileStep2ViewController")
-                    navigationController?.pushViewController(vc, animated: true)
-                }
+                RegistrationBuilder.shared.phone = phone
+                RegistrationBuilder.shared.isPhoneVerified = true
+                
+                let vc = storyboard!.instantiateViewController(withIdentifier: "ProfileStep2ViewController")
+                navigationController?.pushViewController(vc, animated: true)
             }
         } catch {
             errorLabel.text = error.localizedDescription

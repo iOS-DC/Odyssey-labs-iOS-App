@@ -59,171 +59,104 @@ struct MockData {
     static let sampleRides: [Ride] = {
 
         let userIDs = driverProfiles.map { $0.id }
-        
-        // Helper to get a random time:
-        // - If current time > 9 AM, show rides after 4 PM (16:00).
-        // - Otherwise, mix of morning (7-9 AM) and evening (4-7 PM).
-        func randomCommuteTime() -> Date {
-             let calendar = Calendar.current
-             let now = Date()
-             // Use TODAY as the base date
-             let date = calendar.startOfDay(for: now)
-             
-             let currentHour = calendar.component(.hour, from: now)
-             
-             // Logic: If it's already past 9 AM, don't show morning rides (they're in the past).
-             let forceEvening = currentHour >= 9
-             
-             // If forced evening, use evening slot. Else random.
-             let useEvening = forceEvening || Bool.random()
-             
-             let hour = useEvening ? Int.random(in: 16...19) : Int.random(in: 7...8)
-             let minute = Int.random(in: 0...55)
-             
-             return calendar.date(bySettingHour: hour, minute: minute, second: 0, of: date) ?? Date()
+
+        func randomCommuteTime(daysAhead: Int = 0) -> Date {
+            let calendar = Calendar.current
+            let now = Date()
+            let date = calendar.startOfDay(for: now).addingTimeInterval(Double(daysAhead) * 86400)
+            let currentHour = calendar.component(.hour, from: now)
+            let forceEvening = (daysAhead == 0) && (currentHour >= 9)
+            let useEvening = forceEvening || Bool.random()
+            let hour = useEvening ? Int.random(in: 16...20) : Int.random(in: 7...9)
+            let minute = [0, 10, 15, 20, 30, 45].randomElement()!
+            return calendar.date(bySettingHour: hour, minute: minute, second: 0, of: date) ?? Date()
         }
 
-        // 20 realistic Ride objects
+        // ── Locations ────────────────────────────────────────
+        let chitkara  = LocationPoint(lat: 30.5163, lon: 76.6598, address: "Chitkara University")
+
+        // Panchkula sectors
+        let pnk19 = LocationPoint(lat: 30.6956, lon: 76.8495, address: "Sector 19, Panchkula")
+        let pnk14 = LocationPoint(lat: 30.7102, lon: 76.8481, address: "Sector 14, Panchkula")
+        let pnk11 = LocationPoint(lat: 30.7131, lon: 76.8344, address: "Sector 11, Panchkula")
+        let pnk20 = LocationPoint(lat: 30.6892, lon: 76.8568, address: "Sector 20, Panchkula")
+        let pnk21 = LocationPoint(lat: 30.6830, lon: 76.8620, address: "Sector 21, Panchkula")
+
+        // Other cities
+        let ambala    = LocationPoint(lat: 30.3752, lon: 76.7821, address: "Ambala City")
+        let ambalaC   = LocationPoint(lat: 30.3784, lon: 76.8268, address: "Ambala Cantonment")
+        let deba      = LocationPoint(lat: 30.5933, lon: 76.8404, address: "Derabassi")
+        let rajpura   = LocationPoint(lat: 30.4837, lon: 76.5978, address: "Rajpura")
+        let patiala   = LocationPoint(lat: 30.3398, lon: 76.3869, address: "Patiala")
+        let patialaB  = LocationPoint(lat: 30.3317, lon: 76.4027, address: "Bus Stand, Patiala")
+
+        // Chandigarh
+        let chd17     = LocationPoint(lat: 30.7046, lon: 76.7179, address: "Sector 17, Chandigarh")
+        let chd22     = LocationPoint(lat: 30.6992, lon: 76.7551, address: "Sector 22, Chandigarh")
+        let chd34     = LocationPoint(lat: 30.7097, lon: 76.7897, address: "Sector 34, Chandigarh")
+        let chd43     = LocationPoint(lat: 30.7162, lon: 76.7562, address: "Sector 43, Chandigarh")
+        let chdIsbt   = LocationPoint(lat: 30.7662, lon: 76.7755, address: "ISBT 43, Chandigarh")
+        let elante    = LocationPoint(lat: 30.7410, lon: 76.7565, address: "Elante Mall, Chandigarh")
+        let itPark    = LocationPoint(lat: 30.7294, lon: 76.7845, address: "IT Park, Chandigarh")
+        let pgi       = LocationPoint(lat: 30.7050, lon: 76.7100, address: "PGI, Chandigarh")
+        let chdApt    = LocationPoint(lat: 30.6735, lon: 76.7885, address: "Chandigarh Airport")
+
+        // Mohali
+        let zirakpur  = LocationPoint(lat: 30.6637, lon: 76.8371, address: "Zirakpur")
+        let phase5    = LocationPoint(lat: 30.7350, lon: 76.8010, address: "Phase 5, Mohali")
+        let sec82     = LocationPoint(lat: 30.6520, lon: 76.8227, address: "Sector 82, Mohali")
+        let kharar    = LocationPoint(lat: 30.7932, lon: 76.7808, address: "Kharar")
+        let newChd    = LocationPoint(lat: 30.6700, lon: 76.7400, address: "New Chandigarh, Mullanpur")
+
+        // ── Rides ────────────────────────────────────────────
+        // d=0 → today, d=1 → tomorrow, some spread across next 3 days
         let rides: [Ride] = [
-            Ride(driverUserID: userIDs[0],
-                 source: LocationPoint(lat: 30.5163, lon: 76.6598, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7046, lon: 76.7179, address: "Sector 17, Chandigarh"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 3, farePerSeat: 40, status: .published, notes: nil),
 
-            Ride(driverUserID: userIDs[1],
-                 source: LocationPoint(lat: 30.5151, lon: 76.6595, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7410, lon: 76.7565, address: "Elante Mall, Chandigarh"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 2, farePerSeat: 60, status: .published, notes: nil),
+            // ── FROM Chitkara → popular destinations ──
 
-            Ride(driverUserID: userIDs[2],
-                 source: LocationPoint(lat: 30.5132, lon: 76.6569, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7294, lon: 76.7845, address: "IT Park, Chandigarh"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 4, farePerSeat: 50, status: .published, notes: nil),
+            Ride(driverUserID: userIDs[0],  source: chitkara, destination: chd17,   waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 50,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[1],  source: chitkara, destination: pnk19,   waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 2, farePerSeat: 70,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[2],  source: chitkara, destination: pnk14,   waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 4, farePerSeat: 65,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[3],  source: chitkara, destination: pnk11,   waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 60,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[4],  source: chitkara, destination: pnk20,   waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 2, farePerSeat: 75,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[5],  source: chitkara, destination: pnk21,   waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 80,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[6],  source: chitkara, destination: ambala,  waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 4, farePerSeat: 120, status: .published, notes: nil),
+            Ride(driverUserID: userIDs[7],  source: chitkara, destination: ambalaC, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 2, farePerSeat: 130, status: .published, notes: nil),
+            Ride(driverUserID: userIDs[8],  source: chitkara, destination: deba,    waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 55,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[9],  source: chitkara, destination: rajpura, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 4, farePerSeat: 40,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[10], source: chitkara, destination: patiala, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 90,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[11], source: chitkara, destination: patialaB,waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 2, farePerSeat: 95,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[12], source: chitkara, destination: elante,  waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 4, farePerSeat: 60,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[13], source: chitkara, destination: itPark,  waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 55,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[14], source: chitkara, destination: zirakpur,waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 45,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[15], source: chitkara, destination: phase5,  waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 2, farePerSeat: 50,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[16], source: chitkara, destination: chd22,   waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 4, farePerSeat: 55,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[17], source: chitkara, destination: chdIsbt, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 50,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[18], source: chitkara, destination: newChd,  waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 4, farePerSeat: 35,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[19], source: chitkara, destination: kharar,  waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 0), seatsTotal: 3, farePerSeat: 70,  status: .published, notes: nil),
 
-            Ride(driverUserID: userIDs[3],
-                 source: LocationPoint(lat: 30.5167, lon: 76.6610, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.6520, lon: 76.8227, address: "Sector 82, Mohali"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 3, farePerSeat: 35, status: .published, notes: nil),
+            // ── FROM popular destinations → Chitkara (morning rides) ──
 
-            Ride(driverUserID: userIDs[4],
-                 source: LocationPoint(lat: 30.5180, lon: 76.6615, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.6900, lon: 76.7770, address: "Sector 22, Chandigarh"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 4, farePerSeat: 55, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[5],
-                 source: LocationPoint(lat: 30.5150, lon: 76.6591, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.9000, lon: 75.8573, address: "Ludhiana Bus Stand"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 1, farePerSeat: 150, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[6],
-                 source: LocationPoint(lat: 30.5170, lon: 76.6600, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7350, lon: 76.8010, address: "Phase 5, Mohali"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 3, farePerSeat: 45, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[7],
-                 source: LocationPoint(lat: 30.5168, lon: 76.6599, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7050, lon: 76.7100, address: "PGI Chandigarh"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 2, farePerSeat: 50, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[8],
-                 source: LocationPoint(lat: 30.5173, lon: 76.6578, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.6637, lon: 76.8371, address: "Zirakpur"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 4, farePerSeat: 40, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[9],
-                 source: LocationPoint(lat: 30.5181, lon: 76.6604, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7932, lon: 76.7808, address: "Kharar"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 3, farePerSeat: 70, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[10],
-                 source: LocationPoint(lat: 30.5144, lon: 76.6602, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7786, lon: 76.7870, address: "Landran"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 4, farePerSeat: 55, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[11],
-                 source: LocationPoint(lat: 30.5176, lon: 76.6610, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.4445, lon: 76.8439, address: "Rajpura"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 2, farePerSeat: 30, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[12],
-                 source: LocationPoint(lat: 30.5159, lon: 76.6622, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7114, lon: 76.8531, address: "Sector 20 Panchkula"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 3, farePerSeat: 65, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[13],
-                 source: LocationPoint(lat: 30.5147, lon: 76.6605, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.6943, lon: 76.8606, address: "Sector 12 Panchkula"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 1, farePerSeat: 80, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[14],
-                 source: LocationPoint(lat: 30.5160, lon: 76.6613, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7477, lon: 76.7590, address: "Chandigarh Airport"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 3, farePerSeat: 90, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[15],
-                 source: LocationPoint(lat: 30.5189, lon: 76.6599, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7662, lon: 76.7755, address: "ISBT 43 Chandigarh"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 4, farePerSeat: 50, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[16],
-                 source: LocationPoint(lat: 30.5153, lon: 76.6629, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7320, lon: 76.7076, address: "Sector 11 Chandigarh"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 3, farePerSeat: 40, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[17],
-                 source: LocationPoint(lat: 30.5161, lon: 76.6601, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.7543, lon: 76.7869, address: "Mohali Railway Station"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 2, farePerSeat: 55, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[18],
-                 source: LocationPoint(lat: 30.5166, lon: 76.6618, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.8389, lon: 76.9589, address: "Pinjore"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 3, farePerSeat: 75, status: .published, notes: nil),
-
-            Ride(driverUserID: userIDs[19],
-                 source: LocationPoint(lat: 30.5158, lon: 76.6600, address: "Chitkara University"),
-                 destination: LocationPoint(lat: 30.6700, lon: 76.7400, address: "New Chandigarh"),
-                 waypoints: [], selectedRoute: nil,
-                 departureTime: randomCommuteTime(),
-                 seatsTotal: 4, farePerSeat: 60, status: .published, notes: nil)
+            Ride(driverUserID: userIDs[0],  source: pnk19,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 3, farePerSeat: 70,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[1],  source: pnk14,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 2, farePerSeat: 65,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[2],  source: pnk11,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 4, farePerSeat: 60,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[3],  source: pnk20,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 3, farePerSeat: 75,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[4],  source: pnk21,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 2, farePerSeat: 80,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[5],  source: ambala,   destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 4, farePerSeat: 120, status: .published, notes: nil),
+            Ride(driverUserID: userIDs[6],  source: deba,     destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 3, farePerSeat: 55,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[7],  source: rajpura,  destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 4, farePerSeat: 40,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[8],  source: patiala,  destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 3, farePerSeat: 90,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[9],  source: chd17,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 2, farePerSeat: 50,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[10], source: chd22,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 4, farePerSeat: 55,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[11], source: chd34,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 3, farePerSeat: 60,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[12], source: chd43,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 2, farePerSeat: 55,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[13], source: elante,   destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 4, farePerSeat: 60,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[14], source: zirakpur, destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 3, farePerSeat: 45,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[15], source: pgi,      destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 2, farePerSeat: 50,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[16], source: chdApt,   destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 3, farePerSeat: 90,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[17], source: sec82,    destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 2, farePerSeat: 45,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[18], source: kharar,   destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 4, farePerSeat: 70,  status: .published, notes: nil),
+            Ride(driverUserID: userIDs[19], source: ambalaC,  destination: chitkara, waypoints: [], selectedRoute: nil, departureTime: randomCommuteTime(daysAhead: 1), seatsTotal: 3, farePerSeat: 130, status: .published, notes: nil),
         ]
 
         return rides

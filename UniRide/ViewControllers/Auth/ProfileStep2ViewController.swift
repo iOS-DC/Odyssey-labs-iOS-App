@@ -147,7 +147,7 @@ class ProfileStep2ViewController: UIViewController {
 
         let proceedToLocationStep: () -> Void = { [weak self] in
             guard let self else { return }
-            UserDataModel.shared.editCurrentUser(vehicle: vehicle)
+            RegistrationBuilder.shared.vehicle = vehicle
             let vc = storyboard?.instantiateViewController(identifier: "ProfileStep3ViewController") as! ProfileStep3ViewController
             navigationController?.pushViewController(vc, animated: true)
         }
@@ -351,8 +351,8 @@ class ProfileStep2ViewController: UIViewController {
     }
 
     private func preloadSavedState() {
-        guard let user = UserDataModel.shared.getCurrentUser() else { return }
-        if let vehicle = user.vehicle {
+        let vehicle = RegistrationBuilder.shared.vehicle ?? UserDataModel.shared.getCurrentUser()?.vehicle
+        if let vehicle = vehicle {
             selectedHasVehicle = true
             selectedVehicleType = vehicle.type == .bike ? "Two-Wheeler" : "Car"
             selectedSeatCapacity = max(1, vehicle.seats)

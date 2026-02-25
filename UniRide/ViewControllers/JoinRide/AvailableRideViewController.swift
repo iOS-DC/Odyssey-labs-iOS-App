@@ -1,178 +1,278 @@
-//
-//  AvailableRideViewController.swift
-//  UniRide
-//
-//  Created by Jagpreet Singh on 26/11/25.
-//
-
 import UIKit
 import MapKit
 
 final class AvailableRideViewController: UIViewController,
                                          UITableViewDataSource,
-                                         UITableViewDelegate {
+                                         UITableViewDelegate,
+                                         UISearchResultsUpdating {
 
     @IBOutlet weak var tableView: UITableView!
 
-    // Coming from JoinRideViewController
+    // MARK: - Inputs (from JoinRideViewController or EventDetailsViewController)
     var fromCoordinate: CLLocationCoordinate2D?
     var toCoordinate: CLLocationCoordinate2D?
     var date: Date?
     var time: Date?
-    
-    // Coming from EventDetailsViewController
     var event: EventItem?
 
-    var rides: [Ride] = []
+    // MARK: - Data
+    private var rides: [Ride] = []          // raw, unfiltered
+    private var filteredRides: [Ride] = []  // drives tableView
+
+    private var activeFilter = RideFilter()
+    private var searchQuery  = ""
+
+    // MARK: - UI
+    private let searchController  = UISearchController(searchResultsController: nil)
+    private let resultCountLabel  = UILabel()
+    private let emptyStateView    = UIView()
+    private var filterBarBtn: UIBarButtonItem!
+
+    // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         title = event != nil ? "Rides to \(event!.title)" : "Available Rides"
-
-        tableView.delegate = self
-        tableView.dataSource = self
-
-        tableView.register(
-            UINib(nibName: "RideTableViewCell", bundle: nil),
-            forCellReuseIdentifier: "RideTableViewCell"
-        )
-
-        tableView.separatorStyle = .none
-        tableView.rowHeight = 220
-
+        setupSearchController()
+        setupFilterButton()
+        setupResultCountLabel()
+        setupEmptyState()
+        setupTableView()
         loadAvailableRides()
     }
 
-    // MARK: - Load Rides
-    private func loadAvailableRides() {
-        // 1. If we have an event, load mock event rides
-        if let event = event {
-            print("🎉 Loading mock rides for event: \(event.title)")
-            rides = MockData.mockRidesForEvent(event)
-            tableView.reloadData()
-            return
-        }
-        
-        // 2. Otherwise, normal coordinate-based search
-        guard let fromCoord = fromCoordinate else {
-            print("❌ No pickup coordinate and no event received")
-            rides = []
-            tableView.reloadData()
-            return
-        }
+    // MARK: - Setup
 
-        let fromPoint = LocationPoint(
-            lat: fromCoord.latitude,
-            lon: fromCoord.longitude,
-            address: nil
-        )
-
-        // 🔥 REAL DATA (NO MOCK)
-        let nearbyRides = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 1500)
-
-        print("✅ Nearby rides found:", nearbyRides.count)
-
-        self.rides = nearbyRides
-        tableView.reloadData()
+    private func setupTableView() {
+        tableView.delegate   = self
+        tableView.dataSource = self
+        tableView.register(UINib(nibName: "RideTableViewCell", bundle: nil),
+                           forCellReuseIdentifier: "RideTableViewCell")
+        tableView.separatorStyle = .none
+        tableView.rowHeight = 220
+        tableView.contentInset = UIEdgeInsets(top: 4, left: 0, bottom: 20, right: 0)
     }
 
-    // MARK: - Join Ride
-    private func joinRide(_ ride: Ride) {
-        guard let user = UserDataModel.shared.getCurrentUser() else {
-            let alert = UIAlertController(
-                title: "Sign in",
-                message: "Please sign in to join a ride.",
-                preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(alert, animated: true)
+    private func setupSearchController() {
+        searchController.searchResultsUpdater = self
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search by pickup or destination…"
+        searchController.searchBar.tintColor = .systemGreen
+        navigationItem.searchController = searchController
+        navigationItem.hidesSearchBarWhenScrolling = false
+        definesPresentationContext = true
+    }
+
+    private func setupFilterButton() {
+        let img = UIImage(systemName: "slider.horizontal.3")
+        filterBarBtn = UIBarButtonItem(image: img,
+                                       style: .plain,
+                                       target: self,
+                                       action: #selector(filterTapped))
+        filterBarBtn.tintColor = .label
+        navigationItem.rightBarButtonItem = filterBarBtn
+    }
+
+    private func setupResultCountLabel() {
+        resultCountLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        resultCountLabel.textColor = .secondaryLabel
+        resultCountLabel.textAlignment = .center
+        resultCountLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(resultCountLabel)
+        NSLayoutConstraint.activate([
+            resultCountLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
+            resultCountLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            resultCountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+        ])
+        if let tv = tableView {
+            tv.contentInset.top = 28
+        }
+    }
+
+    private func setupEmptyState() {
+        emptyStateView.isHidden = true
+        emptyStateView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(emptyStateView)
+
+        let iconView = UIImageView(image: UIImage(systemName: "magnifyingglass"))
+        iconView.tintColor = .systemGray3
+        iconView.contentMode = .scaleAspectFit
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+
+        let titleLbl = UILabel()
+        titleLbl.text = "No rides found"
+        titleLbl.font = .systemFont(ofSize: 18, weight: .semibold)
+        titleLbl.textColor = .secondaryLabel
+        titleLbl.textAlignment = .center
+        titleLbl.translatesAutoresizingMaskIntoConstraints = false
+
+        let bodyLbl = UILabel()
+        bodyLbl.text = "Try adjusting your filters\nor search for a different route."
+        bodyLbl.font = .systemFont(ofSize: 14)
+        bodyLbl.textColor = .tertiaryLabel
+        bodyLbl.textAlignment = .center
+        bodyLbl.numberOfLines = 0
+        bodyLbl.translatesAutoresizingMaskIntoConstraints = false
+
+        let clearBtn = UIButton(type: .system)
+        clearBtn.setTitle("Clear Filters", for: .normal)
+        clearBtn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        clearBtn.tintColor = .systemGreen
+        clearBtn.addTarget(self, action: #selector(clearFilters), for: .touchUpInside)
+        clearBtn.translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = UIStackView(arrangedSubviews: [iconView, titleLbl, bodyLbl, clearBtn])
+        stack.axis = .vertical; stack.alignment = .center; stack.spacing = 10
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        emptyStateView.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+
+            iconView.heightAnchor.constraint(equalToConstant: 60),
+            iconView.widthAnchor.constraint(equalToConstant: 60),
+
+            stack.topAnchor.constraint(equalTo: emptyStateView.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: emptyStateView.bottomAnchor),
+            stack.leadingAnchor.constraint(equalTo: emptyStateView.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: emptyStateView.trailingAnchor),
+        ])
+    }
+
+    // MARK: - Load Rides
+
+    private func loadAvailableRides() {
+        if let event = event {
+            rides = MockData.mockRidesForEvent(event)
+            applyFilters()
             return
         }
+        guard let fromCoord = fromCoordinate else {
+            rides = []; applyFilters(); return
+        }
+        let fromPoint = LocationPoint(lat: fromCoord.latitude, lon: fromCoord.longitude, address: nil)
+        rides = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 1500)
+        applyFilters()
+    }
 
-        let pickup = ride.source
-        let seatsRequested = 1
+    // MARK: - Filter Logic
 
-        let request = RideRequest(
-            rideID: ride.id,
-            passengerUserID: user.id,
-            pickupPoint: pickup,
-            seats: seatsRequested
-        )
+    private func applyFilters() {
+        var result = activeFilter.apply(to: rides)
 
-        let createdRequest = RideDataModel.shared.createJoinRequest(request)
-
-        print("✅ Join request created:", createdRequest.id)
-        print("📊 Total requests for ride:",
-              RideDataModel.shared.listRequests(for: ride.id).count)
-
-        NotificationCenter.default.post(
-            name: .rideRequestsUpdated,
-            object: nil,
-            userInfo: ["requestID": createdRequest.id.uuidString]
-        )
-
-        // Switch to My Rides tab
-        if let tbc = tabBarController, let vcs = tbc.viewControllers {
-            for (i, vc) in vcs.enumerated() {
-                if let nav = vc as? UINavigationController,
-                   nav.viewControllers.first is MyRidesViewController {
-                    tbc.selectedIndex = i
-                    nav.popToRootViewController(animated: false)
-                    break
-                } else if vc is MyRidesViewController {
-                    tbc.selectedIndex = i
-                    break
-                }
+        // Apply text search on top of filter
+        let q = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
+        if !q.isEmpty {
+            result = result.filter { ride in
+                let src  = (ride.source.address ?? "").lowercased()
+                let dst  = (ride.destination.address ?? "").lowercased()
+                return src.contains(q) || dst.contains(q)
             }
         }
 
-        let alert = UIAlertController(
-            title: "Requested",
-            message: "Request sent. Check My Rides → Upcoming.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        filteredRides = result
+        updateUI()
+    }
+
+    private func updateUI() {
+        tableView.reloadData()
+
+        // Result count label
+        let total    = rides.count
+        let showing  = filteredRides.count
+        let filtered = !activeFilter.isDefault || !searchQuery.isEmpty
+
+        if filtered {
+            resultCountLabel.text = showing == 0 ? "No rides match your filters"
+                                                 : "Showing \(showing) of \(total) ride\(total == 1 ? "" : "s")"
+        } else {
+            resultCountLabel.text = "\(total) ride\(total == 1 ? "" : "s") available"
+        }
+
+        // Empty state
+        emptyStateView.isHidden = !filteredRides.isEmpty
+
+        // Filter button badge (orange tint when active)
+        let isActive = !activeFilter.isDefault
+        filterBarBtn.tintColor = isActive ? .systemOrange : .label
+        filterBarBtn.image = UIImage(systemName: isActive
+            ? "slider.horizontal.3"
+            : "slider.horizontal.3")
+    }
+
+    // MARK: - Actions
+
+    @objc private func filterTapped() {
+        let vc = RideFilterViewController()
+        vc.currentFilter = activeFilter
+        vc.onApply = { [weak self] newFilter in
+            self?.activeFilter = newFilter
+            self?.applyFilters()
+        }
+        vc.modalPresentationStyle = .pageSheet
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+        present(vc, animated: true)
+    }
+
+    @objc private func clearFilters() {
+        activeFilter = RideFilter()
+        searchQuery  = ""
+        searchController.searchBar.text = nil
+        applyFilters()
+    }
+
+    // MARK: - UISearchResultsUpdating
+
+    func updateSearchResults(for searchController: UISearchController) {
+        searchQuery = searchController.searchBar.text ?? ""
+        applyFilters()
     }
 }
 
 // MARK: - TableView
+
 extension AvailableRideViewController {
 
-    func tableView(_ tableView: UITableView,
-                   numberOfRowsInSection section: Int) -> Int {
-        return rides.count
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        filteredRides.count
     }
 
-    func tableView(_ tableView: UITableView,
-                   cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: "RideTableViewCell",
-            for: indexPath
-        ) as? RideTableViewCell else {
-            return UITableViewCell()
-        }
+            withIdentifier: "RideTableViewCell", for: indexPath) as? RideTableViewCell
+        else { return UITableViewCell() }
 
-        let ride = rides[indexPath.row]
-
+        let ride   = filteredRides[indexPath.row]
         let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
-
-        print("🚗 Ride:", ride.id, "Driver:", driver?.fullName ?? "Unknown")
-
         cell.configure(with: ride, driver: driver)
-
         cell.onJoinTapped = { [weak self] in
-            self?.joinRide(ride)
+            self?.openDetail(ride: ride, driver: driver)
         }
-
         return cell
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        // Add top & bottom padding
         let inset: CGFloat = 12
         cell.contentView.frame = cell.contentView.frame.insetBy(dx: 0, dy: inset / 2)
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard indexPath.row < filteredRides.count else { return }
+        let ride = filteredRides[indexPath.row]
+        openDetail(ride: ride, driver: UserDataModel.shared.getUser(by: ride.driverUserID))
+    }
+
+    private func openDetail(ride: Ride, driver: UserProfile?) {
+        let vc = RideDetailViewController()
+        vc.ride = ride; vc.driver = driver
+        navigationController?.pushViewController(vc, animated: true)
     }
 }

@@ -25,22 +25,26 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        // Card styling (cornerRadius, background, masksToBounds) is set in XIB.
-        // Shadow must stay in code — requires masksToBounds=false on the cell layer.
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.08
-        layer.shadowOffset = CGSize(width: 0, height: 4)
-        layer.shadowRadius = 8
-        layer.masksToBounds = false
+        // Cell itself is transparent — cardView is the visual card
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        selectionStyle = .none
 
-        // hostImageView appearance set in XIB (contentMode, tintColor, cornerRadius via runtime attrs)
+        // Shadow on cardView (XIB already sets cornerRadius=20, masksToBounds=NO)
+        cardView.layer.shadowColor = UIColor.black.cgColor
+        cardView.layer.shadowOpacity = 0.10
+        cardView.layer.shadowOffset = CGSize(width: 0, height: 4)
+        cardView.layer.shadowRadius = 10
+
+        // hostImageView appearance set in XIB
         hostImageView.clipsToBounds = true
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        layer.shadowPath = UIBezierPath(
-            roundedRect: cardView.frame,
+        // Shadow path hugs the rounded card edges
+        cardView.layer.shadowPath = UIBezierPath(
+            roundedRect: cardView.bounds,
             cornerRadius: cardView.layer.cornerRadius
         ).cgPath
     }
@@ -91,13 +95,24 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             isConfirmed = me != nil && bookings.contains { $0.passengerUserID == me!.id && $0.status == .confirmed }
         }
 
+        let cancelTitle: String
         if isConfirmed {
-            requestStatusLabel.text = "  ✓ Confirmed  "
-            requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
-            requestStatusLabel.textColor = .white
-            var config = cancelRequestButton.configuration ?? UIButton.Configuration.filled()
-            config.title = "Cancel Booking"
-            cancelRequestButton.configuration = config
+            if ride.status == .ongoing {
+                // Trip is live — show trip started badge, disable cancel
+                requestStatusLabel.text = "  🚗 Trip Started  "
+                requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                requestStatusLabel.textColor = .white
+                cancelTitle = "Cancel Booking"
+                cancelRequestButton.isEnabled = false
+                cancelRequestButton.alpha = 0.4
+            } else {
+                requestStatusLabel.text = "  ✓ Confirmed  "
+                requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                requestStatusLabel.textColor = .white
+                cancelTitle = "Cancel Booking"
+                cancelRequestButton.isEnabled = true
+                cancelRequestButton.alpha = 1.0
+            }
         } else {
             let (text, color): (String, UIColor) = {
                 switch trip.requestStatus {
@@ -110,9 +125,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             requestStatusLabel.text = text
             requestStatusLabel.backgroundColor = color
             requestStatusLabel.textColor = .white
-            var config = cancelRequestButton.configuration ?? UIButton.Configuration.filled()
-            config.title = "Cancel Request"
-            cancelRequestButton.configuration = config
+            cancelTitle = "Cancel Request"
         }
 
         requestStatusLabel.font = .systemFont(ofSize: 13, weight: .bold)
@@ -122,6 +135,44 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
 
         // Host info
         configureHostInfo(driverID: ride.driverUserID)
+
+        // MARK: - Button Styles (matching Hosting card)
+
+        // Message — tinted blue with chat icon
+        messageButton.backgroundColor = .clear
+        var msgConfig = UIButton.Configuration.tinted()
+        msgConfig.title = "Message"
+        msgConfig.image = UIImage(systemName: "message.fill")
+        msgConfig.imagePlacement = .leading
+        msgConfig.imagePadding = 4
+        msgConfig.baseBackgroundColor = .systemBlue
+        msgConfig.baseForegroundColor = .systemBlue
+        msgConfig.cornerStyle = .capsule
+        messageButton.configuration = msgConfig
+
+        // ── Unread badge on Chat button
+        applyUnreadBadge(to: messageButton, rideID: ride.id.uuidString)
+
+        // Call — tinted blue with phone icon
+        callButton.backgroundColor = .clear
+        var callConfig = UIButton.Configuration.tinted()
+        callConfig.title = "Call"
+        callConfig.image = UIImage(systemName: "phone.fill")
+        callConfig.imagePlacement = .leading
+        callConfig.imagePadding = 4
+        callConfig.baseBackgroundColor = .systemBlue
+        callConfig.baseForegroundColor = .systemBlue
+        callConfig.cornerStyle = .capsule
+        callButton.configuration = callConfig
+
+        // Cancel — tinted red (soft pink background)
+        cancelRequestButton.backgroundColor = .clear
+        var cancelConfig = UIButton.Configuration.tinted()
+        cancelConfig.title = cancelTitle
+        cancelConfig.baseBackgroundColor = .systemRed
+        cancelConfig.baseForegroundColor = .systemRed
+        cancelConfig.cornerStyle = .capsule
+        cancelRequestButton.configuration = cancelConfig
     }
 
     // MARK: - Helpers
@@ -146,5 +197,30 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         if h > 0 && m > 0 { return "\(h)h \(m)m" }
         else if h > 0      { return "\(h)h" }
         else               { return "\(m)m" }
+    }
+
+    // MARK: - Unread Badge
+    private func applyUnreadBadge(to button: UIButton, rideID: String) {
+        let tag = 9901
+        button.subviews.first(where: { $0.tag == tag })?.removeFromSuperview()
+        let count = ChatDataModel.shared.unreadCount(for: rideID)
+        guard count > 0 else { return }
+        let badge = UILabel()
+        badge.tag = tag
+        badge.text = count > 99 ? "99+" : "\(count)"
+        badge.font = .boldSystemFont(ofSize: 10)
+        badge.textColor = .white
+        badge.backgroundColor = .systemRed
+        badge.textAlignment = .center
+        badge.layer.cornerRadius = 9
+        badge.layer.masksToBounds = true
+        badge.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(badge)
+        NSLayoutConstraint.activate([
+            badge.topAnchor.constraint(equalTo: button.topAnchor, constant: -5),
+            badge.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: 5),
+            badge.heightAnchor.constraint(equalToConstant: 18),
+            badge.widthAnchor.constraint(greaterThanOrEqualToConstant: 18),
+        ])
     }
 }

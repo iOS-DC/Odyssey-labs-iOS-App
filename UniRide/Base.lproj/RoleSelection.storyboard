@@ -89,7 +89,7 @@
                             <constraint firstItem="0Ln-9I-WiH" firstAttribute="top" secondItem="WjH-4E-gjc" secondAttribute="bottom" constant="16" id="QTY-jT-Nkd"/>
                             <constraint firstItem="0Ln-9I-WiH" firstAttribute="leading" secondItem="cqk-Lu-D3N" secondAttribute="leading" constant="16" id="S7I-iX-rjR"/>
                             <constraint firstItem="cqk-Lu-D3N" firstAttribute="trailing" secondItem="0Ln-9I-WiH" secondAttribute="trailing" constant="16" id="lzU-Es-qZH"/>
-                            <constraint firstAttribute="bottom" relation="lessThanOrEqual" secondItem="0Ln-9I-WiH" secondAttribute="bottom" constant="24" id="rN6-Nf-Pnz"/>
+                            <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="0Ln-9I-WiH" secondAttribute="bottom" constant="24" id="rN6-Nf-Pnz"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="K8V-6P-hqR"/>

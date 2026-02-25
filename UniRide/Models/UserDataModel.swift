@@ -181,7 +181,7 @@ final class UserDataModel {
     func isProfileSetupComplete(for user: UserProfile) -> Bool {
         let hasName = !user.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasRole = user.role != nil
-        let hasPhone = user.isPhoneVerified && !(user.phone ?? "").isEmpty
+        let hasPhone = !(user.phone ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasEmployeeID = user.role != .faculty || !((user.employeeID ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         let hasHome = !(getHomeLocations(for: user.id).isEmpty)
         return hasName && hasRole && hasPhone && hasEmployeeID && hasHome
@@ -224,8 +224,7 @@ final class UserDataModel {
     }
 
     // Function Verifying The otp. Called in the otp view controller
-    func verifyEmailOTP(email: String, code: String) throws -> UserProfile {
-
+    func verifyEmailOTP(email: String, code: String) throws -> UserProfile? {
         guard let sent = emailOTPs[email.lowercased()] else {
             throw NSError(domain: "Login", code: 404,
                           userInfo: [NSLocalizedDescriptionKey: "No OTP found for this email"])
@@ -236,22 +235,23 @@ final class UserDataModel {
                           userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
         }
 
+        emailOTPs[email.lowercased()] = nil
+
+        // If it's a returning user, log them in. 
         if let existingUser = users.first(where: { $0.email == email.lowercased() }) {
             currentUserID = existingUser.id
-            emailOTPs[email.lowercased()] = nil
             return existingUser
         }
 
-        let newUser = UserProfile(email: email.lowercased(), isEmailVerified: true)
-        users.append(newUser)
-        currentUserID = newUser.id
+        // Return nil to indicate this is a new user who must continue onboarding
+        return nil
+    }
+
+    func registerNewUser(profile: UserProfile) {
+        users.append(profile)
+        currentUserID = profile.id
         saveUsers()
-
-        print("New user created:", newUser)
-
-        emailOTPs[email.lowercased()] = nil
-
-        return newUser
+        print("New user completely registered:", profile)
     }
 
     // PHONE VERIFICATION Function
@@ -266,26 +266,32 @@ final class UserDataModel {
         print("DEBUG Phone OTP for \(phone): \(otp)")
     }
 
-    func verifyPhoneOTP(phone: String, code: String) throws {
+    func verifyPhoneOTP(phone: String, code: String) throws -> Bool {
         guard let sent = phoneOTPs[phone] else {
-            throw NSError(domain: "Phone", code: 404,
+            throw NSError(domain: "Login", code: 404,
                           userInfo: [NSLocalizedDescriptionKey: "No OTP found for this phone number"])
         }
+
         guard sent == code else {
-            throw NSError(domain: "Phone", code: 403,
+            throw NSError(domain: "Login", code: 403,
                           userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
         }
-        guard let id = currentUserID, let idx = users.firstIndex(where: { $0.id == id }) else {
-            throw NSError(domain: "Phone", code: 440,
-                          userInfo: [NSLocalizedDescriptionKey: "No current user to update"])
-        }
 
-        var user = users[idx]
-        user.phone = phone
-        user.isPhoneVerified = true
-        users[idx] = user
-        saveUsers()
         phoneOTPs[phone] = nil
+        
+        // If a user is already logged in (e.g. they are adding a phone to an existing account)
+        if let currentUserID = self.currentUserID,
+           let index = users.firstIndex(where: { $0.id == currentUserID }) {
+            var user = users[index]
+            user.phone = phone
+            user.isPhoneVerified = true
+            users[index] = user
+            saveUsers()
+            return true
+        }
+        
+        // Return true to indicate the phone OTP was valid for the builder flow
+        return true
     }
     
     func createNewUser(fullName: String, role: UserRole, department: String, year: Int?, phone: String) {
@@ -318,6 +324,10 @@ final class UserDataModel {
 
     func getUser(by id: UUID) -> UserProfile? {
         return users.first(where: { $0.id == id })
+    }
+
+    func userExists(email: String) -> Bool {
+        return users.contains(where: { $0.email.lowercased() == email.lowercased() })
     }
 
     func editCurrentUser(
