@@ -74,6 +74,34 @@ struct Ride: Codable, Equatable {
         self.createdAt = Date()
     }
 
+    init(id: UUID,
+         driverUserID: UUID,
+         source: LocationPoint,
+         destination: LocationPoint,
+         waypoints: [LocationPoint] = [],
+         selectedRoute: RideRoute? = nil,
+         departureTime: Date,
+         seatsTotal: Int,
+         seatsAvailable: Int,
+         farePerSeat: Double,
+         status: RideStatus,
+         notes: String? = nil,
+         createdAt: Date = Date()) {
+        self.id = id
+        self.driverUserID = driverUserID
+        self.source = source
+        self.destination = destination
+        self.waypoints = waypoints
+        self.selectedRoute = selectedRoute
+        self.departureTime = departureTime
+        self.seatsTotal = seatsTotal
+        self.seatsAvailable = seatsAvailable
+        self.farePerSeat = farePerSeat
+        self.status = status
+        self.notes = notes
+        self.createdAt = createdAt
+    }
+
     static func ==(lhs: Ride, rhs: Ride) -> Bool { lhs.id == rhs.id }
 }
 
@@ -175,6 +203,21 @@ final class RideDataModel {
     }
 
     @discardableResult
+    func createRideAndPublishAsync(_ ride: Ride) async throws -> Ride {
+        if BackendConfig.useRealBackend {
+            try await RidesAPI.shared.createRide(ride)
+            if ride.status != .published {
+                try await RidesAPI.shared.publishRide(id: ride.id)
+            }
+        }
+        _ = createRide(ride)
+        if ride.status != .published {
+            _ = publishRide(id: ride.id)
+        }
+        return ride
+    }
+
+    @discardableResult
     func updateRide(_ updated: Ride) -> Bool {
         guard let i = rides.firstIndex(where: { $0.id == updated.id }) else { return false }
         rides[i] = updated
@@ -203,6 +246,14 @@ final class RideDataModel {
         return updateRide(r)
     }
 
+    @discardableResult
+    func cancelRideAsync(id: UUID) async throws -> Bool {
+        if BackendConfig.useRealBackend {
+            try await RidesAPI.shared.cancelRide(rideID: id)
+        }
+        return cancelRide(id: id)
+    }
+
     /// Manually start a published ride. Returns true if succeeded.
     @discardableResult
     func startRide(id: UUID) -> Bool {
@@ -212,6 +263,14 @@ final class RideDataModel {
         return updateRide(r)
     }
 
+    @discardableResult
+    func startRideAsync(id: UUID) async throws -> Bool {
+        if BackendConfig.useRealBackend {
+            try await RidesAPI.shared.startRide(rideID: id)
+        }
+        return startRide(id: id)
+    }
+
     /// Manually end an ongoing ride (mark completed). Returns true if succeeded.
     @discardableResult
     func endRide(id: UUID) -> Bool {
@@ -219,6 +278,14 @@ final class RideDataModel {
         guard r.status == .ongoing else { return false }
         r.status = .completed
         return updateRide(r)
+    }
+
+    @discardableResult
+    func endRideAsync(id: UUID) async throws -> Bool {
+        if BackendConfig.useRealBackend {
+            try await RidesAPI.shared.endRide(rideID: id)
+        }
+        return endRide(id: id)
     }
 
     @discardableResult
@@ -240,6 +307,13 @@ final class RideDataModel {
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
         return req
+    }
+
+    func createJoinRequestAsync(_ req: RideRequest) async throws -> RideRequest {
+        if BackendConfig.useRealBackend {
+            try await RidesAPI.shared.createJoinRequest(req)
+        }
+        return createJoinRequest(req)
     }
 
 
@@ -296,6 +370,13 @@ final class RideDataModel {
         )
     }
 
+    func approveRequestAsync(requestID: UUID, hostUserID: UUID) async throws {
+        if let request = requests.first(where: { $0.id == requestID }), BackendConfig.useRealBackend {
+            try await RidesAPI.shared.approveRequest(requestID: requestID, rideID: request.rideID)
+        }
+        approveRequest(requestID: requestID, hostUserID: hostUserID)
+    }
+
     func denyRequest(requestID: UUID, hostUserID: UUID) {
         guard let rqIdx = requests.firstIndex(where: { $0.id == requestID }) else { return }
         var rq = requests[rqIdx]
@@ -322,6 +403,13 @@ final class RideDataModel {
         )
     }
 
+    func denyRequestAsync(requestID: UUID, hostUserID: UUID) async throws {
+        if let request = requests.first(where: { $0.id == requestID }), BackendConfig.useRealBackend {
+            try await RidesAPI.shared.denyRequest(requestID: requestID, rideID: request.rideID)
+        }
+        denyRequest(requestID: requestID, hostUserID: hostUserID)
+    }
+
     func cancelMyRequest(requestID: UUID, passengerUserID: UUID) {
         guard let rqIdx = requests.firstIndex(where: { $0.id == requestID }) else { return }
         var rq = requests[rqIdx]
@@ -337,6 +425,13 @@ final class RideDataModel {
         saveRequests()
 
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+    }
+
+    func cancelMyRequestAsync(requestID: UUID, passengerUserID: UUID) async throws {
+        if let request = requests.first(where: { $0.id == requestID }), BackendConfig.useRealBackend {
+            try await RidesAPI.shared.cancelRequest(requestID: requestID, rideID: request.rideID)
+        }
+        cancelMyRequest(requestID: requestID, passengerUserID: passengerUserID)
     }
 
     /// Cancel booking (by passenger or host) and return seats
@@ -372,6 +467,13 @@ final class RideDataModel {
         // Notify UI to update lists
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+    }
+
+    func cancelBookingAsync(bookingID: UUID, by userID: UUID) async throws {
+        if let booking = bookings.first(where: { $0.id == bookingID }), BackendConfig.useRealBackend {
+            try await RidesAPI.shared.cancelBooking(bookingID: bookingID, rideID: booking.rideID)
+        }
+        cancelBooking(bookingID: bookingID, by: userID)
     }
 
     func ridesNear(_ point: LocationPoint, maxMeters: Double = 2500) -> [Ride] {
@@ -516,6 +618,21 @@ final class RideDataModel {
     func listRequests(for rideID: UUID) -> [RideRequest] { requests.filter { $0.rideID == rideID } }
     func listBookings(for rideID: UUID) -> [Booking] { bookings.filter { $0.rideID == rideID } }
     func listMyBookings(userID: UUID) -> [Booking] { bookings.filter { $0.passengerUserID == userID } }
+
+    /// Merges backend rides into local cache without deleting local drafts/requests state.
+    /// This is used during progressive backend rollout.
+    func mergeRemoteRides(_ incoming: [Ride]) {
+        guard !incoming.isEmpty else { return }
+        for ride in incoming {
+            if let index = rides.firstIndex(where: { $0.id == ride.id }) {
+                rides[index] = ride
+            } else {
+                rides.append(ride)
+            }
+        }
+        saveRides()
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+    }
 
     private func loadAll() {
         rides = load([Ride].self, from: ridesURL) ?? []

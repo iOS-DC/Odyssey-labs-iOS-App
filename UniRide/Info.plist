@@ -2,9 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>API_BASE_URL</key>
+	<string>https://jobxehwerpvedlfkbfoi.supabase.co</string>
+	<key>DEV_FIXED_PHONE_OTP</key>
+	<string>111111</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>whatsapp</string>
+		<string>instagram</string>
+		<string>fb</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>UniRide needs your location to show nearby rides.
 </string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvYnhlaHdlcnB2ZWRsZmtiZm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTIzODMsImV4cCI6MjA4NzgyODM4M30.xftgy_ZnxXDl6Ow5ZFL3m0Y_RojJDjsJEdq1DbYM3c0</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -24,11 +36,7 @@
 			</array>
 		</dict>
 	</dict>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>whatsapp</string>
-		<string>instagram</string>
-		<string>fb</string>
-	</array>
+	<key>USE_REAL_BACKEND</key>
+	<true/>
 </dict>
 </plist>

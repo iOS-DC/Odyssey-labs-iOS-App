@@ -55,6 +55,30 @@ struct EventItem: Codable, Equatable {
         self.shareCount = 0
     }
 
+    init(id: UUID,
+         createdByUserID: UUID,
+         title: String,
+         details: String? = nil,
+         location: EventLocation? = nil,
+         startsAt: Date,
+         endsAt: Date? = nil,
+         attendeeCount: Int = 0,
+         dayScholarCount: Int = 0,
+         imageName: String? = nil,
+         shareCount: Int = 0) {
+        self.id = id
+        self.createdByUserID = createdByUserID
+        self.title = title
+        self.details = details
+        self.location = location
+        self.startsAt = startsAt
+        self.endsAt = endsAt
+        self.attendeeCount = attendeeCount
+        self.dayScholarCount = dayScholarCount
+        self.imageName = imageName
+        self.shareCount = shareCount
+    }
+
     static func ==(lhs: EventItem, rhs: EventItem) -> Bool { lhs.id == rhs.id }
 }
 
@@ -120,6 +144,13 @@ final class EventDataModel {
             events[i] = event
             saveEvents()
         }
+    }
+
+    /// Replaces event feed from backend payload.
+    func replaceEventsFromBackend(_ incoming: [EventItem]) {
+        guard !incoming.isEmpty else { return }
+        events = incoming.sorted { $0.startsAt < $1.startsAt }
+        saveEvents()
     }
 
     // MARK: - Mock Events (UI feed)

@@ -201,18 +201,29 @@ final class PassengerDetailViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Keep", style: .cancel))
         alert.addAction(UIAlertAction(title: "Remove", style: .destructive) { [weak self] _ in
             guard let self else { return }
-            // Find the confirmed booking and cancel it (returns seat to ride)
-            let bookings = RideDataModel.shared.listBookings(for: self.ride.id)
-            if let booking = bookings.first(where: {
-                $0.passengerUserID == self.passenger.id && $0.status == .confirmed
-            }) {
-                RideDataModel.shared.cancelBooking(
-                    bookingID: booking.id,
-                    by: self.ride.driverUserID  // host is removing the passenger
-                )
+            Task { @MainActor in
+                do {
+                    let bookings = RideDataModel.shared.listBookings(for: self.ride.id)
+                    if let booking = bookings.first(where: {
+                        $0.passengerUserID == self.passenger.id && $0.status == .confirmed
+                    }) {
+                        try await RideDataModel.shared.cancelBookingAsync(
+                            bookingID: booking.id,
+                            by: self.ride.driverUserID
+                        )
+                    }
+                    self.onRemovePassenger?()
+                    self.dismiss(animated: true)
+                } catch {
+                    let fail = UIAlertController(
+                        title: "Couldn’t remove passenger",
+                        message: error.localizedDescription,
+                        preferredStyle: .alert
+                    )
+                    fail.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(fail, animated: true)
+                }
             }
-            self.onRemovePassenger?()
-            self.dismiss(animated: true)
         })
         present(alert, animated: true)
     }

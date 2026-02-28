@@ -75,37 +75,49 @@ class HomeViewController: UIViewController {
             seats: 1
         )
 
-        let createdRequest = RideDataModel.shared.createJoinRequest(request)
-        AppHaptics.success()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let createdRequest = try await RideDataModel.shared.createJoinRequestAsync(request)
+                AppHaptics.success()
 
-        NotificationCenter.default.post(
-            name: .rideRequestsUpdated,
-            object: nil,
-            userInfo: ["requestID": createdRequest.id.uuidString]
-        )
+                NotificationCenter.default.post(
+                    name: .rideRequestsUpdated,
+                    object: nil,
+                    userInfo: ["requestID": createdRequest.id.uuidString]
+                )
 
-        // Switch to My Rides tab
-        if let tbc = tabBarController, let vcs = tbc.viewControllers {
-            for (i, vc) in vcs.enumerated() {
-                if let nav = vc as? UINavigationController,
-                   nav.viewControllers.first is MyRidesViewController {
-                    tbc.selectedIndex = i
-                    nav.popToRootViewController(animated: false)
-                    break
-                } else if vc is MyRidesViewController {
-                    tbc.selectedIndex = i
-                    break
+                if let tbc = tabBarController, let vcs = tbc.viewControllers {
+                    for (i, vc) in vcs.enumerated() {
+                        if let nav = vc as? UINavigationController,
+                           nav.viewControllers.first is MyRidesViewController {
+                            tbc.selectedIndex = i
+                            nav.popToRootViewController(animated: false)
+                            break
+                        } else if vc is MyRidesViewController {
+                            tbc.selectedIndex = i
+                            break
+                        }
+                    }
                 }
+
+                let alert = UIAlertController(
+                    title: "Requested",
+                    message: "Request sent. Check My Rides → Upcoming.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            } catch {
+                let alert = UIAlertController(
+                    title: "Couldn’t request ride",
+                    message: error.localizedDescription,
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
             }
         }
-
-        let alert = UIAlertController(
-            title: "Requested",
-            message: "Request sent. Check My Rides → Upcoming.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
     }
 
     private func openEventDetailsScreen(event: EventItem) {
@@ -125,10 +137,13 @@ class HomeViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        events = EventDataModel.shared.eventList()
-        events = Array(events.prefix(2))
-        fetchRideData()
-        homeTableView.reloadData()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await BackendSyncCoordinator.shared.refreshHomeFeedIfEnabled()
+            self.events = Array(EventDataModel.shared.eventList().prefix(2))
+            self.fetchRideData()
+            self.homeTableView.reloadData()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {

@@ -284,10 +284,20 @@ final class UserDataModel {
     }
 
     func registerNewUser(profile: UserProfile) {
-        users.append(profile)
-        currentUserID = profile.id
+        let persisted = withBackendIdentity(profile)
+        users.append(persisted)
+        currentUserID = persisted.id
         saveUsers()
-        print("New user completely registered:", profile)
+        if BackendConfig.useRealBackend {
+            Task {
+                do {
+                    try await AuthAPI.shared.upsertCurrentUserProfile(persisted)
+                } catch {
+                    print("Profile upsert failed:", error.localizedDescription)
+                }
+            }
+        }
+        print("New user completely registered:", persisted)
     }
 
     // PHONE VERIFICATION Function
@@ -297,7 +307,7 @@ final class UserDataModel {
             throw NSError(domain: "Phone", code: 400,
                           userInfo: [NSLocalizedDescriptionKey: "Enter a valid phone number"])
         }
-        let otp = String(Int.random(in: 100000...999999))
+        let otp = BackendConfig.devFixedPhoneOTP ?? String(Int.random(in: 100000...999999))
         phoneOTPs[phone] = otp
         print("DEBUG Phone OTP for \(phone): \(otp)")
     }
@@ -307,6 +317,11 @@ final class UserDataModel {
         guard phone.count >= 10 else {
             throw NSError(domain: "Phone", code: 400,
                           userInfo: [NSLocalizedDescriptionKey: "Enter a valid phone number"])
+        }
+
+        if BackendConfig.devFixedPhoneOTP != nil {
+            try startPhoneVerification(phone: phone)
+            return
         }
 
         if BackendConfig.useRealBackend {
@@ -347,6 +362,9 @@ final class UserDataModel {
 
     func verifyPhoneOTPAsync(phone rawPhone: String, code: String) async throws -> Bool {
         let phone = rawPhone.trimmingCharacters(in: .whitespacesAndNewlines)
+        if BackendConfig.devFixedPhoneOTP != nil {
+            return try verifyPhoneOTP(phone: phone, code: code)
+        }
         if BackendConfig.useRealBackend {
             return try await AuthAPI.shared.verifyPhoneOTP(phone: phone, code: code)
         }
@@ -412,6 +430,15 @@ final class UserDataModel {
 
         users[index] = user
         saveUsers()
+        if BackendConfig.useRealBackend {
+            Task {
+                do {
+                    try await AuthAPI.shared.upsertCurrentUserProfile(user)
+                } catch {
+                    print("Profile upsert failed:", error.localizedDescription)
+                }
+            }
+        }
     }
 
     // saveUserProfile (missing earlier)
@@ -421,11 +448,22 @@ final class UserDataModel {
 
         users[index] = updatedUser
         saveUsers()
+        if BackendConfig.useRealBackend {
+            Task {
+                do {
+                    try await AuthAPI.shared.upsertCurrentUserProfile(updatedUser)
+                } catch {
+                    print("Profile upsert failed:", error.localizedDescription)
+                }
+            }
+        }
     }
 
     // LOGOUT Function
     func logout() {
         currentUserID = nil
+        SessionStore.shared.accessToken = nil
+        SessionStore.shared.authUserID = nil
         saveUsers()
     }
 
@@ -519,10 +557,35 @@ final class UserDataModel {
             year: remote.year,
             employeeID: remote.employeeID,
             photoURL: parsedPhotoURL,
-            vehicle: nil,
-            savedHomeLocation: nil,
-            savedHomeLocations: nil,
+            vehicle: remote.vehicle,
+            savedHomeLocation: remote.savedHomeLocation,
+            savedHomeLocations: remote.savedHomeLocations,
             lastKnownLocation: nil
+        )
+    }
+
+    private func withBackendIdentity(_ profile: UserProfile) -> UserProfile {
+        guard BackendConfig.useRealBackend,
+              let backendID = AuthAPI.shared.currentAuthUserID() else {
+            return profile
+        }
+
+        return UserProfile(
+            id: backendID,
+            email: profile.email,
+            isEmailVerified: profile.isEmailVerified,
+            phone: profile.phone,
+            isPhoneVerified: profile.isPhoneVerified,
+            fullName: profile.fullName,
+            role: profile.role,
+            courseName: profile.courseName,
+            year: profile.year,
+            employeeID: profile.employeeID,
+            photoURL: profile.photoURL,
+            vehicle: profile.vehicle,
+            savedHomeLocation: profile.savedHomeLocation,
+            savedHomeLocations: profile.savedHomeLocations,
+            lastKnownLocation: profile.lastKnownLocation
         )
     }
 

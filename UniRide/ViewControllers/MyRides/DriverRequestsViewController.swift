@@ -119,13 +119,38 @@ extension DriverRequestsViewController: RequestCellDelegate {
     func requestCellApproveTapped(_ cell: RequestCell) {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
         let request = requests[index]
-        RideDataModel.shared.approveRequest(requestID: request.id, hostUserID: trip.ride.driverUserID)
-        // UI updates automatically because approveRequest posts .rideRequestsUpdated -> loadData() gets called
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await RideDataModel.shared.approveRequestAsync(requestID: request.id, hostUserID: trip.ride.driverUserID)
+            } catch {
+                let alert = UIAlertController(
+                    title: "Couldn’t approve request",
+                    message: error.localizedDescription,
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            }
+        }
     }
 
     func requestCellDenyTapped(_ cell: RequestCell) {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
         let request = requests[index]
-        RideDataModel.shared.denyRequest(requestID: request.id, hostUserID: trip.ride.driverUserID)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await RideDataModel.shared.denyRequestAsync(requestID: request.id, hostUserID: trip.ride.driverUserID)
+            } catch {
+                let alert = UIAlertController(
+                    title: "Couldn’t deny request",
+                    message: error.localizedDescription,
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            }
+        }
     }
 }

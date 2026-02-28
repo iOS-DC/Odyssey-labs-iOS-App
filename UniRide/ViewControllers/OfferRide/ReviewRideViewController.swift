@@ -129,29 +129,36 @@ class ReviewRideViewController: UIViewController {
              notes: ""
          )
 
-         // Save + publish
-         RideDataModel.shared.createRide(ride)
-         // Ensure model helper marks it published (redundant because we set status .published,
-         // but calling publishRide keeps logic consistent if you have checks there)
-         RideDataModel.shared.publishRide(id: ride.id)
+         offerButton.setPrimaryCTAEnabled(false)
+         Task { @MainActor [weak self] in
+             guard let self else { return }
+             defer { self.offerButton.setPrimaryCTAEnabled(true) }
+             do {
+                 _ = try await RideDataModel.shared.createRideAndPublishAsync(ride)
+                 NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+                 AppHaptics.success()
 
-         // Notify observers so lists refresh immediately
-         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
-         AppHaptics.success()
+                 if let rt = ride.selectedRoute {
+                     print("[ReviewRide] created ride id:", ride.id.uuidString,
+                           "expectedTravelTime(s):", rt.expectedTravelTime,
+                           "distance(m):", rt.distanceMeters,
+                           "waypoints:", waypoints.count)
+                 } else {
+                     print("[ReviewRide] created ride WITHOUT selectedRoute (fallback travel time will be used).")
+                 }
 
-         // Debug logs to confirm times present
-         if let rt = ride.selectedRoute {
-             print("[ReviewRide] created ride id:", ride.id.uuidString,
-                   "expectedTravelTime(s):", rt.expectedTravelTime,
-                   "distance(m):", rt.distanceMeters,
-                   "waypoints:", waypoints.count)
-         } else {
-             print("[ReviewRide] created ride WITHOUT selectedRoute (fallback travel time will be used).")
+                 tabBarController?.selectedIndex = 1
+                 navigationController?.popToRootViewController(animated: true)
+             } catch {
+                 let alert = UIAlertController(
+                     title: "Couldn’t publish ride",
+                     message: error.localizedDescription,
+                     preferredStyle: .alert
+                 )
+                 alert.addAction(UIAlertAction(title: "OK", style: .default))
+                 present(alert, animated: true)
+             }
          }
-
-         // Navigate back to MyRides tab
-         tabBarController?.selectedIndex = 1
-         navigationController?.popToRootViewController(animated: true)
      }
     func merge(_ date: Date, _ time: Date) -> Date {
         let calendar = Calendar.current

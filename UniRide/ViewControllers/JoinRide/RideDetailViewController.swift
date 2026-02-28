@@ -423,24 +423,40 @@ final class RideDetailViewController: UIViewController {
             pickupPoint: ride.source,
             seats: 1
         )
-        _ = RideDataModel.shared.createJoinRequest(req)
-        NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+        requestBtn.isEnabled = false
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await RideDataModel.shared.createJoinRequestAsync(req)
+                NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
 
-        alreadyRequested = true
-        updateButtonState()
+                alreadyRequested = true
+                updateButtonState()
 
-        AppHaptics.success()
+                AppHaptics.success()
 
-        let alert = UIAlertController(
-            title: "Request Sent! 🎉",
-            message: "The driver will approve your request. Check My Rides → Upcoming.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-            self?.onRequested?()
-            self?.navigationController?.popViewController(animated: true)
-        })
-        present(alert, animated: true)
+                let alert = UIAlertController(
+                    title: "Request Sent! 🎉",
+                    message: "The driver will approve your request. Check My Rides → Upcoming.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+                    self?.onRequested?()
+                    self?.navigationController?.popViewController(animated: true)
+                })
+                present(alert, animated: true)
+            } catch {
+                requestBtn.isEnabled = true
+                updateButtonState()
+                let alert = UIAlertController(
+                    title: "Couldn’t send request",
+                    message: error.localizedDescription,
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            }
+        }
     }
 
     // MARK: - Helpers

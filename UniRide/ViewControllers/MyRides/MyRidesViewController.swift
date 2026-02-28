@@ -362,8 +362,22 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
 
     func upcomingCellDidTapCancelRide(_ cell: UpcomingTableViewCell) {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
-        RideDataModel.shared.cancelRide(id: currentTrips[index].ride.id)
-        reloadTrips()
+        let rideID = currentTrips[index].ride.id
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await RideDataModel.shared.cancelRideAsync(id: rideID)
+                reloadTrips()
+            } catch {
+                let alert = UIAlertController(
+                    title: "Couldn’t cancel ride",
+                    message: error.localizedDescription,
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            }
+        }
     }
 
     func upcomingCellDidTapStartTrip(_ cell: UpcomingTableViewCell) {
@@ -377,8 +391,20 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         )
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "Start Trip", style: .default) { [weak self] _ in
-            RideDataModel.shared.startRide(id: rideID)
-            self?.reloadTrips()
+            Task { @MainActor in
+                do {
+                    _ = try await RideDataModel.shared.startRideAsync(id: rideID)
+                    self?.reloadTrips()
+                } catch {
+                    let alert = UIAlertController(
+                        title: "Couldn’t start trip",
+                        message: error.localizedDescription,
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self?.present(alert, animated: true)
+                }
+            }
         })
         present(alert, animated: true)
     }
@@ -394,8 +420,20 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         )
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "End Trip", style: .destructive) { [weak self] _ in
-            RideDataModel.shared.endRide(id: rideID)
-            self?.reloadTrips()
+            Task { @MainActor in
+                do {
+                    _ = try await RideDataModel.shared.endRideAsync(id: rideID)
+                    self?.reloadTrips()
+                } catch {
+                    let alert = UIAlertController(
+                        title: "Couldn’t end trip",
+                        message: error.localizedDescription,
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self?.present(alert, animated: true)
+                }
+            }
         })
         present(alert, animated: true)
     }
@@ -467,15 +505,27 @@ extension MyRidesViewController {
         alert.addAction(UIAlertAction(title: "Keep", style: .cancel))
         alert.addAction(UIAlertAction(title: title, style: .destructive) { [weak self] _ in
             guard let self else { return }
-            if isConfirmed {
-                let bookings = RideDataModel.shared.listBookings(for: trip.ride.id)
-                if let booking = bookings.first(where: { $0.passengerUserID == me.id && $0.status == .confirmed }) {
-                    RideDataModel.shared.cancelBooking(bookingID: booking.id, by: me.id)
+            Task { @MainActor in
+                do {
+                    if isConfirmed {
+                        let bookings = RideDataModel.shared.listBookings(for: trip.ride.id)
+                        if let booking = bookings.first(where: { $0.passengerUserID == me.id && $0.status == .confirmed }) {
+                            try await RideDataModel.shared.cancelBookingAsync(bookingID: booking.id, by: me.id)
+                        }
+                    } else if let requestID = trip.requestID {
+                        try await RideDataModel.shared.cancelMyRequestAsync(requestID: requestID, passengerUserID: me.id)
+                    }
+                    self.reloadTrips()
+                } catch {
+                    let fail = UIAlertController(
+                        title: "Couldn’t cancel",
+                        message: error.localizedDescription,
+                        preferredStyle: .alert
+                    )
+                    fail.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(fail, animated: true)
                 }
-            } else if let requestID = trip.requestID {
-                RideDataModel.shared.cancelMyRequest(requestID: requestID, passengerUserID: me.id)
             }
-            self.reloadTrips()
         })
         present(alert, animated: true)
     }
