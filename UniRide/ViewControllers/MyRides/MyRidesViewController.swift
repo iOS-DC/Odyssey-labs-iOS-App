@@ -13,6 +13,7 @@ final class MyRidesViewController: UIViewController {
     private var upcomingTrips: [RideDataModel.MyTrip] = []
     private var pastTrips:     [RideDataModel.MyTrip] = []
     private var currentTrips:  [RideDataModel.MyTrip] = []
+    private var didAnimateListOnFirstShow = false
 
     // Notification bell
     private let bellBtn   = UIButton(type: .system)
@@ -24,7 +25,7 @@ final class MyRidesViewController: UIViewController {
             systemImage: "car.2.fill",
             title: "No upcoming rides",
             body: "Rides you've offered or joined will appear here once approved.",
-            tintColor: .systemBlue
+            tintColor: AppDesign.Color.primary
         )
         return v
     }()
@@ -72,6 +73,14 @@ final class MyRidesViewController: UIViewController {
         refreshBellBadge()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !didAnimateListOnFirstShow else { return }
+        didAnimateListOnFirstShow = true
+        tableView.layoutIfNeeded()
+        tableView.animateVisibleCellsStaggered()
+    }
+
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
@@ -90,20 +99,22 @@ final class MyRidesViewController: UIViewController {
         tableView.separatorStyle = .none
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 260
-        tableView.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 20, right: 0)
+        tableView.sectionHeaderTopPadding = 0
+        tableView.tableHeaderView = UIView(frame: .zero)
+        tableView.contentInset = UIEdgeInsets(top: AppDesign.Spacing.xs, left: 0, bottom: AppDesign.Spacing.lg, right: 0)
     }
 
     private func setupFilterButton() {
         guard let btn = filterButton else { return }
-        btn.layer.cornerRadius = 18
-        btn.backgroundColor = .systemBlue.withAlphaComponent(0.1)
-        btn.tintColor = .systemBlue
+        btn.layer.cornerRadius = AppDesign.Radius.md
+        btn.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.1)
+        btn.tintColor = AppDesign.Color.primary
         btn.setTitle(nil, for: .normal)
         btn.setImage(UIImage(systemName: "line.3.horizontal.decrease.circle"), for: .normal)
         btn.layer.shadowColor = UIColor.black.cgColor
-        btn.layer.shadowOpacity = 0.1
-        btn.layer.shadowOffset = CGSize(width: 0, height: 2)
-        btn.layer.shadowRadius = 4
+        btn.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
+        btn.layer.shadowOffset = AppDesign.Shadow.smallCardOffset
+        btn.layer.shadowRadius = AppDesign.Shadow.smallCardRadius
     }
 
     // MARK: - Data
@@ -122,6 +133,7 @@ final class MyRidesViewController: UIViewController {
     // MARK: - Segment & Filter
 
     @IBAction func segmentChanged(_ sender: UISegmentedControl) {
+        AppHaptics.selection()
         updateForSelectedSegment()
         UIView.animate(withDuration: 0.3) {
             self.filterButton?.isHidden = sender.selectedSegmentIndex == 0
@@ -475,9 +487,9 @@ extension MyRidesViewController {
         bellBtn.tintColor = .label
         bellBtn.addTarget(self, action: #selector(bellTapped), for: .touchUpInside)
 
-        bellBadge.font = .boldSystemFont(ofSize: 9)
+        bellBadge.font = AppDesign.Typography.captionStrong.withSize(9)
         bellBadge.textColor = .white
-        bellBadge.backgroundColor = .systemRed
+        bellBadge.backgroundColor = AppDesign.Color.destructive
         bellBadge.textAlignment = .center
         bellBadge.layer.cornerRadius = 7
         bellBadge.layer.masksToBounds = true
@@ -500,7 +512,7 @@ extension MyRidesViewController {
         bellBadge.isHidden = count == 0
         bellBadge.text = count > 9 ? "9+" : "\(count)"
         bellBtn.setImage(UIImage(systemName: count > 0 ? "bell.badge" : "bell"), for: .normal)
-        bellBtn.tintColor = count > 0 ? .systemRed : .label
+        bellBtn.tintColor = count > 0 ? AppDesign.Color.destructive : .label
     }
 
     @objc private func notificationsDidUpdate() {

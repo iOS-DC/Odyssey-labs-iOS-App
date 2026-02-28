@@ -35,7 +35,7 @@ final class RoutesBottomSheetViewController: UIViewController {
         if let sheet = self.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 12
+            sheet.preferredCornerRadius = AppDesign.Radius.lg
         }
     }
 }
@@ -65,6 +65,7 @@ extension RoutesBottomSheetViewController: UITableViewDataSource, UITableViewDel
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        AppHaptics.selection()
         delegate?.routesBottomSheet(self, didSelectRouteAt: indexPath.row)
         tableView.deselectRow(at: indexPath, animated: true)
         dismiss(animated: true, completion: nil)

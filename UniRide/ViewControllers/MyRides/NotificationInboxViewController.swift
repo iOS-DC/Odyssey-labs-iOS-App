@@ -62,36 +62,36 @@ private final class NotifCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
 
         iconView.contentMode = .scaleAspectFit
-        iconView.tintColor   = .systemOrange
+        iconView.tintColor   = AppDesign.Color.primary
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
-        titleLbl.font = .systemFont(ofSize: 14, weight: .semibold)
+        titleLbl.font = AppDesign.Typography.captionStrong
         titleLbl.numberOfLines = 1
 
-        bodyLbl.font = .systemFont(ofSize: 13)
+        bodyLbl.font = AppDesign.Typography.caption
         bodyLbl.textColor = .secondaryLabel
         bodyLbl.numberOfLines = 0
 
-        timeLbl.font = .systemFont(ofSize: 11)
+        timeLbl.font = AppDesign.Typography.caption
         timeLbl.textColor = .tertiaryLabel
 
         let textStack = UIStackView(arrangedSubviews: [titleLbl, bodyLbl, timeLbl])
         textStack.axis = .vertical
-        textStack.spacing = 2
+        textStack.spacing = AppDesign.Spacing.xxs / 2
         textStack.translatesAutoresizingMaskIntoConstraints = false
 
         [iconView, textStack].forEach { contentView.addSubview($0) }
 
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            iconView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+            iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: AppDesign.Spacing.md),
+            iconView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: AppDesign.Spacing.sm + AppDesign.Spacing.xxs / 2),
             iconView.widthAnchor.constraint(equalToConstant: 28),
             iconView.heightAnchor.constraint(equalToConstant: 28),
 
-            textStack.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 12),
-            textStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            textStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
+            textStack.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: AppDesign.Spacing.sm),
+            textStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -AppDesign.Spacing.md),
+            textStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: AppDesign.Spacing.sm),
+            textStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -AppDesign.Spacing.sm),
         ])
     }
     required init?(coder: NSCoder) { fatalError() }
@@ -103,13 +103,13 @@ private final class NotifCell: UITableViewCell {
             iconView.tintColor = .systemOrange
         case .passengerJoined:
             iconView.image     = UIImage(systemName: "person.badge.plus")
-            iconView.tintColor = .systemGreen
+            iconView.tintColor = AppDesign.Color.primary
         case .requestApproved:
             iconView.image     = UIImage(systemName: "checkmark.circle.fill")
-            iconView.tintColor = .systemGreen
+            iconView.tintColor = AppDesign.Color.primary
         case .requestDenied:
             iconView.image     = UIImage(systemName: "xmark.circle.fill")
-            iconView.tintColor = .systemRed
+            iconView.tintColor = AppDesign.Color.destructive
         }
 
         titleLbl.text = notif.title
@@ -125,11 +125,11 @@ private final class NotifCell: UITableViewCell {
         } else {
             switch notif.type {
             case .requestApproved, .passengerJoined:
-                backgroundColor = UIColor.systemGreen.withAlphaComponent(0.05)
+                backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.08)
             case .requestDenied:
-                backgroundColor = UIColor.systemRed.withAlphaComponent(0.05)
+                backgroundColor = AppDesign.Color.destructive.withAlphaComponent(0.05)
             default:
-                backgroundColor = UIColor.systemOrange.withAlphaComponent(0.06)
+                backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.06)
             }
         }
     }

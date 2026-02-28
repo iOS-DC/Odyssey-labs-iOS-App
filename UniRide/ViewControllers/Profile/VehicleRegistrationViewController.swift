@@ -47,15 +47,15 @@ class VehicleRegistrationViewController: UIViewController {
         ])
 
         formStack.axis    = .vertical
-        formStack.spacing = 20
+        formStack.spacing = AppDesign.Spacing.lg
         formStack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(formStack)
         NSLayoutConstraint.activate([
-            formStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 24),
-            formStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 16),
-            formStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -16),
-            formStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -32),
-            formStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -32),
+            formStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.xl),
+            formStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
+            formStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
+            formStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl - AppDesign.Spacing.xs),
+            formStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.xl * 2),
         ])
 
         // 1. Header
@@ -87,7 +87,7 @@ class VehicleRegistrationViewController: UIViewController {
         plateField.returnKeyType  = .next
         plateField.clearButtonMode = .whileEditing
         plateField.applyRoundedField()
-        plateField.font = .systemFont(ofSize: 16)
+        plateField.font = AppDesign.Typography.body
         plateField.heightAnchor.constraint(equalToConstant: 54).isActive = true
         plateField.addTarget(self, action: #selector(fieldsChanged), for: .editingChanged)
         return plateField
@@ -98,7 +98,7 @@ class VehicleRegistrationViewController: UIViewController {
         modelField.returnKeyType = .done
         modelField.clearButtonMode = .whileEditing
         modelField.applyRoundedField()
-        modelField.font = .systemFont(ofSize: 16)
+        modelField.font = AppDesign.Typography.body
         modelField.heightAnchor.constraint(equalToConstant: 54).isActive = true
         modelField.addTarget(self, action: #selector(fieldsChanged), for: .editingChanged)
         modelField.delegate = self
@@ -125,8 +125,8 @@ class VehicleRegistrationViewController: UIViewController {
         config.title = label
         config.imagePlacement = .top
         config.imagePadding   = 8
-        config.baseBackgroundColor = .systemBlue
-        config.baseForegroundColor = .systemBlue
+        config.baseBackgroundColor = AppDesign.Color.primary
+        config.baseForegroundColor = AppDesign.Color.primary
         config.cornerStyle = .medium
         btn.configuration = config
         btn.translatesAutoresizingMaskIntoConstraints = false
@@ -151,14 +151,14 @@ class VehicleRegistrationViewController: UIViewController {
 
         // Count label
         seatCountLbl.text          = "\(seatCount)"
-        seatCountLbl.font          = .systemFont(ofSize: 28, weight: .bold)
+        seatCountLbl.font          = AppDesign.Typography.h2
         seatCountLbl.textAlignment = .center
         seatCountLbl.widthAnchor.constraint(equalToConstant: 60).isActive = true
 
         // Plus
         var plusCfg = UIButton.Configuration.filled()
         plusCfg.image = UIImage(systemName: "plus")
-        plusCfg.baseBackgroundColor = .systemBlue
+        plusCfg.baseBackgroundColor = AppDesign.Color.primary
         plusCfg.baseForegroundColor = .white
         plusCfg.cornerStyle = .capsule
         plusSeat.configuration = plusCfg
@@ -169,8 +169,7 @@ class VehicleRegistrationViewController: UIViewController {
 
         let hint = UILabel()
         hint.text      = "Maximum 6 seats"
-        hint.font      = .systemFont(ofSize: 12)
-        hint.textColor = .tertiaryLabel
+        hint.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
 
         let row       = UIStackView(arrangedSubviews: [minusSeat, seatCountLbl, plusSeat])
         row.axis      = .horizontal
@@ -186,43 +185,31 @@ class VehicleRegistrationViewController: UIViewController {
 
     private func configureSaveButton() {
         saveButton.setTitle("Save Vehicle", for: .normal)
-        saveButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        saveButton.backgroundColor  = .systemBlue
-        saveButton.setTitleColor(.white, for: .normal)
-        saveButton.layer.cornerRadius = 14
-        saveButton.isEnabled = false
-        saveButton.alpha = 0.5
+        saveButton.applyPrimaryButton(color: AppDesign.Color.primary, radius: AppDesign.Radius.sm)
+        saveButton.setPrimaryCTAEnabled(false)
         saveButton.translatesAutoresizingMaskIntoConstraints = false
-        saveButton.heightAnchor.constraint(equalToConstant: 52).isActive = true
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
     }
 
     // MARK: - Card wrapper
     private func makeCard(title: String, content: UIView) -> UIView {
         let card = UIView()
-        card.backgroundColor     = .systemBackground
-        card.layer.cornerRadius  = 16
-        card.layer.shadowColor   = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.06
-        card.layer.shadowRadius  = 8
-        card.layer.shadowOffset  = CGSize(width: 0, height: 3)
-        card.layer.masksToBounds = false
+        card.applyCardStyle(corner: AppDesign.Radius.md, shadowOpacity: AppDesign.Shadow.smallCardOpacity, shadowRadius: AppDesign.Shadow.smallCardRadius)
 
         let titleLbl = UILabel()
         titleLbl.text      = title
-        titleLbl.font      = .systemFont(ofSize: 13, weight: .semibold)
-        titleLbl.textColor = .secondaryLabel
+        titleLbl.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
 
         let stack      = UIStackView(arrangedSubviews: [titleLbl, content])
         stack.axis     = .vertical
-        stack.spacing  = 10
+        stack.spacing  = AppDesign.Spacing.sm - AppDesign.Spacing.xxs / 2
         stack.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: AppDesign.Spacing.md),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: AppDesign.Spacing.md),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -AppDesign.Spacing.md),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -AppDesign.Spacing.md),
         ])
         return card
     }
@@ -230,8 +217,7 @@ class VehicleRegistrationViewController: UIViewController {
     private func makeHeaderLabel(_ text: String) -> UILabel {
         let lbl = UILabel()
         lbl.text          = text
-        lbl.font          = .systemFont(ofSize: 14)
-        lbl.textColor     = .secondaryLabel
+        lbl.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
         lbl.numberOfLines = 0
         return lbl
     }
@@ -248,11 +234,11 @@ class VehicleRegistrationViewController: UIViewController {
         let isCarSelected = selectedType == .car
         [carButton, bikeButton].forEach { btn in
             let isSel = (btn == carButton) ? isCarSelected : !isCarSelected
-            btn.configuration?.baseBackgroundColor = isSel ? .systemBlue : .systemGray5
-            btn.configuration?.baseForegroundColor = isSel ? .systemBlue : .secondaryLabel
+            btn.configuration?.baseBackgroundColor = isSel ? AppDesign.Color.primary : AppDesign.Color.fieldBackground
+            btn.configuration?.baseForegroundColor = isSel ? AppDesign.Color.primary : .secondaryLabel
             btn.layer.borderWidth = isSel ? 2 : 0
-            btn.layer.borderColor = isSel ? UIColor.systemBlue.cgColor : nil
-            btn.layer.cornerRadius = 10
+            btn.layer.borderColor = isSel ? AppDesign.Color.primary.cgColor : nil
+            btn.layer.cornerRadius = AppDesign.Radius.sm
         }
     }
 
@@ -269,8 +255,7 @@ class VehicleRegistrationViewController: UIViewController {
         let ready = !(plateField.text?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
                  && !(modelField.text?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
                  && seatCount >= 1
-        saveButton.isEnabled = ready
-        saveButton.alpha     = ready ? 1 : 0.5
+        saveButton.setPrimaryCTAEnabled(ready)
     }
 
     @objc private func saveTapped() {

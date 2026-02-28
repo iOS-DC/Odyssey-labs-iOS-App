@@ -21,6 +21,7 @@ final class AvailableRideViewController: UIViewController,
 
     private var activeFilter = RideFilter()
     private var searchQuery  = ""
+    private var didAnimateListOnFirstShow = false
 
     // MARK: - UI
     private let searchController  = UISearchController(searchResultsController: nil)
@@ -41,6 +42,14 @@ final class AvailableRideViewController: UIViewController,
         loadAvailableRides()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !didAnimateListOnFirstShow else { return }
+        didAnimateListOnFirstShow = true
+        tableView.layoutIfNeeded()
+        tableView.animateVisibleCellsStaggered()
+    }
+
     // MARK: - Setup
 
     private func setupTableView() {
@@ -50,14 +59,14 @@ final class AvailableRideViewController: UIViewController,
                            forCellReuseIdentifier: "RideTableViewCell")
         tableView.separatorStyle = .none
         tableView.rowHeight = 220
-        tableView.contentInset = UIEdgeInsets(top: 4, left: 0, bottom: 20, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: AppDesign.Spacing.xxs, left: 0, bottom: AppDesign.Spacing.lg, right: 0)
     }
 
     private func setupSearchController() {
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
         searchController.searchBar.placeholder = "Search by pickup or destination…"
-        searchController.searchBar.tintColor = .systemGreen
+        searchController.searchBar.tintColor = AppDesign.Color.primary
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
@@ -74,15 +83,14 @@ final class AvailableRideViewController: UIViewController,
     }
 
     private func setupResultCountLabel() {
-        resultCountLabel.font = .systemFont(ofSize: 13, weight: .medium)
-        resultCountLabel.textColor = .secondaryLabel
+        resultCountLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         resultCountLabel.textAlignment = .center
         resultCountLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(resultCountLabel)
         NSLayoutConstraint.activate([
-            resultCountLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
-            resultCountLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            resultCountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            resultCountLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: AppDesign.Spacing.xxs),
+            resultCountLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.md),
+            resultCountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.md),
         ])
         if let tv = tableView {
             tv.contentInset.top = 28
@@ -101,36 +109,34 @@ final class AvailableRideViewController: UIViewController,
 
         let titleLbl = UILabel()
         titleLbl.text = "No rides found"
-        titleLbl.font = .systemFont(ofSize: 18, weight: .semibold)
-        titleLbl.textColor = .secondaryLabel
+        titleLbl.applyTextStyle(AppDesign.Typography.bodyStrong, color: .secondaryLabel)
         titleLbl.textAlignment = .center
         titleLbl.translatesAutoresizingMaskIntoConstraints = false
 
         let bodyLbl = UILabel()
         bodyLbl.text = "Try adjusting your filters\nor search for a different route."
-        bodyLbl.font = .systemFont(ofSize: 14)
-        bodyLbl.textColor = .tertiaryLabel
+        bodyLbl.applyTextStyle(AppDesign.Typography.subheadline, color: .tertiaryLabel, lines: 0)
         bodyLbl.textAlignment = .center
-        bodyLbl.numberOfLines = 0
         bodyLbl.translatesAutoresizingMaskIntoConstraints = false
 
         let clearBtn = UIButton(type: .system)
         clearBtn.setTitle("Clear Filters", for: .normal)
-        clearBtn.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
-        clearBtn.tintColor = .systemGreen
+        clearBtn.applyTextActionStyle()
         clearBtn.addTarget(self, action: #selector(clearFilters), for: .touchUpInside)
         clearBtn.translatesAutoresizingMaskIntoConstraints = false
 
         let stack = UIStackView(arrangedSubviews: [iconView, titleLbl, bodyLbl, clearBtn])
-        stack.axis = .vertical; stack.alignment = .center; stack.spacing = 10
+        stack.axis = .vertical
+        stack.alignment = .center
+        stack.spacing = AppDesign.Spacing.sm
         stack.translatesAutoresizingMaskIntoConstraints = false
         emptyStateView.addSubview(stack)
 
         NSLayoutConstraint.activate([
             emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.xl),
+            emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.xl),
 
             iconView.heightAnchor.constraint(equalToConstant: 60),
             iconView.widthAnchor.constraint(equalToConstant: 60),
@@ -195,9 +201,9 @@ final class AvailableRideViewController: UIViewController,
         // Empty state
         emptyStateView.isHidden = !filteredRides.isEmpty
 
-        // Filter button badge (orange tint when active)
+        // Filter button active tint
         let isActive = !activeFilter.isDefault
-        filterBarBtn.tintColor = isActive ? .systemOrange : .label
+        filterBarBtn.tintColor = isActive ? AppDesign.Color.primary : .label
         filterBarBtn.image = UIImage(systemName: isActive
             ? "slider.horizontal.3"
             : "slider.horizontal.3")
@@ -206,6 +212,7 @@ final class AvailableRideViewController: UIViewController,
     // MARK: - Actions
 
     @objc private func filterTapped() {
+        AppHaptics.impact(.light)
         let vc = RideFilterViewController()
         vc.currentFilter = activeFilter
         vc.onApply = { [weak self] newFilter in
@@ -216,12 +223,13 @@ final class AvailableRideViewController: UIViewController,
         if let sheet = vc.sheetPresentationController {
             sheet.detents = [.medium()]
             sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 24
+            sheet.preferredCornerRadius = AppDesign.Radius.lg
         }
         present(vc, animated: true)
     }
 
     @objc private func clearFilters() {
+        AppHaptics.selection()
         activeFilter = RideFilter()
         searchQuery  = ""
         searchController.searchBar.text = nil

@@ -56,6 +56,19 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setDefaultDateAndTime()
 
         contentView.applyCardStyle()
+        fromTextField.applyRoundedField()
+        fromTextField.addLeftIcon("mappin")
+        toTextField.applyRoundedField()
+        toTextField.addLeftIcon("mappin")
+        suggestionsTable.applySmallCard()
+        let nextTitle = nextButton.currentTitle ?? "Next"
+        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
+        titleLabel.applyTextStyle(AppDesign.Typography.h2)
+        fromLabelTitle.applyTextStyle(AppDesign.Typography.bodyStrong)
+        toLabelTitle.applyTextStyle(AppDesign.Typography.bodyStrong)
+        chooseRouteLabel.applyTextStyle(AppDesign.Typography.title)
+        loadingLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+        emptyStateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
         setupAutocomplete()
         setupPickers()
         routePillsContainer.applySmallCard()
@@ -385,8 +398,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         let hasFrom = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasTo = !(toTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let enabled = hasFrom && hasTo
-        nextButton.isEnabled = enabled
-        nextButton.alpha = enabled ? 1.0 : 0.4
+        nextButton.setPrimaryCTAEnabled(enabled)
     }
 
 
@@ -399,7 +411,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         if overlay.title == "selected" {
             //  Hero route
-            renderer.strokeColor = .systemBlue
+            renderer.strokeColor = AppDesign.Color.primary
             renderer.lineWidth = 9
             renderer.alpha = 1.0
         } else {
@@ -438,7 +450,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         let frame = tf.convert(tf.bounds, to: view)
 
         UIView.animate(withDuration: 0.2) {
-            self.suggestionsTable.frame = CGRect( x: frame.minX, y: frame.maxY + 3, width: frame.width, height: 220)
+            self.suggestionsTable.frame = CGRect(x: frame.minX, y: frame.maxY + AppDesign.Spacing.xxs, width: frame.width, height: 220)
         }
 
     }

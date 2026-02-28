@@ -16,46 +16,63 @@ class EmailViewController: UIViewController {
         applyOnboardingChrome(step: 1, total: 7)
         containerCard.applyCardStyle()
         emailTextField.applyRoundedField()
-        continueButton.applyPrimaryButton(color: .systemBlue)
+        continueButton.applyPrimaryButton(color: AppDesign.Color.primary)
         applyPrimaryOnboardingCTAStyle(continueButton)
         emailTextField.keyboardType = .emailAddress
+        emailTextField.textContentType = .emailAddress
         emailTextField.autocapitalizationType = .none
         emailTextField.autocorrectionType = .no
-        continueButton.isEnabled = false
-        continueButton.alpha = 0.5
+        continueButton.setPrimaryCTAEnabled(false)
         emailTextField.addTarget(self, action: #selector(emailChanged), for: .editingChanged)
+        configureAccessibility()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        animateOnboardingEntrance([containerCard, emailTextField, continueButton])
     }
     @IBOutlet weak var containerCard: UIView!
+
+    private func configureAccessibility() {
+        emailTextField.accessibilityLabel = "University email"
+        emailTextField.accessibilityHint = "Enter your Chitkara email address"
+        continueButton.accessibilityLabel = "Continue"
+        continueButton.accessibilityHint = "Sends a verification code to your email"
+        errorLabel.accessibilityLabel = "Email error"
+    }
     
     @objc private func emailChanged() {
         let raw = (emailTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let isValid = raw.hasSuffix("@chitkara.edu.in") || raw.hasSuffix("@chitkarauniversity.edu.in")
-        continueButton.isEnabled = isValid
-        continueButton.alpha = isValid ? 1.0 : 0.5
+        continueButton.setPrimaryCTAEnabled(isValid)
     }
     
     
     @IBAction func continueTapped(_ sender: UIButton) {
         errorLabel.isHidden = true
         let raw = (emailTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        do {
-            try UserDataModel.shared.startEmailVerification(email: raw)
-            
-            // Storing email for OTP screen
-            UserDefaults.standard.set(raw, forKey: "lastEmailForOTP")
+        continueButton.setPrimaryCTAEnabled(false)
 
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.emailChanged() }
 
-            let otpVC = storyboard!.instantiateViewController(withIdentifier: "OTPViewController") as! OTPViewController
-            otpVC.verificationMode = .email
-     
-            let nav = UINavigationController(rootViewController: otpVC)
-            nav.modalPresentationStyle = .fullScreen
-            present(nav, animated: true, completion: nil)
-            
-        } catch {
-            errorLabel.text = error.localizedDescription
-            errorLabel.isHidden = false
+            do {
+                try await UserDataModel.shared.startEmailVerificationAsync(email: raw)
+
+                // Storing email for OTP screen
+                UserDefaults.standard.set(raw, forKey: "lastEmailForOTP")
+
+                let otpVC = storyboard!.instantiateViewController(withIdentifier: "OTPViewController") as! OTPViewController
+                otpVC.verificationMode = .email
+
+                let nav = UINavigationController(rootViewController: otpVC)
+                nav.modalPresentationStyle = .fullScreen
+                present(nav, animated: true, completion: nil)
+            } catch {
+                errorLabel.text = error.localizedDescription
+                errorLabel.isHidden = false
+            }
         }
     }
     

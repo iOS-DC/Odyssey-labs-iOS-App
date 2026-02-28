@@ -16,6 +16,11 @@ final class RoleSelectionViewController: UIViewController {
         updateSelectionUI()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        animateOnboardingEntrance([containerCard, studentButton, facultyButton, continueButton])
+    }
+
     private func setupUI() {
         containerCard.applyCardStyle()
 
@@ -32,11 +37,11 @@ final class RoleSelectionViewController: UIViewController {
             subtitle: "I'm a faculty or staff member"
         )
 
-        continueButton.applyPrimaryButton(color: .systemBlue)
+        continueButton.applyPrimaryButton(color: AppDesign.Color.primary)
         applyPrimaryOnboardingCTAStyle(continueButton)
         continueButton.setTitle("Continue", for: .normal)
-        continueButton.isEnabled = false
-        continueButton.alpha = 0.5
+        continueButton.setPrimaryCTAEnabled(false)
+        configureAccessibility()
     }
 
     private func configureRoleButton(_ button: UIButton, icon: String, title: String, subtitle: String) {
@@ -52,51 +57,66 @@ final class RoleSelectionViewController: UIViewController {
 
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
             var out = attrs
-            out.font = .systemFont(ofSize: 18, weight: .semibold)
+            out.font = AppDesign.Typography.bodyStrong
             return out
         }
         config.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
             var out = attrs
-            out.font = .systemFont(ofSize: 14, weight: .regular)
+            out.font = AppDesign.Typography.subheadline
             out.foregroundColor = UIColor.secondaryLabel
             return out
         }
 
         button.configuration = config
-        button.layer.cornerRadius = 16
+        button.layer.cornerRadius = AppDesign.Radius.md
         button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.systemGray4.cgColor
+        button.layer.borderColor = AppDesign.Color.border.cgColor
         button.backgroundColor = .systemBackground
     }
 
     private func updateSelectionUI() {
-        let selectedBG = UIColor.systemBlue.withAlphaComponent(0.1)
-        let selectedBorder = UIColor.systemBlue.cgColor
-        let normalBorder = UIColor.systemGray4.cgColor
+        let selectedBG = AppDesign.Color.primary.withAlphaComponent(0.1)
+        let selectedBorder = AppDesign.Color.primary.cgColor
+        let normalBorder = AppDesign.Color.border.cgColor
 
         for (button, role) in [(studentButton, UserRole.student), (facultyButton, UserRole.faculty)] {
             let isSelected = selectedRole == role
             button?.backgroundColor = isSelected ? selectedBG : .systemBackground
             button?.layer.borderColor = isSelected ? selectedBorder : normalBorder
             button?.layer.borderWidth = isSelected ? 2 : 1
+            if isSelected {
+                button?.accessibilityTraits.insert(.selected)
+            } else {
+                button?.accessibilityTraits.remove(.selected)
+            }
 
             guard var cfg = button?.configuration else { continue }
             cfg.image = UIImage(systemName: role == .student ? "graduationcap.fill" : "briefcase.fill")
             button?.configuration = cfg
         }
 
-        continueButton.isEnabled = (selectedRole != nil)
-        continueButton.alpha = selectedRole == nil ? 0.5 : 1.0
+        continueButton.setPrimaryCTAEnabled(selectedRole != nil)
     }
 
     @IBAction private func studentTapped(_ sender: UIButton) {
+        AppHaptics.selection()
         selectedRole = .student
         updateSelectionUI()
     }
 
     @IBAction private func facultyTapped(_ sender: UIButton) {
+        AppHaptics.selection()
         selectedRole = .faculty
         updateSelectionUI()
+    }
+
+    private func configureAccessibility() {
+        studentButton.accessibilityLabel = "Student role"
+        studentButton.accessibilityHint = "Select if you are enrolled as a student"
+        facultyButton.accessibilityLabel = "Faculty role"
+        facultyButton.accessibilityHint = "Select if you are faculty or staff"
+        continueButton.accessibilityLabel = "Continue"
+        continueButton.accessibilityHint = "Go to profile details step"
     }
 
     @IBAction private func continueTapped(_ sender: UIButton) {

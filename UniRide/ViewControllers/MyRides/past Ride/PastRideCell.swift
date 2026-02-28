@@ -51,13 +51,13 @@ final class PastRideCell: UITableViewCell {
         selectionStyle = .none
 
         // Card container
-        cardView.backgroundColor   = .systemBackground
-        cardView.layer.cornerRadius = 20
-        cardView.layer.masksToBounds = false
-        cardView.layer.shadowColor   = UIColor.black.cgColor
-        cardView.layer.shadowOpacity = 0.09
-        cardView.layer.shadowOffset  = CGSize(width: 0, height: 4)
-        cardView.layer.shadowRadius  = 12
+        cardView.backgroundColor = .systemBackground
+        cardView.applyCardStyle(
+            corner: AppDesign.Radius.lg,
+            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+            shadowRadius: AppDesign.Shadow.smallCardRadius,
+            shadowOffset: AppDesign.Shadow.smallCardOffset
+        )
         cardView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(cardView)
 
@@ -82,39 +82,39 @@ final class PastRideCell: UITableViewCell {
 
     private func styleComponents() {
         // Role chip
-        roleChip.font = .systemFont(ofSize: 12, weight: .semibold)
+        roleChip.font = AppDesign.Typography.captionStrong
         roleChip.textAlignment = .center
         roleChip.layer.cornerRadius = 10
         roleChip.layer.masksToBounds = true
 
         // Status chip
-        statusChip.font = .systemFont(ofSize: 11, weight: .bold)
+        statusChip.font = AppDesign.Typography.captionStrong
         statusChip.textAlignment = .center
         statusChip.layer.cornerRadius = 10
         statusChip.layer.masksToBounds = true
 
         // Date
-        dateLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        dateLabel.font = AppDesign.Typography.caption
         dateLabel.textColor = .tertiaryLabel
         dateLabel.textAlignment = .right
         dateLabel.setContentHuggingPriority(.required, for: .horizontal)
 
         // Dividers
-        [divider1, divider2, divider3].forEach { $0.backgroundColor = UIColor.systemGray5 }
+        [divider1, divider2, divider3].forEach { $0.backgroundColor = AppDesign.Color.border }
 
         // From / To / Arrow
-        fromLabel.font = .systemFont(ofSize: 16, weight: .bold)
+        fromLabel.font = AppDesign.Typography.bodyStrong
         fromLabel.numberOfLines = 2
         fromLabel.adjustsFontSizeToFitWidth = true
         fromLabel.minimumScaleFactor = 0.8
         fromLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         arrowIcon.image = UIImage(systemName: "arrow.right")
-        arrowIcon.tintColor = .systemGreen
+        arrowIcon.tintColor = AppDesign.Color.primary
         arrowIcon.contentMode = .scaleAspectFit
         arrowIcon.setContentHuggingPriority(.required, for: .horizontal)
 
-        toLabel.font = .systemFont(ofSize: 16, weight: .bold)
+        toLabel.font = AppDesign.Typography.bodyStrong
         toLabel.numberOfLines = 2
         toLabel.adjustsFontSizeToFitWidth = true
         toLabel.minimumScaleFactor = 0.8
@@ -122,19 +122,19 @@ final class PastRideCell: UITableViewCell {
         toLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         // Time
-        timeLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        timeLabel.font = AppDesign.Typography.caption
         timeLabel.textColor = .secondaryLabel
 
         // Section header
-        sectionHeader.font = .systemFont(ofSize: 12, weight: .medium)
+        sectionHeader.font = AppDesign.Typography.captionStrong
         sectionHeader.textColor = .tertiaryLabel
 
         // Price labels
-        priceLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        priceLabel.font = AppDesign.Typography.subheadline
         priceLabel.textColor = .label
 
-        totalLabel.font = .systemFont(ofSize: 14, weight: .semibold)
-        totalLabel.textColor = .systemGreen
+        totalLabel.font = AppDesign.Typography.subheadline
+        totalLabel.textColor = AppDesign.Color.success
         totalLabel.textAlignment = .right
         totalLabel.setContentHuggingPriority(.required, for: .horizontal)
     }
@@ -230,11 +230,11 @@ final class PastRideCell: UITableViewCell {
         // Role chip
         roleChip.text = isHost ? "  Hosting  " : "  Passenger  "
         if isHost {
-            roleChip.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.12)
-            roleChip.textColor = .systemBlue
+            roleChip.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.12)
+            roleChip.textColor = AppDesign.Color.primary
         } else {
-            roleChip.backgroundColor = UIColor.systemPurple.withAlphaComponent(0.12)
-            roleChip.textColor = .systemPurple
+            roleChip.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.12)
+            roleChip.textColor = AppDesign.Color.primary
         }
 
         // Status chip
@@ -297,8 +297,7 @@ final class PastRideCell: UITableViewCell {
         if profiles.isEmpty {
             let empty = UILabel()
             empty.text = "No passengers"
-            empty.font = .systemFont(ofSize: 13)
-            empty.textColor = .tertiaryLabel
+            empty.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
             peopleStack.addArrangedSubview(empty)
             return
         }
@@ -314,20 +313,19 @@ final class PastRideCell: UITableViewCell {
         let avatar = UIImageView()
         avatar.contentMode = .scaleAspectFill
         avatar.clipsToBounds = true
-        avatar.layer.cornerRadius = 18
+        avatar.layer.cornerRadius = AppDesign.Radius.md
         avatar.backgroundColor = .systemGray5
         avatar.translatesAutoresizingMaskIntoConstraints = false
         avatar.loadAndFallback(from: profile?.photoURL, name: profile?.fullName ?? "?")
 
         let nameLabel = UILabel()
         nameLabel.text = profile?.fullName ?? "Unknown"
-        nameLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        nameLabel.font = AppDesign.Typography.subheadline
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let subLabel = UILabel()
         subLabel.text = profile?.role == .student ? "Student" : "Faculty"
-        subLabel.font = .systemFont(ofSize: 12)
-        subLabel.textColor = .secondaryLabel
+        subLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         subLabel.translatesAutoresizingMaskIntoConstraints = false
 
         [avatar, nameLabel, subLabel].forEach { row.addSubview($0) }
@@ -376,15 +374,8 @@ final class PastRideCell: UITableViewCell {
                    && ($0.firstAttribute == .bottom || $0.secondAttribute == .bottom) }
             .forEach { $0.isActive = false }
 
-        var cfg = UIButton.Configuration.filled()
-        cfg.title = "⭐  Rate this ride"
-        cfg.baseBackgroundColor = UIColor.systemYellow
-        cfg.baseForegroundColor = UIColor.black.withAlphaComponent(0.85)
-        cfg.cornerStyle = .capsule
-        cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { a in
-            var b = a; b.font = .systemFont(ofSize: 14, weight: .semibold); return b
-        }
-        let btn = UIButton(configuration: cfg)
+        let btn = UIButton(type: .system)
+        btn.applyTintActionStyle(title: "Rate this ride", imageSystemName: "star.fill", color: AppDesign.Color.primary)
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.addTarget(self, action: #selector(rateTapped), for: .touchUpInside)
         cardView.addSubview(btn)

@@ -31,7 +31,10 @@ class MessageViewController: UIViewController {
         tableView.estimatedRowHeight = 60
 
         // 🔑 INPUT BAR LOGIC (THIS WAS MISSING)
-        sendButton.isEnabled = false
+        sendButton.applyPrimaryButton(color: AppDesign.Color.primary)
+        sendButton.setPrimaryCTAEnabled(false)
+        messageTextField.applyRoundedField()
+        messageTextField.setLeftPaddingPoints(12)
 
         messageTextField.addTarget(
             self,
@@ -43,7 +46,8 @@ class MessageViewController: UIViewController {
     // MARK: - Text Change
     @objc private func textDidChange() {
         let text = messageTextField.text ?? ""
-        sendButton.isEnabled = !text.trimmingCharacters(in: .whitespaces).isEmpty
+        let enabled = !text.trimmingCharacters(in: .whitespaces).isEmpty
+        sendButton.setPrimaryCTAEnabled(enabled)
     }
 
     // MARK: - Send Action
@@ -59,7 +63,7 @@ class MessageViewController: UIViewController {
 
         messages.append(newMessage)
         messageTextField.text = ""
-        sendButton.isEnabled = false
+        sendButton.setPrimaryCTAEnabled(false)
 
         tableView.reloadData()
         scrollToBottom()
@@ -96,4 +100,3 @@ extension MessageViewController: UITableViewDataSource {
         return cell
     }
 }
-

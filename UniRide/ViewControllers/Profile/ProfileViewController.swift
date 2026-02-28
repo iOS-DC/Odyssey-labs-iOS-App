@@ -49,7 +49,7 @@ class ProfileViewController: UIViewController {
             image: UIImage(systemName: "rectangle.portrait.and.arrow.right"),
             style: .plain, target: self, action: #selector(logoutTapped)
         )
-        navigationItem.leftBarButtonItem?.tintColor = .systemRed
+        navigationItem.leftBarButtonItem?.tintColor = AppDesign.Color.destructive
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "pencil"),
@@ -72,15 +72,15 @@ class ProfileViewController: UIViewController {
         ])
 
         contentStack.axis    = .vertical
-        contentStack.spacing = 16
+        contentStack.spacing = AppDesign.Spacing.md
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(contentStack)
         NSLayoutConstraint.activate([
-            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 16),
-            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 16),
-            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -16),
-            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24),
-            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -32),
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.md),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.xl * 2),
         ])
 
         contentStack.addArrangedSubview(buildHeroCard())
@@ -90,21 +90,15 @@ class ProfileViewController: UIViewController {
     // MARK: - Hero Card
     private func buildHeroCard() -> UIView {
         let card = UIView()
-        card.backgroundColor  = .systemBackground
-        card.layer.cornerRadius = 20
-        card.layer.shadowColor   = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.08
-        card.layer.shadowRadius  = 12
-        card.layer.shadowOffset  = CGSize(width: 0, height: 4)
-        card.layer.masksToBounds = false
+        card.applyCardStyle()
 
         // Avatar
         avatarImageView.contentMode    = .scaleAspectFill
         avatarImageView.clipsToBounds  = true
         avatarImageView.layer.cornerRadius = 44
-        avatarImageView.backgroundColor = .systemPurple.withAlphaComponent(0.15)
+        avatarImageView.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.15)
         avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
-        avatarImageView.tintColor = .systemPurple
+        avatarImageView.tintColor = AppDesign.Color.primary
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             avatarImageView.widthAnchor.constraint(equalToConstant: 88),
@@ -112,21 +106,18 @@ class ProfileViewController: UIViewController {
         ])
 
         // Name
-        nameLabel.font          = .systemFont(ofSize: 22, weight: .bold)
+        nameLabel.applyTextStyle(AppDesign.Typography.title)
         nameLabel.textAlignment = .center
-        nameLabel.textColor     = .label
         nameLabel.text          = "Your Name"
 
         // Subtitle (department / year)
-        subtitleLabel.font          = .systemFont(ofSize: 15, weight: .medium)
+        subtitleLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         subtitleLabel.textAlignment = .center
-        subtitleLabel.textColor     = .secondaryLabel
         subtitleLabel.text          = "—"
 
         // Member since
-        memberLabel.font          = .systemFont(ofSize: 13)
+        memberLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
         memberLabel.textAlignment = .center
-        memberLabel.textColor     = .tertiaryLabel
         memberLabel.text          = "Member Since 2025"
 
         // Divider
@@ -162,7 +153,7 @@ class ProfileViewController: UIViewController {
     private func buildStatsRow() -> UIView {
         // Rating stat
         let ratingTitleLbl = makeCaptionLabel("Rating")
-        ratingLabel.font          = .systemFont(ofSize: 18, weight: .semibold)
+        ratingLabel.font          = AppDesign.Typography.bodyStrong
         ratingLabel.textAlignment = .center
         ratingLabel.text          = "—"
 
@@ -177,7 +168,7 @@ class ProfileViewController: UIViewController {
 
         // Rides stat
         let ridesTitleLbl = makeCaptionLabel("Rides")
-        ridesLabel.font          = .systemFont(ofSize: 18, weight: .semibold)
+        ridesLabel.font          = AppDesign.Typography.bodyStrong
         ridesLabel.textAlignment = .center
         ridesLabel.text          = "0"
 
@@ -194,33 +185,23 @@ class ProfileViewController: UIViewController {
     // MARK: - Contact Card
     private func buildContactCard() -> UIView {
         let card = UIView()
-        card.backgroundColor    = .systemBackground
-        card.layer.cornerRadius = 20
-        card.layer.shadowColor   = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.08
-        card.layer.shadowRadius  = 12
-        card.layer.shadowOffset  = CGSize(width: 0, height: 4)
-        card.layer.masksToBounds = false
+        card.applyCardStyle()
 
         let titleLabel = UILabel()
         titleLabel.text      = "Contact Information"
-        titleLabel.font      = .systemFont(ofSize: 17, weight: .bold)
-        titleLabel.textColor = .label
+        titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
 
         // Email row
-        emailValueLabel.font      = .systemFont(ofSize: 15, weight: .medium)
-        emailValueLabel.textColor = .label
+        emailValueLabel.applyTextStyle(AppDesign.Typography.subheadline)
         emailValueLabel.numberOfLines = 0
         let emailRow = infoRow(icon: "envelope.fill", titleText: "Email", valueLabel: emailValueLabel)
 
         // Phone row
-        phoneValueLabel.font      = .systemFont(ofSize: 15, weight: .medium)
-        phoneValueLabel.textColor = .label
+        phoneValueLabel.applyTextStyle(AppDesign.Typography.subheadline)
         let phoneRow = infoRow(icon: "phone.fill", titleText: "Phone", valueLabel: phoneValueLabel)
 
         // Home row (with edit button)
-        homeValueLabel.font      = .systemFont(ofSize: 15, weight: .medium)
-        homeValueLabel.textColor = .label
+        homeValueLabel.applyTextStyle(AppDesign.Typography.subheadline)
         homeValueLabel.numberOfLines = 0
         let homeRow = buildHomeRow()
 
@@ -241,7 +222,7 @@ class ProfileViewController: UIViewController {
 
     private func buildHomeRow() -> UIView {
         let icon = UIImageView(image: UIImage(systemName: "house.fill"))
-        icon.tintColor = .systemBlue
+        icon.tintColor = AppDesign.Color.primary
         icon.contentMode = .scaleAspectFit
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.widthAnchor.constraint(equalToConstant: 20).isActive  = true
@@ -256,7 +237,7 @@ class ProfileViewController: UIViewController {
 
         let editBtn = UIButton(type: .system)
         editBtn.setTitle("Edit", for: .normal)
-        editBtn.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
+        editBtn.applyTextActionStyle()
         editBtn.setContentHuggingPriority(.required, for: .horizontal)
         editBtn.addTarget(self, action: #selector(editHomeLocationTapped), for: .touchUpInside)
 
@@ -442,14 +423,13 @@ class ProfileViewController: UIViewController {
     private func makeCaptionLabel(_ text: String) -> UILabel {
         let lbl = UILabel()
         lbl.text      = text
-        lbl.font      = .systemFont(ofSize: 12, weight: .medium)
-        lbl.textColor = .secondaryLabel
+        lbl.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         return lbl
     }
 
     private func infoRow(icon iconName: String, titleText: String, valueLabel: UILabel) -> UIView {
         let icon = UIImageView(image: UIImage(systemName: iconName))
-        icon.tintColor    = .systemBlue
+        icon.tintColor    = AppDesign.Color.primary
         icon.contentMode  = .scaleAspectFit
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.widthAnchor.constraint(equalToConstant: 20).isActive  = true
@@ -470,7 +450,7 @@ class ProfileViewController: UIViewController {
 
     private func makeSeparator() -> UIView {
         let sep = UIView()
-        sep.backgroundColor = .systemGray6
+        sep.backgroundColor = AppDesign.Color.border
         sep.translatesAutoresizingMaskIntoConstraints = false
         sep.heightAnchor.constraint(equalToConstant: 1).isActive = true
         return sep

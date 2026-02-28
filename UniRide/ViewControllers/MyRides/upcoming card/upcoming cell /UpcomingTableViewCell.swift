@@ -66,15 +66,12 @@ final class UpcomingTableViewCell: UITableViewCell {
         selectionStyle = .none
 
         // Card appearance — corner radius + white background (XIB already has 12pt H margins, 8pt V margins)
-        cardView.layer.cornerRadius = 20
-        cardView.layer.masksToBounds = false   // must be false for shadow to show
-        cardView.backgroundColor = .systemBackground
-
-        // Shadow sits on cardView's own layer so it tracks the card frame exactly
-        cardView.layer.shadowColor = UIColor.black.cgColor
-        cardView.layer.shadowOpacity = 0.10
-        cardView.layer.shadowOffset = CGSize(width: 0, height: 4)
-        cardView.layer.shadowRadius = 10
+        cardView.applyCardStyle(
+            corner: AppDesign.Radius.lg,
+            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+            shadowRadius: AppDesign.Shadow.smallCardRadius,
+            shadowOffset: AppDesign.Shadow.smallCardOffset
+        )
 
         // Requests container begins collapsed
         requestContainerView.isHidden = true
@@ -88,6 +85,17 @@ final class UpcomingTableViewCell: UITableViewCell {
         mapHeightConstraint.constant = 1
 
         mapView.delegate = self
+
+        roleLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+        statusLabel.applyTextStyle(AppDesign.Typography.captionStrong)
+        dateLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        fromLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 2)
+        toLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 2)
+        startTimeLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        endTimeLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        durationLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        passengersLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        seatsLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
     }
 
     override func layoutSubviews() {
@@ -156,7 +164,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         let (statusIcon, bgColor): (String, UIColor) = {
             switch ride.status {
             case .published: return ("✓", UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0))
-            case .ongoing:   return ("▶", UIColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 1.0))
+            case .ongoing:   return ("▶", AppDesign.Color.primary)
             default:         return ("•", UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 1.0))
             }
         }()
@@ -173,16 +181,12 @@ final class UpcomingTableViewCell: UITableViewCell {
         } else {
             viewRequestButton.isHidden = false
             viewRequestsHeightConstraint.constant = 36
-            viewRequestsTopConstraint.constant = 12
+            viewRequestsTopConstraint.constant = AppDesign.Spacing.sm
             
             let reqCount = rideRequests.count
             let title = reqCount == 1 ? "1 Pending Request" : "\(reqCount) Pending Requests"
             viewRequestButton.setTitle(title, for: .normal)
-            viewRequestButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
-            viewRequestButton.backgroundColor = .systemOrange.withAlphaComponent(0.15)
-            viewRequestButton.setTitleColor(.systemOrange, for: .normal)
-            viewRequestButton.layer.cornerRadius = 18
-            viewRequestButton.clipsToBounds = true
+            viewRequestButton.applyTextActionStyle(font: AppDesign.Typography.captionStrong)
         }
 
         // Approved passengers
@@ -205,50 +209,20 @@ final class UpcomingTableViewCell: UITableViewCell {
         drawRouteIfNeeded(for: ride)
         
         // Button Styles
-        cancelRideButton.backgroundColor = .clear
-        var cancelConfig = UIButton.Configuration.tinted()
-        cancelConfig.title = "Cancel Ride"
-        cancelConfig.baseBackgroundColor = .systemRed
-        cancelConfig.baseForegroundColor = .systemRed
-        cancelConfig.cornerStyle = .capsule
-        cancelRideButton.configuration = cancelConfig
+        cancelRideButton.applyTintActionStyle(title: "Cancel Ride", color: AppDesign.Color.destructive)
 
-        messageButton.backgroundColor = .clear
-        var msgConfig = UIButton.Configuration.tinted()
-        msgConfig.title = "Chat"
-        msgConfig.image = UIImage(systemName: "message.fill")
-        msgConfig.imagePlacement = .leading
-        msgConfig.imagePadding = 4
-        msgConfig.baseBackgroundColor = .systemBlue
-        msgConfig.baseForegroundColor = .systemBlue
-        msgConfig.cornerStyle = .capsule
-        messageButton.configuration = msgConfig
+        messageButton.applyTintActionStyle(title: "Chat", imageSystemName: "message.fill")
 
         // ── Unread badge on Chat button ──
         let rideIDStr = trip.ride.id.uuidString
         applyUnreadBadge(to: messageButton, rideID: rideIDStr)
 
-        callButton.backgroundColor = .clear
-        var callConfig = UIButton.Configuration.tinted()
-        callConfig.title = "Call"
-        callConfig.image = UIImage(systemName: "phone.fill")
-        callConfig.imagePlacement = .leading
-        callConfig.imagePadding = 4
-        callConfig.baseBackgroundColor = .systemBlue
-        callConfig.baseForegroundColor = .systemBlue
-        callConfig.cornerStyle = .capsule
-        callButton.configuration = callConfig
+        callButton.applyTintActionStyle(title: "Call", imageSystemName: "phone.fill")
         
-        showMapButton.backgroundColor = .clear
-        var mapConfig = UIButton.Configuration.tinted()
-        mapConfig.title = isMapExpanded ? " Hide" : " Map"
-        mapConfig.image = UIImage(systemName: isMapExpanded ? "map.fill" : "map")
-        mapConfig.imagePlacement = .leading
-        mapConfig.imagePadding = 4
-        mapConfig.baseBackgroundColor = .systemBlue
-        mapConfig.baseForegroundColor = .systemBlue
-        mapConfig.cornerStyle = .capsule
-        showMapButton.configuration = mapConfig
+        showMapButton.applyTintActionStyle(
+            title: isMapExpanded ? "Hide" : "Map",
+            imageSystemName: isMapExpanded ? "map.fill" : "map"
+        )
 
         // Start / End Trip button
         startTripButton.backgroundColor = .clear
@@ -259,7 +233,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             startConfig.image = UIImage(systemName: "play.fill")
             startConfig.imagePlacement = .leading
             startConfig.imagePadding = 6
-            startConfig.baseBackgroundColor = .systemGreen
+            startConfig.baseBackgroundColor = AppDesign.Color.success
             startConfig.baseForegroundColor = .white
             startConfig.cornerStyle = .capsule
             startTripButton.configuration = startConfig
@@ -291,7 +265,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         mapView.isHidden = !isMapExpanded
         mapHeightConstraint.constant = isMapExpanded ? 180 : 1
         var config = sender.configuration ?? UIButton.Configuration.tinted()
-        config.title = isMapExpanded ? " Hide" : " Map"
+        config.title = isMapExpanded ? "Hide" : "Map"
         config.image = UIImage(systemName: isMapExpanded ? "map.fill" : "map")
         sender.configuration = config
         delegate?.upcomingCellRequestsToggled(self)
@@ -328,8 +302,8 @@ final class UpcomingTableViewCell: UITableViewCell {
     private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
         label.backgroundColor = backgroundColor
         label.textColor = textColor
-        label.font = .systemFont(ofSize: 13, weight: .bold)
-        label.layer.cornerRadius = 13
+        label.font = AppDesign.Typography.captionStrong
+        label.layer.cornerRadius = AppDesign.Radius.sm
         label.layer.masksToBounds = true
         label.textAlignment = .center
     }
@@ -360,7 +334,7 @@ final class UpcomingTableViewCell: UITableViewCell {
                 let label = UILabel(frame: CGRect(x: 0, y: 0, width: size, height: size))
                 label.text = initial
                 label.textAlignment = .center
-                label.font = .systemFont(ofSize: 18, weight: .semibold)
+                label.font = AppDesign.Typography.bodyStrong
                 label.textColor = .systemGray
                 avatarView.addSubview(label)
 
@@ -400,7 +374,7 @@ final class UpcomingTableViewCell: UITableViewCell {
 extension UpcomingTableViewCell: MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let r = MKPolylineRenderer(overlay: overlay)
-        r.strokeColor = .systemBlue
+        r.strokeColor = AppDesign.Color.primary
         r.lineWidth = 4
         return r
     }
@@ -423,9 +397,9 @@ extension UpcomingTableViewCell {
         let badge = UILabel()
         badge.tag = tag
         badge.text = count > 99 ? "99+" : "\(count)"
-        badge.font = .boldSystemFont(ofSize: 10)
+        badge.font = AppDesign.Typography.captionStrong.withSize(10)
         badge.textColor = .white
-        badge.backgroundColor = .systemRed
+        badge.backgroundColor = AppDesign.Color.destructive
         badge.textAlignment = .center
         badge.layer.cornerRadius = 9
         badge.layer.masksToBounds = true

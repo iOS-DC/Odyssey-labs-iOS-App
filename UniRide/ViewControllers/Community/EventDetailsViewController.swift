@@ -62,54 +62,48 @@ class EventDetailsViewController: UIViewController {
         
         // Main Stack View
         stackView.axis = .vertical
-        stackView.spacing = 20
+        stackView.spacing = AppDesign.Spacing.lg
         stackView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(stackView)
         
         NSLayoutConstraint.activate([
             stackView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            stackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40)
+            stackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: AppDesign.Spacing.md),
+            stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -AppDesign.Spacing.md),
+            stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -AppDesign.Spacing.xl - AppDesign.Spacing.md)
         ])
         
         // 1. Hero Image
         heroImageView.contentMode = .scaleAspectFill
         heroImageView.clipsToBounds = true
-        heroImageView.layer.cornerRadius = 16
+        heroImageView.layer.cornerRadius = AppDesign.Radius.md
         heroImageView.heightAnchor.constraint(equalToConstant: 250).isActive = true
         stackView.addArrangedSubview(heroImageView)
         
         // 2. Header Info
         let infoStack = UIStackView()
         infoStack.axis = .vertical
-        infoStack.spacing = 8
+        infoStack.spacing = AppDesign.Spacing.xs
         
-        headerTitleLabel.font = .systemFont(ofSize: 28, weight: .bold)
-        headerTitleLabel.textColor = .label
-        headerTitleLabel.numberOfLines = 0
+        headerTitleLabel.applyTextStyle(AppDesign.Typography.h2, lines: 0)
         infoStack.addArrangedSubview(headerTitleLabel)
         
-        eventDateLabel.font = .systemFont(ofSize: 16, weight: .medium)
-        eventDateLabel.textColor = .secondaryLabel
+        eventDateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         infoStack.addArrangedSubview(eventDateLabel)
         
-        eventLocationLabel.font = .systemFont(ofSize: 16, weight: .medium)
-        eventLocationLabel.textColor = .secondaryLabel
+        eventLocationLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         infoStack.addArrangedSubview(eventLocationLabel)
         
         stackView.addArrangedSubview(infoStack)
         
         // 3. Action Buttons
         actionButtonsStack.axis = .horizontal
-        actionButtonsStack.spacing = 16
+        actionButtonsStack.spacing = AppDesign.Spacing.md
         actionButtonsStack.distribution = .fillEqually
-        actionButtonsStack.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        actionButtonsStack.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight).isActive = true
         
-        configureButton(offerRideButton, title: "Offer Ride", color: .systemBlue)
-        // Match "Find Ride" teal color from Join Tab
-        let joinColor = UIColor(red: 0.06, green: 0.79, blue: 0.69, alpha: 1.0)
-        configureButton(joinRideButton, title: "Join Ride", color: joinColor)
+        offerRideButton.applyProminentSecondaryCTA(title: "Offer Ride", corner: AppDesign.Radius.md)
+        joinRideButton.applyProminentPrimaryCTA(title: "Join Ride", corner: AppDesign.Radius.md)
         
         offerRideButton.addTarget(self, action: #selector(offerRideTapped), for: .touchUpInside)
         joinRideButton.addTarget(self, action: #selector(joinRide), for: .touchUpInside)
@@ -120,22 +114,11 @@ class EventDetailsViewController: UIViewController {
         
         // 4. About Section
         aboutHeaderLabel.text = "About Event"
-        aboutHeaderLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        aboutHeaderLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
         stackView.addArrangedSubview(aboutHeaderLabel)
         
-        detailsLabel.font = .systemFont(ofSize: 16, weight: .regular)
-        detailsLabel.textColor = .label
-        detailsLabel.numberOfLines = 0
+        detailsLabel.applyTextStyle(AppDesign.Typography.body, lines: 0)
         stackView.addArrangedSubview(detailsLabel)
-    }
-    
-    private func configureButton(_ button: UIButton, title: String, color: UIColor) {
-        var config = UIButton.Configuration.filled()
-        config.title = title
-        config.baseBackgroundColor = color
-        config.cornerStyle = .capsule
-        config.baseForegroundColor = .white
-        button.configuration = config
     }
     
     private func populateData() {

@@ -37,11 +37,11 @@ final class ProfileCompletionBannerView: UIView {
         // ── Header row ──────────────────────────────────────────
         let titleLabel         = UILabel()
         titleLabel.text        = "Complete Your Profile"
-        titleLabel.font        = .systemFont(ofSize: 15, weight: .bold)
+        titleLabel.font        = AppDesign.Typography.bodyStrong
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         fractionLabel.text     = completion.completedFraction
-        fractionLabel.font     = .systemFont(ofSize: 13, weight: .medium)
+        fractionLabel.font     = AppDesign.Typography.caption
         fractionLabel.textColor = .secondaryLabel
         fractionLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -67,7 +67,7 @@ final class ProfileCompletionBannerView: UIView {
 
         let pctLabel         = UILabel()
         pctLabel.text        = "\(completion.percentage)% complete"
-        pctLabel.font        = .systemFont(ofSize: 11, weight: .medium)
+        pctLabel.font        = AppDesign.Typography.caption
         pctLabel.textColor   = .systemGreen
         pctLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -125,12 +125,12 @@ final class ProfileCompletionBannerView: UIView {
         // Title + subtitle
         let titleLbl = UILabel()
         titleLbl.text = step.title
-        titleLbl.font = .systemFont(ofSize: 14, weight: done ? .regular : .medium)
+        titleLbl.font = done ? AppDesign.Typography.caption : AppDesign.Typography.captionStrong
         titleLbl.textColor = done ? .secondaryLabel : .label
 
         let subLbl = UILabel()
         subLbl.text = step.subtitle
-        subLbl.font = .systemFont(ofSize: 12)
+        subLbl.font = AppDesign.Typography.caption
         subLbl.textColor = .tertiaryLabel
 
         let textStack = UIStackView(arrangedSubviews: [titleLbl, subLbl])

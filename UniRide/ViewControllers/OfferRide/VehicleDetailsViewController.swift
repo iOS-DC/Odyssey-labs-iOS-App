@@ -32,18 +32,21 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        ContainerView.applyCardStyle()
+        let nextTitle = nextButton.currentTitle ?? "Next"
+        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
+        carView.applySmallCard()
+        bikeView.applySmallCard()
+        seatsLabel.applyTextStyle(AppDesign.Typography.h2)
+        maxSeatsLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+        suggestedFareLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         updateVehicleUI()
         updateSeatsUI()
 
         // Fare field: numbers only, max 5 digits (₹99,999)
         costTextField.delegate = self
         costTextField.keyboardType = .numberPad
-        // Enforce a taller, clearly visible field height
-        costTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
-        costTextField.layer.cornerRadius = 10
-        costTextField.layer.borderWidth = 1
-        costTextField.layer.borderColor = UIColor.systemGray4.cgColor
-        costTextField.backgroundColor = UIColor(white: 0.97, alpha: 1)
+        costTextField.applyRoundedField()
         costTextField.setLeftPaddingPoints(12)
     }
 
@@ -61,9 +64,9 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     // MARK: - Update UI for Vehicle Cards
     func updateVehicleUI() {
 
-        let selectedColor = UIColor.systemBlue
-        let selectedBG = UIColor.systemBlue.withAlphaComponent(0.08)
-        let normalBorder = UIColor.systemGray5.cgColor
+        let selectedColor = AppDesign.Color.primary
+        let selectedBG = AppDesign.Color.primary.withAlphaComponent(0.08)
+        let normalBorder = AppDesign.Color.border.cgColor
 
         if selectedVehicle == .car {
             animateSelection(carView)
@@ -158,8 +161,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
         let cost = Double(costTextField.text ?? "") ?? 0
         let enabled = seats > 0 && cost > 0
 
-        nextButton.isEnabled = enabled
-        nextButton.alpha = enabled ? 1 : 0.5
+        nextButton.setPrimaryCTAEnabled(enabled)
     }
 
     // MARK: - Actions

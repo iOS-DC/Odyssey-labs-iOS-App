@@ -30,11 +30,13 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         contentView.backgroundColor = .clear
         selectionStyle = .none
 
-        // Shadow on cardView (XIB already sets cornerRadius=20, masksToBounds=NO)
-        cardView.layer.shadowColor = UIColor.black.cgColor
-        cardView.layer.shadowOpacity = 0.10
-        cardView.layer.shadowOffset = CGSize(width: 0, height: 4)
-        cardView.layer.shadowRadius = 10
+        // Shadow on cardView (XIB already sets constraints; style comes from design tokens)
+        cardView.applyCardStyle(
+            corner: AppDesign.Radius.lg,
+            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+            shadowRadius: AppDesign.Shadow.smallCardRadius,
+            shadowOffset: AppDesign.Shadow.smallCardOffset
+        )
 
         // hostImageView appearance set in XIB
         hostImageView.clipsToBounds = true
@@ -81,8 +83,8 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         roleLabel.text = "  Passenger  "
         roleLabel.backgroundColor = .systemGray6
         roleLabel.textColor = .secondaryLabel
-        roleLabel.font = .systemFont(ofSize: 12, weight: .semibold)
-        roleLabel.layer.cornerRadius = 13
+        roleLabel.font = AppDesign.Typography.captionStrong
+        roleLabel.layer.cornerRadius = AppDesign.Radius.sm
         roleLabel.layer.masksToBounds = true
 
         // Request / booking status badge
@@ -128,8 +130,8 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             cancelTitle = "Cancel Request"
         }
 
-        requestStatusLabel.font = .systemFont(ofSize: 13, weight: .bold)
-        requestStatusLabel.layer.cornerRadius = 13
+        requestStatusLabel.font = AppDesign.Typography.captionStrong
+        requestStatusLabel.layer.cornerRadius = AppDesign.Radius.sm
         requestStatusLabel.layer.masksToBounds = true
         requestStatusLabel.textAlignment = .center
 
@@ -138,41 +140,17 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
 
         // MARK: - Button Styles (matching Hosting card)
 
-        // Message — tinted blue with chat icon
-        messageButton.backgroundColor = .clear
-        var msgConfig = UIButton.Configuration.tinted()
-        msgConfig.title = "Message"
-        msgConfig.image = UIImage(systemName: "message.fill")
-        msgConfig.imagePlacement = .leading
-        msgConfig.imagePadding = 4
-        msgConfig.baseBackgroundColor = .systemBlue
-        msgConfig.baseForegroundColor = .systemBlue
-        msgConfig.cornerStyle = .capsule
-        messageButton.configuration = msgConfig
+        // Message — secondary action
+        messageButton.applyTintActionStyle(title: "Message", imageSystemName: "message.fill")
 
         // ── Unread badge on Chat button
         applyUnreadBadge(to: messageButton, rideID: ride.id.uuidString)
 
-        // Call — tinted blue with phone icon
-        callButton.backgroundColor = .clear
-        var callConfig = UIButton.Configuration.tinted()
-        callConfig.title = "Call"
-        callConfig.image = UIImage(systemName: "phone.fill")
-        callConfig.imagePlacement = .leading
-        callConfig.imagePadding = 4
-        callConfig.baseBackgroundColor = .systemBlue
-        callConfig.baseForegroundColor = .systemBlue
-        callConfig.cornerStyle = .capsule
-        callButton.configuration = callConfig
+        // Call — secondary action
+        callButton.applyTintActionStyle(title: "Call", imageSystemName: "phone.fill")
 
-        // Cancel — tinted red (soft pink background)
-        cancelRequestButton.backgroundColor = .clear
-        var cancelConfig = UIButton.Configuration.tinted()
-        cancelConfig.title = cancelTitle
-        cancelConfig.baseBackgroundColor = .systemRed
-        cancelConfig.baseForegroundColor = .systemRed
-        cancelConfig.cornerStyle = .capsule
-        cancelRequestButton.configuration = cancelConfig
+        // Cancel — destructive secondary action
+        cancelRequestButton.applyTintActionStyle(title: cancelTitle, color: AppDesign.Color.destructive)
     }
 
     // MARK: - Helpers
@@ -208,9 +186,9 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let badge = UILabel()
         badge.tag = tag
         badge.text = count > 99 ? "99+" : "\(count)"
-        badge.font = .boldSystemFont(ofSize: 10)
+        badge.font = AppDesign.Typography.captionStrong.withSize(10)
         badge.textColor = .white
-        badge.backgroundColor = .systemRed
+        badge.backgroundColor = AppDesign.Color.destructive
         badge.textAlignment = .center
         badge.layer.cornerRadius = 9
         badge.layer.masksToBounds = true

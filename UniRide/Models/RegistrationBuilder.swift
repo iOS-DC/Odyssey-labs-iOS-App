@@ -63,10 +63,6 @@ final class RegistrationBuilder {
             guard let _ = year else {
                 throw NSError(domain: "Registration", code: 400, userInfo: [NSLocalizedDescriptionKey: "Year is required for students."])
             }
-        } else if role == .faculty {
-            guard let empID = employeeID, !empID.isEmpty else {
-                throw NSError(domain: "Registration", code: 400, userInfo: [NSLocalizedDescriptionKey: "Employee ID is required for faculty."])
-            }
         }
 
         return UserProfile(

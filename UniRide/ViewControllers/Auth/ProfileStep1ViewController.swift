@@ -31,14 +31,6 @@ final class ProfileStep1ViewController: UIViewController {
     // Set by RoleSelectionViewController
     var lockedRole: UserRole?
 
-    private let employeeIDTextField: UITextField = {
-        let tf = UITextField()
-        tf.placeholder = "Employee ID"
-        tf.translatesAutoresizingMaskIntoConstraints = false
-        tf.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        return tf
-    }()
-
     private var activeRole: UserRole {
         if let lockedRole { return lockedRole }
         if let builderRole = RegistrationBuilder.shared.role { return builderRole }
@@ -60,6 +52,11 @@ final class ProfileStep1ViewController: UIViewController {
         validateContinueAvailability()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        animateOnboardingEntrance([headerTitleLabel, headerSubtitleLabel, containerCard, continueButton])
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         containerCard.layer.shadowPath = UIBezierPath(
@@ -70,26 +67,22 @@ final class ProfileStep1ViewController: UIViewController {
 
     // MARK: - UI Setup
     private func setupUI() {
-        containerCard.layer.masksToBounds = false
-        containerCard.layer.shadowColor = UIColor.black.cgColor
-        containerCard.layer.shadowOpacity = 0.1
-        containerCard.layer.shadowRadius = 8
-        containerCard.layer.shadowOffset = CGSize(width: 0, height: 4)
+        containerCard.applyCardStyle()
 
         fullNameTextField.applyRoundedField()
         phoneTextField.keyboardType = .numberPad
         phoneTextField.applyRoundedField()
-        employeeIDTextField.applyRoundedField()
 
         otpTextField.keyboardType = .numberPad
         otpTextField.applyRoundedField()
 
         sendOTPButton.applyOutlineButton()
-        continueButton.applyPrimaryButton(color: .systemBlue)
+        dropDownButton.applyOutlineButton()
+        yearDropDownButton.applyOutlineButton()
+        continueButton.applyPrimaryButton(color: AppDesign.Color.primary)
         applyPrimaryOnboardingCTAStyle(continueButton)
 
-        continueButton.isEnabled = false
-        continueButton.alpha = 0.5
+        continueButton.setPrimaryCTAEnabled(false)
 
         fullNameTextField.addTarget(self, action: #selector(formDidChange), for: .editingChanged)
         phoneTextField.addTarget(self, action: #selector(formDidChange), for: .editingChanged)
@@ -101,13 +94,9 @@ final class ProfileStep1ViewController: UIViewController {
         otpTextField.alpha = 0
         otpTextField.isEnabled = false
         otpStatusLabel.isHidden = true
-        otpStatusLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        otpStatusLabel.font = AppDesign.Typography.caption
 
-        if !stackView.arrangedSubviews.contains(employeeIDTextField),
-           let phoneIndex = stackView.arrangedSubviews.firstIndex(of: phoneTextField) {
-            stackView.insertArrangedSubview(employeeIDTextField, at: phoneIndex)
-        }
-        employeeIDTextField.addTarget(self, action: #selector(formDidChange), for: .editingChanged)
+        configureAccessibility()
     }
 
     private func updateFormForRole() {
@@ -122,7 +111,6 @@ final class ProfileStep1ViewController: UIViewController {
         
         yearLabel.isHidden = !isStudent
         yearDropDownButton.isHidden = !isStudent
-        employeeIDTextField.isHidden = true // Hidden for both student and faculty
     }
 
     @objc private func formDidChange() {
@@ -173,7 +161,7 @@ final class ProfileStep1ViewController: UIViewController {
     @IBAction func continuePressed(_ sender: UIButton) {
         let phone = (phoneTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard phone.count >= 10 else {
-            showOTPStatus("Enter a valid phone number", color: .systemRed)
+            showOTPStatus("Enter a valid phone number", color: AppDesign.Color.destructive)
             return
         }
 
@@ -186,21 +174,19 @@ final class ProfileStep1ViewController: UIViewController {
         if role == .student {
             RegistrationBuilder.shared.courseName = dropDownButton.title(for: .normal)
             RegistrationBuilder.shared.year = year
-        } else {
-            RegistrationBuilder.shared.employeeID = employeeIDTextField.text
         }
         RegistrationBuilder.shared.phone = phone
 
         do {
             try UserDataModel.shared.startPhoneVerification(phone: phone)
-            showOTPStatus("OTP sent. Verify phone on next step.", color: .systemGreen)
+            showOTPStatus("OTP sent. Verify phone on next step.", color: AppDesign.Color.success)
 
             let vc = storyboard?.instantiateViewController(withIdentifier: "OTPViewController") as! OTPViewController
             vc.verificationMode = .phone
             vc.phoneNumber = phone
             navigationController?.pushViewController(vc, animated: true)
         } catch {
-            showOTPStatus(error.localizedDescription, color: .systemRed)
+            showOTPStatus(error.localizedDescription, color: AppDesign.Color.destructive)
         }
     }
 
@@ -221,14 +207,12 @@ final class ProfileStep1ViewController: UIViewController {
         if activeRole == .student {
             let hasYear = Int(yearDropDownButton.title(for: .normal) ?? "") != nil
             let enabled = !name.isEmpty && hasDepartment && hasYear && hasPhone
-            continueButton.isEnabled = enabled
-            continueButton.alpha = enabled ? 1.0 : 0.5
+            continueButton.setPrimaryCTAEnabled(enabled)
             return
         }
 
         let enabled = !name.isEmpty && hasDepartment && hasPhone
-        continueButton.isEnabled = enabled
-        continueButton.alpha = enabled ? 1.0 : 0.5
+        continueButton.setPrimaryCTAEnabled(enabled)
     }
 
     private func preloadSavedState() {
@@ -248,8 +232,6 @@ final class ProfileStep1ViewController: UIViewController {
             if let year = RegistrationBuilder.shared.year {
                 yearDropDownButton.setTitle("\(year)", for: .normal)
             }
-        } else if let eid = RegistrationBuilder.shared.employeeID, !eid.isEmpty {
-            employeeIDTextField.text = eid
         }
         
         // Next check existing user data
@@ -272,9 +254,19 @@ final class ProfileStep1ViewController: UIViewController {
                         yearDropDownButton.setTitle("\(year)", for: .normal)
                     }
                 }
-            } else if employeeIDTextField.text?.isEmpty ?? true, let eid = user.employeeID, !eid.isEmpty {
-                employeeIDTextField.text = eid
             }
         }
+    }
+
+    private func configureAccessibility() {
+        fullNameTextField.accessibilityLabel = "Full name"
+        dropDownButton.accessibilityLabel = "Course or department"
+        dropDownButton.accessibilityHint = "Select your course or department"
+        yearDropDownButton.accessibilityLabel = "Year"
+        yearDropDownButton.accessibilityHint = "Select your academic year"
+        phoneTextField.accessibilityLabel = "Phone number"
+        phoneTextField.accessibilityHint = "Enter a 10 digit mobile number"
+        continueButton.accessibilityLabel = "Continue"
+        continueButton.accessibilityHint = "Proceed to phone verification"
     }
 }

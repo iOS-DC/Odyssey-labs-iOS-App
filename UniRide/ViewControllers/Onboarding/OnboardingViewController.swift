@@ -14,9 +14,14 @@ final class OnboardingViewController: UIViewController {
         configureWelcomeUI()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        animateOnboardingEntrance([imageView, titleLabel, subtitleLabel, infoStack, nextButton])
+    }
+
     private func configureWelcomeUI() {
         navigationItem.hidesBackButton = true
-        view.backgroundColor = UIColor(red: 0.13, green: 0.46, blue: 0.97, alpha: 1)
+        view.backgroundColor = AppDesign.Color.primary
 
         pageControl.isHidden = true
 
@@ -24,29 +29,29 @@ final class OnboardingViewController: UIViewController {
         imageView.tintColor = .white
         imageView.contentMode = .scaleAspectFit
         imageView.backgroundColor = UIColor.white.withAlphaComponent(0.16)
-        imageView.layer.cornerRadius = 22
+        imageView.layer.cornerRadius = AppDesign.Radius.lg
         imageView.clipsToBounds = true
 
         titleLabel.text = "UniRide"
-        titleLabel.font = .systemFont(ofSize: 36, weight: .bold)
+        titleLabel.font = AppDesign.Typography.h1
         titleLabel.textColor = .white
         titleLabel.textAlignment = .center
 
         subtitleLabel.text = "Your Campus Carpool Community\n\n• Connect with Peers\nShare rides with students and faculty from your university\n\n• Save Money & Environment\nSplit costs and reduce your carbon footprint together"
         subtitleLabel.numberOfLines = 2
         subtitleLabel.textColor = UIColor.white.withAlphaComponent(0.95)
-        subtitleLabel.font = .systemFont(ofSize: 17, weight: .medium)
+        subtitleLabel.font = AppDesign.Typography.body
         subtitleLabel.textAlignment = .center
         buildInfoCards()
 
         var ctaConfig = UIButton.Configuration.filled()
         ctaConfig.title = "Get Started"
         ctaConfig.baseBackgroundColor = .white
-        ctaConfig.baseForegroundColor = UIColor(red: 0.13, green: 0.46, blue: 0.97, alpha: 1)
+        ctaConfig.baseForegroundColor = AppDesign.Color.primary
         ctaConfig.cornerStyle = .large
         ctaConfig.attributedTitle = AttributedString(
             "Get Started",
-            attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: 20, weight: .bold)])
+            attributes: AttributeContainer([.font: AppDesign.Typography.title])
         )
         nextButton.configuration = ctaConfig
         nextButton.isEnabled = true
@@ -83,7 +88,7 @@ final class OnboardingViewController: UIViewController {
         let card = UIView()
         card.translatesAutoresizingMaskIntoConstraints = false
         card.backgroundColor = UIColor.white.withAlphaComponent(0.16)
-        card.layer.cornerRadius = 18
+        card.layer.cornerRadius = AppDesign.Radius.md
 
         let iconView = UIImageView(image: UIImage(systemName: icon))
         iconView.translatesAutoresizingMaskIntoConstraints = false
@@ -94,13 +99,13 @@ final class OnboardingViewController: UIViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = title
         titleLabel.textColor = .white
-        titleLabel.font = .systemFont(ofSize: 18, weight: .semibold)
+        titleLabel.font = AppDesign.Typography.bodyStrong
 
         let subtitleLabel = UILabel()
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         subtitleLabel.text = subtitle
         subtitleLabel.textColor = UIColor.white.withAlphaComponent(0.9)
-        subtitleLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        subtitleLabel.font = AppDesign.Typography.subheadline
         subtitleLabel.numberOfLines = 2
 
         card.addSubview(iconView)

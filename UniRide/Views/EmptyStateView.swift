@@ -60,16 +60,16 @@ final class EmptyStateView: UIView {
         iconView.contentMode = .scaleAspectFit
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
-        titleLabel.font = .systemFont(ofSize: 18, weight: .semibold)
+        titleLabel.font = AppDesign.Typography.bodyStrong
         titleLabel.textColor = .label.withAlphaComponent(0.6)
         titleLabel.textAlignment = .center
 
-        bodyLabel.font = .systemFont(ofSize: 14)
+        bodyLabel.font = AppDesign.Typography.subheadline
         bodyLabel.textColor = .tertiaryLabel
         bodyLabel.textAlignment = .center
         bodyLabel.numberOfLines = 0
 
-        actionButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        actionButton.titleLabel?.font = AppDesign.Typography.subheadline
         actionButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
 
         stack.axis      = .vertical

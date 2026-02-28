@@ -12,10 +12,12 @@ class HomeViewController: UIViewController {
 
     @IBOutlet weak var greetingsLabel: UILabel!
     @IBOutlet weak var homeTableView: UITableView!
-   
+    @IBOutlet weak var offerButton: UIButton!
+    
     @IBOutlet weak var requestButton: UIButton!
     var upcomingRide: RideDataModel.MyTrip?
     var nearbyRides: [Ride] = []
+    private var didAnimateListOnFirstShow = false
 
     var events: [EventItem] = []
 
@@ -24,10 +26,9 @@ class HomeViewController: UIViewController {
 
             let name = UserDataModel.shared.getCurrentUser()?.fullName ?? "User"
             greetingsLabel.text = "Hi, \(name.split(separator: " ").first ?? "User")"
-            
+
             homeTableView.backgroundColor = UIColor(named: "Color")
-//            requestButton.layer.borderWidth = 2
-//            requestButton.layer.borderColor = UIColor.systemBlue.cgColor
+            configureQuickActions()
             setupTable()
 
             // Load Top Events from the same source as Community
@@ -41,6 +42,11 @@ class HomeViewController: UIViewController {
                 name: .LocationServiceDidUpdate,
                 object: nil
             )
+    }
+    
+    private func configureQuickActions() {
+        requestButton.applyProminentPrimaryCTA(title: "Request Ride")
+        offerButton.applyProminentSecondaryCTA(title: "Offer Ride")
     }
     
     private func openMyRideTab() {
@@ -70,6 +76,7 @@ class HomeViewController: UIViewController {
         )
 
         let createdRequest = RideDataModel.shared.createJoinRequest(request)
+        AppHaptics.success()
 
         NotificationCenter.default.post(
             name: .rideRequestsUpdated,
@@ -124,6 +131,14 @@ class HomeViewController: UIViewController {
         homeTableView.reloadData()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !didAnimateListOnFirstShow else { return }
+        didAnimateListOnFirstShow = true
+        homeTableView.layoutIfNeeded()
+        homeTableView.animateVisibleCellsStaggered()
+    }
+
     // Called automatically whenever user moves
     @objc func handleLiveLocationUpdate(_ note: Notification) {
         guard let loc = note.userInfo?["location"] as? CLLocation else { return }
@@ -174,6 +189,8 @@ class HomeViewController: UIViewController {
             homeTableView.delegate = self
             homeTableView.dataSource = self
             homeTableView.separatorStyle = .none
+            homeTableView.sectionHeaderTopPadding = 0
+            homeTableView.tableHeaderView = UIView(frame: .zero)
 
             homeTableView.register(
                 UINib(nibName: "RideTableViewCell", bundle: nil),
@@ -189,6 +206,7 @@ class HomeViewController: UIViewController {
                 UINib(nibName: "UpcomingTableHomeViewCell", bundle: nil),
                 forCellReuseIdentifier: "UpcomingRideCell"
             )
+            homeTableView.contentInset = UIEdgeInsets(top: AppDesign.Spacing.xs, left: 0, bottom: AppDesign.Spacing.lg, right: 0)
         }
 
         @IBAction func offerRideTapped(_ sender: UIButton) {
@@ -275,7 +293,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                         systemImage: "car.fill",
                         title: "No nearby rides",
                         body: "No rides found near your location right now.\nTry offering a ride!",
-                        tintColor: .systemGreen
+                        tintColor: AppDesign.Color.primary
                     )
                     esv.translatesAutoresizingMaskIntoConstraints = false
                     cell.contentView.addSubview(esv)
@@ -327,7 +345,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                     systemImage: "car.fill",
                     title: "No nearby rides",
                     body: "No rides found near your location right now.\nTry offering a ride!",
-                    tintColor: .systemGreen
+                    tintColor: AppDesign.Color.primary
                 )
                 esv.translatesAutoresizingMaskIntoConstraints = false
                 cell.contentView.addSubview(esv)
@@ -420,16 +438,26 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-
+        let container = UIView()
+        container.backgroundColor = tableView.backgroundColor ?? view.backgroundColor
+        
         let label = UILabel()
-        label.font = UIFont.boldSystemFont(ofSize: 22)
-        label.textColor = .black
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.backgroundColor = .clear
+        label.applyTextStyle(AppDesign.Typography.title)
         label.text = self.tableView(tableView, titleForHeaderInSection: section)
-        return label
+        
+        container.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: AppDesign.Spacing.md),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -AppDesign.Spacing.md),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -AppDesign.Spacing.xs)
+        ])
+        return container
     }
    
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 50
+        return 56
     }
 }

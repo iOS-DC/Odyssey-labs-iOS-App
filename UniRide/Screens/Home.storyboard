@@ -91,6 +91,7 @@
                     <connections>
                         <outlet property="greetingsLabel" destination="bhF-3a-zUs" id="naM-V5-kFz"/>
                         <outlet property="homeTableView" destination="exj-Zl-8Yn" id="9zA-HD-7lF"/>
+                        <outlet property="offerButton" destination="tnd-rS-XM5" id="Yzv-fh-9Vb"/>
                         <outlet property="requestButton" destination="MNZ-fN-t70" id="Rgn-4E-VuK"/>
                     </connections>
                 </viewController>

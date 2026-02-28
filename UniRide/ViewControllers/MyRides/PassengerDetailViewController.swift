@@ -38,7 +38,7 @@ final class PassengerDetailViewController: UIViewController {
         // ── Title ────────────────────────────────────────────────────
         let titleLabel = UILabel()
         titleLabel.text = "Passenger Details"
-        titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        titleLabel.font = AppDesign.Typography.bodyStrong
         titleLabel.textAlignment = .center
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(titleLabel)
@@ -56,7 +56,7 @@ final class PassengerDetailViewController: UIViewController {
         let initial = String(passenger.fullName.prefix(1)).uppercased()
         let initLabel = UILabel(frame: CGRect(x: 0, y: 0, width: avatarSize, height: avatarSize))
         initLabel.text = initial
-        initLabel.font = .systemFont(ofSize: 34, weight: .semibold)
+        initLabel.font = AppDesign.Typography.h1
         initLabel.textColor = .systemGray
         initLabel.textAlignment = .center
         avatarView.addSubview(initLabel)
@@ -76,7 +76,7 @@ final class PassengerDetailViewController: UIViewController {
         // ── Name ─────────────────────────────────────────────────────
         let nameLabel = UILabel()
         nameLabel.text = passenger.fullName
-        nameLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        nameLabel.font = AppDesign.Typography.title
         nameLabel.textAlignment = .center
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(nameLabel)
@@ -84,7 +84,7 @@ final class PassengerDetailViewController: UIViewController {
         // ── Role tag ─────────────────────────────────────────────────
         let roleLabel = UILabel()
         roleLabel.text = "Passenger"
-        roleLabel.font = .systemFont(ofSize: 14)
+        roleLabel.font = AppDesign.Typography.subheadline
         roleLabel.textColor = .secondaryLabel
         roleLabel.textAlignment = .center
         roleLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -93,7 +93,7 @@ final class PassengerDetailViewController: UIViewController {
         // ── Info stack ───────────────────────────────────────────────
         let infoStack = UIStackView()
         infoStack.axis = .vertical
-        infoStack.spacing = 8
+        infoStack.spacing = AppDesign.Spacing.xs
         infoStack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(infoStack)
 
@@ -109,7 +109,7 @@ final class PassengerDetailViewController: UIViewController {
         ] {
             let row = UILabel()
             row.text = "\(key): \(value)"
-            row.font = .systemFont(ofSize: 15)
+            row.font = AppDesign.Typography.subheadline
             row.textColor = .label
             row.numberOfLines = 0
             infoStack.addArrangedSubview(row)
@@ -118,24 +118,24 @@ final class PassengerDetailViewController: UIViewController {
         // ── Message button ───────────────────────────────────────────
         let msgBtn = makeActionButton(
             title: "Message \(passenger.fullName.components(separatedBy: " ").first ?? passenger.fullName)",
-            color: .systemBlue
+            color: AppDesign.Color.primary
         )
         msgBtn.addTarget(self, action: #selector(messageTapped), for: .touchUpInside)
         view.addSubview(msgBtn)
 
         // ── Remove button ────────────────────────────────────────────
-        let removeBtn = makeActionButton(title: "Remove Passenger", color: .systemRed)
+        let removeBtn = makeActionButton(title: "Remove Passenger", color: AppDesign.Color.destructive)
         removeBtn.addTarget(self, action: #selector(removeTapped), for: .touchUpInside)
         view.addSubview(removeBtn)
 
         // ── Layout ───────────────────────────────────────────────────
         NSLayoutConstraint.activate([
             closeBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            closeBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            closeBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
             closeBtn.widthAnchor.constraint(equalToConstant: 32),
             closeBtn.heightAnchor.constraint(equalToConstant: 32),
 
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: AppDesign.Spacing.lg),
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 
             avatarView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
@@ -144,25 +144,25 @@ final class PassengerDetailViewController: UIViewController {
             avatarView.heightAnchor.constraint(equalToConstant: avatarSize),
 
             nameLabel.topAnchor.constraint(equalTo: avatarView.bottomAnchor, constant: 14),
-            nameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            nameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            nameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
+            nameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
 
             roleLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
             roleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 
             infoStack.topAnchor.constraint(equalTo: roleLabel.bottomAnchor, constant: 20),
-            infoStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            infoStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            infoStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
+            infoStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
 
             msgBtn.topAnchor.constraint(equalTo: infoStack.bottomAnchor, constant: 28),
-            msgBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            msgBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            msgBtn.heightAnchor.constraint(equalToConstant: 52),
+            msgBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
+            msgBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
+            msgBtn.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight),
 
             removeBtn.topAnchor.constraint(equalTo: msgBtn.bottomAnchor, constant: 12),
-            removeBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            removeBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            removeBtn.heightAnchor.constraint(equalToConstant: 52),
+            removeBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
+            removeBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
+            removeBtn.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight),
         ])
     }
 
@@ -173,7 +173,7 @@ final class PassengerDetailViewController: UIViewController {
         config.baseForegroundColor = .white
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
             var a = attrs
-            a.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+            a.font = AppDesign.Typography.action
             return a
         }
         config.cornerStyle = .capsule

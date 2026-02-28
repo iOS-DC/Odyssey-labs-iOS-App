@@ -26,20 +26,20 @@ class ProfileStep2ViewController: UIViewController {
         let tf = UITextField()
         tf.placeholder = "Model"
         tf.translatesAutoresizingMaskIntoConstraints = false
-        tf.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        tf.heightAnchor.constraint(equalToConstant: AppDesign.Size.fieldHeight).isActive = true
         return tf
     }()
     private let plateTextField: UITextField = {
         let tf = UITextField()
         tf.placeholder = "Plate Number"
         tf.translatesAutoresizingMaskIntoConstraints = false
-        tf.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        tf.heightAnchor.constraint(equalToConstant: AppDesign.Size.fieldHeight).isActive = true
         return tf
     }()
     private let seatsButton: UIButton = {
         let b = UIButton(type: .system)
         b.translatesAutoresizingMaskIntoConstraints = false
-        b.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        b.heightAnchor.constraint(equalToConstant: AppDesign.Size.fieldHeight).isActive = true
         return b
     }()
 
@@ -49,13 +49,13 @@ class ProfileStep2ViewController: UIViewController {
         applyOnboardingChrome(step: 6, total: 7)
 
         vehicleSectionStack.isHidden = true
-        continueButton.isEnabled = false
-        continueButton.alpha = 0.5
+        continueButton.setPrimaryCTAEnabled(false)
         containerCard.applyCardStyle()
         setupVehicleDropdown()
         yesVehicleButton.applyOutlineButton()
         noVehicleButton.applyOutlineButton()
-        continueButton.applyPrimaryButton(color: .systemBlue)
+        vehicleTypeDropdown.applyOutlineButton()
+        continueButton.applyPrimaryButton(color: AppDesign.Color.primary)
         applyPrimaryOnboardingCTAStyle(continueButton)
         modelTextField.applyRoundedField()
         plateTextField.applyRoundedField()
@@ -64,7 +64,13 @@ class ProfileStep2ViewController: UIViewController {
         modelTextField.addTarget(self, action: #selector(vehicleDetailChanged), for: .editingChanged)
         plateTextField.addTarget(self, action: #selector(vehicleDetailChanged), for: .editingChanged)
         setupVehicleDetailFields()
+        configureAccessibility()
 
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        animateOnboardingEntrance([containerCard, yesVehicleButton, noVehicleButton, continueButton])
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -89,11 +95,13 @@ class ProfileStep2ViewController: UIViewController {
         }
     
     @IBAction func yesVehicleTapped(_ sender: UIButton) {
+        AppHaptics.selection()
         selectedHasVehicle = true
         applyVehicleSelectionUI(hasVehicle: true)
         validateContinueButton()
     }
     @IBAction func noVehicleTapped(_ sender: UIButton) {
+        AppHaptics.selection()
         selectedHasVehicle = false
         selectedVehicleType = nil
         selectedSeatCapacity = 0
@@ -102,14 +110,12 @@ class ProfileStep2ViewController: UIViewController {
     }
     func validateContinueButton() {
         if selectedHasVehicle == nil {
-            continueButton.isEnabled = false
-            continueButton.alpha = 0.5
+            continueButton.setPrimaryCTAEnabled(false)
             return
         }
 
         if selectedHasVehicle == true && selectedVehicleType == nil {
-            continueButton.isEnabled = false
-            continueButton.alpha = 0.5
+            continueButton.setPrimaryCTAEnabled(false)
             return
         }
         if selectedHasVehicle == true {
@@ -117,13 +123,11 @@ class ProfileStep2ViewController: UIViewController {
             let hasPlate = !(plateTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             let hasSeats = selectedSeatCapacity > 0
             let enabled = hasModel && hasPlate && hasSeats
-            continueButton.isEnabled = enabled
-            continueButton.alpha = enabled ? 1.0 : 0.5
+            continueButton.setPrimaryCTAEnabled(enabled)
             return
         }
 
-        continueButton.isEnabled = true
-        continueButton.alpha = 1.0
+        continueButton.setPrimaryCTAEnabled(true)
     }
    	 
     @IBAction func continuePressed(_ sender: UIButton) {
@@ -376,19 +380,23 @@ class ProfileStep2ViewController: UIViewController {
 
     private func applyVehicleSelectionUI(hasVehicle: Bool) {
         if hasVehicle {
-            yesVehicleButton.layer.borderColor = UIColor.systemBlue.cgColor
-            yesVehicleButton.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
-            noVehicleButton.layer.borderColor = UIColor.systemGray4.cgColor
+            yesVehicleButton.layer.borderColor = AppDesign.Color.primary.cgColor
+            yesVehicleButton.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.1)
+            noVehicleButton.layer.borderColor = AppDesign.Color.border.cgColor
             noVehicleButton.backgroundColor = .clear
+            yesVehicleButton.accessibilityTraits.insert(.selected)
+            noVehicleButton.accessibilityTraits.remove(.selected)
             vehicleSectionStack.isHidden = false
             modelTextField.isHidden = false
             plateTextField.isHidden = false
             seatsButton.isHidden = false
         } else {
-            noVehicleButton.layer.borderColor = UIColor.systemBlue.cgColor
-            noVehicleButton.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
-            yesVehicleButton.layer.borderColor = UIColor.systemGray4.cgColor
+            noVehicleButton.layer.borderColor = AppDesign.Color.primary.cgColor
+            noVehicleButton.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.1)
+            yesVehicleButton.layer.borderColor = AppDesign.Color.border.cgColor
             yesVehicleButton.backgroundColor = .clear
+            noVehicleButton.accessibilityTraits.insert(.selected)
+            yesVehicleButton.accessibilityTraits.remove(.selected)
             vehicleSectionStack.isHidden = true
             modelTextField.isHidden = true
             plateTextField.isHidden = true
@@ -428,6 +436,17 @@ class ProfileStep2ViewController: UIViewController {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
+    }
+
+    private func configureAccessibility() {
+        yesVehicleButton.accessibilityLabel = "Yes, I have a vehicle"
+        noVehicleButton.accessibilityLabel = "No, I do not have a vehicle"
+        vehicleTypeDropdown.accessibilityLabel = "Vehicle type"
+        modelTextField.accessibilityLabel = "Vehicle model"
+        plateTextField.accessibilityLabel = "Vehicle plate number"
+        seatsButton.accessibilityLabel = "Seat capacity"
+        continueButton.accessibilityLabel = "Continue"
+        continueButton.accessibilityHint = "Proceed to set home location"
     }
 
     

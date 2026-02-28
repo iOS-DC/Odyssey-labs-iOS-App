@@ -43,12 +43,18 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
         applyStyles()
         setupLocationSummary()
         refreshSummary()
+        configureAccessibility()
         
         setupAutocomplete()
         
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        animateOnboardingEntrance([containerCard, verificationCard, completeSetupButton])
     }
     
     @objc private func dismissKeyboard() {
@@ -59,26 +65,27 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
     private func applyStyles() {
         containerCard.applyCardStyle()
         verificationCard.applySmallCard()
+        homeAddressTextField.applyRoundedField()
 
         // Using standard text field visually, but maybe light outline depending on current app style.
         
-        completeSetupButton.applyPrimaryButton()
+        completeSetupButton.applyPrimaryButton(color: AppDesign.Color.primary)
         applyPrimaryOnboardingCTAStyle(completeSetupButton)
         completeSetupButton.setTitle(isEditingMode ? "Save Location" : "Complete Setup", for: .normal)
     }
 
     private func setupLocationSummary() {
-        locationsSummaryLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        locationsSummaryLabel.font = AppDesign.Typography.subheadline
         locationsSummaryLabel.textColor = .secondaryLabel
         locationsSummaryLabel.numberOfLines = 0
         locationsSummaryLabel.translatesAutoresizingMaskIntoConstraints = false
 
         verificationCard.addSubview(locationsSummaryLabel)
         NSLayoutConstraint.activate([
-            locationsSummaryLabel.topAnchor.constraint(equalTo: verificationCard.topAnchor, constant: 12),
-            locationsSummaryLabel.leadingAnchor.constraint(equalTo: verificationCard.leadingAnchor, constant: 12),
-            locationsSummaryLabel.trailingAnchor.constraint(equalTo: verificationCard.trailingAnchor, constant: -12),
-            locationsSummaryLabel.bottomAnchor.constraint(equalTo: verificationCard.bottomAnchor, constant: -12)
+            locationsSummaryLabel.topAnchor.constraint(equalTo: verificationCard.topAnchor, constant: AppDesign.Spacing.sm),
+            locationsSummaryLabel.leadingAnchor.constraint(equalTo: verificationCard.leadingAnchor, constant: AppDesign.Spacing.sm),
+            locationsSummaryLabel.trailingAnchor.constraint(equalTo: verificationCard.trailingAnchor, constant: -AppDesign.Spacing.sm),
+            locationsSummaryLabel.bottomAnchor.constraint(equalTo: verificationCard.bottomAnchor, constant: -AppDesign.Spacing.sm)
         ])
     }
 
@@ -87,12 +94,10 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
             let text = (home.address ?? "Location").trimmingCharacters(in: .whitespacesAndNewlines)
             locationsSummaryLabel.text = "Home:\n\(text)"
             homeAddressTextField.text = text
-            completeSetupButton.isEnabled = true
-            completeSetupButton.alpha = 1.0
+            completeSetupButton.setPrimaryCTAEnabled(true)
         } else {
             locationsSummaryLabel.text = "No home location set.\nPlease search and select your primary route from the suggestions above."
-            completeSetupButton.isEnabled = false
-            completeSetupButton.alpha = 0.5
+            completeSetupButton.setPrimaryCTAEnabled(false)
         }
     }
     
@@ -104,7 +109,7 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
         // Add Current Location Button
         let locationButton = UIButton(type: .system)
         locationButton.setImage(UIImage(systemName: "location.fill"), for: .normal)
-        locationButton.tintColor = .systemBlue
+        locationButton.tintColor = AppDesign.Color.primary
         locationButton.frame = CGRect(x: 0, y: 0, width: 40, height: 40)
         locationButton.addTarget(self, action: #selector(useCurrentLocationTapped), for: .touchUpInside)
         homeAddressTextField.rightView = locationButton
@@ -114,9 +119,7 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
         suggestionsTable.delegate = self
         suggestionsTable.dataSource = self
         suggestionsTable.isHidden = true
-        suggestionsTable.layer.cornerRadius = 8
-        suggestionsTable.layer.borderWidth = 1
-        suggestionsTable.layer.borderColor = UIColor.systemGray5.cgColor
+        suggestionsTable.applySmallCard()
         suggestionsTable.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         
         searchCompleter.resultTypes = [.address, .pointOfInterest]
@@ -148,8 +151,7 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
 
     @objc private func textFieldDidChange(_ textField: UITextField) {
         homeLocation = nil
-        completeSetupButton.isEnabled = false
-        completeSetupButton.alpha = 0.5
+        completeSetupButton.setPrimaryCTAEnabled(false)
         
         let query = textField.text ?? ""
         if query.isEmpty {
@@ -164,7 +166,7 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
         let frameInView = homeAddressTextField.convert(homeAddressTextField.bounds, to: self.view)
         suggestionsTable.frame = CGRect(
             x: frameInView.minX,
-            y: frameInView.maxY + 4,
+            y: frameInView.maxY + AppDesign.Spacing.xxs,
             width: frameInView.width,
             height: 220
         )
@@ -241,6 +243,7 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
             let finalUser = try RegistrationBuilder.shared.buildUser()
             UserDataModel.shared.registerNewUser(profile: finalUser)
             RegistrationBuilder.shared.reset()
+            AppHaptics.success()
             goToTabBar()
         } catch {
             showAlert("Missing Information", error.localizedDescription)
@@ -256,5 +259,12 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
     private func goToTabBar() {
         let tabBar = storyboard?.instantiateViewController(identifier: "MainTabBarController") as! UITabBarController
         navigationController?.setViewControllers([tabBar], animated: true)
+    }
+
+    private func configureAccessibility() {
+        homeAddressTextField.accessibilityLabel = "Home address"
+        homeAddressTextField.accessibilityHint = "Search and select your home location"
+        completeSetupButton.accessibilityLabel = isEditingMode ? "Save location" : "Complete setup"
+        completeSetupButton.accessibilityHint = isEditingMode ? "Save your updated home location" : "Finish account setup and go to home"
     }
 }

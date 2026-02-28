@@ -57,7 +57,16 @@ class ReviewRideViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         cardView.applyCardStyle()
-        offerButton.applyPrimaryButton()
+        let offerTitle = offerButton.currentTitle ?? "Offer Ride"
+        offerButton.applyProminentPrimaryCTA(title: offerTitle, corner: AppDesign.Radius.md)
+        fromLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 0)
+        toLabel.applyTextStyle(AppDesign.Typography.body, color: .secondaryLabel, lines: 0)
+        dateLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        timeLabel.applyTextStyle(AppDesign.Typography.body)
+        vehicleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        seatsLabel.applyTextStyle(AppDesign.Typography.body)
+        fareLabel.applyTextStyle(AppDesign.Typography.body, lines: 0)
+        totalLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 0)
         
         fillSummary()
     }
@@ -128,6 +137,7 @@ class ReviewRideViewController: UIViewController {
 
          // Notify observers so lists refresh immediately
          NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+         AppHaptics.success()
 
          // Debug logs to confirm times present
          if let rt = ride.selectedRoute {

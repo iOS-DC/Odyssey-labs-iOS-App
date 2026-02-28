@@ -182,9 +182,8 @@ final class UserDataModel {
         let hasName = !user.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasRole = user.role != nil
         let hasPhone = !(user.phone ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasEmployeeID = user.role != .faculty || !((user.employeeID ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         let hasHome = !(getHomeLocations(for: user.id).isEmpty)
-        return hasName && hasRole && hasPhone && hasEmployeeID && hasHome
+        return hasName && hasRole && hasPhone && hasHome
     }
 
     func suggestedCommutePrefill() -> (from: LocationPoint, to: LocationPoint)? {
@@ -223,6 +222,21 @@ final class UserDataModel {
         print("DEBUG Email OTP for \(email): \(otp)")
     }
 
+    func startEmailVerificationAsync(email raw: String) async throws {
+        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
+            throw NSError(domain: "Login", code: 401,
+                          userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
+        }
+
+        if BackendConfig.useRealBackend {
+            try await AuthAPI.shared.startEmailVerification(email: email)
+            return
+        }
+
+        try startEmailVerification(email: email)
+    }
+
     // Function Verifying The otp. Called in the otp view controller
     func verifyEmailOTP(email: String, code: String) throws -> UserProfile? {
         guard let sent = emailOTPs[email.lowercased()] else {
@@ -247,6 +261,28 @@ final class UserDataModel {
         return nil
     }
 
+    func verifyEmailOTPAsync(email rawEmail: String, code: String) async throws -> UserProfile? {
+        let email = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        if BackendConfig.useRealBackend {
+            let response = try await AuthAPI.shared.verifyEmailOTP(email: email, code: code)
+            guard response.existingUser else { return nil }
+
+            if let remote = response.user {
+                let remoteProfile = mapRemoteUserToProfile(remote, fallbackEmail: email)
+                return upsertAndLogin(remoteProfile)
+            }
+
+            if let existing = users.first(where: { $0.email == email }) {
+                currentUserID = existing.id
+                return existing
+            }
+            return nil
+        }
+
+        return try verifyEmailOTP(email: email, code: code)
+    }
+
     func registerNewUser(profile: UserProfile) {
         users.append(profile)
         currentUserID = profile.id
@@ -264,6 +300,21 @@ final class UserDataModel {
         let otp = String(Int.random(in: 100000...999999))
         phoneOTPs[phone] = otp
         print("DEBUG Phone OTP for \(phone): \(otp)")
+    }
+
+    func startPhoneVerificationAsync(phone raw: String) async throws {
+        let phone = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard phone.count >= 10 else {
+            throw NSError(domain: "Phone", code: 400,
+                          userInfo: [NSLocalizedDescriptionKey: "Enter a valid phone number"])
+        }
+
+        if BackendConfig.useRealBackend {
+            try await AuthAPI.shared.startPhoneVerification(phone: phone)
+            return
+        }
+
+        try startPhoneVerification(phone: phone)
     }
 
     func verifyPhoneOTP(phone: String, code: String) throws -> Bool {
@@ -292,6 +343,14 @@ final class UserDataModel {
         
         // Return true to indicate the phone OTP was valid for the builder flow
         return true
+    }
+
+    func verifyPhoneOTPAsync(phone rawPhone: String, code: String) async throws -> Bool {
+        let phone = rawPhone.trimmingCharacters(in: .whitespacesAndNewlines)
+        if BackendConfig.useRealBackend {
+            return try await AuthAPI.shared.verifyPhoneOTP(phone: phone, code: code)
+        }
+        return try verifyPhoneOTP(phone: phone, code: code)
     }
     
     func createNewUser(fullName: String, role: UserRole, department: String, year: Int?, phone: String) {
@@ -441,5 +500,68 @@ final class UserDataModel {
 
         saveUsers()
         UserDefaults.standard.set(true, forKey: UserDataModel.mockUsersSeedKey)
+    }
+
+    private func mapRemoteUserToProfile(_ remote: AuthRemoteUser, fallbackEmail: String) -> UserProfile {
+        let parsedID = remote.id.flatMap(UUID.init(uuidString:))
+        let parsedRole = remote.role.flatMap(UserRole.init(rawValue:))
+        let parsedPhotoURL = remote.photoURL.flatMap(URL.init(string:))
+
+        return UserProfile(
+            id: parsedID ?? UUID(),
+            email: remote.email.isEmpty ? fallbackEmail : remote.email.lowercased(),
+            isEmailVerified: remote.isEmailVerified ?? true,
+            phone: remote.phone,
+            isPhoneVerified: remote.isPhoneVerified ?? false,
+            fullName: remote.fullName ?? "",
+            role: parsedRole,
+            courseName: remote.courseName,
+            year: remote.year,
+            employeeID: remote.employeeID,
+            photoURL: parsedPhotoURL,
+            vehicle: nil,
+            savedHomeLocation: nil,
+            savedHomeLocations: nil,
+            lastKnownLocation: nil
+        )
+    }
+
+    private func upsertAndLogin(_ incoming: UserProfile) -> UserProfile {
+        if let idx = users.firstIndex(where: { $0.id == incoming.id }) {
+            users[idx] = incoming
+            currentUserID = incoming.id
+            saveUsers()
+            return incoming
+        }
+
+        if let idx = users.firstIndex(where: { $0.email == incoming.email }) {
+            let existingID = users[idx].id
+            let merged = UserProfile(
+                id: existingID,
+                email: incoming.email,
+                isEmailVerified: incoming.isEmailVerified,
+                phone: incoming.phone,
+                isPhoneVerified: incoming.isPhoneVerified,
+                fullName: incoming.fullName,
+                role: incoming.role,
+                courseName: incoming.courseName,
+                year: incoming.year,
+                employeeID: incoming.employeeID,
+                photoURL: incoming.photoURL,
+                vehicle: incoming.vehicle,
+                savedHomeLocation: incoming.savedHomeLocation,
+                savedHomeLocations: incoming.savedHomeLocations,
+                lastKnownLocation: incoming.lastKnownLocation
+            )
+            users[idx] = merged
+            currentUserID = merged.id
+            saveUsers()
+            return merged
+        }
+
+        users.append(incoming)
+        currentUserID = incoming.id
+        saveUsers()
+        return incoming
     }
 }

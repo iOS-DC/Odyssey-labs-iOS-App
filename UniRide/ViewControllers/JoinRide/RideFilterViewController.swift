@@ -111,14 +111,14 @@ final class RideFilterViewController: UIViewController {
 
     private func buildUI() {
         // Grabber
-        grabber.backgroundColor = UIColor.systemGray4
+        grabber.backgroundColor = AppDesign.Color.border
         grabber.layer.cornerRadius = 2.5
         grabber.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(grabber)
 
         // Title
         titleLabel.text = "Filter Rides"
-        titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
+        titleLabel.font = AppDesign.Typography.bodyStrong
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(titleLabel)
 
@@ -134,10 +134,10 @@ final class RideFilterViewController: UIViewController {
         styleSection(fareLabel)
         fareSlider.minimumValue = 0
         fareSlider.maximumValue = 500
-        fareSlider.tintColor    = .systemGreen
+        fareSlider.tintColor    = AppDesign.Color.primary
         fareSlider.addTarget(self, action: #selector(fareChanged), for: .valueChanged)
         fareSlider.translatesAutoresizingMaskIntoConstraints = false
-        fareValueLbl.font = .systemFont(ofSize: 15, weight: .semibold)
+        fareValueLbl.font = AppDesign.Typography.subheadline
         fareValueLbl.textAlignment = .right
         fareValueLbl.setContentHuggingPriority(.required, for: .horizontal)
         fareValueLbl.translatesAutoresizingMaskIntoConstraints = false
@@ -153,7 +153,7 @@ final class RideFilterViewController: UIViewController {
         seatsStepper.stepValue = 1; seatsStepper.value = 1
         seatsStepper.addTarget(self, action: #selector(seatsChanged), for: .valueChanged)
         seatsStepper.translatesAutoresizingMaskIntoConstraints = false
-        seatsValueLbl.font = .systemFont(ofSize: 17, weight: .semibold)
+        seatsValueLbl.font = AppDesign.Typography.bodyStrong
         seatsValueLbl.text = "1"
         seatsValueLbl.setContentHuggingPriority(.required, for: .horizontal)
         seatsValueLbl.translatesAutoresizingMaskIntoConstraints = false
@@ -175,21 +175,12 @@ final class RideFilterViewController: UIViewController {
         }
 
         // ── Apply / Reset ──
-        var applyCfg = UIButton.Configuration.filled()
-        applyCfg.title = "Apply Filters"
-        applyCfg.baseBackgroundColor = .systemGreen
-        applyCfg.cornerStyle = .capsule
-        applyCfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { a in
-            var b = a; b.font = .systemFont(ofSize: 15, weight: .semibold); return b
-        }
-        applyBtn.configuration = applyCfg
+        applyBtn.applyProminentPrimaryCTA(title: "Apply Filters", corner: AppDesign.Radius.md)
         applyBtn.addTarget(self, action: #selector(applyTapped), for: .touchUpInside)
         applyBtn.translatesAutoresizingMaskIntoConstraints = false
 
-        var resetCfg = UIButton.Configuration.plain()
-        resetCfg.title = "Reset"
-        resetCfg.baseForegroundColor = .secondaryLabel
-        resetBtn.configuration = resetCfg
+        resetBtn.applyTextActionStyle(color: .secondaryLabel, font: AppDesign.Typography.action)
+        resetBtn.setTitle("Reset", for: .normal)
         resetBtn.addTarget(self, action: #selector(resetTapped), for: .touchUpInside)
         resetBtn.translatesAutoresizingMaskIntoConstraints = false
 
@@ -209,7 +200,7 @@ final class RideFilterViewController: UIViewController {
             timeLabel, chipStack,
         ])
         mainStack.axis = .vertical
-        mainStack.spacing = 10
+        mainStack.spacing = AppDesign.Spacing.sm - AppDesign.Spacing.xxs / 2
         mainStack.setCustomSpacing(16, after: sortControl)
         mainStack.setCustomSpacing(16, after: fareRow)
         mainStack.setCustomSpacing(16, after: seatsRow)
@@ -225,17 +216,17 @@ final class RideFilterViewController: UIViewController {
             grabber.heightAnchor.constraint(equalToConstant: 5),
 
             titleLabel.topAnchor.constraint(equalTo: grabber.bottomAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
 
-            mainStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
-            mainStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            mainStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            mainStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDesign.Spacing.lg),
+            mainStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
+            mainStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
 
             chipStack.heightAnchor.constraint(equalToConstant: 40),
 
-            btnRow.topAnchor.constraint(equalTo: mainStack.bottomAnchor, constant: 24),
-            btnRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            btnRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            btnRow.topAnchor.constraint(equalTo: mainStack.bottomAnchor, constant: AppDesign.Spacing.xl),
+            btnRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
+            btnRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
             btnRow.heightAnchor.constraint(equalToConstant: 48),
 
             applyBtn.widthAnchor.constraint(equalTo: btnRow.widthAnchor, multiplier: 0.68),
@@ -245,14 +236,14 @@ final class RideFilterViewController: UIViewController {
     // MARK: - Helpers
 
     private func styleSection(_ label: UILabel) {
-        label.font = .systemFont(ofSize: 11, weight: .semibold)
+        label.font = AppDesign.Typography.captionStrong
         label.textColor = .tertiaryLabel
         label.translatesAutoresizingMaskIntoConstraints = false
     }
 
     private func separator() -> UIView {
         let v = UIView()
-        v.backgroundColor = .systemGray5
+        v.backgroundColor = AppDesign.Color.border
         v.heightAnchor.constraint(equalToConstant: 1).isActive = true
         v.translatesAutoresizingMaskIntoConstraints = false
         return v
@@ -261,11 +252,11 @@ final class RideFilterViewController: UIViewController {
     private func makeChipButton(_ title: String, tag: Int) -> UIButton {
         let btn = UIButton(type: .system)
         btn.setTitle(title, for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
-        btn.layer.cornerRadius = 16
+        btn.titleLabel?.font = AppDesign.Typography.caption
+        btn.layer.cornerRadius = AppDesign.Radius.sm
         btn.layer.borderWidth  = 1.5
-        btn.layer.borderColor  = UIColor.systemGray4.cgColor
-        btn.backgroundColor    = UIColor.systemGray6
+        btn.layer.borderColor  = AppDesign.Color.border.cgColor
+        btn.backgroundColor    = AppDesign.Color.fieldBackground
         btn.setTitleColor(.secondaryLabel, for: .normal)
         btn.tag = tag
         btn.addTarget(self, action: #selector(timeChipTapped(_:)), for: .touchUpInside)
@@ -287,12 +278,12 @@ final class RideFilterViewController: UIViewController {
             let isSelected = btn.tag == tag
             UIView.animate(withDuration: 0.18) {
                 if isSelected {
-                    btn.backgroundColor    = UIColor.systemGreen.withAlphaComponent(0.12)
-                    btn.layer.borderColor  = UIColor.systemGreen.cgColor
-                    btn.setTitleColor(.systemGreen, for: .normal)
+                    btn.backgroundColor    = AppDesign.Color.primary.withAlphaComponent(0.12)
+                    btn.layer.borderColor  = AppDesign.Color.primary.cgColor
+                    btn.setTitleColor(AppDesign.Color.primary, for: .normal)
                 } else {
-                    btn.backgroundColor    = UIColor.systemGray6
-                    btn.layer.borderColor  = UIColor.systemGray4.cgColor
+                    btn.backgroundColor    = AppDesign.Color.fieldBackground
+                    btn.layer.borderColor  = AppDesign.Color.border.cgColor
                     btn.setTitleColor(.secondaryLabel, for: .normal)
                 }
             }
@@ -320,6 +311,7 @@ final class RideFilterViewController: UIViewController {
     }
 
     @objc private func timeChipTapped(_ sender: UIButton) {
+        AppHaptics.selection()
         currentFilter.timeSlot = RideFilter.TimeSlot(rawValue: sender.tag) ?? .any
         updateChipSelection(selected: sender.tag)
     }

@@ -60,15 +60,15 @@ class EditProfileViewController: UIViewController,
         ])
 
         contentStack.axis    = .vertical
-        contentStack.spacing = 16
+        contentStack.spacing = AppDesign.Spacing.md
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(contentStack)
         NSLayoutConstraint.activate([
-            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 20),
-            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 16),
-            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -16),
-            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -32),
-            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -32),
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.lg),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl - AppDesign.Spacing.xs),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.xl * 2),
         ])
 
         contentStack.addArrangedSubview(buildProfileCard())
@@ -85,14 +85,14 @@ class EditProfileViewController: UIViewController,
         avatarImageView.backgroundColor = .systemGray5
         avatarImageView.layer.cornerRadius = 55        // half of 110 — always circular
         avatarImageView.layer.borderWidth  = 3
-        avatarImageView.layer.borderColor  = UIColor.systemBlue.withAlphaComponent(0.7).cgColor
+        avatarImageView.layer.borderColor  = AppDesign.Color.primary.withAlphaComponent(0.7).cgColor
         avatarImageView.isUserInteractionEnabled = true
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         let tap = UITapGestureRecognizer(target: self, action: #selector(selectImageTapped))
         avatarImageView.addGestureRecognizer(tap)
 
         // ── Camera badge (positioned relative to the avatar) ─────────────────
-        cameraBadge.backgroundColor    = .systemBlue
+        cameraBadge.backgroundColor    = AppDesign.Color.primary
         cameraBadge.layer.cornerRadius = 16
         cameraBadge.layer.borderWidth  = 2.5
         cameraBadge.layer.borderColor  = UIColor.systemBackground.cgColor
@@ -149,11 +149,9 @@ class EditProfileViewController: UIViewController,
         // ── Change Photo button ───────────────────────────────────────────────
         var photoCfg = UIButton.Configuration.plain()
         photoCfg.title = "Change Photo"
-        photoCfg.baseForegroundColor = .systemBlue
-        photoCfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { a in
-            var at = a; at.font = UIFont.systemFont(ofSize: 15, weight: .medium); return at
-        }
+        photoCfg.baseForegroundColor = AppDesign.Color.primary
         changePhotoBtn.configuration = photoCfg
+        changePhotoBtn.titleLabel?.font = AppDesign.Typography.subheadline
         changePhotoBtn.addTarget(self, action: #selector(selectImageTapped), for: .touchUpInside)
 
         // ── Fields ────────────────────────────────────────────────────────────
@@ -169,14 +167,16 @@ class EditProfileViewController: UIViewController,
         saveCfg.image   = UIImage(systemName: "checkmark.circle.fill")
         saveCfg.imagePlacement  = .leading
         saveCfg.imagePadding    = 8
-        saveCfg.baseBackgroundColor = .systemBlue
+        saveCfg.baseBackgroundColor = AppDesign.Color.primary
         saveCfg.baseForegroundColor = .white
         saveCfg.cornerStyle = .capsule
         saveCfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { a in
-            var at = a; at.font = UIFont.systemFont(ofSize: 16, weight: .semibold); return at
+            var at = a
+            at.font = AppDesign.Typography.action
+            return at
         }
         saveButton.configuration = saveCfg
-        saveButton.heightAnchor.constraint(equalToConstant: 52).isActive = true
+        saveButton.applyPrimaryButton(color: AppDesign.Color.primary)
         saveButton.addTarget(self, action: #selector(saveButtonTapped(_:)), for: .touchUpInside)
 
         // ── Inner stack: avatar → Change Photo → separator → fields → save ───
@@ -213,14 +213,14 @@ class EditProfileViewController: UIViewController,
 
         // Header
         let iconBg = UIView()
-        iconBg.backgroundColor    = UIColor.systemBlue.withAlphaComponent(0.1)
-        iconBg.layer.cornerRadius = 10
+        iconBg.backgroundColor    = AppDesign.Color.primary.withAlphaComponent(0.1)
+        iconBg.layer.cornerRadius = AppDesign.Radius.sm
         iconBg.translatesAutoresizingMaskIntoConstraints = false
         iconBg.widthAnchor.constraint(equalToConstant: 36).isActive  = true
         iconBg.heightAnchor.constraint(equalToConstant: 36).isActive = true
 
         let carIcon = UIImageView(image: UIImage(systemName: "car.fill"))
-        carIcon.tintColor    = .systemBlue
+        carIcon.tintColor    = AppDesign.Color.primary
         carIcon.contentMode  = .scaleAspectFit
         carIcon.translatesAutoresizingMaskIntoConstraints = false
         iconBg.addSubview(carIcon)
@@ -233,11 +233,10 @@ class EditProfileViewController: UIViewController,
 
         let titleLbl    = UILabel()
         titleLbl.text   = "Vehicle Information"
-        titleLbl.font   = .systemFont(ofSize: 15, weight: .bold)
-        titleLbl.textColor = .label
+        titleLbl.applyTextStyle(AppDesign.Typography.bodyStrong)
 
         let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
-        chevron.tintColor   = .systemBlue
+        chevron.tintColor   = AppDesign.Color.primary
         chevron.contentMode = .scaleAspectFit
         chevron.setContentHuggingPriority(.required, for: .horizontal)
         chevron.translatesAutoresizingMaskIntoConstraints = false
@@ -251,15 +250,14 @@ class EditProfileViewController: UIViewController,
         vehicleDetailsStack.spacing = 12
 
         // CTA
-        vehicleCTABtn.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
-        vehicleCTABtn.tintColor = .systemBlue
+        vehicleCTABtn.applyTextActionStyle()
         vehicleCTABtn.contentHorizontalAlignment = .leading
         vehicleCTABtn.addTarget(self, action: #selector(openVehicleDetails), for: .touchUpInside)
 
         let mainStack = UIStackView(arrangedSubviews: [
             headerStack, makeSeparator(), vehicleDetailsStack, vehicleCTABtn
         ])
-        mainStack.axis = .vertical; mainStack.spacing = 14
+        mainStack.axis = .vertical; mainStack.spacing = AppDesign.Spacing.sm + AppDesign.Spacing.xxs / 2
         mainStack.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(mainStack)
         NSLayoutConstraint.activate([
@@ -287,8 +285,7 @@ class EditProfileViewController: UIViewController,
         } else {
             let empty = UILabel()
             empty.text      = "No vehicle added yet."
-            empty.font      = .systemFont(ofSize: 14)
-            empty.textColor = .tertiaryLabel
+            empty.applyTextStyle(AppDesign.Typography.subheadline, color: .tertiaryLabel)
             vehicleDetailsStack.addArrangedSubview(empty)
             vehicleCTABtn.setTitle("Add Vehicle", for: .normal)
         }
@@ -296,18 +293,22 @@ class EditProfileViewController: UIViewController,
 
     private func vehicleRow(icon: String, label: String, value: String) -> UIView {
         let icn = UIImageView(image: UIImage(systemName: icon))
-        icn.tintColor    = .systemBlue
+        icn.tintColor    = AppDesign.Color.primary
         icn.contentMode  = .scaleAspectFit
         icn.translatesAutoresizingMaskIntoConstraints = false
         icn.widthAnchor.constraint(equalToConstant: 18).isActive  = true
         icn.heightAnchor.constraint(equalToConstant: 18).isActive = true
 
         let keyLbl = UILabel()
-        keyLbl.text = label; keyLbl.font = .systemFont(ofSize: 13); keyLbl.textColor = .secondaryLabel
+        keyLbl.text = label
+        keyLbl.font = AppDesign.Typography.caption
+        keyLbl.textColor = .secondaryLabel
         keyLbl.widthAnchor.constraint(equalToConstant: 56).isActive = true
 
         let valLbl = UILabel()
-        valLbl.text = value; valLbl.font = .systemFont(ofSize: 14, weight: .medium); valLbl.textColor = .label
+        valLbl.text = value
+        valLbl.font = AppDesign.Typography.subheadline
+        valLbl.textColor = .label
 
         let row = UIStackView(arrangedSubviews: [icn, keyLbl, valLbl])
         row.axis = .horizontal; row.spacing = 8; row.alignment = .center
@@ -318,30 +319,22 @@ class EditProfileViewController: UIViewController,
     private func makeCard() -> UIView {
         let card = UIView()
         card.backgroundColor    = .systemBackground
-        card.layer.cornerRadius = 20
-        card.layer.masksToBounds = false
-        card.layer.shadowColor   = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.08
-        card.layer.shadowRadius  = 12
-        card.layer.shadowOffset  = CGSize(width: 0, height: 4)
+        card.applyCardStyle()
         return card
     }
 
     private func setupField(_ field: UITextField, placeholder: String, icon: String, keyboardType: UIKeyboardType) {
         field.borderStyle     = .none
-        field.backgroundColor = UIColor.systemGray6
-        field.layer.cornerRadius  = 13
-        field.layer.masksToBounds = true
-        field.font            = .systemFont(ofSize: 15)
+        field.applyRoundedField()
+        field.font            = AppDesign.Typography.subheadline
         field.keyboardType    = keyboardType
         field.autocorrectionType = .no
         field.autocapitalizationType = keyboardType == .default ? .words : .none
-        field.heightAnchor.constraint(equalToConstant: 52).isActive = true
         field.attributedPlaceholder = NSAttributedString(string: placeholder,
             attributes: [.foregroundColor: UIColor.tertiaryLabel])
 
         let iconView = UIImageView(image: UIImage(systemName: icon))
-        iconView.tintColor    = .systemBlue
+        iconView.tintColor    = AppDesign.Color.primary
         iconView.contentMode  = .scaleAspectFit
         iconView.frame        = CGRect(x: 12, y: 0, width: 20, height: 20)
         let leftContainer     = UIView(frame: CGRect(x: 0, y: 0, width: 42, height: 52))
@@ -369,7 +362,7 @@ class EditProfileViewController: UIViewController,
 
     private func makeSeparator() -> UIView {
         let sep = UIView()
-        sep.backgroundColor = .systemGray5
+        sep.backgroundColor = AppDesign.Color.border
         sep.heightAnchor.constraint(equalToConstant: 1).isActive = true
         return sep
     }
@@ -413,7 +406,7 @@ class EditProfileViewController: UIViewController,
         if let y = yearField.text, let yr = Int(y) { user.year = yr }
         if let photoURL = newPhotoURL { user.photoURL = photoURL }
         UserDataModel.shared.saveUserProfile(user)
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        AppHaptics.success()
         navigationController?.popViewController(animated: true)
     }
 

@@ -4,6 +4,9 @@ class CommunityViewController: UIViewController,
                                UITableViewDelegate,
                                UITableViewDataSource,
                                UITextViewDelegate {
+    private let sheetHiddenOffset: CGFloat = 400
+    private let sheetShowDuration: TimeInterval = 0.34
+    private let sheetHideDuration: TimeInterval = 0.24
 
     // MARK: - Outlets
     @IBOutlet weak var segmentedControl: UISegmentedControl!
@@ -92,8 +95,8 @@ class CommunityViewController: UIViewController,
         sharePopView.isHidden = true
 
         newPostBottomConstraint.constant = 300
-        commentPopupBottomConstraint.constant = 400
-        sharePopUpBottomConstraint.constant = 400
+        commentPopupBottomConstraint.constant = sheetHiddenOffset
+        sharePopUpBottomConstraint.constant = sheetHiddenOffset
         
         // Register Custom Cell
         commentTableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
@@ -145,19 +148,19 @@ class CommunityViewController: UIViewController,
     func setupNewPostUI() {
         // New Post Popup Styling
         newPostContainerView.backgroundColor = .systemBackground
-        newPostContainerView.layer.cornerRadius = 24
+        newPostContainerView.layer.cornerRadius = AppDesign.Radius.lg
         newPostContainerView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         newPostContainerView.layer.shadowColor = UIColor.black.cgColor
-        newPostContainerView.layer.shadowOpacity = 0.15
-        newPostContainerView.layer.shadowOffset = CGSize(width: 0, height: -4)
-        newPostContainerView.layer.shadowRadius = 16
+        newPostContainerView.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
+        newPostContainerView.layer.shadowOffset = CGSize(width: 0, height: -AppDesign.Spacing.xs)
+        newPostContainerView.layer.shadowRadius = AppDesign.Shadow.cardRadius
         
         // TextView Styling
-        newPostTextView.layer.cornerRadius = 16
+        newPostTextView.layer.cornerRadius = AppDesign.Radius.md
         newPostTextView.backgroundColor = .secondarySystemBackground
         newPostTextView.layer.borderWidth = 0
-        newPostTextView.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        newPostTextView.font = .systemFont(ofSize: 16, weight: .regular)
+        newPostTextView.textContainerInset = UIEdgeInsets(top: AppDesign.Spacing.md, left: AppDesign.Spacing.md, bottom: AppDesign.Spacing.md, right: AppDesign.Spacing.md)
+        newPostTextView.font = AppDesign.Typography.body
         newPostTextView.textColor = .label
         
         // Placeholder setup
@@ -166,10 +169,8 @@ class CommunityViewController: UIViewController,
         
         // Style the Post Button
         if let postBtn = newPostContainerView.viewWithTag(99) as? UIButton {
-            postBtn.layer.cornerRadius = 16
-            postBtn.backgroundColor = .systemBlue
-            postBtn.setTitleColor(.white, for: .normal)
-            postBtn.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
+            let title = postBtn.currentTitle ?? "Post"
+            postBtn.applyProminentPrimaryCTA(title: title, corner: AppDesign.Radius.md)
         }
         
         setupUserHeader()
@@ -191,21 +192,19 @@ class CommunityViewController: UIViewController,
         avatarIV.translatesAutoresizingMaskIntoConstraints = false
         avatarIV.image = UIImage(named: "profile") ?? UIImage(systemName: "person.circle.fill")
         avatarIV.contentMode = .scaleAspectFill
-        avatarIV.layer.cornerRadius = 20
+        avatarIV.layer.cornerRadius = AppDesign.Radius.lg
         avatarIV.clipsToBounds = true
         avatarIV.tag = 1001
         
         let nameLabel = UILabel()
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         nameLabel.text = "Rehan Khan"
-        nameLabel.font = .systemFont(ofSize: 17, weight: .semibold)
-        nameLabel.textColor = .label
+        nameLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
         
         let subLabel = UILabel()
         subLabel.translatesAutoresizingMaskIntoConstraints = false
         subLabel.text = "Post to Community"
-        subLabel.font = .systemFont(ofSize: 13, weight: .regular)
-        subLabel.textColor = .secondaryLabel
+        subLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         
         let stack = UIStackView(arrangedSubviews: [nameLabel, subLabel])
         stack.axis = .vertical
@@ -228,21 +227,17 @@ class CommunityViewController: UIViewController,
     
     func setupPopupUI() {
         // Comment Popup Styling
-        commentPopupView.layer.cornerRadius = 24
+        commentPopupView.layer.cornerRadius = AppDesign.Radius.lg
         commentPopupView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         commentPopupView.layer.shadowColor = UIColor.black.cgColor
-        commentPopupView.layer.shadowOpacity = 0.15
-        commentPopupView.layer.shadowOffset = CGSize(width: 0, height: -4)
-        commentPopupView.layer.shadowRadius = 16
-        
+        commentPopupView.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
+        commentPopupView.layer.shadowOffset = CGSize(width: 0, height: -AppDesign.Spacing.xs)
+        commentPopupView.layer.shadowRadius = AppDesign.Shadow.cardRadius
+
         // TextField Styling
-        commentTextField.layer.cornerRadius = 20
-        commentTextField.layer.borderWidth = 1
-        commentTextField.layer.borderColor = UIColor.systemGray5.cgColor
-        commentTextField.clipsToBounds = true
-        commentTextField.backgroundColor = .secondarySystemBackground
+        commentTextField.applyRoundedField()
         commentTextField.borderStyle = .none
-        
+
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 40))
         commentTextField.leftView = paddingView
         commentTextField.leftViewMode = .always
@@ -253,34 +248,33 @@ class CommunityViewController: UIViewController,
     func setupShareUI() {
         // Container
         sharePopView.backgroundColor = .systemBackground
-        sharePopView.layer.cornerRadius = 24
+        sharePopView.layer.cornerRadius = AppDesign.Radius.lg
         sharePopView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         sharePopView.layer.shadowColor = UIColor.black.cgColor
-        sharePopView.layer.shadowOpacity = 0.15
-        sharePopView.layer.shadowOffset = CGSize(width: 0, height: -4)
-        sharePopView.layer.shadowRadius = 16
+        sharePopView.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
+        sharePopView.layer.shadowOffset = CGSize(width: 0, height: -AppDesign.Spacing.xs)
+        sharePopView.layer.shadowRadius = AppDesign.Shadow.cardRadius
         
         // Title (Tag 201)
         if let titleLabel = sharePopView.viewWithTag(201) as? UILabel {
             titleLabel.text = "Share Post"
-            titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
-            titleLabel.textColor = .label
+            titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
         }
         
         // Style Buttons (Tags 1, 2, 3, 4)
         let socialColors: [Int: UIColor] = [
-            1: .systemGreen, // WhatsApp
-            2: .systemPink,  // Instagram
-            3: .systemBlue,  // Facebook
-            4: .systemGray   // More
+            1: AppDesign.Color.success, // WhatsApp
+            2: AppDesign.Color.primary, // Instagram
+            3: AppDesign.Color.primary, // Facebook
+            4: AppDesign.Color.textPrimary.withAlphaComponent(0.7) // More
         ]
         
         for i in 1...4 {
             if let btn = sharePopView.viewWithTag(i) as? UIButton {
-                btn.layer.cornerRadius = 12
+                btn.layer.cornerRadius = AppDesign.Radius.sm
                 btn.backgroundColor = .secondarySystemBackground
                 btn.tintColor = socialColors[i] ?? .label
-                btn.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+                btn.titleLabel?.font = AppDesign.Typography.subheadline
                 
                 // Add icons programmatically if needed, or rely on text
                 switch i {
@@ -301,10 +295,10 @@ class CommunityViewController: UIViewController,
         
         // Cancel Button (Tag 202)
         if let cancelBtn = sharePopView.viewWithTag(202) as? UIButton {
-            cancelBtn.layer.cornerRadius = 22 // Pill shape
-            cancelBtn.backgroundColor = .systemGray5
+            cancelBtn.layer.cornerRadius = AppDesign.Radius.md
+            cancelBtn.backgroundColor = AppDesign.Color.fieldBackground
             cancelBtn.setTitleColor(.label, for: .normal)
-            cancelBtn.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+            cancelBtn.titleLabel?.font = AppDesign.Typography.button
             // Remove defaultFilled if it conflicts
             cancelBtn.configuration = .plain()
             cancelBtn.setTitle("Cancel", for: .normal)
@@ -313,46 +307,43 @@ class CommunityViewController: UIViewController,
 
     // MARK: - NEW POST POPUP
     func showComposer() {
+        AppHaptics.impact(.light)
         hideCommentPopup()
         hideSharePopup()
 
         newPostContainerView.isHidden = false
-
-        UIView.animate(withDuration: 0.3) {
-            self.newPostBottomConstraint.constant = 0
-            self.view.layoutIfNeeded()
-        }
+        newPostContainerView.alpha = 0
+        newPostContainerView.transform = CGAffineTransform(translationX: 0, y: 16)
+        newPostBottomConstraint.constant = 0
+        animateSheetShow(newPostContainerView)
 
         newPostTextView.becomeFirstResponder()
     }
 
     func hideComposer() {
         newPostTextView.resignFirstResponder()
-
-        UIView.animate(withDuration: 0.3, animations: {
-            self.newPostBottomConstraint.constant = 300
-            self.view.layoutIfNeeded()
-        }) { _ in
+        newPostBottomConstraint.constant = 300
+        animateSheetHide(newPostContainerView) { [weak self] in
+            guard let self else { return }
             self.newPostContainerView.isHidden = true
         }
     }
 
     // MARK: - SHARE POPUP
     func showSharePopup() {
+        AppHaptics.impact(.light)
         hideComposer()
         hideCommentPopup()
 
         sharePopView.isHidden = false
         sharePopView.alpha = 0
+        sharePopView.transform = CGAffineTransform(translationX: 0, y: 16)
         sharePopUpBottomConstraint.constant = 0
-
-        UIView.animate(withDuration: 0.30) {
-            self.sharePopView.alpha = 1
-            self.view.layoutIfNeeded()
-        }
+        animateSheetShow(sharePopView)
     }
 
     @IBAction func segmentChanged(_ sender: Any) {
+        AppHaptics.selection()
         tableView.reloadData()
         
         // Hide "New Post" button (plus) when in Events tab
@@ -363,41 +354,68 @@ class CommunityViewController: UIViewController,
         }
     }
     func hideSharePopup() {
-        sharePopUpBottomConstraint.constant = 400
-
-        UIView.animate(withDuration: 0.30, animations: {
-            self.sharePopView.alpha = 0
-            self.view.layoutIfNeeded()
-        }) { _ in
+        sharePopUpBottomConstraint.constant = sheetHiddenOffset
+        animateSheetHide(sharePopView) { [weak self] in
+            guard let self else { return }
             self.sharePopView.isHidden = true
         }
     }
 
     // MARK: - COMMENT POPUP
     func showCommentPopup() {
+        AppHaptics.impact(.light)
         hideComposer()
         hideSharePopup()
 
         commentPopupView.isHidden = false
         commentPopupView.alpha = 0
+        commentPopupView.transform = CGAffineTransform(translationX: 0, y: 16)
         commentPopupBottomConstraint.constant = 0
 
         commentTableView.reloadData()
+        animateSheetShow(commentPopupView)
+    }
 
-        UIView.animate(withDuration: 0.3) {
-            self.commentPopupView.alpha = 1
+    func hideCommentPopup() {
+        commentPopupBottomConstraint.constant = sheetHiddenOffset
+        animateSheetHide(commentPopupView) { [weak self] in
+            guard let self else { return }
+            self.commentPopupView.isHidden = true
+        }
+    }
+
+    private func animateSheetShow(_ sheet: UIView) {
+        if UIAccessibility.isReduceMotionEnabled {
+            sheet.alpha = 1
+            sheet.transform = .identity
+            view.layoutIfNeeded()
+            return
+        }
+        UIView.animate(withDuration: sheetShowDuration,
+                       delay: 0,
+                       usingSpringWithDamping: 0.9,
+                       initialSpringVelocity: 0.25,
+                       options: [.curveEaseOut, .allowUserInteraction]) {
+            sheet.alpha = 1
+            sheet.transform = .identity
             self.view.layoutIfNeeded()
         }
     }
 
-    func hideCommentPopup() {
-        commentPopupBottomConstraint.constant = 400
-
-        UIView.animate(withDuration: 0.3, animations: {
-            self.commentPopupView.alpha = 0
+    private func animateSheetHide(_ sheet: UIView, completion: (() -> Void)? = nil) {
+        if UIAccessibility.isReduceMotionEnabled {
+            sheet.alpha = 0
+            view.layoutIfNeeded()
+            completion?()
+            return
+        }
+        UIView.animate(withDuration: sheetHideDuration, delay: 0, options: [.curveEaseIn, .allowUserInteraction]) {
+            sheet.alpha = 0
+            sheet.transform = CGAffineTransform(translationX: 0, y: 12)
             self.view.layoutIfNeeded()
-        }) { _ in
-            self.commentPopupView.isHidden = true
+        } completion: { _ in
+            sheet.transform = .identity
+            completion?()
         }
     }
 
@@ -513,18 +531,10 @@ class CommunityViewController: UIViewController,
     }
     
     @IBAction func shareEventTapped(_ sender: UIButton) {
-        // Redundant action or legacy connection?
-        // Forwarding to same logic if needed, or ignoring to avoid double presentation if both connected
-        // Based on storyboard, FeedCell has this connected too.
-        // If this is for FeedCell, shareButtonTapped handles it.
-        // If this is for EventCell using a different button...
-        // Safest is to do nothing if shareButtonTapped handles feed, and EventShareButtonTapped handles event.
-        // But to be safe if this is the ONLY action for some button:
-        
-        if let indexPath = getCellIndexPath(sender: sender) {
-            // Check if it's an event or feed?
-            // Since we reused cells logic in datasource, let's just default to logic based on sender location
-             // Actually, simplest is to defer to the specific handlers above which extract model cleanly.
+        if segmentedControl.selectedSegmentIndex == 1 {
+            EventShareButtonTapped(sender)
+        } else {
+            shareButtonTapped(sender)
         }
     }
 
@@ -678,23 +688,52 @@ class CommunityViewController: UIViewController,
         // FEED LIST
         if segmentedControl.selectedSegmentIndex == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
+            if let feedCard = cell.contentView.subviews.first {
+                feedCard.applyCardStyle(
+                    corner: AppDesign.Radius.lg,
+                    shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                    shadowRadius: AppDesign.Shadow.smallCardRadius,
+                    shadowOffset: AppDesign.Shadow.smallCardOffset
+                )
+            }
 
             if let imgView = cell.viewWithTag(100) as? UIImageView {
                 imgView.image = UIImage(named: "profile")
-                imgView.layer.cornerRadius = 21
+                imgView.layer.cornerRadius = AppDesign.Radius.lg
                 imgView.clipsToBounds = true
             }
 
             let post = feedPosts[indexPath.row]
 
-            (cell.viewWithTag(1) as? UILabel)?.text = post.name
-            (cell.viewWithTag(2) as? UILabel)?.text = post.subtitle
-            (cell.viewWithTag(3) as? UILabel)?.text = post.timestamp
-            (cell.viewWithTag(4) as? UILabel)?.text = post.message
+            if let label = cell.viewWithTag(1) as? UILabel {
+                label.text = post.name
+                label.applyTextStyle(AppDesign.Typography.bodyStrong)
+            }
+            if let label = cell.viewWithTag(2) as? UILabel {
+                label.text = post.subtitle
+                label.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+            }
+            if let label = cell.viewWithTag(3) as? UILabel {
+                label.text = post.timestamp
+                label.applyTextStyle(AppDesign.Typography.body, color: .secondaryLabel)
+            }
+            if let label = cell.viewWithTag(4) as? UILabel {
+                label.text = post.message
+                label.applyTextStyle(AppDesign.Typography.body, lines: 2)
+            }
 
-            (cell.viewWithTag(10) as? UIButton)?.setTitle("❤️ \(post.likeCount)", for: .normal)
-            (cell.viewWithTag(11) as? UIButton)?.setTitle("💬 \(post.commentCount)", for: .normal)
-            (cell.viewWithTag(12) as? UIButton)?.setTitle("↪️ \(post.shareCount)", for: .normal)
+            if let likeButton = cell.viewWithTag(10) as? UIButton {
+                likeButton.setTitle("❤️ \(post.likeCount)", for: .normal)
+                likeButton.titleLabel?.font = AppDesign.Typography.subheadline
+            }
+            if let commentButton = cell.viewWithTag(11) as? UIButton {
+                commentButton.setTitle("💬 \(post.commentCount)", for: .normal)
+                commentButton.titleLabel?.font = AppDesign.Typography.subheadline
+            }
+            if let shareButton = cell.viewWithTag(12) as? UIButton {
+                shareButton.setTitle("↪️ \(post.shareCount)", for: .normal)
+                shareButton.titleLabel?.font = AppDesign.Typography.subheadline
+            }
 
             let commentsLabel = cell.viewWithTag(20) as? UILabel
             commentsLabel?.text = post.comments.joined(separator: "\n")
@@ -708,13 +747,13 @@ class CommunityViewController: UIViewController,
 
         // Card Styling (Container Tag 900)
         if let cardView = cell.viewWithTag(900) {
-            cardView.backgroundColor = .systemBackground
-            cardView.layer.cornerRadius = 16
-            cardView.layer.shadowColor = UIColor.black.cgColor
-            cardView.layer.shadowOpacity = 0.1
-            cardView.layer.shadowOffset = CGSize(width: 0, height: 2)
-            cardView.layer.shadowRadius = 8
-            cardView.clipsToBounds = false 
+            cardView.applyCardStyle(
+                corner: AppDesign.Radius.lg,
+                shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                shadowRadius: AppDesign.Shadow.smallCardRadius,
+                shadowOffset: AppDesign.Shadow.smallCardOffset
+            )
+            cardView.clipsToBounds = false
         }
 
         if let imgView = cell.viewWithTag(100) as? UIImageView {
@@ -722,7 +761,7 @@ class CommunityViewController: UIViewController,
             imgView.contentMode = .scaleAspectFill
             imgView.clipsToBounds = true
 
-            imgView.layer.cornerRadius = 21
+            imgView.layer.cornerRadius = AppDesign.Radius.lg
             
         }
         
@@ -730,8 +769,7 @@ class CommunityViewController: UIViewController,
         // title
         if let titleLabel = cell.viewWithTag(1) as? UILabel {
             titleLabel.text = event.title
-            titleLabel.font = .systemFont(ofSize: 18, weight: .bold)
-            titleLabel.textColor = .label
+            titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
         }
 
         // date
@@ -739,30 +777,27 @@ class CommunityViewController: UIViewController,
         df.dateFormat = "MMM d, yyyy 'at' HH:mm"
         if let dateLabel = cell.viewWithTag(2) as? UILabel {
             dateLabel.text = df.string(from: event.startsAt)
-            dateLabel.font = .systemFont(ofSize: 14, weight: .medium)
-            dateLabel.textColor = .secondaryLabel
+            dateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         }
 
         // location
         if let locLabel = cell.viewWithTag(3) as? UILabel {
             locLabel.text = event.location?.name ?? "No Location"
-            locLabel.font = .systemFont(ofSize: 14, weight: .regular)
-            locLabel.textColor = .secondaryLabel
+            locLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         }
 
         // attendees
-        (cell.viewWithTag(4) as? UILabel)?.text = "Attending \(event.attendeeCount)"
+        if let attendeesLabel = cell.viewWithTag(4) as? UILabel {
+            attendeesLabel.text = "Attending \(event.attendeeCount)"
+            attendeesLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        }
 
 
 
         // Buttons
         if let attendButton = cell.viewWithTag(10) as? UIButton {
             attendButton.setTitle("Attend", for: .normal)
-            attendButton.layer.cornerRadius = 17.5
-            attendButton.clipsToBounds = true
-            attendButton.backgroundColor = .systemBlue.withAlphaComponent(0.1)
-            attendButton.setTitleColor(.systemBlue, for: .normal)
-            attendButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+            attendButton.applyTextActionStyle()
         }
 
 
@@ -781,25 +816,25 @@ class CommentTableViewCell: UITableViewCell {
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
-        iv.layer.cornerRadius = 16
-        iv.backgroundColor = .systemGray5
+        iv.layer.cornerRadius = AppDesign.Radius.md
+        iv.backgroundColor = AppDesign.Color.fieldBackground
         iv.image = UIImage(systemName: "person.circle.fill")
-        iv.tintColor = .systemGray3
+        iv.tintColor = AppDesign.Color.border
         return iv
     }()
     
     private let bubbleView: UIView = {
         let v = UIView()
         v.translatesAutoresizingMaskIntoConstraints = false
-        v.backgroundColor = .systemGray6
-        v.layer.cornerRadius = 12
+        v.backgroundColor = AppDesign.Color.fieldBackground
+        v.layer.cornerRadius = AppDesign.Radius.sm
         return v
     }()
     
     private let nameLabel: UILabel = {
         let l = UILabel()
         l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = .systemFont(ofSize: 12, weight: .semibold)
+        l.font = AppDesign.Typography.captionStrong
         l.textColor = .secondaryLabel
         return l
     }()
@@ -807,7 +842,7 @@ class CommentTableViewCell: UITableViewCell {
     private let commentLabel: UILabel = {
         let l = UILabel()
         l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = .systemFont(ofSize: 14, weight: .regular)
+        l.font = AppDesign.Typography.subheadline
         l.numberOfLines = 0
         l.textColor = .label
         return l

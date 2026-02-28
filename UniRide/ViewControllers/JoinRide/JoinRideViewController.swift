@@ -45,8 +45,14 @@ class JoinRideViewController: UIViewController,
         setupPickers()
         prefillLocationsIfPossible()
 
-        contentView.applyCardStyle(corner: 24)
-        findRideButton.layer.cornerRadius = 22
+        contentView.applyCardStyle(corner: AppDesign.Radius.lg)
+        fromTextField.applyRoundedField()
+        fromTextField.addLeftIcon("mappin")
+        toTextField.applyRoundedField()
+        toTextField.addLeftIcon("mappin")
+        suggestionsTable.applySmallCard()
+        let findTitle = findRideButton.currentTitle ?? "Find Ride"
+        findRideButton.applyProminentPrimaryCTA(title: findTitle, corner: AppDesign.Radius.md)
         view.bringSubviewToFront(findRideButton)
     }
 
@@ -160,7 +166,7 @@ class JoinRideViewController: UIViewController,
 
         suggestionsTable.frame = CGRect(
             x: frameInView.minX,
-            y: frameInView.maxY + 4,
+            y: frameInView.maxY + AppDesign.Spacing.xxs,
             width: frameInView.width,
             height: 220
         )

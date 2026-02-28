@@ -35,7 +35,7 @@ final class RateRideViewController: UIViewController {
         if let sheet = sheetPresentationController {
             sheet.detents           = [.medium()]
             sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 28
+            sheet.preferredCornerRadius = AppDesign.Radius.lg
         }
     }
     required init?(coder: NSCoder) { fatalError() }
@@ -55,19 +55,19 @@ final class RateRideViewController: UIViewController {
         avatarView.layer.cornerRadius = 35
         avatarView.backgroundColor  = .systemGray5
         avatarView.layer.borderWidth = 2.5
-        avatarView.layer.borderColor = UIColor.systemGreen.withAlphaComponent(0.6).cgColor
+        avatarView.layer.borderColor = AppDesign.Color.primary.withAlphaComponent(0.6).cgColor
         avatarView.loadAndFallback(from: revieweePhotoURL, name: revieweeName)
         avatarView.translatesAutoresizingMaskIntoConstraints = false
 
         // Name
         nameLabel.text      = revieweeName
-        nameLabel.font      = .systemFont(ofSize: 18, weight: .bold)
+        nameLabel.font      = AppDesign.Typography.bodyStrong
         nameLabel.textAlignment = .center
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // Prompt
         promptLabel.text    = "How was your ride?"
-        promptLabel.font    = .systemFont(ofSize: 14, weight: .regular)
+        promptLabel.font    = AppDesign.Typography.subheadline
         promptLabel.textColor = .secondaryLabel
         promptLabel.textAlignment = .center
         promptLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -98,9 +98,9 @@ final class RateRideViewController: UIViewController {
         // Comment
         commentView.text            = "Add a comment (optional)..."
         commentView.textColor       = .tertiaryLabel
-        commentView.font            = .systemFont(ofSize: 14)
-        commentView.backgroundColor = .systemGray6
-        commentView.layer.cornerRadius = 12
+        commentView.font            = AppDesign.Typography.subheadline
+        commentView.backgroundColor = AppDesign.Color.fieldBackground
+        commentView.layer.cornerRadius = AppDesign.Radius.sm
         commentView.layer.masksToBounds = true
         commentView.textContainerInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
         commentView.delegate        = self
@@ -112,19 +112,18 @@ final class RateRideViewController: UIViewController {
         cfg.image = UIImage(systemName: "checkmark.circle.fill")
         cfg.imagePlacement = .leading
         cfg.imagePadding = 6
-        cfg.baseBackgroundColor = .systemGreen
+        cfg.baseBackgroundColor = AppDesign.Color.primary
         cfg.baseForegroundColor = .white
         cfg.cornerStyle = .capsule
         submitBtn.configuration = cfg
-        submitBtn.isEnabled = false
-        submitBtn.alpha = 0.5
+        submitBtn.setPrimaryCTAEnabled(false)
         submitBtn.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         submitBtn.translatesAutoresizingMaskIntoConstraints = false
 
         // Skip
         skipBtn.setTitle("Skip", for: .normal)
         skipBtn.setTitleColor(.tertiaryLabel, for: .normal)
-        skipBtn.titleLabel?.font = .systemFont(ofSize: 14)
+        skipBtn.titleLabel?.font = AppDesign.Typography.subheadline
         skipBtn.addTarget(self, action: #selector(skipTapped), for: .touchUpInside)
         skipBtn.translatesAutoresizingMaskIntoConstraints = false
 
@@ -171,12 +170,11 @@ final class RateRideViewController: UIViewController {
 
         // Enable submit
         UIView.animate(withDuration: 0.2) {
-            self.submitBtn.isEnabled = true
-            self.submitBtn.alpha = 1.0
+            self.submitBtn.setPrimaryCTAEnabled(true)
         }
 
         // Haptic
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        AppHaptics.impact(.light)
     }
 
     private func updateStarUI() {
@@ -219,7 +217,7 @@ final class RateRideViewController: UIViewController {
 
         ReviewDataModel.shared.submit(review: review)
 
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        AppHaptics.success()
         dismiss(animated: true) { [weak self] in
             self?.onSubmitted?()
         }

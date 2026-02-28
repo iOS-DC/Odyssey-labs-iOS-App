@@ -45,7 +45,7 @@ final class RideDetailViewController: UIViewController {
         view.addSubview(scrollView)
 
         contentStack.axis    = .vertical
-        contentStack.spacing = 16
+        contentStack.spacing = AppDesign.Spacing.md
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(contentStack)
 
@@ -54,23 +54,17 @@ final class RideDetailViewController: UIViewController {
         bottomBar.translatesAutoresizingMaskIntoConstraints = false
         // subtle top shadow
         bottomBar.layer.shadowColor   = UIColor.black.cgColor
-        bottomBar.layer.shadowOpacity = 0.07
-        bottomBar.layer.shadowOffset  = CGSize(width: 0, height: -3)
-        bottomBar.layer.shadowRadius  = 8
+        bottomBar.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
+        bottomBar.layer.shadowOffset  = CGSize(width: 0, height: -AppDesign.Spacing.xxs)
+        bottomBar.layer.shadowRadius  = AppDesign.Shadow.smallCardRadius
         view.addSubview(bottomBar)
 
-        var btnCfg = UIButton.Configuration.filled()
-        btnCfg.title             = "Request to Join"
-        btnCfg.image             = UIImage(systemName: "arrow.right.circle.fill")
-        btnCfg.imagePlacement    = .trailing
-        btnCfg.imagePadding      = 8
-        btnCfg.baseBackgroundColor = .systemGreen
-        btnCfg.baseForegroundColor = .white
-        btnCfg.cornerStyle       = .capsule
-        btnCfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { a in
-            var b = a; b.font = .systemFont(ofSize: 16, weight: .semibold); return b
-        }
-        requestBtn.configuration = btnCfg
+        requestBtn.applyProminentPrimaryCTA(
+            title: "Request to Join",
+            corner: AppDesign.Radius.md,
+            imageSystemName: "arrow.right.circle.fill",
+            imagePlacement: .trailing
+        )
         requestBtn.translatesAutoresizingMaskIntoConstraints = false
         requestBtn.addTarget(self, action: #selector(requestTapped), for: .touchUpInside)
         bottomBar.addSubview(requestBtn)
@@ -84,12 +78,7 @@ final class RideDetailViewController: UIViewController {
 
         // ── Cards ──
         [driverCard, infoGrid, notesCard].forEach {
-            $0.backgroundColor = .systemBackground
-            $0.layer.cornerRadius = 18
-            $0.layer.shadowColor  = UIColor.black.cgColor
-            $0.layer.shadowOpacity = 0.06
-            $0.layer.shadowOffset  = CGSize(width: 0, height: 4)
-            $0.layer.shadowRadius  = 10
+            $0.applyCardStyle(corner: AppDesign.Radius.md)
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
 
@@ -119,7 +108,9 @@ final class RideDetailViewController: UIViewController {
             mapView.heightAnchor.constraint(equalToConstant: 220),
 
             // Spacer so last card clears the fixed button bar (safe area + button + padding)
-            spacer.heightAnchor.constraint(equalToConstant: 100),
+            spacer.heightAnchor.constraint(
+                equalToConstant: AppDesign.Size.buttonHeight + (AppDesign.Spacing.lg * 2)
+            ),
 
             // ── Bottom bar: fills from button top to screen edge (covers home indicator area) ──
             bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -127,12 +118,12 @@ final class RideDetailViewController: UIViewController {
             bottomBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             // ── Request button sits ABOVE the tab bar (safe area) ──
-            requestBtn.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: 20),
-            requestBtn.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -20),
-            requestBtn.heightAnchor.constraint(equalToConstant: 52),
-            requestBtn.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            requestBtn.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: AppDesign.Spacing.lg),
+            requestBtn.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -AppDesign.Spacing.lg),
+            requestBtn.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight),
+            requestBtn.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.sm),
             // Button top determines the bar's top
-            requestBtn.topAnchor.constraint(equalTo: bottomBar.topAnchor, constant: 12),
+            requestBtn.topAnchor.constraint(equalTo: bottomBar.topAnchor, constant: AppDesign.Spacing.sm),
         ])
     }
 
@@ -144,8 +135,8 @@ final class RideDetailViewController: UIViewController {
         NSLayoutConstraint.activate([
             card.topAnchor.constraint(equalTo: wrap.topAnchor),
             card.bottomAnchor.constraint(equalTo: wrap.bottomAnchor),
-            card.leadingAnchor.constraint(equalTo: wrap.leadingAnchor, constant: 16),
-            card.trailingAnchor.constraint(equalTo: wrap.trailingAnchor, constant: -16),
+            card.leadingAnchor.constraint(equalTo: wrap.leadingAnchor, constant: AppDesign.Spacing.md),
+            card.trailingAnchor.constraint(equalTo: wrap.trailingAnchor, constant: -AppDesign.Spacing.md),
         ])
         return wrap
     }
@@ -166,17 +157,16 @@ final class RideDetailViewController: UIViewController {
         avatar.contentMode = .scaleAspectFill
         avatar.backgroundColor = .systemGray5
         avatar.layer.borderWidth  = 2.5
-        avatar.layer.borderColor  = UIColor.systemGreen.withAlphaComponent(0.5).cgColor
+        avatar.layer.borderColor  = AppDesign.Color.primary.withAlphaComponent(0.5).cgColor
         avatar.loadAndFallback(from: driver?.photoURL, name: driver?.fullName ?? "D")
         avatar.translatesAutoresizingMaskIntoConstraints = false
 
         let nameLabel = UILabel()
         nameLabel.text = driver?.fullName ?? "Unknown Driver"
-        nameLabel.font = .systemFont(ofSize: 17, weight: .bold)
+        nameLabel.font = AppDesign.Typography.bodyStrong
 
         let subLabel = UILabel()
-        subLabel.textColor = .secondaryLabel
-        subLabel.font = .systemFont(ofSize: 13)
+        subLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         if let d = driver {
             if d.role == .student {
                 let y = d.year.map { ordinal($0) + " Year" } ?? "Student"
@@ -239,14 +229,12 @@ final class RideDetailViewController: UIViewController {
         if let avg = avg {
             let lbl = UILabel()
             lbl.text = String(format: " %.1f", avg)
-            lbl.font = .systemFont(ofSize: 12, weight: .medium)
-            lbl.textColor = .secondaryLabel
+            lbl.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
             stack.addArrangedSubview(lbl)
         } else {
             let lbl = UILabel()
             lbl.text = "  No ratings yet"
-            lbl.font = .systemFont(ofSize: 12)
-            lbl.textColor = .tertiaryLabel
+            lbl.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
             stack.addArrangedSubview(lbl)
         }
         return stack
@@ -257,8 +245,8 @@ final class RideDetailViewController: UIViewController {
         let sectionLabel = makeSectionLabel("RIDE INFO")
 
         let tf = DateFormatter(); tf.dateFormat = "EEE, MMM d  ·  h:mm a"
-        let dateChip  = makeChip(icon: "clock.fill",     color: .systemBlue,   text: tf.string(from: ride.departureTime))
-        let seatsChip = makeChip(icon: "person.2.fill",  color: .systemGreen,  text: "\(ride.seatsAvailable) seats left")
+        let dateChip  = makeChip(icon: "clock.fill",     color: AppDesign.Color.primary,   text: tf.string(from: ride.departureTime))
+        let seatsChip = makeChip(icon: "person.2.fill",  color: AppDesign.Color.primary,  text: "\(ride.seatsAvailable) seats left")
         let fareChip  = makeChip(icon: "indianrupeesign.circle.fill", color: .systemOrange, text: "₹\(Int(ride.farePerSeat)) per seat")
 
         let vehicleText: String
@@ -267,7 +255,7 @@ final class RideDetailViewController: UIViewController {
         } else {
             vehicleText = "Car"
         }
-        let vehicleChip = makeChip(icon: "car.fill", color: .systemPurple, text: vehicleText)
+        let vehicleChip = makeChip(icon: "car.fill", color: AppDesign.Color.primary, text: vehicleText)
 
         let chipStack = UIStackView(arrangedSubviews: [dateChip, seatsChip, fareChip, vehicleChip])
         chipStack.axis = .vertical
@@ -300,9 +288,7 @@ final class RideDetailViewController: UIViewController {
         let sectionLabel = makeSectionLabel("DRIVER NOTES")
         let body = UILabel()
         body.text = notes
-        body.font = .systemFont(ofSize: 14)
-        body.textColor = .secondaryLabel
-        body.numberOfLines = 0
+        body.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
         [sectionLabel, body].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             notesCard.addSubview($0)
@@ -326,7 +312,7 @@ final class RideDetailViewController: UIViewController {
 
         let iconWrap = UIView()
         iconWrap.backgroundColor = color.withAlphaComponent(0.12)
-        iconWrap.layer.cornerRadius = 10
+        iconWrap.layer.cornerRadius = AppDesign.Radius.sm
         iconWrap.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             iconWrap.widthAnchor.constraint(equalToConstant: 36),
@@ -347,8 +333,7 @@ final class RideDetailViewController: UIViewController {
 
         let lbl = UILabel()
         lbl.text = text
-        lbl.font = .systemFont(ofSize: 14, weight: .medium)
-        lbl.textColor = .label
+        lbl.applyTextStyle(AppDesign.Typography.subheadline)
 
         row.addArrangedSubview(iconWrap)
         row.addArrangedSubview(lbl)
@@ -358,8 +343,7 @@ final class RideDetailViewController: UIViewController {
     private func makeSectionLabel(_ text: String) -> UILabel {
         let l = UILabel()
         l.text = text
-        l.font = .systemFont(ofSize: 11, weight: .semibold)
-        l.textColor = .tertiaryLabel
+        l.applyTextStyle(AppDesign.Typography.captionStrong, color: .tertiaryLabel)
         l.letterSpacing(1.2)
         return l
     }
@@ -421,8 +405,10 @@ final class RideDetailViewController: UIViewController {
             requestBtn.isEnabled = false
         } else {
             cfg.title = "Request to Join"
-            cfg.baseBackgroundColor = .systemGreen
+            cfg.baseBackgroundColor = AppDesign.Color.primary
             cfg.image = UIImage(systemName: "arrow.right.circle.fill")
+            cfg.imagePlacement = .trailing
+            cfg.imagePadding = AppDesign.Spacing.xs
             requestBtn.isEnabled = true
         }
         requestBtn.configuration = cfg
@@ -437,13 +423,13 @@ final class RideDetailViewController: UIViewController {
             pickupPoint: ride.source,
             seats: 1
         )
-        RideDataModel.shared.createJoinRequest(req)
+        _ = RideDataModel.shared.createJoinRequest(req)
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
 
         alreadyRequested = true
         updateButtonState()
 
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        AppHaptics.success()
 
         let alert = UIAlertController(
             title: "Request Sent! 🎉",
@@ -473,7 +459,7 @@ final class RideDetailViewController: UIViewController {
 extension RideDetailViewController: MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let r = MKPolylineRenderer(overlay: overlay)
-        r.strokeColor = UIColor.systemGreen
+        r.strokeColor = AppDesign.Color.primary
         r.lineWidth   = 4
         r.lineDashPattern = nil
         return r

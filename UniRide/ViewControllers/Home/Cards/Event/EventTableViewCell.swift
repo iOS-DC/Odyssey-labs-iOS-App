@@ -17,44 +17,35 @@ class EventTableViewCell: UITableViewCell {
         contentView.backgroundColor = .clear
 
         // Card styling (like Ride cell)
-        cardContainerView.backgroundColor = .systemBackground
-        cardContainerView.layer.cornerRadius = 20
+        cardContainerView.backgroundColor = AppDesign.Color.surface
+        cardContainerView.layer.cornerRadius = AppDesign.Radius.lg
         cardContainerView.layer.masksToBounds = true
 
         // Shadow on the cell layer
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.10
-        layer.shadowOffset = CGSize(width: 0, height: 3)
-        layer.shadowRadius = 8
+        layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
+        layer.shadowOffset = AppDesign.Shadow.smallCardOffset
+        layer.shadowRadius = AppDesign.Shadow.smallCardRadius
         layer.masksToBounds = false
 
-        eventImageView.layer.cornerRadius = 12
+        eventImageView.layer.cornerRadius = AppDesign.Radius.sm
         eventImageView.clipsToBounds = true
 
-        titleLabel.font = .systemFont(ofSize: 17, weight: .bold)
-        titleLabel.numberOfLines = 2
+        titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 2)
         titleLabel.lineBreakMode = .byWordWrapping
-        dateLabel.font = .systemFont(ofSize: 13)
-        dateLabel.textColor = .secondaryLabel
-        locationLabel.font = .systemFont(ofSize: 13)
-        locationLabel.textColor = .secondaryLabel
-        locationLabel.numberOfLines = 1
-
-        badgeLabel.font = .systemFont(ofSize: 12, weight: .semibold)
-        badgeLabel.textColor = .systemBlue
+        dateLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        locationLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        badgeLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: AppDesign.Color.primary)
 
         attendButton.setTitle("View Details ›", for: .normal)
-        attendButton.setTitleColor(.systemBlue, for: .normal)
-        attendButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
-        attendButton.backgroundColor = .clear
-        attendButton.layer.cornerRadius = 0
+        attendButton.applyTextActionStyle()
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
 
         // Better spacing between cells
-        let inset: CGFloat = 10
+        let inset: CGFloat = AppDesign.Spacing.sm
         contentView.frame = contentView.frame.insetBy(dx: 0, dy: inset)
 
         // Correct shadow path = performance boost

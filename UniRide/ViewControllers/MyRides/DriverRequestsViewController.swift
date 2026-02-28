@@ -11,7 +11,7 @@ final class DriverRequestsViewController: UIViewController {
         systemImage: "person.3.sequence",
         title: "No Pending Requests",
         body: "You don't have any new join requests right now.",
-        tintColor: .systemGray
+        tintColor: AppDesign.Color.primary
     )
 
     init(trip: RideDataModel.MyTrip) {
@@ -47,6 +47,7 @@ final class DriverRequestsViewController: UIViewController {
         tableView.dataSource = self
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 72
+        tableView.contentInset = UIEdgeInsets(top: AppDesign.Spacing.xs, left: 0, bottom: AppDesign.Spacing.lg, right: 0)
         
         tableView.register(UINib(nibName: "RequestCell", bundle: nil), forCellReuseIdentifier: RequestCell.identifier)
 

@@ -35,8 +35,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
 
-        cardContainerView.layer.cornerRadius = 20
-        cardContainerView.backgroundColor = .systemBackground
+        cardContainerView.applyCardStyle()
 
         fromLabel.numberOfLines = 1
         toLabel.numberOfLines = 1
@@ -52,6 +51,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         timeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         viewDetailsButton.setContentHuggingPriority(.required, for: .horizontal)
         viewDetailsButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        viewDetailsButton.applyTextActionStyle(color: AppDesign.Color.primary, font: AppDesign.Typography.captionStrong)
     }
     
         @objc private func handleTap() {
@@ -80,7 +80,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
                 let badge = UILabel()
                 badge.tag = tag
                 badge.text = "  ● Live  "
-                badge.font = .systemFont(ofSize: 11, weight: .bold)
+                badge.font = AppDesign.Typography.captionStrong
                 badge.textColor = .white
                 badge.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
                 badge.layer.cornerRadius = 10
@@ -88,8 +88,8 @@ class UpcomingTableHomeViewCell: UITableViewCell {
                 badge.translatesAutoresizingMaskIntoConstraints = false
                 cardContainerView.addSubview(badge)
                 NSLayoutConstraint.activate([
-                    badge.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -12),
-                    badge.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: 10)
+                    badge.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -AppDesign.Spacing.sm),
+                    badge.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: AppDesign.Spacing.xs + AppDesign.Spacing.xxs / 2)
                 ])
             }
         }
