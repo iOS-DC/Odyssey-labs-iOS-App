@@ -263,15 +263,32 @@ final class UserDataModel {
         try await AuthService.shared.verifyEmailOTP(email: email, token: code)
 
         // Session is now stored. Try to fetch existing profile from Supabase.
-        if let uid = SessionManager.shared.userID,
-           let row = try? await ProfileRepository.shared.fetchProfile(userID: uid),
-           !row.isEmpty {
-            let profile = profileFromRow(row, fallbackEmail: email, uid: uid)
-            return upsertAndLogin(profile)
+        guard let uid = SessionManager.shared.userID else { return nil }
+
+        // fetchProfile returns [String:Any]? — try? makes it [String:Any]??
+        // Flatten both Optional layers: nil outer = network error, nil inner = no row
+        let fetchedRow = try? await ProfileRepository.shared.fetchProfile(userID: uid)
+        guard let row = fetchedRow ?? nil, !row.isEmpty else {
+            // No profile row yet — brand new user, continue onboarding
+            return nil
         }
 
-        // New user — return nil so onboarding continues
-        return nil
+        // Build local profile from the Supabase row
+        var profile = profileFromRow(row, fallbackEmail: email, uid: uid)
+
+        // Hydrate vehicle from user_vehicles table
+        if let vehicle = try? await ProfileRepository.shared.fetchVehicle(userID: uid) {
+            profile.vehicle = vehicle
+        }
+
+        // Hydrate home locations from home_locations table
+        let homes = (try? await ProfileRepository.shared.fetchHomeLocations(userID: uid)) ?? []
+        if !homes.isEmpty {
+            profile.savedHomeLocations = homes
+            profile.savedHomeLocation  = homes.first
+        }
+
+        return upsertAndLogin(profile)
     }
 
     func registerNewUser(profile: UserProfile) {
@@ -610,15 +627,10 @@ final class UserDataModel {
             return incoming
         }
 
+        // Same email but different local ID — merge, always keep the Supabase UUID
         if let idx = users.firstIndex(where: { $0.email == incoming.email }) {
-            let resolvedID: UUID = {
-                if BackendConfig.useRealBackend {
-                    return incoming.id
-                }
-                return users[idx].id
-            }()
             let merged = UserProfile(
-                id: resolvedID,
+                id: incoming.id,           // always use the Supabase auth UUID
                 email: incoming.email,
                 isEmailVerified: incoming.isEmailVerified,
                 phone: incoming.phone,
