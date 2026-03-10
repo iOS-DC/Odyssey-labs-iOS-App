@@ -249,7 +249,6 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
             showAlert("Missing Information", error.localizedDescription)
         }
     }
-
     private func showAlert(_ title: String, _ message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))

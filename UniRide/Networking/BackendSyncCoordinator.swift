@@ -5,11 +5,8 @@ final class BackendSyncCoordinator {
 
     private init() {}
 
-    /// Pulls home feed data from backend and hydrates local data models.
-    /// Keeps local data untouched when backend is disabled or API fails.
+    /// Pulls home-feed data from Supabase and hydrates local data models.
     func refreshHomeFeedIfEnabled() async {
-        guard BackendConfig.useRealBackend else { return }
-
         async let ridesTask: Void = syncRides()
         async let eventsTask: Void = syncEvents()
 
@@ -18,11 +15,13 @@ final class BackendSyncCoordinator {
 
     private func syncRides() async {
         do {
-            let rides = try await RidesAPI.shared.fetchPublishedRides()
-            RideDataModel.shared.mergeRemoteRides(rides)
-            UserDataModel.shared.ensureDriverProfiles(for: rides.map { $0.driverUserID })
+            let rides = try await RideRepository.shared.fetchPublishedRides()
+            await MainActor.run {
+                RideDataModel.shared.mergeRemoteRides(rides)
+                UserDataModel.shared.ensureDriverProfiles(for: rides.map { $0.driverUserID })
+            }
         } catch {
-            print("Backend ride sync failed: \(error.localizedDescription)")
+            print("Supabase ride sync failed: \(error.localizedDescription)")
         }
     }
 

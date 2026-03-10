@@ -404,10 +404,30 @@ class EditProfileViewController: UIViewController,
         user.email    = emailField.text ?? user.email
         user.phone    = phoneField.text
         if let y = yearField.text, let yr = Int(y) { user.year = yr }
-        if let photoURL = newPhotoURL { user.photoURL = photoURL }
-        UserDataModel.shared.saveUserProfile(user)
-        AppHaptics.success()
-        navigationController?.popViewController(animated: true)
+
+        // If a new photo was chosen, upload to Supabase storage
+        if let photoURL = newPhotoURL,
+           let imageData = try? Data(contentsOf: photoURL) {
+            UserDataModel.shared.saveUserProfile(user)  // save text fields first
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    let remoteURL = try await ProfileRepository.shared.uploadAvatar(
+                        userID: user.id, imageData: imageData)
+                    var updatedUser = user
+                    updatedUser.photoURL = URL(string: remoteURL)
+                    UserDataModel.shared.saveUserProfile(updatedUser)
+                } catch {
+                    print("Avatar upload failed:", error.localizedDescription)
+                }
+                AppHaptics.success()
+                self.navigationController?.popViewController(animated: true)
+            }
+        } else {
+            UserDataModel.shared.saveUserProfile(user)
+            AppHaptics.success()
+            navigationController?.popViewController(animated: true)
+        }
     }
 
     @objc private func openVehicleDetails() {

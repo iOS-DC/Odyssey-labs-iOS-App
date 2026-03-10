@@ -198,15 +198,20 @@ final class AuthAPI {
     }
 
     func verifyEmailOTP(email: String, code: String) async throws -> AuthVerifyEmailResponse {
-        let body = try client.encodeBody(SupabaseEmailVerifyRequest(email: email, token: code, type: "email"))
-        let endpoint = APIEndpoint(path: "/auth/v1/verify", method: "POST", body: body)
-        let response: SupabaseAuthSessionResponse = try await client.send(endpoint, as: SupabaseAuthSessionResponse.self)
+        let response = try await verifyEmailOTPWithFallback(email: email, code: code)
 
         if let token = response.accessToken, !token.isEmpty {
             sessionStore.accessToken = token
         }
         if let userID = response.user?.id, !userID.isEmpty {
             sessionStore.authUserID = userID
+        }
+        guard sessionStore.accessToken != nil else {
+            throw NSError(
+                domain: "Auth",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Could not create an authenticated session from OTP. Please request OTP again."]
+            )
         }
 
         let snapshot = try await fetchCurrentProfileSnapshot(userID: response.user?.id)
@@ -431,6 +436,18 @@ final class AuthAPI {
             return backendID
         }
         return localProfileID
+    }
+
+    private func verifyEmailOTPWithFallback(email: String, code: String) async throws -> SupabaseAuthSessionResponse {
+        do {
+            let primaryBody = try client.encodeBody(SupabaseEmailVerifyRequest(email: email, token: code, type: "email"))
+            let primaryEndpoint = APIEndpoint(path: "/auth/v1/verify", method: "POST", body: primaryBody)
+            return try await client.send(primaryEndpoint, as: SupabaseAuthSessionResponse.self)
+        } catch {
+            let fallbackBody = try client.encodeBody(SupabaseEmailVerifyRequest(email: email, token: code, type: "signup"))
+            let fallbackEndpoint = APIEndpoint(path: "/auth/v1/verify", method: "POST", body: fallbackBody)
+            return try await client.send(fallbackEndpoint, as: SupabaseAuthSessionResponse.self)
+        }
     }
 }
 

@@ -373,13 +373,17 @@ class ProfileViewController: UIViewController {
     }
 
     private func performLogout() {
-        UserDataModel.shared.logout()
-        let sb     = UIStoryboard(name: "Main", bundle: nil)
-        let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
-        let nav    = UINavigationController(rootViewController: emailVC)
-        if let scene = view.window?.windowScene?.delegate as? SceneDelegate {
-            scene.window?.rootViewController = nav
-            scene.window?.makeKeyAndVisible()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await AuthService.shared.signOut()   // clears Supabase session
+            UserDataModel.shared.logout()             // clears local state
+            let sb     = UIStoryboard(name: "Main", bundle: nil)
+            let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
+            let nav    = UINavigationController(rootViewController: emailVC)
+            if let scene = self.view.window?.windowScene?.delegate as? SceneDelegate {
+                scene.window?.rootViewController = nav
+                scene.window?.makeKeyAndVisible()
+            }
         }
     }
 

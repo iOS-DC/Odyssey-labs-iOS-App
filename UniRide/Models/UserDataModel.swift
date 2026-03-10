@@ -228,13 +228,8 @@ final class UserDataModel {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-
-        if BackendConfig.useRealBackend {
-            try await AuthAPI.shared.startEmailVerification(email: email)
-            return
-        }
-
-        try startEmailVerification(email: email)
+        // Always use Supabase Auth OTP
+        try await AuthService.shared.sendEmailOTP(email: email)
     }
 
     // Function Verifying The otp. Called in the otp view controller
@@ -264,37 +259,42 @@ final class UserDataModel {
     func verifyEmailOTPAsync(email rawEmail: String, code: String) async throws -> UserProfile? {
         let email = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
-        if BackendConfig.useRealBackend {
-            let response = try await AuthAPI.shared.verifyEmailOTP(email: email, code: code)
-            guard response.existingUser else { return nil }
+        // Always verify via Supabase Auth
+        try await AuthService.shared.verifyEmailOTP(email: email, token: code)
 
-            if let remote = response.user {
-                let remoteProfile = mapRemoteUserToProfile(remote, fallbackEmail: email)
-                return upsertAndLogin(remoteProfile)
-            }
-
-            if let existing = users.first(where: { $0.email == email }) {
-                currentUserID = existing.id
-                return existing
-            }
-            return nil
+        // Session is now stored. Try to fetch existing profile from Supabase.
+        if let uid = SessionManager.shared.userID,
+           let row = try? await ProfileRepository.shared.fetchProfile(userID: uid),
+           !row.isEmpty {
+            let profile = profileFromRow(row, fallbackEmail: email, uid: uid)
+            return upsertAndLogin(profile)
         }
 
-        return try verifyEmailOTP(email: email, code: code)
+        // New user — return nil so onboarding continues
+        return nil
     }
 
     func registerNewUser(profile: UserProfile) {
-        let persisted = withBackendIdentity(profile)
+        // Use the Supabase auth UID if available
+        let persisted: UserProfile
+        if let authID = SessionManager.shared.userID, authID != profile.id {
+            persisted = UserProfile(
+                id: authID, email: profile.email, isEmailVerified: profile.isEmailVerified,
+                phone: profile.phone, isPhoneVerified: profile.isPhoneVerified,
+                fullName: profile.fullName, role: profile.role, courseName: profile.courseName,
+                year: profile.year, employeeID: profile.employeeID, photoURL: profile.photoURL,
+                vehicle: profile.vehicle, savedHomeLocation: profile.savedHomeLocation,
+                savedHomeLocations: profile.savedHomeLocations, lastKnownLocation: profile.lastKnownLocation)
+        } else {
+            persisted = profile
+        }
         users.append(persisted)
         currentUserID = persisted.id
         saveUsers()
-        if BackendConfig.useRealBackend {
-            Task {
-                do {
-                    try await AuthAPI.shared.upsertCurrentUserProfile(persisted)
-                } catch {
-                    print("Profile upsert failed:", error.localizedDescription)
-                }
+        // Persist to Supabase
+        Task {
+            do { try await pushProfileToSupabase(persisted) } catch {
+                print("Profile upsert failed:", error.localizedDescription)
             }
         }
         print("New user completely registered:", persisted)
@@ -430,13 +430,9 @@ final class UserDataModel {
 
         users[index] = user
         saveUsers()
-        if BackendConfig.useRealBackend {
-            Task {
-                do {
-                    try await AuthAPI.shared.upsertCurrentUserProfile(user)
-                } catch {
-                    print("Profile upsert failed:", error.localizedDescription)
-                }
+        Task {
+            do { try await pushProfileToSupabase(user) } catch {
+                print("Profile upsert failed:", error.localizedDescription)
             }
         }
     }
@@ -448,13 +444,9 @@ final class UserDataModel {
 
         users[index] = updatedUser
         saveUsers()
-        if BackendConfig.useRealBackend {
-            Task {
-                do {
-                    try await AuthAPI.shared.upsertCurrentUserProfile(updatedUser)
-                } catch {
-                    print("Profile upsert failed:", error.localizedDescription)
-                }
+        Task {
+            do { try await pushProfileToSupabase(updatedUser) } catch {
+                print("Profile upsert failed:", error.localizedDescription)
             }
         }
     }
@@ -462,8 +454,7 @@ final class UserDataModel {
     // LOGOUT Function
     func logout() {
         currentUserID = nil
-        SessionStore.shared.accessToken = nil
-        SessionStore.shared.authUserID = nil
+        SessionManager.shared.clear()
         saveUsers()
     }
 
@@ -564,29 +555,51 @@ final class UserDataModel {
         )
     }
 
-    private func withBackendIdentity(_ profile: UserProfile) -> UserProfile {
-        guard BackendConfig.useRealBackend,
-              let backendID = AuthAPI.shared.currentAuthUserID() else {
-            return profile
-        }
+    // MARK: - Supabase profile helpers
 
+    /// Build a UserProfile from a Supabase `profiles` row dictionary.
+    func profileFromRow(_ row: [String: Any], fallbackEmail: String, uid: UUID) -> UserProfile {
+        let email       = (row["email"] as? String) ?? fallbackEmail
+        let fullName    = (row["full_name"] as? String) ?? ""
+        let phone       = row["phone"] as? String
+        let role        = (row["role"] as? String).flatMap(UserRole.init(rawValue:))
+        let courseName  = row["course_name"] as? String
+        let year        = row["year"] as? Int
+        let employeeID  = row["employee_id"] as? String
+        let photoURL    = (row["photo_url"] as? String).flatMap(URL.init(string:))
+        let emailVerif  = (row["is_email_verified"] as? Bool) ?? true
+        let phoneVerif  = (row["is_phone_verified"] as? Bool) ?? false
         return UserProfile(
-            id: backendID,
-            email: profile.email,
-            isEmailVerified: profile.isEmailVerified,
-            phone: profile.phone,
-            isPhoneVerified: profile.isPhoneVerified,
-            fullName: profile.fullName,
-            role: profile.role,
-            courseName: profile.courseName,
-            year: profile.year,
-            employeeID: profile.employeeID,
-            photoURL: profile.photoURL,
-            vehicle: profile.vehicle,
-            savedHomeLocation: profile.savedHomeLocation,
-            savedHomeLocations: profile.savedHomeLocations,
-            lastKnownLocation: profile.lastKnownLocation
-        )
+            id: uid, email: email, isEmailVerified: emailVerif,
+            phone: phone, isPhoneVerified: phoneVerif, fullName: fullName,
+            role: role, courseName: courseName, year: year, employeeID: employeeID,
+            photoURL: photoURL)
+    }
+
+    /// Push the current UserProfile to Supabase `profiles` (and `user_vehicles` if needed).
+    func pushProfileToSupabase(_ user: UserProfile) async throws {
+        guard SessionManager.shared.isLoggedIn else { return }
+        var fields: [String: Any] = [
+            "id":                user.id.uuidString,
+            "email":             user.email,
+            "full_name":         user.fullName,
+            "is_email_verified": user.isEmailVerified,
+            "is_phone_verified": user.isPhoneVerified
+        ]
+        if let v = user.phone        { fields["phone"]       = v }
+        if let v = user.role         { fields["role"]        = v.rawValue }
+        if let v = user.courseName   { fields["course_name"] = v }
+        if let v = user.year         { fields["year"]        = v }
+        if let v = user.employeeID   { fields["employee_id"] = v }
+        if let v = user.photoURL     { fields["photo_url"]   = v.absoluteString }
+        try await ProfileRepository.shared.upsertProfile(fields)
+
+        if let vehicle = user.vehicle {
+            try await ProfileRepository.shared.upsertVehicle(userID: user.id, vehicle: vehicle)
+        }
+        if let home = user.savedHomeLocation {
+            try await ProfileRepository.shared.upsertHomeLocation(userID: user.id, location: home, isPrimary: true)
+        }
     }
 
     private func upsertAndLogin(_ incoming: UserProfile) -> UserProfile {
@@ -598,9 +611,14 @@ final class UserDataModel {
         }
 
         if let idx = users.firstIndex(where: { $0.email == incoming.email }) {
-            let existingID = users[idx].id
+            let resolvedID: UUID = {
+                if BackendConfig.useRealBackend {
+                    return incoming.id
+                }
+                return users[idx].id
+            }()
             let merged = UserProfile(
-                id: existingID,
+                id: resolvedID,
                 email: incoming.email,
                 isEmailVerified: incoming.isEmailVerified,
                 phone: incoming.phone,
