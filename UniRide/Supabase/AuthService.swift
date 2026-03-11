@@ -53,7 +53,12 @@ final class AuthService {
             throw AuthError.invalidResponse
         }
         let email = userObj["email"] as? String
-        session.save(accessToken: at, refreshToken: rt, userID: uid, email: email)
+        var expiresAt: Date? = nil
+        if let exp = json["expires_at"] as? TimeInterval {
+            expiresAt = Date(timeIntervalSince1970: exp)
+        }
+        session.save(accessToken: at, refreshToken: rt, userID: uid, email: email,
+                     expiresAt: expiresAt, preserveLoginDate: false)
     }
 
     // MARK: - Sign out

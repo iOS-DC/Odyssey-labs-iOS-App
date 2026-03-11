@@ -250,7 +250,20 @@ class ProfileViewController: UIViewController {
 
     // MARK: - Load Profile
     private func loadProfile() {
-        guard let profile = UserDataModel.shared.getCurrentUser() else { return }
+        if let profile = UserDataModel.shared.getCurrentUser() {
+            applyProfile(profile)
+        } else if SessionManager.shared.isLoggedIn {
+            // currentUserID not yet restored (e.g. cold launch) — fetch async
+            Task { @MainActor in
+                await UserDataModel.shared.restoreSessionUser()
+                if let profile = UserDataModel.shared.getCurrentUser() {
+                    applyProfile(profile)
+                }
+            }
+        }
+    }
+
+    private func applyProfile(_ profile: UserProfile) {
 
         // Avatar
         if let url = profile.photoURL {

@@ -416,6 +416,35 @@ final class UserDataModel {
         return users.first(where: { $0.id == id })
     }
 
+    /// Called on app relaunch when a saved session exists.
+    /// Restores currentUserID from SessionManager and re-fetches the profile
+    /// from Supabase so the UI always shows up-to-date data.
+    func restoreSessionUser() async {
+        guard let uid = SessionManager.shared.userID else { return }
+
+        // Immediately restore in-memory currentUserID so getCurrentUser() works
+        // even if the network call below is slow.
+        await MainActor.run { self.currentUserID = uid }
+
+        // Re-fetch from Supabase to pick up any changes made on other devices
+        // fetchProfile returns [String:Any]? so try? gives [String:Any]??  — flatten with ?? nil
+        let fetched = (try? await ProfileRepository.shared.fetchProfile(userID: uid)) ?? nil
+        guard let row = fetched, !row.isEmpty else { return }
+
+        var profile = profileFromRow(row, fallbackEmail: SessionManager.shared.userEmail ?? "", uid: uid)
+
+        if let vehicle = try? await ProfileRepository.shared.fetchVehicle(userID: uid) {
+            profile.vehicle = vehicle
+        }
+        let homes = (try? await ProfileRepository.shared.fetchHomeLocations(userID: uid)) ?? []
+        if !homes.isEmpty {
+            profile.savedHomeLocations = homes
+            profile.savedHomeLocation  = homes.first
+        }
+
+        await MainActor.run { _ = self.upsertAndLogin(profile) }
+    }
+
     func getUser(by id: UUID) -> UserProfile? {
         return users.first(where: { $0.id == id })
     }
