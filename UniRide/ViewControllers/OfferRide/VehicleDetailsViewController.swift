@@ -21,6 +21,10 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     var time: Date?
     var selectedRoute: RideRoute?
 
+    // Recurring fields passed from OfferRideViewController
+    var isRecurring: Bool = false
+    var recurringDays: [Int] = []
+
     enum VehicleType { case car, bike }
     var selectedVehicle: VehicleType = .car {
         didSet { updateVehicleUI() }
@@ -123,14 +127,19 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
             return
         }
 
+        // Combine date + time pickers into the departure timestamp
+        let departure = date ?? time ?? Date()
+
         let fare = PricingManager.shared.suggestedFare(
             distanceMeters: route.distanceMeters,
             seats: seats,
-            vehicle: selectedVehicle == .car ? "car" : "bike"
+            vehicle: selectedVehicle == .car ? "car" : "bike",
+            departureTime: departure
         )
 
         costTextField.text = "\(fare)"
-        suggestedFareLabel.text = "Suggested fare: ₹\(fare)"
+        let peakNote = PricingManager.shared.isPeakHour(departure) ? " (peak-hour)" : ""
+        suggestedFareLabel.text = "Suggested fare: ₹\(fare)\(peakNote)"
     }
 
     // MARK: - Fare TextField Delegate
@@ -184,7 +193,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     @IBAction func nextTapped(_ sender: UIButton) {
 
-        let summary = RideSummary(
+        var summary = RideSummary(
             from: source!,
             to: destination!,
             date: date!,
@@ -194,6 +203,8 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
             seats: seats,
             farePerSeat: Double(costTextField.text ?? "") ?? 0
         )
+        summary.isRecurring   = isRecurring
+        summary.recurringDays = recurringDays
 
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
         let vc = sb.instantiateViewController(withIdentifier: "ReviewRideViewController") as! ReviewRideViewController

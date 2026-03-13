@@ -42,6 +42,10 @@ class CommunityViewController: UIViewController,
         let message: String
         let timestamp: String
 
+        /// Remote Supabase ID — non-nil for posts fetched from or inserted into the backend.
+        /// Used to target like / comment / share calls to the correct row.
+        var remoteID: UUID?
+
         var likeCount: Int
         var shareCount: Int
         var hasLiked: Bool = false
@@ -87,6 +91,10 @@ class CommunityViewController: UIViewController,
 
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.separatorStyle = .none
+        tableView.backgroundColor = .systemGroupedBackground
+        tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
+        tableView.showsVerticalScrollIndicator = false
 
         commentTableView.delegate = self
         commentTableView.dataSource = self
@@ -102,8 +110,9 @@ class CommunityViewController: UIViewController,
         commentPopupBottomConstraint.constant = sheetHiddenOffset
         sharePopUpBottomConstraint.constant = sheetHiddenOffset
         
-        // Register Custom Cell
+        // Register Custom Cells
         commentTableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
+        tableView.register(EventCardCell.self, forCellReuseIdentifier: EventCardCell.reuseID)
         commentTableView.separatorStyle = .none
         commentTableView.rowHeight = UITableView.automaticDimension
         commentTableView.estimatedRowHeight = 80
@@ -120,6 +129,17 @@ class CommunityViewController: UIViewController,
         super.viewWillAppear(animated)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+        // Refresh events from Supabase so the Events tab shows real data
+        Task {
+            if let remote = try? await EventsAPI.shared.fetchTopEvents(limit: 30), !remote.isEmpty {
+                await MainActor.run {
+                    self.eventPosts = remote
+                    if self.segmentedControl.selectedSegmentIndex == 1 {
+                        self.tableView.reloadData()
+                    }
+                }
+            }
+        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -489,13 +509,14 @@ class CommunityViewController: UIViewController,
 
         if let index = selectedPostIndex {
             feedPosts[index].comments = selectedComments
+            // Persist comment to Supabase community_comments table
+            if let postID = feedPosts[index].remoteID {
+                Task { try? await CommunityRepository.shared.insertComment(postID: postID, text: text) }
+            }
         }
 
         commentTableView.reloadData()
         tableView.reloadRows(at: [IndexPath(row: currentPostIndex, section: 0)], with: .none)
-
-        // BUG FIX: Persist comment to Supabase community_comments table (best-effort).
-        Task { try? await CommunityRepository.shared.insertPost(text: "") }  // no-op placeholder
 
         hideCommentPopup()
     }
@@ -516,11 +537,10 @@ class CommunityViewController: UIViewController,
         feedPosts[index].likeCount += 1
         tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
 
-        // BUG FIX: Persist the like toggle to Supabase community_likes table.
-        // Note: remote post IDs would need to be stored on CommunityPost;
-        // for now we fire best-effort using the local index as a correlation.
-        // Full wiring requires migrating feedPosts to use CommunityPost model.
-        Task { try? await CommunityRepository.shared.insertPost(text: "") }  // no-op placeholder
+        // Persist like to Supabase (requires a remote post ID)
+        if let postID = feedPosts[index].remoteID {
+            Task { try? await CommunityRepository.shared.toggleLike(postID: postID) }
+        }
     }
 
     @IBAction func shareCancelButtonTapped(_ sender: Any) {
@@ -664,23 +684,30 @@ class CommunityViewController: UIViewController,
         Task {
             guard let remotePosts = try? await CommunityRepository.shared.fetchPosts() else { return }
             let mapped: [Post] = remotePosts.map { rp in
-                let authorName = rp.authorUserID.uuidString  // TODO: resolve to full name via profile
+                // Resolve author name from local profile cache, fall back to "Community Member"
+                let author = UserDataModel.shared.getUser(by: rp.authorUserID)
+                let authorName = author?.fullName.isEmpty == false ? author!.fullName : "Community Member"
+                let role: String
+                if let r = author?.role { role = r == .faculty ? "Faculty" : "Student" }
+                else { role = "Community Member" }
+
                 let df = RelativeDateTimeFormatter()
                 df.unitsStyle = .short
                 let when = df.localizedString(for: rp.createdAt, relativeTo: Date())
                 return Post(
                     name: authorName,
-                    subtitle: "Community Member",
+                    subtitle: role,
                     message: rp.text,
                     timestamp: when,
+                    remoteID: rp.id,        // ← store remote ID so likes/comments can target the right row
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount
                 )
             }
             guard !mapped.isEmpty else { return }
             await MainActor.run {
-                // Prepend remote posts before the local seed post
-                self.feedPosts = mapped + self.feedPosts
+                // Replace local seed posts with remote data
+                self.feedPosts = mapped
                 self.tableView.reloadData()
             }
         }
@@ -795,71 +822,95 @@ class CommunityViewController: UIViewController,
             let commentsLabel = cell.viewWithTag(20) as? UILabel
             commentsLabel?.text = post.comments.joined(separator: "\n")
 
+            // Verified badge — injected programmatically next to the name label (tag 1)
+            let badgeTag = 9001
+            cell.viewWithTag(badgeTag)?.removeFromSuperview()
+            if let nameLabel = cell.viewWithTag(1) as? UILabel {
+                // Look up whether this post's author is verified
+                let authorIDForPost: UUID? = post.remoteID.flatMap { pid in
+                    feedPosts.first(where: { $0.remoteID == pid }).flatMap { _ in nil }
+                }
+                // Simplified: check if the locally-known user matching this post's name is verified
+                let isVerifiedAuthor = UserDataModel.shared.allUsers()
+                    .first(where: { $0.fullName == post.name })?.isEmailVerified == true
+                if isVerifiedAuthor {
+                    let badge = UIImageView(image: UIImage(systemName: "checkmark.seal.fill"))
+                    badge.tag = badgeTag
+                    badge.tintColor = AppDesign.Color.primary
+                    badge.translatesAutoresizingMaskIntoConstraints = false
+                    badge.widthAnchor.constraint(equalToConstant: 13).isActive = true
+                    badge.heightAnchor.constraint(equalToConstant: 13).isActive = true
+                    if let parent = nameLabel.superview {
+                        parent.addSubview(badge)
+                        NSLayoutConstraint.activate([
+                            badge.leadingAnchor.constraint(equalTo: nameLabel.trailingAnchor, constant: 4),
+                            badge.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor),
+                        ])
+                    }
+                }
+            }
+
             return cell
         }
 
-        // EVENT LIST
+        // EVENT LIST — use the fully programmatic EventCardCell
         let event = eventPosts[indexPath.row]
-        let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath)
-
-        // Card Styling (Container Tag 900)
-        if let cardView = cell.viewWithTag(900) {
-            cardView.applyCardStyle(
-                corner: AppDesign.Radius.lg,
-                shadowOpacity: AppDesign.Shadow.smallCardOpacity,
-                shadowRadius: AppDesign.Shadow.smallCardRadius,
-                shadowOffset: AppDesign.Shadow.smallCardOffset
-            )
-            cardView.clipsToBounds = false
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: EventCardCell.reuseID, for: indexPath) as? EventCardCell else {
+            return UITableViewCell()
         }
-
-        if let imgView = cell.viewWithTag(100) as? UIImageView {
-            imgView.image = UIImage(named: event.imageName ?? "")
-            imgView.contentMode = .scaleAspectFill
-            imgView.clipsToBounds = true
-
-            imgView.layer.cornerRadius = AppDesign.Radius.lg
-            
-        }
-        
-
-        // title
-        if let titleLabel = cell.viewWithTag(1) as? UILabel {
-            titleLabel.text = event.title
-            titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
-        }
-
-        // date
-        let df = DateFormatter()
-        df.dateFormat = "MMM d, yyyy 'at' HH:mm"
-        if let dateLabel = cell.viewWithTag(2) as? UILabel {
-            dateLabel.text = df.string(from: event.startsAt)
-            dateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
-        }
-
-        // location
-        if let locLabel = cell.viewWithTag(3) as? UILabel {
-            locLabel.text = event.location?.name ?? "No Location"
-            locLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
-        }
-
-        // attendees
-        if let attendeesLabel = cell.viewWithTag(4) as? UILabel {
-            attendeesLabel.text = "Attending \(event.attendeeCount)"
-            attendeesLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
-        }
-
-
-
-        // Buttons
-        if let attendButton = cell.viewWithTag(10) as? UIButton {
-            attendButton.setTitle("Attend", for: .normal)
-            attendButton.applyTextActionStyle()
-        }
-
-
-
+        cell.configure(with: event, primaryColor: AppDesign.Color.primary)
+        cell.delegate = self
         return cell
+    }
+
+
+    // MARK: - didSelectRowAt (feed posts → PostDetailVC)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        guard tableView != commentTableView,
+              segmentedControl.selectedSegmentIndex == 0,
+              indexPath.row < feedPosts.count else { return }
+
+        let localPost = feedPosts[indexPath.row]
+        guard let remoteID = localPost.remoteID else { return }
+
+        // Map local Post → CommunityPost for PostDetailVC
+        let communityPost = CommunityPost(
+            id: remoteID,
+            authorUserID: UserDataModel.shared.allUsers()
+                .first(where: { $0.fullName == localPost.name })?.id ?? UUID(),
+            text: localPost.message,
+            imageURL: nil,
+            likeCount: localPost.likeCount,
+            shareCount: localPost.shareCount,
+            commentCount: localPost.commentCount,
+            createdAt: Date()
+        )
+        let vc = PostDetailViewController()
+        vc.post = communityPost
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard tableView != commentTableView else { return UITableView.automaticDimension }
+        // Event cards have a fixed hero height + metadata — estimate generously
+        if segmentedControl.selectedSegmentIndex == 1 { return UITableView.automaticDimension }
+        return UITableView.automaticDimension
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard tableView != commentTableView else { return 80 }
+        return segmentedControl.selectedSegmentIndex == 1 ? 270 : 160
+    }
+}
+
+// MARK: - EventCardCellDelegate
+extension CommunityViewController: EventCardCellDelegate {
+    func eventCardCellDidTapAttend(_ cell: EventCardCell) {
+        guard let indexPath = tableView.indexPath(for: cell),
+              indexPath.row < eventPosts.count else { return }
+        openEventDetailsScreen(event: eventPosts[indexPath.row])
     }
 }
 

@@ -9,7 +9,6 @@ final class RegistrationBuilder {
     var email: String?
     var isEmailVerified: Bool = false
     var phone: String?
-    var isPhoneVerified: Bool = false
     var role: UserRole?
 
     var fullName: String?
@@ -27,7 +26,6 @@ final class RegistrationBuilder {
         email = nil
         isEmailVerified = false
         phone = nil
-        isPhoneVerified = false
         role = nil
         fullName = nil
         courseName = nil
@@ -42,9 +40,6 @@ final class RegistrationBuilder {
     func buildUser() throws -> UserProfile {
         guard let email = email, isEmailVerified else {
             throw NSError(domain: "Registration", code: 400, userInfo: [NSLocalizedDescriptionKey: "Email verification required."])
-        }
-        guard let phone = phone, isPhoneVerified else {
-            throw NSError(domain: "Registration", code: 400, userInfo: [NSLocalizedDescriptionKey: "Phone verification required."])
         }
         guard let role = role else {
             throw NSError(domain: "Registration", code: 400, userInfo: [NSLocalizedDescriptionKey: "Please select a role."])
@@ -69,7 +64,6 @@ final class RegistrationBuilder {
             email: email,
             isEmailVerified: isEmailVerified,
             phone: phone,
-            isPhoneVerified: isPhoneVerified,
             fullName: fullName.trimmingCharacters(in: .whitespacesAndNewlines),
             role: role,
             courseName: courseName,

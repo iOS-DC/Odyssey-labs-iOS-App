@@ -524,23 +524,39 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
     func upcomingCellDidTapCancelRide(_ cell: UpcomingTableViewCell) {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
         let rideID = currentTrips[index].ride.id
-        showActionLoading()
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            defer { self.hideActionLoading() }
-            do {
-                _ = try await RideDataModel.shared.cancelRideAsync(id: rideID)
-                reloadTrips()
-            } catch {
-                let alert = UIAlertController(
-                    title: "Couldn't cancel ride",
-                    message: error.localizedDescription,
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
-                present(alert, animated: true)
-            }
+
+        // Ask for cancellation reason before cancelling
+        let reasons = ["Change of plans", "Vehicle issue", "Emergency", "Found alternative", "Other"]
+        let sheet = UIAlertController(title: "Cancel Ride",
+                                      message: "Please select a reason for cancellation:",
+                                      preferredStyle: .actionSheet)
+        for reason in reasons {
+            sheet.addAction(UIAlertAction(title: reason, style: .destructive) { [weak self] _ in
+                guard let self else { return }
+                self.showActionLoading()
+                Task { @MainActor in
+                    defer { self.hideActionLoading() }
+                    do {
+                        _ = try await RideDataModel.shared.cancelRideAsync(id: rideID)
+                        self.reloadTrips()
+                    } catch {
+                        let alert = UIAlertController(
+                            title: "Couldn't cancel ride",
+                            message: error.localizedDescription,
+                            preferredStyle: .alert
+                        )
+                        alert.addAction(UIAlertAction(title: "OK", style: .default))
+                        self.present(alert, animated: true)
+                    }
+                }
+            })
         }
+        sheet.addAction(UIAlertAction(title: "Keep Ride", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = cell
+            popover.sourceRect = cell.bounds
+        }
+        present(sheet, animated: true)
     }
 
     func upcomingCellDidTapStartTrip(_ cell: UpcomingTableViewCell) {

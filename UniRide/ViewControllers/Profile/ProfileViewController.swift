@@ -69,11 +69,11 @@ class ProfileViewController: UIViewController {
     private func setupNavBar() {
         title = "Profile"
 
+        // Settings gear button (left) → pushes SettingsViewController
         navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "rectangle.portrait.and.arrow.right"),
-            style: .plain, target: self, action: #selector(logoutTapped)
+            image: UIImage(systemName: "gearshape.fill"),
+            style: .plain, target: self, action: #selector(settingsTapped)
         )
-        navigationItem.leftBarButtonItem?.tintColor = AppDesign.Color.destructive
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "pencil"),
@@ -298,19 +298,25 @@ class ProfileViewController: UIViewController {
 
     // MARK: - Load Profile
     private func loadProfile() {
+        // 1. Show whatever we have locally right now (fast path)
         if let profile = UserDataModel.shared.getCurrentUser() {
             applyProfile(profile)
             hideSkeleton()
-        } else if SessionManager.shared.isLoggedIn {
-            // currentUserID not yet restored (cold launch) — show skeleton and fetch async
-            Task { @MainActor in
-                await UserDataModel.shared.restoreSessionUser()
-                if let profile = UserDataModel.shared.getCurrentUser() {
-                    applyProfile(profile)
-                }
-                hideSkeleton()
+        }
+
+        // 2. Always refresh from Supabase in the background (stale-while-revalidate).
+        //    This ensures freshly-registered accounts with an empty local cache (or any
+        //    profile updated on another device) are reflected immediately.
+        guard SessionManager.shared.isLoggedIn else {
+            hideSkeleton()
+            return
+        }
+        Task { @MainActor in
+            await UserDataModel.shared.restoreSessionUser()
+            if let fresh = UserDataModel.shared.getCurrentUser() {
+                applyProfile(fresh)
+                ReviewDataModel.shared.fetchAndMerge(for: fresh.id)
             }
-        } else {
             hideSkeleton()
         }
     }
@@ -441,6 +447,11 @@ class ProfileViewController: UIViewController {
     // MARK: - Actions
     @objc private func editButtonTapped() {
         openEditProfile()
+    }
+
+    @objc private func settingsTapped() {
+        let vc = SettingsViewController()
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     @objc private func editHomeLocationTapped() {

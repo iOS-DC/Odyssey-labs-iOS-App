@@ -11,7 +11,6 @@ import UIKit
 final class OTPViewController: UIViewController, UITextFieldDelegate {
     enum VerificationMode {
         case email
-        case phone
     }
 
     @IBOutlet weak var otpField1: UITextField!
@@ -24,7 +23,6 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
 
     @IBOutlet weak var containerCard: UIView!
     var verificationMode: VerificationMode = .email
-    var phoneNumber: String?
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var subtitleLabel: UILabel?
     private var resendTimer: Timer?
@@ -33,8 +31,8 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = verificationMode == .email ? "Verify Email" : "Verify Phone"
-        applyOnboardingChrome(step: verificationMode == .email ? 2 : 5, total: 7)
+        title = "Verify Email"
+        applyOnboardingChrome(step: 2, total: 7)
         errorLabel.isHidden = true
         verifyButton.applyPrimaryButton(color: AppDesign.Color.primary, radius: AppDesign.Radius.sm)
         applyPrimaryOnboardingCTAStyle(verifyButton)
@@ -167,22 +165,6 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
                         let vc = roleStoryboard.instantiateViewController(withIdentifier: "RoleSelectionViewController")
                         navigationController?.pushViewController(vc, animated: true)
                     }
-                case .phone:
-                    let phone = (phoneNumber ?? "")
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !phone.isEmpty else {
-                        errorLabel.text = "Phone verification session expired. Go back and retry."
-                        errorLabel.isHidden = false
-                        return
-                    }
-                    let isValid = try await UserDataModel.shared.verifyPhoneOTPAsync(phone: phone, code: code)
-                    guard isValid else { return }
-
-                    RegistrationBuilder.shared.phone = phone
-                    RegistrationBuilder.shared.isPhoneVerified = true
-
-                    let vc = storyboard!.instantiateViewController(withIdentifier: "ProfileStep2ViewController")
-                    navigationController?.pushViewController(vc, animated: true)
                 }
             } catch {
                 errorLabel.text = error.localizedDescription
@@ -229,15 +211,6 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
                         return
                     }
                     try await UserDataModel.shared.startEmailVerificationAsync(email: email)
-                case .phone:
-                    let phone = (phoneNumber ?? "")
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !phone.isEmpty else {
-                        errorLabel.text = "Phone missing. Go back and retry."
-                        errorLabel.isHidden = false
-                        return
-                    }
-                    try await UserDataModel.shared.startPhoneVerificationAsync(phone: phone)
                 }
                 clearOTPFields()
                 errorLabel.isHidden = true
@@ -292,16 +265,9 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     }
 
     private func configureSubtitle() {
-        switch verificationMode {
-        case .email:
-            titleLabel.text = "Verify your email"
-            let email = (UserDefaults.standard.string(forKey: "lastEmailForOTP") ?? "").lowercased()
-            subtitleLabel?.text = "Enter the 6-digit code we sent to\n\(maskedEmail(email))"
-        case .phone:
-            titleLabel.text = "Verify Phone"
-            let phone = phoneNumber ?? ""
-            subtitleLabel?.text = "Enter the 6-digit code we sent to\n\(maskedPhone(phone))"
-        }
+        titleLabel.text = "Verify your email"
+        let email = (UserDefaults.standard.string(forKey: "lastEmailForOTP") ?? "").lowercased()
+        subtitleLabel?.text = "Enter the 6-digit code we sent to\n\(maskedEmail(email))"
     }
 
     private func maskedEmail(_ email: String) -> String {
@@ -319,12 +285,16 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     }
 
     private func goToTabBar() {
+        // Request APNs permission right after login so iOS shows the
+        // "Allow Notifications?" prompt in a natural, logged-in context.
+        PushNotificationService.shared.requestPermission()
+
         let tabBar = storyboard?.instantiateViewController(identifier: "MainTabBarController") as! UITabBarController
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = scene.windows.first {
             window.rootViewController = tabBar
             window.makeKeyAndVisible()
-            
+
             // Optional transition animation
             UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil, completion: nil)
         }

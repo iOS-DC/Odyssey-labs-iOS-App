@@ -42,13 +42,21 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     private var suggestions: [MKLocalSearchCompletion] = []
     private var routes: [MKRoute] = []
     // Persistent Routes Sheet
-    
 
     private var selectedRoute: MKRoute?
 
     @IBOutlet weak var contentView: UIView!
 
     private var isLoadingVisible = false
+
+    // MARK: - Recurring ride state
+    private var isRecurring: Bool = false
+    private var recurringDays: Set<Int> = []   // ISO: 1=Mon … 7=Sun
+
+    // UI references for the recurring card (built programmatically)
+    private var recurringCard: UIView?
+    private var recurringSwitch: UISwitch?
+    private var dayPillsStack: UIStackView?
 
     // Sets up everything when the screen first loads
     override func viewDidLoad() {
@@ -75,12 +83,126 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setInitialRouteUIState()
         prefillLocationsIfPossible()
         updateNextButtonState()
+        buildRecurringCard()
 
         // Tap anywhere on the map to dismiss the keyboard
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tapGesture.cancelsTouchesInView = false
         mapView.addGestureRecognizer(tapGesture)
     }
+
+    // MARK: - Recurring Card
+    /// Builds a "Repeat this ride" toggle card and inserts it below the date/time pickers.
+    private func buildRecurringCard() {
+        let card = UIView()
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.backgroundColor = .secondarySystemGroupedBackground
+        card.layer.cornerRadius = AppDesign.Radius.md
+        card.layer.borderColor = AppDesign.Color.border.cgColor
+        card.layer.borderWidth = 1
+
+        // Label
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Repeat this ride"
+        label.font = AppDesign.Typography.bodyStrong
+        label.textColor = .label
+
+        // Switch
+        let sw = UISwitch()
+        sw.translatesAutoresizingMaskIntoConstraints = false
+        sw.onTintColor = AppDesign.Color.primary
+        sw.addTarget(self, action: #selector(recurringToggled(_:)), for: .valueChanged)
+        self.recurringSwitch = sw
+
+        // Day pills stack (hidden until switch is ON)
+        let days = [(1, "Mon"), (2, "Tue"), (3, "Wed"), (4, "Thu"), (5, "Fri"), (6, "Sat"), (7, "Sun")]
+        let pillsStack = UIStackView()
+        pillsStack.translatesAutoresizingMaskIntoConstraints = false
+        pillsStack.axis = .horizontal
+        pillsStack.distribution = .fillEqually
+        pillsStack.spacing = 6
+        pillsStack.alpha = 0
+        pillsStack.isHidden = true
+        self.dayPillsStack = pillsStack
+
+        for (iso, name) in days {
+            let btn = UIButton(type: .system)
+            btn.tag = iso
+            btn.setTitle(name, for: .normal)
+            btn.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .semibold)
+            btn.layer.cornerRadius = 8
+            btn.clipsToBounds = true
+            btn.addTarget(self, action: #selector(dayPillTapped(_:)), for: .touchUpInside)
+            applyDayPillStyle(btn, selected: false)
+            pillsStack.addArrangedSubview(btn)
+        }
+
+        card.addSubview(label)
+        card.addSubview(sw)
+        card.addSubview(pillsStack)
+
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            label.centerYAnchor.constraint(equalTo: sw.centerYAnchor),
+
+            sw.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+            sw.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+
+            pillsStack.topAnchor.constraint(equalTo: sw.bottomAnchor, constant: 12),
+            pillsStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            pillsStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+            pillsStack.heightAnchor.constraint(equalToConstant: 36),
+            pillsStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14)
+        ])
+
+        // Insert the card into the main scrollable stack view, below dateTimeStack
+        if let stackView = dateTimeStack.superview as? UIStackView {
+            if let idx = stackView.arrangedSubviews.firstIndex(of: dateTimeStack) {
+                stackView.insertArrangedSubview(card, at: idx + 1)
+            } else {
+                stackView.addArrangedSubview(card)
+            }
+        } else {
+            // Fallback: add directly below dateTimeStack if not in a stack
+            dateTimeStack.superview?.addSubview(card)
+        }
+        self.recurringCard = card
+    }
+
+    @objc private func recurringToggled(_ sender: UISwitch) {
+        isRecurring = sender.isOn
+        AppHaptics.impact(.light)
+        guard let stack = dayPillsStack else { return }
+        if sender.isOn {
+            stack.isHidden = false
+            UIView.animate(withDuration: 0.25) { stack.alpha = 1 }
+        } else {
+            UIView.animate(withDuration: 0.2) { stack.alpha = 0 } completion: { _ in stack.isHidden = true }
+            recurringDays.removeAll()
+            stack.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { applyDayPillStyle($0, selected: false) }
+        }
+    }
+
+    @objc private func dayPillTapped(_ sender: UIButton) {
+        let iso = sender.tag
+        AppHaptics.impact(.light)
+        if recurringDays.contains(iso) {
+            recurringDays.remove(iso)
+            applyDayPillStyle(sender, selected: false)
+        } else {
+            recurringDays.insert(iso)
+            applyDayPillStyle(sender, selected: true)
+        }
+    }
+
+    private func applyDayPillStyle(_ btn: UIButton, selected: Bool) {
+        btn.backgroundColor = selected ? AppDesign.Color.primary : AppDesign.Color.fieldBackground
+        btn.setTitleColor(selected ? .white : .label, for: .normal)
+        btn.layer.borderWidth = selected ? 0 : 1
+        btn.layer.borderColor = AppDesign.Color.border.cgColor
+    }
+
     // Sets the date to today and time to 10 minutes from now (minimum lead time)
     private func setDefaultDateAndTime() {
         datePicker.date = Date()
@@ -488,6 +610,12 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             return
         }
 
+        // Validate recurring: if toggle is on, at least one day must be selected
+        if isRecurring && recurringDays.isEmpty {
+            showValidationAlert("Select Repeat Days", message: "Please select at least one weekday for this recurring ride.")
+            return
+        }
+
         view.endEditing(true)
 
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
@@ -497,6 +625,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         vc.time = timePicker.date
         vc.source      = LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text)
         vc.destination = LocationPoint(lat: to.latitude,   lon: to.longitude,   address: toTextField.text)
+        vc.isRecurring   = isRecurring
+        vc.recurringDays = Array(recurringDays).sorted()
 
         if let route = selectedRoute {
             vc.selectedRoute = MapKitManager.shared.convert(route)

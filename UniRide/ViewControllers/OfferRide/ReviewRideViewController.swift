@@ -10,6 +10,10 @@ struct RideSummary {
     let seats: Int
     let farePerSeat: Double
 
+    // Recurring support
+    var isRecurring: Bool = false
+    var recurringDays: [Int] = []  // ISO: 1=Mon … 7=Sun
+
     var totalFare: Double {
         return farePerSeat * Double(seats)
     }
@@ -93,6 +97,34 @@ class ReviewRideViewController: UIViewController {
 
         fareLabel.text = "₹\(Int(summary.farePerSeat)) per person"
         totalLabel.text = "Total: ₹\(Int(summary.totalFare))"
+
+        // MARK: Recurring banner
+        if summary.isRecurring, !summary.recurringDays.isEmpty {
+            let dayNames = [1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat", 7: "Sun"]
+            let labels = summary.recurringDays.sorted().compactMap { dayNames[$0] }.joined(separator: ", ")
+
+            // Insert a recurring info row below the total label (only once)
+            if cardView.viewWithTag(9901) == nil {
+                let recurringLabel = UILabel()
+                recurringLabel.tag = 9901
+                recurringLabel.translatesAutoresizingMaskIntoConstraints = false
+                recurringLabel.numberOfLines = 0
+                recurringLabel.text = "🔁 Repeats \(labels) · 4 weeks"
+                recurringLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+                recurringLabel.textColor = AppDesign.Color.primary
+                recurringLabel.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.08)
+                recurringLabel.layer.cornerRadius = 8
+                recurringLabel.clipsToBounds = true
+                recurringLabel.textAlignment = .center
+                cardView.addSubview(recurringLabel)
+                NSLayoutConstraint.activate([
+                    recurringLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+                    recurringLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+                    recurringLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16),
+                    recurringLabel.heightAnchor.constraint(equalToConstant: 36)
+                ])
+            }
+        }
     }
 
  
@@ -128,7 +160,9 @@ class ReviewRideViewController: UIViewController {
             seatsTotal: summary.seats,
             farePerSeat: summary.farePerSeat,
             status: .published,
-            notes: ""
+            notes: "",
+            isRecurring: summary.isRecurring,
+            recurringDays: summary.recurringDays
         )
 
         // Show loading state inline on the button

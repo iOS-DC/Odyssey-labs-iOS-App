@@ -28,6 +28,13 @@ final class AvailableRideViewController: UIViewController,
     private let resultCountLabel  = UILabel()
     private let emptyStateView    = UIView()
     private var filterBarBtn: UIBarButtonItem!
+    private lazy var offlineView: OfflineEmptyStateView = {
+        let v = OfflineEmptyStateView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.isHidden = true
+        v.retryButton.addTarget(self, action: #selector(retryConnection), for: .touchUpInside)
+        return v
+    }()
 
     // MARK: - Lifecycle
 
@@ -39,7 +46,17 @@ final class AvailableRideViewController: UIViewController,
         setupResultCountLabel()
         setupEmptyState()
         setupTableView()
+        setupOfflineView()
+        _ = NetworkMonitor.shared  // ensure monitor started
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(connectivityChanged(_:)),
+            name: .connectivityChanged, object: nil
+        )
         loadAvailableRides()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -48,6 +65,33 @@ final class AvailableRideViewController: UIViewController,
         didAnimateListOnFirstShow = true
         tableView.layoutIfNeeded()
         tableView.animateVisibleCellsStaggered()
+    }
+
+    // MARK: - Offline state
+
+    private func setupOfflineView() {
+        view.addSubview(offlineView)
+        NSLayoutConstraint.activate([
+            offlineView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            offlineView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            offlineView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            offlineView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    @objc private func connectivityChanged(_ note: Notification) {
+        let isConnected = (note.userInfo?["isConnected"] as? Bool) ?? true
+        offlineView.isHidden = isConnected
+        tableView.isHidden   = !isConnected
+        if isConnected { loadAvailableRides() }
+    }
+
+    @objc private func retryConnection() {
+        if NetworkMonitor.shared.isConnected {
+            offlineView.isHidden = true
+            tableView.isHidden   = false
+            loadAvailableRides()
+        }
     }
 
     // MARK: - Setup
@@ -151,17 +195,45 @@ final class AvailableRideViewController: UIViewController,
     // MARK: - Load Rides
 
     private func loadAvailableRides() {
-        if let event = event {
-            rides = MockData.mockRidesForEvent(event)
-            applyFilters()
-            return
+        // Show a spinner while we wait for Supabase
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.startAnimating()
+        view.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+        ])
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            // Fetch all published rides from Supabase and merge into local model.
+            // This ensures rides posted on other devices appear in this list.
+            if let remote = try? await RideRepository.shared.fetchPublishedRides(), !remote.isEmpty {
+                RideDataModel.shared.mergeRemoteRides(remote)
+                UserDataModel.shared.ensureDriverProfiles(for: remote.map { $0.driverUserID })
+            }
+
+            spinner.removeFromSuperview()
+
+            // Event-filtered rides (shown from EventDetails screen)
+            if let event = self.event {
+                self.rides = MockData.mockRidesForEvent(event)
+                self.applyFilters()
+                return
+            }
+
+            // Location-filtered rides
+            guard let fromCoord = self.fromCoordinate else {
+                self.rides = []
+                self.applyFilters()
+                return
+            }
+            let fromPoint = LocationPoint(lat: fromCoord.latitude, lon: fromCoord.longitude, address: nil)
+            self.rides = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 1500)
+            self.applyFilters()
         }
-        guard let fromCoord = fromCoordinate else {
-            rides = []; applyFilters(); return
-        }
-        let fromPoint = LocationPoint(lat: fromCoord.latitude, lon: fromCoord.longitude, address: nil)
-        rides = RideDataModel.shared.ridesNear(fromPoint, maxMeters: 1500)
-        applyFilters()
     }
 
     // MARK: - Filter Logic

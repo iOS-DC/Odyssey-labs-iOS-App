@@ -16,6 +16,9 @@ final class ChatViewModel: ObservableObject {
 
     private var cancellable: AnyCancellable?
 
+    // MARK: - Realtime
+    private let realtimeClient = SupabaseRealtimeClient()
+
     // MARK: - Init
     init(rideID: String, rideTitle: String, participants: [UserProfile] = []) {
         self.rideID        = rideID
@@ -27,27 +30,29 @@ final class ChatViewModel: ObservableObject {
         self.currentUserName = me?.fullName ?? "Me"
 
         load()
-        subscribeToUpdates()
+        subscribeToLocalUpdates()
+        startRealtimeSubscription()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        realtimeClient.disconnect()
     }
 
     // MARK: - Load + Subscribe
+
     private func load() {
         messages = ChatDataModel.shared.messages(for: rideID)
         ChatDataModel.shared.markAsRead(rideID: rideID)
-        // BUG FIX: Also fetch from Supabase so messages from other devices are visible.
+        // Also fetch from Supabase to catch messages sent while offline
         Task { await fetchFromSupabase() }
     }
 
-    /// Fetches messages from Supabase and merges them into the local cache.
+    /// Fetches historical messages from Supabase and merges into the local cache.
     @MainActor
     private func fetchFromSupabase() async {
         guard let rideUUID = UUID(uuidString: rideID) else { return }
         guard let remote = try? await ChatRepository.shared.fetchMessages(rideID: rideUUID) else { return }
-        // Merge remote messages into the local model so they persist across launches.
         for msg in remote {
             ChatDataModel.shared.append(msg, to: rideID)
         }
@@ -55,16 +60,16 @@ final class ChatViewModel: ObservableObject {
         ChatDataModel.shared.markAsRead(rideID: rideID)
     }
 
-    private func subscribeToUpdates() {
+    private func subscribeToLocalUpdates() {
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleUpdate(_:)),
+            selector: #selector(handleLocalUpdate(_:)),
             name: .chatMessagesUpdated,
             object: nil
         )
     }
 
-    @objc private func handleUpdate(_ note: Notification) {
+    @objc private func handleLocalUpdate(_ note: Notification) {
         guard let updated = note.object as? String, updated == rideID else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -73,7 +78,52 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Supabase Realtime subscription
+
+    private func startRealtimeSubscription() {
+        guard let rideUUID = UUID(uuidString: rideID) else { return }
+
+        // Subscribe to INSERT events on messages filtered by this ride
+        let channel = realtimeClient
+            .channel("public:messages:ride_id=eq.\(rideUUID.uuidString)")
+
+        channel.on("INSERT") { [weak self] record in
+            guard let self else { return }
+            self.handleRealtimeInsert(record)
+        }
+
+        realtimeClient.connect()
+        channel.subscribe()
+    }
+
+    /// Called on the main thread when a real-time INSERT arrives from Supabase.
+    private func handleRealtimeInsert(_ record: [String: Any]) {
+        guard
+            let idStr    = record["id"]          as? String, let id = UUID(uuidString: idStr),
+            let senderID = record["sender_id"]   as? String,
+            let text     = record["body"]        as? String,
+            let tsStr    = record["created_at"]  as? String
+        else { return }
+
+        // Ignore our own messages — we already append them locally on send
+        guard senderID != currentUserID else { return }
+
+        // Deduplicate: if this message is already in the cache (e.g. from the
+        // REST fetch on open) don't add it again
+        let existing = ChatDataModel.shared.messages(for: rideID)
+        guard !existing.contains(where: { $0.id == id }) else { return }
+
+        let ts   = ISO8601DateFormatter().date(from: tsStr) ?? Date()
+        let name = record["sender_name"] as? String ?? ""
+        let msg  = ChatMessage(id: id, senderID: senderID, senderName: name, text: text, timestamp: ts)
+
+        ChatDataModel.shared.append(msg, to: rideID)
+        messages.append(msg)
+        ChatDataModel.shared.markAsRead(rideID: rideID)
+    }
+
     // MARK: - Send
+
     func sendMessage(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
@@ -89,7 +139,7 @@ final class ChatViewModel: ObservableObject {
         ChatDataModel.shared.append(msg, to: rideID)
         messages.append(msg)
 
-        // BUG FIX: Also persist to Supabase `messages` table.
+        // Persist to Supabase `messages` table
         if let rideUUID = UUID(uuidString: rideID) {
             Task {
                 try? await ChatRepository.shared.sendMessage(
@@ -104,52 +154,34 @@ final class ChatViewModel: ObservableObject {
         scheduleAutoReply(after: trimmed)
     }
 
-    // MARK: - Contextual Auto-Reply
-    /// Simulates a reply from one of the real ride participants (not the current user).
-    /// This makes the chat feel alive for a demo — in a real app this would be a push notification.
+    // MARK: - Contextual Auto-Reply (demo purposes)
     private func scheduleAutoReply(after message: String) {
         let others = participants.filter { $0.id.uuidString != currentUserID }
         guard let responder = others.randomElement() else { return }
-
-        // Only reply sometimes (70% of the time) to keep it natural
         guard Double.random(in: 0...1) < 0.70 else { return }
 
         let replies: [String]
         let lower = message.lowercased()
 
         if lower.contains("late") || lower.contains("wait") {
-            replies = [
-                "No worries, I can wait a couple minutes 🙂",
-                "Ok, just let me know when you're on your way!",
-                "Sure, I'll hold. Just please hurry 😅"
-            ]
+            replies = ["No worries, I can wait a couple minutes 🙂",
+                       "Ok, just let me know when you're on your way!",
+                       "Sure, I'll hold. Just please hurry 😅"]
         } else if lower.contains("where") || lower.contains("location") {
-            replies = [
-                "I'm at the main gate, near the parking 📍",
-                "Just outside the hostel block. Can you share your live location?",
-                "I can see the building from here, coming to you!"
-            ]
+            replies = ["I'm at the main gate, near the parking 📍",
+                       "Just outside the hostel block. Can you share your live location?",
+                       "I can see the building from here, coming to you!"]
         } else if lower.contains("hi") || lower.contains("hello") || lower.contains("hey") {
-            replies = [
-                "Hey! 👋 See you at the pickup!",
-                "Hi! All set for the ride 🚗",
-                "Hello! Ready to go!"
-            ]
+            replies = ["Hey! 👋 See you at the pickup!",
+                       "Hi! All set for the ride 🚗",
+                       "Hello! Ready to go!"]
         } else if lower.contains("thanks") || lower.contains("thank") {
             replies = ["You're welcome! 😊", "No problem at all!", "Anytime! 🙏"]
         } else {
-            replies = [
-                "Got it 👍",
-                "Ok, noted!",
-                "Sounds good!",
-                "I'll be ready at the pickup point.",
-                "✓ Acknowledged",
-                "Perfect, see you soon!",
-                "Running on time 🕐",
-                "Cool, thanks for the heads up!",
-                "Ok sure 👌",
-                "On my way! 🏃"
-            ]
+            replies = ["Got it 👍", "Ok, noted!", "Sounds good!",
+                       "I'll be ready at the pickup point.", "✓ Acknowledged",
+                       "Perfect, see you soon!", "Running on time 🕐",
+                       "Cool, thanks for the heads up!", "Ok sure 👌", "On my way! 🏃"]
         }
 
         let delay = Double.random(in: 1.5...4.0)

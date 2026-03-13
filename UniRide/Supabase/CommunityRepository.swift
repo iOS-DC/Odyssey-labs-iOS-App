@@ -158,7 +158,7 @@ final class CommunityRepository {
 
     // MARK: - Comments
 
-    func fetchComments(postID: UUID) async throws -> [String] {
+    func fetchComments(postID: UUID) async throws -> [CommunityComment] {
         try await SessionManager.shared.validateSession()
         let url = mgr.restURL(table: "community_comments",
                               query: "post_id=eq.\(postID.uuidString)&order=created_at.asc")
@@ -167,7 +167,18 @@ final class CommunityRepository {
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
         let remote = (try? JSONDecoder().decode([RemoteComment].self, from: data)) ?? []
-        return remote.map { $0.text }
+        let iso = ISO8601DateFormatter()
+        return remote.compactMap { r -> CommunityComment? in
+            guard let id   = UUID(uuidString: r.id),
+                  let auth = UUID(uuidString: r.authorUserId) else { return nil }
+            return CommunityComment(
+                id: id,
+                postID: postID,
+                authorUserID: auth,
+                text: r.text,
+                createdAt: iso.date(from: r.createdAt) ?? Date()
+            )
+        }
     }
 
     func insertComment(postID: UUID, text: String) async throws {

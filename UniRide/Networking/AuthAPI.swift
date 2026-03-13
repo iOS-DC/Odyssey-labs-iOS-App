@@ -59,7 +59,6 @@ private struct SupabaseProfileRecord: Decodable {
     let email: String?
     let phone: String?
     let isEmailVerified: Bool?
-    let isPhoneVerified: Bool?
     let fullName: String?
     let role: String?
     let courseName: String?
@@ -72,7 +71,6 @@ private struct SupabaseProfileRecord: Decodable {
         case email
         case phone
         case isEmailVerified = "is_email_verified"
-        case isPhoneVerified = "is_phone_verified"
         case fullName = "full_name"
         case role
         case courseName = "course_name"
@@ -87,7 +85,6 @@ private struct SupabaseProfileUpsertRequest: Encodable {
     let email: String
     let phone: String?
     let isEmailVerified: Bool
-    let isPhoneVerified: Bool
     let fullName: String
     let role: String?
     let courseName: String?
@@ -100,7 +97,6 @@ private struct SupabaseProfileUpsertRequest: Encodable {
         case email
         case phone
         case isEmailVerified = "is_email_verified"
-        case isPhoneVerified = "is_phone_verified"
         case fullName = "full_name"
         case role
         case courseName = "course_name"
@@ -161,7 +157,6 @@ struct AuthRemoteUser: Decodable {
     let email: String
     let phone: String?
     let isEmailVerified: Bool?
-    let isPhoneVerified: Bool?
     let fullName: String?
     let role: String?
     let courseName: String?
@@ -277,7 +272,6 @@ final class AuthAPI {
             email: profile.email.lowercased(),
             phone: profile.phone,
             isEmailVerified: profile.isEmailVerified,
-            isPhoneVerified: profile.isPhoneVerified,
             fullName: profile.fullName,
             role: profile.role?.rawValue,
             courseName: profile.courseName,
@@ -311,7 +305,7 @@ final class AuthAPI {
 
         async let profileTask: [SupabaseProfileRecord] = client.send(
             APIEndpoint(
-                path: "/rest/v1/profiles?select=id,email,phone,is_email_verified,is_phone_verified,full_name,role,course_name,year,employee_id,photo_url&id=eq.\(userID)&limit=1",
+                path: "/rest/v1/profiles?select=id,email,phone,is_email_verified,full_name,role,course_name,year,employee_id,photo_url&id=eq.\(userID)&limit=1",
                 method: "GET",
                 headers: ["Accept": "application/json"]
             ),
@@ -425,7 +419,6 @@ final class AuthAPI {
             email: email,
             phone: snapshot.profile?.phone ?? authUser?.phone,
             isEmailVerified: snapshot.profile?.isEmailVerified ?? (authUser?.emailConfirmedAt != nil),
-            isPhoneVerified: snapshot.profile?.isPhoneVerified ?? (authUser?.phoneConfirmedAt != nil),
             fullName: snapshot.profile?.fullName,
             role: snapshot.profile?.role,
             courseName: snapshot.profile?.courseName,

@@ -168,7 +168,9 @@ final class RideRepository {
             "departure_time": iso.string(from: ride.departureTime),
             "seats_total": ride.seatsTotal, "seats_available": ride.seatsAvailable,
             "fare_per_seat": ride.farePerSeat, "status": ride.status.rawValue,
-            "created_at": iso.string(from: ride.createdAt)
+            "created_at": iso.string(from: ride.createdAt),
+            "is_recurring": ride.isRecurring,
+            "recurring_days": ride.recurringDays
         ]
         if let v = ride.source.address      { p["source_address"]      = v }
         if let v = ride.destination.address { p["destination_address"] = v }
@@ -178,6 +180,7 @@ final class RideRepository {
         req.httpBody = try JSONSerialization.data(withJSONObject: p)
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
+
     }
 
     func updateRideStatus(id: UUID, status: RideStatus) async throws {

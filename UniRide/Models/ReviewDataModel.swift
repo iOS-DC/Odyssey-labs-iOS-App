@@ -4,7 +4,8 @@ extension Notification.Name {
     static let reviewsUpdated = Notification.Name("reviewsUpdated")
 }
 
-/// Singleton that persists all ride reviews to Documents/reviews.json
+/// Singleton that persists ride reviews locally AND syncs with Supabase
+/// so that driver/passenger ratings are visible across all devices.
 final class ReviewDataModel {
 
     static let shared = ReviewDataModel()
@@ -18,10 +19,11 @@ final class ReviewDataModel {
             .appendingPathComponent("reviews.json")
     }
 
-    // MARK: - Persistence
+    // MARK: - Local Persistence
+
     private func load() {
         guard
-            let data = try? Data(contentsOf: fileURL),
+            let data    = try? Data(contentsOf: fileURL),
             let decoded = try? JSONDecoder().decode([Review].self, from: data)
         else { return }
         reviews = decoded
@@ -33,18 +35,51 @@ final class ReviewDataModel {
         }
     }
 
-    // MARK: - Write
+    // MARK: - Write (local + Supabase)
+
     func submit(review: Review) {
-        // Prevent duplicates: one review per reviewer → reviewee per ride
+        // Prevent duplicate reviews locally
         guard !hasReviewed(rideID: review.rideID,
                            reviewerID: review.reviewerID,
                            revieweeID: review.revieweeID) else { return }
         reviews.append(review)
         save()
         NotificationCenter.default.post(name: .reviewsUpdated, object: nil)
+
+        // Persist to Supabase in the background — failures are silent
+        // (the review is still stored locally, and will sync on next fetch)
+        Task {
+            try? await ReviewRepository.shared.insertReview(review)
+        }
+    }
+
+    // MARK: - Remote sync
+
+    /// Fetches all remote reviews for `userID` (as reviewee) from Supabase,
+    /// merges them into the local cache (deduped by review.id), and triggers
+    /// a .reviewsUpdated notification so any listening UI refreshes.
+    ///
+    /// Call this whenever you need an accurate cross-device rating, e.g.:
+    ///   • ProfileViewController.viewWillAppear
+    ///   • RideDetailViewController.viewDidLoad (for the driver's rating)
+    func fetchAndMerge(for userID: UUID) {
+        Task { @MainActor in
+            guard let remote = try? await ReviewRepository.shared.fetchReviews(revieweeID: userID),
+                  !remote.isEmpty else { return }
+
+            // Merge: add any review not already in the local cache (matched by id)
+            let existingIDs = Set(reviews.map { $0.id })
+            let newOnes = remote.filter { !existingIDs.contains($0.id) }
+            guard !newOnes.isEmpty else { return }
+
+            reviews.append(contentsOf: newOnes)
+            save()
+            NotificationCenter.default.post(name: .reviewsUpdated, object: nil)
+        }
     }
 
     // MARK: - Read
+
     func reviews(for userID: UUID) -> [Review] {
         reviews.filter { $0.revieweeID == userID }
     }
@@ -64,14 +99,13 @@ final class ReviewDataModel {
 
     func hasReviewed(rideID: UUID, reviewerID: UUID, revieweeID: UUID) -> Bool {
         reviews.contains {
-            $0.rideID == rideID &&
+            $0.rideID     == rideID     &&
             $0.reviewerID == reviewerID &&
             $0.revieweeID == revieweeID
         }
     }
 
     /// All people this user still needs to rate for a given ride.
-    /// For a host: unrated passengers. For a passenger: unrated driver.
     func pendingReviewees(rideID: UUID, reviewerID: UUID, allRevieweeIDs: [UUID]) -> [UUID] {
         allRevieweeIDs.filter { !hasReviewed(rideID: rideID, reviewerID: reviewerID, revieweeID: $0) }
     }

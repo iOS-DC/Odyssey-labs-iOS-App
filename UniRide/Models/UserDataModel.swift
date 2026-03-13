@@ -24,7 +24,6 @@ struct UserProfile: Equatable, Codable {
     var email: String
     var isEmailVerified: Bool
     var phone: String?
-    var isPhoneVerified: Bool
     var fullName: String
     var role: UserRole?
     var courseName: String? // This will be used as "Department"
@@ -41,7 +40,6 @@ struct UserProfile: Equatable, Codable {
          email: String,
          isEmailVerified: Bool = false,
          phone: String? = nil,
-         isPhoneVerified: Bool = false,
          fullName: String = "",
          role: UserRole? = nil,
          courseName: String? = nil,
@@ -56,7 +54,6 @@ struct UserProfile: Equatable, Codable {
         self.email = email
         self.isEmailVerified = isEmailVerified
         self.phone = phone
-        self.isPhoneVerified = isPhoneVerified
         self.fullName = fullName
         self.role = role
         self.courseName = courseName
@@ -73,7 +70,6 @@ struct UserProfile: Equatable, Codable {
     init(email: String,
          isEmailVerified: Bool = false,
          phone: String? = nil,
-         isPhoneVerified: Bool = false,
          fullName: String = "",
          role: UserRole? = nil,
          courseName: String? = nil,
@@ -88,7 +84,6 @@ struct UserProfile: Equatable, Codable {
         self.email = email
         self.isEmailVerified = isEmailVerified
         self.phone = phone
-        self.isPhoneVerified = isPhoneVerified
         self.fullName = fullName
         self.role = role
         self.courseName = courseName
@@ -117,7 +112,6 @@ final class UserDataModel {
     private var currentUserID: UUID?
 
     private var emailOTPs: [String: String] = [:]
-    private var phoneOTPs: [String: String] = [:]
     private let campusLocation = LocationPoint(
         lat: 30.5163,
         lon: 76.6598,
@@ -181,9 +175,8 @@ final class UserDataModel {
     func isProfileSetupComplete(for user: UserProfile) -> Bool {
         let hasName = !user.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasRole = user.role != nil
-        let hasPhone = !(user.phone ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasHome = !(getHomeLocations(for: user.id).isEmpty)
-        return hasName && hasRole && hasPhone && hasHome
+        return hasName && hasRole && hasHome
     }
 
     func suggestedCommutePrefill() -> (from: LocationPoint, to: LocationPoint)? {
@@ -297,7 +290,7 @@ final class UserDataModel {
         if let authID = SessionManager.shared.userID, authID != profile.id {
             persisted = UserProfile(
                 id: authID, email: profile.email, isEmailVerified: profile.isEmailVerified,
-                phone: profile.phone, isPhoneVerified: profile.isPhoneVerified,
+                phone: profile.phone,
                 fullName: profile.fullName, role: profile.role, courseName: profile.courseName,
                 year: profile.year, employeeID: profile.employeeID, photoURL: profile.photoURL,
                 vehicle: profile.vehicle, savedHomeLocation: profile.savedHomeLocation,
@@ -317,84 +310,12 @@ final class UserDataModel {
         print("New user completely registered:", persisted)
     }
 
-    // PHONE VERIFICATION Function
-    func startPhoneVerification(phone raw: String) throws {
-        let phone = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard phone.count >= 10 else {
-            throw NSError(domain: "Phone", code: 400,
-                          userInfo: [NSLocalizedDescriptionKey: "Enter a valid phone number"])
-        }
-        let otp = BackendConfig.devFixedPhoneOTP ?? String(Int.random(in: 100000...999999))
-        phoneOTPs[phone] = otp
-        print("DEBUG Phone OTP for \(phone): \(otp)")
-    }
-
-    func startPhoneVerificationAsync(phone raw: String) async throws {
-        let phone = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard phone.count >= 10 else {
-            throw NSError(domain: "Phone", code: 400,
-                          userInfo: [NSLocalizedDescriptionKey: "Enter a valid phone number"])
-        }
-
-        if BackendConfig.devFixedPhoneOTP != nil {
-            try startPhoneVerification(phone: phone)
-            return
-        }
-
-        if BackendConfig.useRealBackend {
-            try await AuthAPI.shared.startPhoneVerification(phone: phone)
-            return
-        }
-
-        try startPhoneVerification(phone: phone)
-    }
-
-    func verifyPhoneOTP(phone: String, code: String) throws -> Bool {
-        guard let sent = phoneOTPs[phone] else {
-            throw NSError(domain: "Login", code: 404,
-                          userInfo: [NSLocalizedDescriptionKey: "No OTP found for this phone number"])
-        }
-
-        guard sent == code else {
-            throw NSError(domain: "Login", code: 403,
-                          userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
-        }
-
-        phoneOTPs[phone] = nil
-        
-        // If a user is already logged in (e.g. they are adding a phone to an existing account)
-        if let currentUserID = self.currentUserID,
-           let index = users.firstIndex(where: { $0.id == currentUserID }) {
-            var user = users[index]
-            user.phone = phone
-            user.isPhoneVerified = true
-            users[index] = user
-            saveUsers()
-            return true
-        }
-        
-        // Return true to indicate the phone OTP was valid for the builder flow
-        return true
-    }
-
-    func verifyPhoneOTPAsync(phone rawPhone: String, code: String) async throws -> Bool {
-        let phone = rawPhone.trimmingCharacters(in: .whitespacesAndNewlines)
-        if BackendConfig.devFixedPhoneOTP != nil {
-            return try verifyPhoneOTP(phone: phone, code: code)
-        }
-        if BackendConfig.useRealBackend {
-            return try await AuthAPI.shared.verifyPhoneOTP(phone: phone, code: code)
-        }
-        return try verifyPhoneOTP(phone: phone, code: code)
-    }
-    
     func createNewUser(fullName: String, role: UserRole, department: String, year: Int?, phone: String) {
 
         let newUser = UserProfile(
             email: "",
             isEmailVerified: true,
             phone: phone,
-            isPhoneVerified: true,
             fullName: fullName,
             role: role,
             courseName: department,
@@ -447,6 +368,11 @@ final class UserDataModel {
 
     func getUser(by id: UUID) -> UserProfile? {
         return users.first(where: { $0.id == id })
+    }
+
+    /// Returns all locally cached user profiles.
+    func allUsers() -> [UserProfile] {
+        return users
     }
 
     func userExists(email: String) -> Bool {
@@ -587,7 +513,6 @@ final class UserDataModel {
             email: remote.email.isEmpty ? fallbackEmail : remote.email.lowercased(),
             isEmailVerified: remote.isEmailVerified ?? true,
             phone: remote.phone,
-            isPhoneVerified: remote.isPhoneVerified ?? false,
             fullName: remote.fullName ?? "",
             role: parsedRole,
             courseName: remote.courseName,
@@ -614,10 +539,9 @@ final class UserDataModel {
         let employeeID  = row["employee_id"] as? String
         let photoURL    = (row["photo_url"] as? String).flatMap(URL.init(string:))
         let emailVerif  = (row["is_email_verified"] as? Bool) ?? true
-        let phoneVerif  = (row["is_phone_verified"] as? Bool) ?? false
         return UserProfile(
             id: uid, email: email, isEmailVerified: emailVerif,
-            phone: phone, isPhoneVerified: phoneVerif, fullName: fullName,
+            phone: phone, fullName: fullName,
             role: role, courseName: courseName, year: year, employeeID: employeeID,
             photoURL: photoURL)
     }
@@ -629,8 +553,7 @@ final class UserDataModel {
             "id":                user.id.uuidString,
             "email":             user.email,
             "full_name":         user.fullName,
-            "is_email_verified": user.isEmailVerified,
-            "is_phone_verified": user.isPhoneVerified
+            "is_email_verified": user.isEmailVerified
         ]
         if let v = user.phone        { fields["phone"]       = v }
         if let v = user.role         { fields["role"]        = v.rawValue }
@@ -686,11 +609,10 @@ final class UserDataModel {
         // Same email but different local ID — merge, always keep the Supabase UUID
         if let idx = users.firstIndex(where: { $0.email == incoming.email }) {
             let merged = UserProfile(
-                id: incoming.id,           // always use the Supabase auth UUID
+                id: incoming.id,
                 email: incoming.email,
                 isEmailVerified: incoming.isEmailVerified,
                 phone: incoming.phone,
-                isPhoneVerified: incoming.isPhoneVerified,
                 fullName: incoming.fullName,
                 role: incoming.role,
                 courseName: incoming.courseName,

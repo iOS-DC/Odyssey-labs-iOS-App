@@ -160,10 +160,6 @@ final class ProfileStep1ViewController: UIViewController {
     // MARK: - Continue
     @IBAction func continuePressed(_ sender: UIButton) {
         let phone = (phoneTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard phone.count >= 10 else {
-            showOTPStatus("Enter a valid phone number", color: AppDesign.Color.destructive)
-            return
-        }
 
         let role = activeRole
         let yearText = yearDropDownButton.title(for: .normal)
@@ -175,19 +171,13 @@ final class ProfileStep1ViewController: UIViewController {
             RegistrationBuilder.shared.courseName = dropDownButton.title(for: .normal)
             RegistrationBuilder.shared.year = year
         }
-        RegistrationBuilder.shared.phone = phone
-
-        do {
-            try UserDataModel.shared.startPhoneVerification(phone: phone)
-            showOTPStatus("OTP sent. Verify phone on next step.", color: AppDesign.Color.success)
-
-            let vc = storyboard?.instantiateViewController(withIdentifier: "OTPViewController") as! OTPViewController
-            vc.verificationMode = .phone
-            vc.phoneNumber = phone
-            navigationController?.pushViewController(vc, animated: true)
-        } catch {
-            showOTPStatus(error.localizedDescription, color: AppDesign.Color.destructive)
+        // Save phone if provided — verification no longer required
+        if !phone.isEmpty {
+            RegistrationBuilder.shared.phone = phone
         }
+
+        let vc = storyboard?.instantiateViewController(withIdentifier: "ProfileStep2ViewController")
+        if let vc { navigationController?.pushViewController(vc, animated: true) }
     }
 
     // MARK: - Helpers
@@ -199,19 +189,17 @@ final class ProfileStep1ViewController: UIViewController {
 
     private func validateContinueAvailability() {
         let name = (fullNameTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let phone = (phoneTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasPhone = phone.count >= 10
         let dept = dropDownButton.title(for: .normal) ?? ""
         let hasDepartment = dept != "Select Department" && dept != "Select Course"
 
         if activeRole == .student {
             let hasYear = Int(yearDropDownButton.title(for: .normal) ?? "") != nil
-            let enabled = !name.isEmpty && hasDepartment && hasYear && hasPhone
+            let enabled = !name.isEmpty && hasDepartment && hasYear
             continueButton.setPrimaryCTAEnabled(enabled)
             return
         }
 
-        let enabled = !name.isEmpty && hasDepartment && hasPhone
+        let enabled = !name.isEmpty && hasDepartment
         continueButton.setPrimaryCTAEnabled(enabled)
     }
 
@@ -265,8 +253,8 @@ final class ProfileStep1ViewController: UIViewController {
         yearDropDownButton.accessibilityLabel = "Year"
         yearDropDownButton.accessibilityHint = "Select your academic year"
         phoneTextField.accessibilityLabel = "Phone number"
-        phoneTextField.accessibilityHint = "Enter a 10 digit mobile number"
+        phoneTextField.accessibilityHint = "Enter your mobile number (optional)"
         continueButton.accessibilityLabel = "Continue"
-        continueButton.accessibilityHint = "Proceed to phone verification"
+        continueButton.accessibilityHint = "Proceed to the next step"
     }
 }

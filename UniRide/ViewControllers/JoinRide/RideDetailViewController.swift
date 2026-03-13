@@ -34,6 +34,11 @@ final class RideDetailViewController: UIViewController {
         populate()
         drawRoute()
         checkExistingRequest()
+        // Fetch remote reviews for the driver so the star rating is
+        // cross-device accurate (not just what's cached on this device).
+        if let driverID = driver?.id {
+            ReviewDataModel.shared.fetchAndMerge(for: driverID)
+        }
     }
 
     // MARK: - Layout

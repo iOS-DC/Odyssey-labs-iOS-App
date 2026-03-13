@@ -49,22 +49,30 @@ struct Ride: Codable, Equatable {
     var notes: String?
     let createdAt: Date
 
+    // MARK: - Recurring
+    /// True when the driver schedules this ride on multiple weekdays.
+    var isRecurring: Bool = false
+    /// ISO weekday numbers the ride repeats on (1 = Monday, 7 = Sunday).
+    var recurringDays: [Int] = []
+
     init(driverUserID: UUID,
          source: LocationPoint,
          destination: LocationPoint,
          waypoints: [LocationPoint] = [],
-         selectedRoute: RideRoute? = nil,    // NEW param (default nil)
+         selectedRoute: RideRoute? = nil,
          departureTime: Date,
          seatsTotal: Int,
          farePerSeat: Double,
          status: RideStatus = .draft,
-         notes: String? = nil) {
+         notes: String? = nil,
+         isRecurring: Bool = false,
+         recurringDays: [Int] = []) {
         self.id = UUID()
         self.driverUserID = driverUserID
         self.source = source
         self.destination = destination
         self.waypoints = waypoints
-        self.selectedRoute = selectedRoute      // store
+        self.selectedRoute = selectedRoute
         self.departureTime = departureTime
         self.seatsTotal = seatsTotal
         self.seatsAvailable = seatsTotal
@@ -72,6 +80,8 @@ struct Ride: Codable, Equatable {
         self.status = status
         self.notes = notes
         self.createdAt = Date()
+        self.isRecurring = isRecurring
+        self.recurringDays = recurringDays
     }
 
     init(id: UUID,
@@ -86,7 +96,9 @@ struct Ride: Codable, Equatable {
          farePerSeat: Double,
          status: RideStatus,
          notes: String? = nil,
-         createdAt: Date = Date()) {
+         createdAt: Date = Date(),
+         isRecurring: Bool = false,
+         recurringDays: [Int] = []) {
         self.id = id
         self.driverUserID = driverUserID
         self.source = source
@@ -100,6 +112,8 @@ struct Ride: Codable, Equatable {
         self.status = status
         self.notes = notes
         self.createdAt = createdAt
+        self.isRecurring = isRecurring
+        self.recurringDays = recurringDays
     }
 
     static func ==(lhs: Ride, rhs: Ride) -> Bool { lhs.id == rhs.id }
@@ -261,7 +275,9 @@ final class RideDataModel {
                 farePerSeat: ride.farePerSeat,
                 status: ride.status,
                 notes: ride.notes,
-                createdAt: ride.createdAt
+                createdAt: ride.createdAt,
+                isRecurring: ride.isRecurring,
+                recurringDays: ride.recurringDays
             )
         }
         try await RideRepository.shared.insertRide(outboundRide)
@@ -271,6 +287,48 @@ final class RideDataModel {
         // Also keep local cache in sync
         _ = createRide(outboundRide)
         if outboundRide.status != .published { _ = publishRide(id: outboundRide.id) }
+
+        // MARK: Recurring — batch-create one ride per matching weekday for the next 4 weeks
+        if outboundRide.isRecurring, !outboundRide.recurringDays.isEmpty {
+            let cal = Calendar(identifier: .gregorian)
+            let baseComponents = cal.dateComponents([.hour, .minute], from: outboundRide.departureTime)
+            let startDay = cal.startOfDay(for: outboundRide.departureTime).addingTimeInterval(86400) // start from tomorrow
+
+            await withTaskGroup(of: Void.self) { group in
+                for offset in 0..<28 {  // 4 weeks
+                    guard let candidate = cal.date(byAdding: .day, value: offset, to: startDay) else { continue }
+                    let weekday = cal.component(.weekday, from: candidate)
+                    // Calendar weekday: 1=Sun,2=Mon…7=Sat  →  ISO: 1=Mon…7=Sun
+                    let isoWeekday = weekday == 1 ? 7 : weekday - 1
+                    guard outboundRide.recurringDays.contains(isoWeekday) else { continue }
+
+                    var departComps = cal.dateComponents([.year, .month, .day], from: candidate)
+                    departComps.hour   = baseComponents.hour
+                    departComps.minute = baseComponents.minute
+                    guard let fullDeparture = cal.date(from: departComps) else { continue }
+
+                    let instance = Ride(
+                        driverUserID: outboundRide.driverUserID,
+                        source: outboundRide.source,
+                        destination: outboundRide.destination,
+                        waypoints: outboundRide.waypoints,
+                        selectedRoute: outboundRide.selectedRoute,
+                        departureTime: fullDeparture,
+                        seatsTotal: outboundRide.seatsTotal,
+                        farePerSeat: outboundRide.farePerSeat,
+                        status: .published,
+                        notes: outboundRide.notes,
+                        isRecurring: true,
+                        recurringDays: outboundRide.recurringDays
+                    )
+                    group.addTask {
+                        try? await RideRepository.shared.insertRide(instance)
+                        _ = self.createRide(instance)
+                    }
+                }
+            }
+        }
+
         return outboundRide
     }
 
@@ -431,6 +489,13 @@ final class RideDataModel {
             body: "Your request for \(route) has been approved. You're all set!",
             type: .requestApproved
         )
+        // Push notification → passenger's device(s)
+        PushNotificationService.shared.send(
+            to: rq.passengerUserID,
+            title: "Booking Approved ✅",
+            body: "Your request for \(route) has been approved. You're all set!",
+            data: ["action": "request_approved", "ride_id": ride.id.uuidString]
+        )
     }
 
     func approveRequestAsync(requestID: UUID, hostUserID: UUID) async throws {
@@ -485,6 +550,13 @@ final class RideDataModel {
             title: "Booking Request Declined",
             body: "Your request for \(route) was not approved by the driver. Try another ride!",
             type: .requestDenied
+        )
+        // Push notification → passenger's device(s)
+        PushNotificationService.shared.send(
+            to: rq.passengerUserID,
+            title: "Booking Request Declined",
+            body: "Your request for \(route) was not approved by the driver. Try another ride!",
+            data: ["action": "request_denied", "ride_id": ride.id.uuidString]
         )
     }
 
@@ -542,6 +614,13 @@ final class RideDataModel {
                 title: "Booking Cancelled",
                 body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
                 type: .passengerCancelled
+            )
+            // Push notification → driver's device(s)
+            PushNotificationService.shared.send(
+                to: ride.driverUserID,
+                title: "Booking Cancelled",
+                body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
+                data: ["action": "passenger_cancelled", "ride_id": ride.id.uuidString]
             )
         }
 
