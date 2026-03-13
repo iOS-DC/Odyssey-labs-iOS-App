@@ -22,7 +22,7 @@ final class StorageService {
         req.setValue(SupabaseManager.shared.anonKey, forHTTPHeaderField: "apikey")
         req.setValue("Bearer \(token)",              forHTTPHeaderField: "Authorization")
         req.setValue(mimeType,                       forHTTPHeaderField: "Content-Type")
-        req.setValue("upsert",                       forHTTPHeaderField: "x-upsert")
+        req.setValue("true",                         forHTTPHeaderField: "x-upsert")
         req.httpBody = imageData
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)

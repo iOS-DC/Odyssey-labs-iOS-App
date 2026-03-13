@@ -200,7 +200,23 @@ final class AuthAPI {
     func verifyEmailOTP(email: String, code: String) async throws -> AuthVerifyEmailResponse {
         let response = try await verifyEmailOTPWithFallback(email: email, code: code)
 
-        if let token = response.accessToken, !token.isEmpty {
+        // BUG FIX: Save the full session (including refresh_token) into SessionManager
+        // so BOTH the old (RideRepository) and new (RidesAPI) networking layers share one token.
+        if let at = response.accessToken, !at.isEmpty,
+           let rt = response.refreshToken, !rt.isEmpty,
+           let userIDStr = response.user?.id, !userIDStr.isEmpty,
+           let uid = UUID(uuidString: userIDStr) {
+            let userEmail = response.user?.email
+            SessionManager.shared.save(
+                accessToken: at,
+                refreshToken: rt,
+                userID: uid,
+                email: userEmail,
+                expiresAt: nil,
+                preserveLoginDate: false
+            )
+        } else if let token = response.accessToken, !token.isEmpty {
+            // Partial response — at minimum keep the access token alive
             sessionStore.accessToken = token
         }
         if let userID = response.user?.id, !userID.isEmpty {
@@ -451,33 +467,43 @@ final class AuthAPI {
     }
 }
 
+// BUG FIX: SessionStore is now a thin bridge over SessionManager.
+// Previously, the old networking layer (RideRepository, ProfileRepository) read its token
+// from SessionManager, while the new APIClient layer read from SessionStore — two different
+// UserDefaults keys, causing either layer to go out unauthenticated depending on login path.
+// Now all reads and writes funnel through SessionManager as the single source of truth.
 final class SessionStore {
     static let shared = SessionStore()
-
-    private let accessTokenKey = "session.accessToken"
-    private let authUserIDKey = "session.authUserID"
-
     private init() {}
 
+    /// Delegates to SessionManager — the single source of truth for the access token.
     var accessToken: String? {
-        get { UserDefaults.standard.string(forKey: accessTokenKey) }
+        get { SessionManager.shared.accessToken }
         set {
-            if let token = newValue {
-                UserDefaults.standard.set(token, forKey: accessTokenKey)
-            } else {
-                UserDefaults.standard.removeObject(forKey: accessTokenKey)
+            guard let token = newValue else {
+                SessionManager.shared.clear()
+                return
             }
+            // Preserve existing refresh token and expiry when only the access token changes.
+            let rt = SessionManager.shared.refreshToken ?? token
+            let uid = SessionManager.shared.userID ?? UUID()
+            SessionManager.shared.save(
+                accessToken: token,
+                refreshToken: rt,
+                userID: uid,
+                email: SessionManager.shared.userEmail,
+                expiresAt: SessionManager.shared.accessTokenExpiresAt,
+                preserveLoginDate: true
+            )
         }
     }
 
+    /// Delegates to SessionManager — returns the auth user ID as a string.
     var authUserID: String? {
-        get { UserDefaults.standard.string(forKey: authUserIDKey) }
+        get { SessionManager.shared.userID?.uuidString }
         set {
-            if let value = newValue {
-                UserDefaults.standard.set(value, forKey: authUserIDKey)
-            } else {
-                UserDefaults.standard.removeObject(forKey: authUserIDKey)
-            }
+            // UserID is stored as part of the full save() call in verifyEmailOTP.
+            // This setter is a no-op to avoid partial-state writes.
         }
     }
 }

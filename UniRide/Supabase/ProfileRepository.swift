@@ -13,6 +13,7 @@ final class ProfileRepository {
     // MARK: - Fetch profile by user ID
 
     func fetchProfile(userID: UUID) async throws -> [String: Any]? {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         // Use array format (no Accept: object header) to avoid 406 when row missing
         let url = mgr.restURL(table: "profiles", query: "id=eq.\(userID.uuidString)&limit=1")
@@ -27,6 +28,7 @@ final class ProfileRepository {
     // MARK: - Upsert profile
 
     func upsertProfile(_ profile: [String: Any]) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "profiles")
         var req = URLRequest(url: url)
@@ -41,6 +43,7 @@ final class ProfileRepository {
     // MARK: - Update specific fields
 
     func updateProfile(userID: UUID, fields: [String: Any]) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "profiles", query: "id=eq.\(userID.uuidString)")
         var req = URLRequest(url: url)
@@ -54,6 +57,7 @@ final class ProfileRepository {
     // MARK: - Vehicle (user_vehicles table, PK = user_id)
 
     func upsertVehicle(userID: UUID, vehicle: Vehicle) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "user_vehicles")
         var req = URLRequest(url: url)
@@ -73,6 +77,7 @@ final class ProfileRepository {
     }
 
     func fetchVehicle(userID: UUID) async throws -> Vehicle? {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "user_vehicles", query: "user_id=eq.\(userID.uuidString)&limit=1")
         var req = URLRequest(url: url)
@@ -93,6 +98,7 @@ final class ProfileRepository {
     // MARK: - Home locations (home_locations table)
 
     func upsertHomeLocation(userID: UUID, location: LocationPoint, isPrimary: Bool = true) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "home_locations")
         var req = URLRequest(url: url)
@@ -112,6 +118,7 @@ final class ProfileRepository {
     }
 
     func fetchHomeLocations(userID: UUID) async throws -> [LocationPoint] {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "home_locations",
                               query: "user_id=eq.\(userID.uuidString)&order=is_primary.desc,created_at.asc")
@@ -129,6 +136,7 @@ final class ProfileRepository {
     // MARK: - Upload avatar
 
     func uploadAvatar(userID: UUID, imageData: Data, mimeType: String = "image/jpeg") async throws -> String {
+        try await SessionManager.shared.validateSession()
         guard let token = SessionManager.shared.accessToken else { throw RepositoryError.notLoggedIn }
         let path = "\(userID.uuidString)/avatar.jpg"
         let url  = SupabaseManager.shared.projectURL

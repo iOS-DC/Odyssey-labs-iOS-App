@@ -29,8 +29,6 @@
 		D6DFDE992EC761F000BF33E0 /* UniRideUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UniRideUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-
-
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		9A58CBF42ED6DADA007E4D22 /* Exceptions for "UniRide" folder in "UniRide" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;

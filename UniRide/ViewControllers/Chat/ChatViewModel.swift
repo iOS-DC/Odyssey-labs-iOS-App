@@ -38,6 +38,21 @@ final class ChatViewModel: ObservableObject {
     private func load() {
         messages = ChatDataModel.shared.messages(for: rideID)
         ChatDataModel.shared.markAsRead(rideID: rideID)
+        // BUG FIX: Also fetch from Supabase so messages from other devices are visible.
+        Task { await fetchFromSupabase() }
+    }
+
+    /// Fetches messages from Supabase and merges them into the local cache.
+    @MainActor
+    private func fetchFromSupabase() async {
+        guard let rideUUID = UUID(uuidString: rideID) else { return }
+        guard let remote = try? await ChatRepository.shared.fetchMessages(rideID: rideUUID) else { return }
+        // Merge remote messages into the local model so they persist across launches.
+        for msg in remote {
+            ChatDataModel.shared.append(msg, to: rideID)
+        }
+        messages = ChatDataModel.shared.messages(for: rideID)
+        ChatDataModel.shared.markAsRead(rideID: rideID)
     }
 
     private func subscribeToUpdates() {
@@ -70,8 +85,21 @@ final class ChatViewModel: ObservableObject {
             text: trimmed,
             timestamp: Date()
         )
+        // Append locally for instant UI feedback
         ChatDataModel.shared.append(msg, to: rideID)
         messages.append(msg)
+
+        // BUG FIX: Also persist to Supabase `messages` table.
+        if let rideUUID = UUID(uuidString: rideID) {
+            Task {
+                try? await ChatRepository.shared.sendMessage(
+                    rideID: rideUUID,
+                    senderID: UUID(uuidString: currentUserID) ?? UUID(),
+                    senderName: currentUserName,
+                    text: trimmed
+                )
+            }
+        }
 
         scheduleAutoReply(after: trimmed)
     }

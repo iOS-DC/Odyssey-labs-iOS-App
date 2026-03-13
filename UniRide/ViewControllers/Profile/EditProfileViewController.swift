@@ -6,6 +6,7 @@ class EditProfileViewController: UIViewController,
 
     // MARK: - State
     private var newPhotoURL: URL? = nil
+    private var isSaving = false
 
     // MARK: - UI
     private let scrollView       = UIScrollView()
@@ -19,6 +20,9 @@ class EditProfileViewController: UIViewController,
     private let yearField        = UITextField()
     private let emailField       = UITextField()
     private let phoneField       = UITextField()
+
+    // Saved reference to the save button so we can toggle its loading state
+    private weak var saveButton: UIButton?
 
     // outlets needed by @IBAction stubs
     @IBOutlet weak var cardBackgroundView: UIView?
@@ -40,11 +44,41 @@ class EditProfileViewController: UIViewController,
         let bgTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         bgTap.cancelsTouchesInView = false
         view.addGestureRecognizer(bgTap)
+
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillChange(_:)),
+                                               name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(_:)),
+                                               name: UIResponder.keyboardWillHideNotification, object: nil)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshVehicleCard()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Keyboard Avoidance
+
+    @objc private func keyboardWillChange(_ notification: Notification) {
+        guard let info = notification.userInfo,
+              let frame = (info[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue,
+              let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval else { return }
+        let bottom = view.bounds.height - frame.minY
+        UIView.animate(withDuration: duration) {
+            self.scrollView.contentInset.bottom = bottom
+            self.scrollView.verticalScrollIndicatorInsets.bottom = bottom
+        }
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        guard let duration = (notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval) else { return }
+        UIView.animate(withDuration: duration) {
+            self.scrollView.contentInset.bottom = 0
+            self.scrollView.verticalScrollIndicatorInsets.bottom = 0
+        }
     }
 
     // MARK: - Build layout
@@ -178,6 +212,8 @@ class EditProfileViewController: UIViewController,
         saveButton.configuration = saveCfg
         saveButton.applyPrimaryButton(color: AppDesign.Color.primary)
         saveButton.addTarget(self, action: #selector(saveButtonTapped(_:)), for: .touchUpInside)
+        // Keep a weak reference so loading state can be toggled from beginSaving/endSaving
+        self.saveButton = saveButton
 
         // ── Inner stack: avatar → Change Photo → separator → fields → save ───
         let inner = UIStackView(arrangedSubviews: [
@@ -375,14 +411,11 @@ class EditProfileViewController: UIViewController,
         phoneField.text = user.phone
         yearField.text  = user.year.map { "\($0)" }
 
-        if let url = user.photoURL, let data = try? Data(contentsOf: url), let img = UIImage(data: data) {
-            avatarImageView.image       = img
-            avatarImageView.contentMode = .scaleAspectFill
-        } else {
-            avatarImageView.image = UIImage(systemName: "person.circle.fill")?
-                .withRenderingMode(.alwaysOriginal).withTintColor(.systemGray3)
-            avatarImageView.contentMode = .scaleAspectFit
-        }
+        // Non-blocking avatar load using the shared helper
+        // Force layout so bounds are known before calling loadAndFallback
+        avatarImageView.layoutIfNeeded()
+        avatarImageView.loadAndFallback(from: user.photoURL, name: user.fullName.isEmpty ? "?" : user.fullName)
+        avatarImageView.contentMode = user.photoURL != nil ? .scaleAspectFill : .scaleAspectFit
     }
 
     // MARK: - Actions
@@ -399,34 +432,66 @@ class EditProfileViewController: UIViewController,
     @objc private func dismissKeyboard() { view.endEditing(true) }
 
     @IBAction func saveButtonTapped(_ sender: Any) {
+        guard !isSaving else { return }
         guard var user = UserDataModel.shared.getCurrentUser() else { return }
-        user.fullName = nameField.text  ?? user.fullName
-        user.email    = emailField.text ?? user.email
-        user.phone    = phoneField.text
-        if let y = yearField.text, let yr = Int(y) { user.year = yr }
 
-        // If a new photo was chosen, upload to Supabase storage
-        if let photoURL = newPhotoURL,
-           let imageData = try? Data(contentsOf: photoURL) {
-            UserDataModel.shared.saveUserProfile(user)  // save text fields first
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+        // Collect & validate fields
+        let newName  = (nameField.text  ?? "").trimmingCharacters(in: .whitespaces)
+        let newEmail = (emailField.text ?? "").trimmingCharacters(in: .whitespaces)
+        let newPhone = (phoneField.text ?? "").trimmingCharacters(in: .whitespaces)
+        let newYear  = yearField.text.flatMap { Int($0) }
+
+        guard !newName.isEmpty else {
+            showAlert(title: "Name Required", message: "Please enter your full name.")
+            return
+        }
+
+        user.fullName = newName
+        user.email    = newEmail.isEmpty ? user.email : newEmail
+        user.phone    = newPhone.isEmpty ? user.phone : newPhone
+        if let yr = newYear { user.year = yr }
+
+        beginSaving()
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.endSaving() }
+
+            // 1. Upload avatar if a new photo was picked
+            if let photoURL = self.newPhotoURL,
+               let imageData = try? Data(contentsOf: photoURL) {
                 do {
-                    let remoteURL = try await ProfileRepository.shared.uploadAvatar(
+                    let remoteURLStr = try await ProfileRepository.shared.uploadAvatar(
                         userID: user.id, imageData: imageData)
-                    var updatedUser = user
-                    updatedUser.photoURL = URL(string: remoteURL)
-                    UserDataModel.shared.saveUserProfile(updatedUser)
+                    user.photoURL = URL(string: remoteURLStr)
                 } catch {
-                    print("Avatar upload failed:", error.localizedDescription)
+                    self.showAlert(title: "Photo Upload Failed",
+                                   message: error.localizedDescription + "\n\nOther changes were still saved.")
                 }
-                AppHaptics.success()
-                self.navigationController?.popViewController(animated: true)
             }
-        } else {
+
+            // 2. Persist text-field changes locally first
             UserDataModel.shared.saveUserProfile(user)
+
+            // 3. Sync to Supabase (best-effort, won't block navigation)
+            var remoteFields: [String: Any] = [
+                "id":        user.id.uuidString,
+                "full_name": user.fullName,
+                "email":     user.email,
+            ]
+            if let phone = user.phone    { remoteFields["phone"] = phone }
+            if let year  = user.year     { remoteFields["year"]  = year }
+            if let urlStr = user.photoURL?.absoluteString { remoteFields["photo_url"] = urlStr }
+
+            do {
+                try await ProfileRepository.shared.upsertProfile(remoteFields)
+            } catch {
+                // Non-fatal — local save already succeeded
+                print("[EditProfile] Remote sync failed:", error.localizedDescription)
+            }
+
             AppHaptics.success()
-            navigationController?.popViewController(animated: true)
+            self.navigationController?.popViewController(animated: true)
         }
     }
 
@@ -453,5 +518,33 @@ class EditProfileViewController: UIViewController,
             .appendingPathComponent("profile_\(UUID().uuidString).jpg")
         try? data.write(to: url)
         return url
+    }
+
+    // MARK: - Loading State
+
+    private func beginSaving() {
+        isSaving = true
+        var cfg = saveButton?.configuration
+        cfg?.showsActivityIndicator = true
+        cfg?.title = "Saving…"
+        saveButton?.configuration = cfg
+        saveButton?.isEnabled = false
+    }
+
+    private func endSaving() {
+        isSaving = false
+        var cfg = saveButton?.configuration
+        cfg?.showsActivityIndicator = false
+        cfg?.title = "Save Changes"
+        saveButton?.configuration = cfg
+        saveButton?.isEnabled = true
+    }
+
+    // MARK: - Alert Helper
+
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }

@@ -98,68 +98,72 @@ class ReviewRideViewController: UIViewController {
  
     @IBAction func offerTapped(_ sender: UIButton) {
 
-         guard let user = UserDataModel.shared.getCurrentUser() else {
-             print("[ReviewRide] no current user; cannot create ride")
-             return
-         }
+        guard let user = UserDataModel.shared.getCurrentUser() else {
+            let alert = UIAlertController(title: "Not Signed In",
+                                          message: "Please sign in before offering a ride.",
+                                          preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
 
-         let finalDeparture = merge(summary.date, summary.time)
+        let finalDeparture = merge(summary.date, summary.time)
 
-         // Use route waypoints if available; sample if too many points
-         let rawWaypoints = summary.route?.coordinates ?? []
-         let waypoints: [LocationPoint]
-         if rawWaypoints.count > 120 {
-             // sample roughly 80-120 points max for storage efficiency
-             let step = max(1, rawWaypoints.count / 100)
-             waypoints = stride(from: 0, to: rawWaypoints.count, by: step).map { rawWaypoints[$0] }
-         } else {
-             waypoints = rawWaypoints
-         }
+        let rawWaypoints = summary.route?.coordinates ?? []
+        let waypoints: [LocationPoint]
+        if rawWaypoints.count > 120 {
+            let step = max(1, rawWaypoints.count / 100)
+            waypoints = stride(from: 0, to: rawWaypoints.count, by: step).map { rawWaypoints[$0] }
+        } else {
+            waypoints = rawWaypoints
+        }
 
-         let ride = Ride(
-             driverUserID: user.id,
-             source: summary.from,
-             destination: summary.to,
-             waypoints: waypoints,
-             selectedRoute: summary.route,
-             departureTime: finalDeparture,
-             seatsTotal: summary.seats,
-             farePerSeat: summary.farePerSeat,
-             status: .published,
-             notes: ""
-         )
+        let ride = Ride(
+            driverUserID: user.id,
+            source: summary.from,
+            destination: summary.to,
+            waypoints: waypoints,
+            selectedRoute: summary.route,
+            departureTime: finalDeparture,
+            seatsTotal: summary.seats,
+            farePerSeat: summary.farePerSeat,
+            status: .published,
+            notes: ""
+        )
 
-         offerButton.setPrimaryCTAEnabled(false)
-         Task { @MainActor [weak self] in
-             guard let self else { return }
-             defer { self.offerButton.setPrimaryCTAEnabled(true) }
-             do {
-                 _ = try await RideDataModel.shared.createRideAndPublishAsync(ride)
-                 NotificationCenter.default.post(name: .ridesUpdated, object: nil)
-                 AppHaptics.success()
+        // Show loading state inline on the button
+        var loadingCfg = offerButton.configuration ?? UIButton.Configuration.filled()
+        loadingCfg.showsActivityIndicator = true
+        loadingCfg.title = "Publishing…"
+        offerButton.configuration = loadingCfg
+        offerButton.isEnabled = false
 
-                 if let rt = ride.selectedRoute {
-                     print("[ReviewRide] created ride id:", ride.id.uuidString,
-                           "expectedTravelTime(s):", rt.expectedTravelTime,
-                           "distance(m):", rt.distanceMeters,
-                           "waypoints:", waypoints.count)
-                 } else {
-                     print("[ReviewRide] created ride WITHOUT selectedRoute (fallback travel time will be used).")
-                 }
-
-                 tabBarController?.selectedIndex = 1
-                 navigationController?.popToRootViewController(animated: true)
-             } catch {
-                 let alert = UIAlertController(
-                     title: "Couldn’t publish ride",
-                     message: error.localizedDescription,
-                     preferredStyle: .alert
-                 )
-                 alert.addAction(UIAlertAction(title: "OK", style: .default))
-                 present(alert, animated: true)
-             }
-         }
-     }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                var cfg = self.offerButton.configuration ?? UIButton.Configuration.filled()
+                cfg.showsActivityIndicator = false
+                cfg.title = "Offer Ride"
+                self.offerButton.configuration = cfg
+                self.offerButton.isEnabled = true
+            }
+            do {
+                _ = try await RideDataModel.shared.createRideAndPublishAsync(ride)
+                NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+                AppHaptics.success()
+                tabBarController?.selectedIndex = 1
+                navigationController?.popToRootViewController(animated: true)
+            } catch {
+                let alert = UIAlertController(
+                    title: "Couldn't publish ride",
+                    message: error.localizedDescription,
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            }
+        }
+    }
     func merge(_ date: Date, _ time: Date) -> Date {
         let calendar = Calendar.current
 

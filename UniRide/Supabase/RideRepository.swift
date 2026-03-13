@@ -123,6 +123,7 @@ final class RideRepository {
     // MARK: - Rides
 
     func fetchPublishedRides() async throws -> [Ride] {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "rides", query: "status=eq.published&order=departure_time.asc")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
@@ -133,6 +134,7 @@ final class RideRepository {
     }
 
     func fetchRides(driverID: UUID) async throws -> [Ride] {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "rides",
                               query: "driver_user_id=eq.\(driverID.uuidString)&order=departure_time.desc")
@@ -144,6 +146,7 @@ final class RideRepository {
     }
 
     func fetchRide(id: UUID) async throws -> Ride? {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "rides", query: "id=eq.\(id.uuidString)&limit=1")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
@@ -154,6 +157,7 @@ final class RideRepository {
     }
 
     func insertRide(_ ride: Ride) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "rides")
         var req = URLRequest(url: url); req.httpMethod = "POST"; req.allHTTPHeaderFields = headers
@@ -177,6 +181,7 @@ final class RideRepository {
     }
 
     func updateRideStatus(id: UUID, status: RideStatus) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "rides", query: "id=eq.\(id.uuidString)")
         var req = URLRequest(url: url); req.httpMethod = "PATCH"; req.allHTTPHeaderFields = headers
@@ -186,6 +191,7 @@ final class RideRepository {
     }
 
     func updateSeatsAvailable(rideID: UUID, seats: Int) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "rides", query: "id=eq.\(rideID.uuidString)")
         var req = URLRequest(url: url); req.httpMethod = "PATCH"; req.allHTTPHeaderFields = headers
@@ -197,6 +203,7 @@ final class RideRepository {
     // MARK: - Requests
 
     func fetchRequests(rideID: UUID) async throws -> [RideRequest] {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_requests",
                               query: "ride_id=eq.\(rideID.uuidString)&order=created_at.asc")
@@ -208,6 +215,7 @@ final class RideRepository {
     }
 
     func fetchMyRequests(passengerID: UUID) async throws -> [RideRequest] {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_requests",
                               query: "passenger_user_id=eq.\(passengerID.uuidString)&order=created_at.desc")
@@ -219,6 +227,7 @@ final class RideRepository {
     }
 
     func insertRequest(_ request: RideRequest) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_requests")
         var req = URLRequest(url: url); req.httpMethod = "POST"; req.allHTTPHeaderFields = headers
@@ -237,6 +246,7 @@ final class RideRepository {
     }
 
     func updateRequestStatus(id: UUID, status: RideRequestStatus) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_requests", query: "id=eq.\(id.uuidString)")
         var req = URLRequest(url: url); req.httpMethod = "PATCH"; req.allHTTPHeaderFields = headers
@@ -250,6 +260,7 @@ final class RideRepository {
     // MARK: - Bookings
 
     func fetchBookings(rideID: UUID) async throws -> [Booking] {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_bookings",
                               query: "ride_id=eq.\(rideID.uuidString)&order=created_at.asc")
@@ -261,6 +272,7 @@ final class RideRepository {
     }
 
     func fetchMyBookings(passengerID: UUID) async throws -> [Booking] {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_bookings",
                               query: "passenger_user_id=eq.\(passengerID.uuidString)&order=created_at.desc")
@@ -272,6 +284,7 @@ final class RideRepository {
     }
 
     func insertBooking(_ booking: Booking) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_bookings")
         var req = URLRequest(url: url); req.httpMethod = "POST"; req.allHTTPHeaderFields = headers
@@ -290,6 +303,7 @@ final class RideRepository {
     }
 
     func updateBookingStatus(id: UUID, status: BookingStatus) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_bookings", query: "id=eq.\(id.uuidString)")
         var req = URLRequest(url: url); req.httpMethod = "PATCH"; req.allHTTPHeaderFields = headers

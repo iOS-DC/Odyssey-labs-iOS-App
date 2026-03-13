@@ -8,9 +8,9 @@ final class SupabaseManager {
     static let shared = SupabaseManager()
     private init() {}
 
-    // ── Replace with your actual Supabase project values ──
-    let projectURL = URL(string: "https://jobxehwerpvedlfkbfoi.supabase.co")!
-    let anonKey   = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvYnhlaHdlcnB2ZWRsZmtiZm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTIzODMsImV4cCI6MjA4NzgyODM4M30.xftgy_ZnxXDl6Ow5ZFL3m0Y_RojJDjsJEdq1DbYM3c0"
+    // Reads from BackendConfig — single source of truth shared with the APIClient layer.
+    let projectURL = BackendConfig.baseURL ?? URL(string: "https://jobxehwerpvedlfkbfoi.supabase.co")!
+    let anonKey   = BackendConfig.supabaseAnonKey ?? BackendConfig.supabaseAnonKeyFallback
 
     // MARK: - Headers
 

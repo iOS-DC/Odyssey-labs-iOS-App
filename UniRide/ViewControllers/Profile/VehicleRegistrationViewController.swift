@@ -264,13 +264,43 @@ class VehicleRegistrationViewController: UIViewController {
 
         let vehicle = Vehicle(type: selectedType, model: model, registrationNumber: plate, seats: seatCount)
 
+        // Save locally immediately
         UserDataModel.shared.editCurrentUser(vehicle: vehicle)
 
-        let alert = UIAlertController(title: "Saved!", message: "Your vehicle has been registered.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-            self?.navigationController?.popViewController(animated: true)
-        })
-        present(alert, animated: true)
+        // Show loading state on save button
+        saveButton.isEnabled = false
+        var cfg = saveButton.configuration
+        cfg?.showsActivityIndicator = true
+        cfg?.title = "Saving…"
+        saveButton.configuration = cfg
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            // Sync to Supabase
+            if let userID = SessionManager.shared.userID {
+                do {
+                    try await ProfileRepository.shared.upsertVehicle(userID: userID, vehicle: vehicle)
+                } catch {
+                    // Non-fatal — local save already succeeded
+                    print("[VehicleReg] Remote sync failed:", error.localizedDescription)
+                }
+            }
+
+            // Restore button state
+            var cfg = self.saveButton.configuration
+            cfg?.showsActivityIndicator = false
+            cfg?.title = "Save Vehicle"
+            self.saveButton.configuration = cfg
+            self.saveButton.isEnabled = true
+
+            AppHaptics.success()
+            let alert = UIAlertController(title: "Saved!", message: "Your vehicle has been registered.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+                self?.navigationController?.popViewController(animated: true)
+            })
+            self.present(alert, animated: true)
+        }
     }
 
     // MARK: - Preload existing vehicle

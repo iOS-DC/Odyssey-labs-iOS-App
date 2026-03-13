@@ -157,6 +157,10 @@ class EventDetailsViewController: UIViewController {
     }
 
     @objc @IBAction func offerRideTapped(_ sender: Any) {
+        // BUG FIX: Record attendance in Supabase event_attendance table
+        if let eventID = event?.id {
+            Task { try? await CommunityRepository.shared.recordEventAttendance(eventID: eventID) }
+        }
         let storyboard = UIStoryboard(name: "OfferRide", bundle: nil)
         if let vc = storyboard.instantiateViewController(withIdentifier: "OfferRideViewController") as? OfferRideViewController {
             navigationController?.pushViewController(vc, animated: true)
@@ -164,9 +168,12 @@ class EventDetailsViewController: UIViewController {
     }
     
     @objc @IBAction func joinRide(_ sender: Any) {
+        // BUG FIX: Record attendance in Supabase event_attendance table
+        if let eventID = event?.id {
+            Task { try? await CommunityRepository.shared.recordEventAttendance(eventID: eventID) }
+        }
         // Navigate directly to AvailableRideViewController with this event
         let storyboard = UIStoryboard(name: "JoinRide", bundle: nil)
-        
         if let vc = storyboard.instantiateViewController(withIdentifier: "AvailableRideViewController") as? AvailableRideViewController {
             vc.event = self.event
             navigationController?.pushViewController(vc, animated: true)

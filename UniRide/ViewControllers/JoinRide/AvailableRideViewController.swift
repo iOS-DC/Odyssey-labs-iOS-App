@@ -201,11 +201,11 @@ final class AvailableRideViewController: UIViewController,
         // Empty state
         emptyStateView.isHidden = !filteredRides.isEmpty
 
-        // Filter button active tint
+        // Filter button — filled icon + primary tint when a filter is active
         let isActive = !activeFilter.isDefault
         filterBarBtn.tintColor = isActive ? AppDesign.Color.primary : .label
         filterBarBtn.image = UIImage(systemName: isActive
-            ? "slider.horizontal.3"
+            ? "line.3.horizontal.decrease.circle.fill"
             : "slider.horizontal.3")
     }
 

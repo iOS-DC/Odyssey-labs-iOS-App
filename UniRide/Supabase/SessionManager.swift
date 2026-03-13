@@ -53,6 +53,9 @@ final class SessionManager {
             self.loginDate = Date()
         }
         persistToDisk()
+        
+        // Notify the app that session has updated
+        NotificationCenter.default.post(name: Notification.Name("SessionUpdated"), object: nil)
     }
 
     func clear() {
@@ -63,6 +66,25 @@ final class SessionManager {
         accessTokenExpiresAt = nil
         loginDate            = nil
         UserDefaults.standard.removeObject(forKey: "sb_session")
+        
+        // Notify the app that user logged out
+        NotificationCenter.default.post(name: Notification.Name("UserLoggedOut"), object: nil)
+    }
+
+    // MARK: - Session Validation
+    
+    /// Throws an error if the session is invalid or expired. Forces a refresh if needed.
+    func validateSession() async throws {
+        if !isLoggedIn {
+            throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])
+        }
+        if isAccessTokenExpired {
+            await refreshIfNeeded()
+            if isAccessTokenExpired {
+                clear()
+                throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Session expired, please log in again"])
+            }
+        }
     }
 
     // MARK: - Refresh token
@@ -115,14 +137,19 @@ final class SessionManager {
     }
 
     private func loadFromDisk() {
-        guard let data = UserDefaults.standard.data(forKey: "sb_session"),
-              let p = try? JSONDecoder().decode(Persisted.self, from: data),
-              let uid = UUID(uuidString: p.userID) else { return }
-        accessToken          = p.accessToken
-        refreshToken         = p.refreshToken
-        userID               = uid
-        userEmail            = p.userEmail
-        accessTokenExpiresAt = p.accessTokenExpiresAt
-        loginDate            = p.loginDate
+        if let data = UserDefaults.standard.data(forKey: "sb_session"),
+           let p = try? JSONDecoder().decode(Persisted.self, from: data) {
+            self.accessToken = p.accessToken
+            self.refreshToken = p.refreshToken
+            self.userID = UUID(uuidString: p.userID)
+            self.userEmail = p.userEmail
+            self.accessTokenExpiresAt = p.accessTokenExpiresAt
+            self.loginDate = p.loginDate
+            
+            // Check session validity immediately upon loading
+            if !self.isLoggedIn {
+                self.clear()
+            }
+        }
     }
 }

@@ -638,13 +638,40 @@ final class UserDataModel {
         if let v = user.year         { fields["year"]        = v }
         if let v = user.employeeID   { fields["employee_id"] = v }
         if let v = user.photoURL     { fields["photo_url"]   = v.absoluteString }
+
+        // BUG FIX: Sync last-known location to Supabase profiles table.
+        // Previously these columns (last_known_lat/lon/address) were always NULL in Supabase.
+        if let loc = user.lastKnownLocation {
+            fields["last_known_lat"]     = loc.lat
+            fields["last_known_lon"]     = loc.lon
+            if let addr = loc.address {
+                fields["last_known_address"] = addr
+            }
+        }
+
         try await ProfileRepository.shared.upsertProfile(fields)
 
         if let vehicle = user.vehicle {
             try await ProfileRepository.shared.upsertVehicle(userID: user.id, vehicle: vehicle)
         }
-        if let home = user.savedHomeLocation {
-            try await ProfileRepository.shared.upsertHomeLocation(userID: user.id, location: home, isPrimary: true)
+
+        // BUG FIX: Sync ALL saved home locations, not just the primary one.
+        // Previously only user.savedHomeLocation (the first entry) was written, silently
+        // dropping any additional locations the user had saved.
+        let homes: [LocationPoint]
+        if let all = user.savedHomeLocations, !all.isEmpty {
+            homes = all
+        } else if let single = user.savedHomeLocation {
+            homes = [single]
+        } else {
+            homes = []
+        }
+        for (index, loc) in homes.enumerated() {
+            try await ProfileRepository.shared.upsertHomeLocation(
+                userID: user.id,
+                location: loc,
+                isPrimary: index == 0
+            )
         }
     }
 

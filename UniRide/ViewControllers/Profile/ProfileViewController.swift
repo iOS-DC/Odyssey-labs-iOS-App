@@ -7,13 +7,20 @@ class ProfileViewController: UIViewController {
     private let scrollView   = UIScrollView()
     private let contentStack = UIStackView()
 
+    // Pull-to-refresh
+    private let refreshControl = UIRefreshControl()
+
     // MARK: - Completion banner
     private var completionBanner: ProfileCompletionBannerView?
-    private static let dismissedKey = "profileCompletionBannerDismissed"
 
+    /// Banner is dismissed per-user so re-login or profile changes can re-surface it.
+    private var bannerDismissedKey: String {
+        let uid = UserDataModel.shared.getCurrentUser()?.id.uuidString ?? "unknown"
+        return "profileBannerDismissed_\(uid)"
+    }
     private var isBannerDismissed: Bool {
-        get { UserDefaults.standard.bool(forKey: Self.dismissedKey) }
-        set { UserDefaults.standard.set(newValue, forKey: Self.dismissedKey) }
+        get { UserDefaults.standard.bool(forKey: bannerDismissedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: bannerDismissedKey) }
     }
 
     // MARK: - Hero card views (kept as properties for update)
@@ -29,11 +36,28 @@ class ProfileViewController: UIViewController {
     private let phoneValueLabel  = UILabel()
     private let homeValueLabel   = UILabel()
 
+    // MARK: - Loading skeleton
+    private lazy var skeletonOverlay: UIView = {
+        let v = UIView()
+        v.backgroundColor = .systemGroupedBackground
+        v.translatesAutoresizingMaskIntoConstraints = false
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.startAnimating()
+        v.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: v.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: v.centerYAnchor),
+        ])
+        return v
+    }()
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavBar()
         buildScrollLayout()
+        setupRefreshControl()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -85,6 +109,30 @@ class ProfileViewController: UIViewController {
 
         contentStack.addArrangedSubview(buildHeroCard())
         contentStack.addArrangedSubview(buildContactCard())
+
+        // Skeleton overlay covers the content until the first profile loads
+        view.addSubview(skeletonOverlay)
+        NSLayoutConstraint.activate([
+            skeletonOverlay.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            skeletonOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            skeletonOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            skeletonOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    private func setupRefreshControl() {
+        refreshControl.tintColor = AppDesign.Color.primary
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        scrollView.refreshControl = refreshControl
+    }
+
+    @objc private func handleRefresh() {
+        AppHaptics.selection()
+        // Reset banner dismissal so a profile-change refresh can re-surface it
+        loadProfile()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            self?.refreshControl.endRefreshing()
+        }
     }
 
     // MARK: - Hero Card
@@ -118,7 +166,7 @@ class ProfileViewController: UIViewController {
         // Member since
         memberLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
         memberLabel.textAlignment = .center
-        memberLabel.text          = "Member Since 2025"
+        memberLabel.text          = "—"
 
         // Divider
         let divider            = UIView()
@@ -252,27 +300,41 @@ class ProfileViewController: UIViewController {
     private func loadProfile() {
         if let profile = UserDataModel.shared.getCurrentUser() {
             applyProfile(profile)
+            hideSkeleton()
         } else if SessionManager.shared.isLoggedIn {
-            // currentUserID not yet restored (e.g. cold launch) — fetch async
+            // currentUserID not yet restored (cold launch) — show skeleton and fetch async
             Task { @MainActor in
                 await UserDataModel.shared.restoreSessionUser()
                 if let profile = UserDataModel.shared.getCurrentUser() {
                     applyProfile(profile)
                 }
+                hideSkeleton()
             }
+        } else {
+            hideSkeleton()
+        }
+    }
+
+    private func hideSkeleton() {
+        guard !skeletonOverlay.isHidden else { return }
+        UIView.animate(withDuration: 0.25) {
+            self.skeletonOverlay.alpha = 0
+        } completion: { _ in
+            self.skeletonOverlay.isHidden = true
         }
     }
 
     private func applyProfile(_ profile: UserProfile) {
 
-        // Avatar
-        if let url = profile.photoURL {
-            loadImageAsync(from: url)
-        } else {
-            avatarImageView.image     = UIImage.generatedAvatar(for: profile.fullName.isEmpty ? "?" : profile.fullName,
-                                                                size: CGSize(width: 88, height: 88))
-            avatarImageView.tintColor = nil
+        // Avatar — force a known size so loadAndFallback generates correct initials image
+        // (view may not be laid out yet on first viewWillAppear call)
+        let avatarSize = CGSize(width: 88, height: 88)
+        if avatarImageView.bounds.width < 4 {
+            // Provide an explicit size hint before layout pass
+            let placeholder = UIImage.generatedAvatar(for: profile.fullName.isEmpty ? "?" : profile.fullName, size: avatarSize)
+            avatarImageView.image = placeholder
         }
+        avatarImageView.loadAndFallback(from: profile.photoURL, name: profile.fullName.isEmpty ? "?" : profile.fullName)
 
         // Name
         nameLabel.text = profile.fullName.isEmpty ? "Your Name" : profile.fullName
@@ -282,18 +344,27 @@ class ProfileViewController: UIViewController {
             if role == .student {
                 let course = profile.courseName ?? ""
                 let year   = profile.year.map { " · Year \($0)" } ?? ""
-                subtitleLabel.text = course + year
+                subtitleLabel.text = course.isEmpty ? "Student" : (course + year)
             } else {
                 subtitleLabel.text = "Faculty · \(profile.courseName ?? "")"
             }
         }
 
-        memberLabel.text = "Member Since 2025"
+        // Member Since — derived from the session's loginDate or current year as fallback
+        let yearStr: String
+        if let date = SessionManager.shared.loginDate {
+            let cal = Calendar.current
+            yearStr = "\(cal.component(.year, from: date))"
+        } else {
+            let cal = Calendar.current
+            yearStr = "\(cal.component(.year, from: Date()))"
+        }
+        memberLabel.text = "Member Since \(yearStr)"
 
-        // Stats
-        let avg        = ReviewDataModel.shared.averageRating(for: profile.id)
+        // Stats — rating from ReviewDataModel, rides from RideDataModel
+        let avg = ReviewDataModel.shared.averageRating(for: profile.id)
         ratingLabel.text = avg.map { String(format: "%.1f ★", $0) } ?? "—"
-        let total      = ReviewDataModel.shared.totalRides(for: profile.id)
+        let total = ReviewDataModel.shared.totalRides(for: profile.id)
         ridesLabel.text = "\(total)"
 
         // Contact
@@ -306,11 +377,15 @@ class ProfileViewController: UIViewController {
             homeValueLabel.text = "Tap Edit to set home"
         }
 
-        // Tab badge
+        // Tab badge — "!" when profile is incomplete
         let completion = ProfileCompletionCalculator.compute(for: profile)
         tabBarItem.badgeValue = completion.isComplete ? nil : "!"
 
-        // Banner
+        // Banner — re-show if profile became incomplete again (e.g. after logout/login)
+        if completion.isComplete {
+            // Profile is now complete — reset dismissed state so banner shows next time a step regresses
+            UserDefaults.standard.removeObject(forKey: bannerDismissedKey)
+        }
         refreshCompletionBanner(for: profile)
     }
 
@@ -388,31 +463,16 @@ class ProfileViewController: UIViewController {
     private func performLogout() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            try? await AuthService.shared.signOut()   // clears Supabase session
-            UserDataModel.shared.logout()             // clears local state
-            let sb     = UIStoryboard(name: "Main", bundle: nil)
+            try? await AuthService.shared.signOut()
+            UserDataModel.shared.logout()
+            let sb      = UIStoryboard(name: "Main", bundle: nil)
             let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
-            let nav    = UINavigationController(rootViewController: emailVC)
+            let nav     = UINavigationController(rootViewController: emailVC)
             if let scene = self.view.window?.windowScene?.delegate as? SceneDelegate {
                 scene.window?.rootViewController = nav
                 scene.window?.makeKeyAndVisible()
             }
         }
-    }
-
-    // MARK: - Async image loader
-    private func loadImageAsync(from url: URL) {
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let self else { return }
-            DispatchQueue.main.async {
-                if let data, let image = UIImage(data: data) {
-                    self.avatarImageView.image = image
-                } else {
-                    guard let profile = UserDataModel.shared.getCurrentUser() else { return }
-                    self.avatarImageView.image = UIImage.generatedAvatar(for: profile.fullName, size: CGSize(width: 88, height: 88))
-                }
-            }
-        }.resume()
     }
 
     // MARK: - Helpers

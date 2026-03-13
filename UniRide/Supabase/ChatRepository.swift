@@ -12,7 +12,8 @@ final class ChatRepository {
 
     // MARK: - Fetch messages for a ride
 
-    func fetchMessages(rideID: UUID) async throws -> [[String: Any]] {
+    func fetchMessages(rideID: UUID) async throws -> [ChatMessage] {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "messages",
                               query: "ride_id=eq.\(rideID.uuidString)&order=created_at.asc")
@@ -20,22 +21,33 @@ final class ChatRepository {
         req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
-        return (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        return rows.compactMap { row -> ChatMessage? in
+            guard let idStr    = row["id"]         as? String, let id  = UUID(uuidString: idStr),
+                  let senderID = row["sender_id"]  as? String,
+                  let text     = row["body"]        as? String,
+                  let tsStr    = row["created_at"]  as? String else { return nil }
+            let name = (row["sender_name"] as? String) ?? ""
+            let ts   = ISO8601DateFormatter().date(from: tsStr) ?? Date()
+            return ChatMessage(id: id, senderID: senderID, senderName: name, text: text, timestamp: ts)
+        }
     }
 
     // MARK: - Send message
 
-    func sendMessage(rideID: UUID, senderID: UUID, body: String) async throws {
+    func sendMessage(rideID: UUID, senderID: UUID, senderName: String, text: String) async throws {
+        try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "messages")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.allHTTPHeaderFields = headers
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let payload: [String: Any] = [
-            "ride_id":   rideID.uuidString,
-            "sender_id": senderID.uuidString,
-            "body":      body,
-            "created_at": ISO8601DateFormatter().string(from: Date())
+            "ride_id":     rideID.uuidString,
+            "sender_id":   senderID.uuidString,
+            "sender_name": senderName,
+            "body":        text
         ]
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (data, response) = try await URLSession.shared.data(for: req)

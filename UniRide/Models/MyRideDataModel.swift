@@ -434,20 +434,31 @@ final class RideDataModel {
     }
 
     func approveRequestAsync(requestID: UUID, hostUserID: UUID) async throws {
-        try await RideRepository.shared.updateRequestStatus(id: requestID, status: .approved)
-        // Also create a booking row in Supabase
-        if let req = requests.first(where: { $0.id == requestID }),
-           let ride = rides.first(where: { $0.id == req.rideID }) {
-            let booking = Booking(
-                rideID: req.rideID,
-                passengerUserID: req.passengerUserID,
-                seats: req.seats,
-                pickupPoint: req.pickupPoint
-            )
-            try await RideRepository.shared.insertBooking(booking)
-            let newSeats = max(0, ride.seatsAvailable - req.seats)
-            try await RideRepository.shared.updateSeatsAvailable(rideID: ride.id, seats: newSeats)
+        // BUG FIX: Reordered for safer failure handling.
+        // 1. Insert booking first — if this fails, request stays 'pending' (safe to retry)
+        // 2. Update seat count
+        // 3. Mark request 'approved' last — treat this as the commit step
+        guard let req = requests.first(where: { $0.id == requestID }),
+              let ride = rides.first(where: { $0.id == req.rideID }) else {
+            throw NSError(domain: "Rides", code: 404,
+                          userInfo: [NSLocalizedDescriptionKey: "Request or ride not found locally"])
         }
+
+        let booking = Booking(
+            rideID: req.rideID,
+            passengerUserID: req.passengerUserID,
+            seats: req.seats,
+            pickupPoint: req.pickupPoint
+        )
+        try await RideRepository.shared.insertBooking(booking)
+
+        let newSeats = max(0, ride.seatsAvailable - req.seats)
+        try await RideRepository.shared.updateSeatsAvailable(rideID: ride.id, seats: newSeats)
+
+        // Commit: mark the request approved only after booking + seats are persisted
+        try await RideRepository.shared.updateRequestStatus(id: requestID, status: .approved)
+
+        // Mirror the changes in the local cache
         approveRequest(requestID: requestID, hostUserID: hostUserID)
     }
 
@@ -696,14 +707,14 @@ final class RideDataModel {
     /// Merges backend rides into local cache without deleting local drafts/request state.
     func mergeRemoteRides(_ incoming: [Ride]) {
         guard !incoming.isEmpty else { return }
-        // Keep local drafts; replace or add everything else from Supabase
+        // BUG FIX: Always replace existing rides with the remote version so updated
+        // seat counts and statuses from Supabase are never ignored by a stale local copy.
+        // Local drafts are preserved because they won't appear in the remote list.
         let localDrafts = rides.filter { $0.status == .draft }
-        var merged = localDrafts
-        for remoteRide in incoming {
-            if !merged.contains(where: { $0.id == remoteRide.id }) {
-                merged.append(remoteRide)
-            }
-        }
+        let remoteIDs = Set(incoming.map { $0.id })
+        // Keep only local drafts that haven't been published to Supabase yet
+        var merged = localDrafts.filter { !remoteIDs.contains($0.id) }
+        merged.append(contentsOf: incoming)
         rides = merged.sorted { $0.departureTime < $1.departureTime }
         saveRides()
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
@@ -742,16 +753,15 @@ final class RideDataModel {
     
     private func reconcileAllRideStatuses(now: Date = Date()) {
         var changed = false
+        var statusChanges: [(id: UUID, status: RideStatus)] = []
 
         for idx in rides.indices {
             var r = rides[idx]
 
-            // Never touch draft or cancelled
             // Never touch draft, cancelled, or completed rides
             if r.status == .draft || r.status == .cancelled || r.status == .completed {
                 continue
             }
-           
 
             // Future rides → keep as published (but never reset a manually-started ongoing ride)
             if r.departureTime > now {
@@ -760,17 +770,17 @@ final class RideDataModel {
                     r.status = .published
                     rides[idx] = r
                     changed = true
+                    statusChanges.append((id: r.id, status: .published))
                 }
                 continue
             }
 
-            // Calculate end time SAFELY
+            // Calculate end time
             let travelSeconds: TimeInterval
             if let route = r.selectedRoute {
                 travelSeconds = route.expectedTravelTime
             } else {
-                // fallback ONLY for completion logic
-                travelSeconds = 60 * 60   // 1 hour
+                travelSeconds = 60 * 60   // 1-hour fallback
             }
 
             let endTime = r.departureTime.addingTimeInterval(travelSeconds)
@@ -781,6 +791,7 @@ final class RideDataModel {
                     r.status = .completed
                     rides[idx] = r
                     changed = true
+                    statusChanges.append((id: r.id, status: .completed))
                 }
             } else {
                 // Between start and end → Ongoing
@@ -788,6 +799,7 @@ final class RideDataModel {
                     r.status = .ongoing
                     rides[idx] = r
                     changed = true
+                    statusChanges.append((id: r.id, status: .ongoing))
                 }
             }
         }
@@ -795,6 +807,15 @@ final class RideDataModel {
         if changed {
             saveRides()
             NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+
+            // BUG FIX: Sync the reconciled statuses back to Supabase so other users
+            // always see the correct ride state (previously these changes were local-only).
+            guard !statusChanges.isEmpty else { return }
+            Task {
+                for change in statusChanges {
+                    try? await RideRepository.shared.updateRideStatus(id: change.id, status: change.status)
+                }
+            }
         }
     }
 

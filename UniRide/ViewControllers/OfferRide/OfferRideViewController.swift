@@ -76,6 +76,10 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         prefillLocationsIfPossible()
         updateNextButtonState()
 
+        // Tap anywhere on the map to dismiss the keyboard
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        mapView.addGestureRecognizer(tapGesture)
     }
     // Sets the date to today and time to 10 minutes from now (minimum lead time)
     private func setDefaultDateAndTime() {
@@ -186,6 +190,10 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     // Always allow user to edit the text fields
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool { true }
 
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+
     @IBAction private func locationFieldEditingChanged(_ sender: UITextField) {
         updateNextButtonState()
     }
@@ -264,6 +272,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
                 }
 
                 self.suggestionsTable.isHidden = true
+                self.activeField?.resignFirstResponder()
+                self.activeField = nil
                 self.updateNextButtonState()
                 self.tryFetchRoutes()
             }
@@ -458,21 +468,46 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     // MARK: - NEXT BUTTON
     // Moves to vehicle details screen with all the route info
     @IBAction func nextTapped(_ sender: Any) {
-        guard let from = fromCoord, let to = toCoord else { return }
+        let fromText = fromTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let toText   = toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        guard !fromText.isEmpty, !toText.isEmpty else {
+            showValidationAlert("Missing Location", message: "Please enter both a pickup and a drop-off location.")
+            return
+        }
+        guard let from = fromCoord else {
+            showValidationAlert("Select from suggestions", message: "Please pick your pickup location from the autocomplete list.")
+            return
+        }
+        guard let to = toCoord else {
+            showValidationAlert("Select from suggestions", message: "Please pick your drop-off location from the autocomplete list.")
+            return
+        }
+        guard fromText.lowercased() != toText.lowercased() else {
+            showValidationAlert("Same Location", message: "Pickup and drop-off can't be the same. Please choose different locations.")
+            return
+        }
+
+        view.endEditing(true)
 
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
         let vc = sb.instantiateViewController(withIdentifier: "VehicleDetailsViewController") as! VehicleDetailsViewController
 
         vc.date = datePicker.date
         vc.time = timePicker.date
-
-        vc.source = LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text)
-        vc.destination = LocationPoint(lat: to.latitude, lon: to.longitude, address: toTextField.text)
+        vc.source      = LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text)
+        vc.destination = LocationPoint(lat: to.latitude,   lon: to.longitude,   address: toTextField.text)
 
         if let route = selectedRoute {
             vc.selectedRoute = MapKitManager.shared.convert(route)
         }
 
         navigationController?.pushViewController(vc, animated: true)
+    }
+
+    private func showValidationAlert(_ title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
