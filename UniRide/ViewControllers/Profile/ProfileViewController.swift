@@ -207,13 +207,6 @@ class ProfileViewController: UIViewController {
 
         let ratingCol = column(top: ratingLabel, bottom: ratingTitleLbl)
 
-        // Separator
-        let sep          = UIView()
-        sep.backgroundColor = .systemGray5
-        sep.translatesAutoresizingMaskIntoConstraints = false
-        sep.widthAnchor.constraint(equalToConstant: 1).isActive  = true
-        sep.heightAnchor.constraint(equalToConstant: 36).isActive = true
-
         // Rides stat
         let ridesTitleLbl = makeCaptionLabel("Rides")
         ridesLabel.font          = AppDesign.Typography.bodyStrong
@@ -222,7 +215,7 @@ class ProfileViewController: UIViewController {
 
         let ridesCol = column(top: ridesLabel, bottom: ridesTitleLbl)
 
-        let statsStack        = UIStackView(arrangedSubviews: [ratingCol, sep, ridesCol])
+        let statsStack        = UIStackView(arrangedSubviews: [ratingCol, ridesCol])
         statsStack.axis       = .horizontal
         statsStack.alignment  = .center
         statsStack.distribution = .fillEqually

@@ -799,6 +799,42 @@ final class RideDataModel {
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
     }
 
+    func syncMyFullHistoryAsync(userID: UUID) async {
+        do {
+            let history = try await RideRepository.shared.fetchMyFullHistory(userID: userID)
+            await MainActor.run {
+                // Merge requests
+                let currentReqIDs = Set(requests.map { $0.id })
+                let newReqs = history.requests.filter { !currentReqIDs.contains($0.id) }
+                for r in history.requests {
+                    if let idx = requests.firstIndex(where: { $0.id == r.id }) {
+                        requests[idx] = r
+                    }
+                }
+                requests.append(contentsOf: newReqs)
+                
+                // Merge bookings
+                let currentBookingIDs = Set(bookings.map { $0.id })
+                let newBookings = history.bookings.filter { !currentBookingIDs.contains($0.id) }
+                for b in history.bookings {
+                    if let idx = bookings.firstIndex(where: { $0.id == b.id }) {
+                        bookings[idx] = b
+                    }
+                }
+                bookings.append(contentsOf: newBookings)
+                
+                // Merge rides
+                mergeRemoteRides(history.rides)
+                
+                saveRequests()
+                saveBookings()
+                NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+            }
+        } catch {
+            print("Failed to sync my rides history: \(error.localizedDescription)")
+        }
+    }
+
     private func loadAll() {
         rides = load([Ride].self, from: ridesURL) ?? []
         requests = load([RideRequest].self, from: requestsURL) ?? []

@@ -102,7 +102,7 @@ class EventDetailsViewController: UIViewController {
         actionButtonsStack.distribution = .fillEqually
         actionButtonsStack.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight).isActive = true
         
-        offerRideButton.applyProminentSecondaryCTA(title: "Offer Ride", corner: AppDesign.Radius.md)
+        offerRideButton.applyProminentPrimaryCTA(title: "Offer Ride", corner: AppDesign.Radius.md)
         joinRideButton.applyProminentPrimaryCTA(title: "Join Ride", corner: AppDesign.Radius.md)
         
         offerRideButton.addTarget(self, action: #selector(offerRideTapped), for: .touchUpInside)

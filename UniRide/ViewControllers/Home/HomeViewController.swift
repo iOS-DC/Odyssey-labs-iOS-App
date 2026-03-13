@@ -29,6 +29,7 @@ class HomeViewController: UIViewController {
         super.viewDidLoad()
         homeTableView.backgroundColor = UIColor(named: "Color")
         configureQuickActions()
+        configureScrollingHeader()
         setupTable()
         setupRefreshControl()
 
@@ -63,7 +64,38 @@ class HomeViewController: UIViewController {
 
     private func configureQuickActions() {
         requestButton.applyProminentPrimaryCTA(title: "Request Ride")
-        offerButton.applyProminentSecondaryCTA(title: "Offer Ride")
+        offerButton.applyProminentPrimaryCTA(title: "Offer Ride")
+    }
+
+    private func configureScrollingHeader() {
+        guard let buttonStack = offerButton.superview else { return }
+        
+        // Remove only the button stack from main view hierarchy
+        buttonStack.removeFromSuperview()
+        buttonStack.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Re-pin the table view to start below the greetings label
+        homeTableView.translatesAutoresizingMaskIntoConstraints = false
+        homeTableView.topAnchor.constraint(equalTo: greetingsLabel.bottomAnchor, constant: 16).isActive = true
+        
+        // Create the scrolling container just for the buttons
+        let headerView = UIView()
+        headerView.addSubview(buttonStack)
+        
+        NSLayoutConstraint.activate([
+            buttonStack.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 4),
+            buttonStack.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
+            buttonStack.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
+            buttonStack.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16)
+        ])
+        
+        // Pre-calculate the header's auto-layout height
+        headerView.setNeedsLayout()
+        headerView.layoutIfNeeded()
+        let size = headerView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        headerView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: size.height)
+        
+        homeTableView.tableHeaderView = headerView
     }
 
     private func setupRefreshControl() {
@@ -77,7 +109,6 @@ class HomeViewController: UIViewController {
         homeTableView.dataSource = self
         homeTableView.separatorStyle = .none
         homeTableView.sectionHeaderTopPadding = 0
-        homeTableView.tableHeaderView = UIView(frame: .zero)
 
         homeTableView.register(
             UINib(nibName: "RideTableViewCell", bundle: nil),

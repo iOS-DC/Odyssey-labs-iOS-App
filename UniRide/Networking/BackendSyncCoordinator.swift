@@ -9,8 +9,14 @@ final class BackendSyncCoordinator {
     func refreshHomeFeedIfEnabled() async {
         async let ridesTask: Void = syncRides()
         async let eventsTask: Void = syncEvents()
+        async let myHistoryTask: Void = syncMyHistory()
 
-        _ = await (ridesTask, eventsTask)
+        _ = await (ridesTask, eventsTask, myHistoryTask)
+    }
+
+    private func syncMyHistory() async {
+        guard let user = UserDataModel.shared.getCurrentUser() else { return }
+        await RideDataModel.shared.syncMyFullHistoryAsync(userID: user.id)
     }
 
     private func syncRides() async {

@@ -315,6 +315,43 @@ final class RideRepository {
         try checkHTTP(response, data: data)
     }
 
+    // MARK: - Full History Sync
+    
+    /// Fetches all rides hosted by the user, plus all requests/bookings made by the user,
+    /// and the rides associated with those requests/bookings.
+    func fetchMyFullHistory(userID: UUID) async throws -> (rides: [Ride], requests: [RideRequest], bookings: [Booking]) {
+        try await SessionManager.shared.validateSession()
+        
+        async let fetchHosted   = fetchRides(driverID: userID)
+        async let fetchReqs     = fetchMyRequests(passengerID: userID)
+        async let fetchBks      = fetchMyBookings(passengerID: userID)
+        
+        let (hostedRides, myRequests, myBookings) = try await (fetchHosted, fetchReqs, fetchBks)
+        
+        var passengerRideIDs = Set<UUID>()
+        myRequests.forEach { passengerRideIDs.insert($0.rideID) }
+        myBookings.forEach { passengerRideIDs.insert($0.rideID) }
+        hostedRides.forEach { passengerRideIDs.remove($0.id) }
+        
+        var passengerRides: [Ride] = []
+        if !passengerRideIDs.isEmpty {
+            let idsStr = passengerRideIDs.map { $0.uuidString }.joined(separator: ",")
+            let url = mgr.restURL(table: "rides", query: "id=in.(\(idsStr))")
+            var req = URLRequest(url: url)
+            req.allHTTPHeaderFields = mgr.userHeaders
+            let (data, response) = try await URLSession.shared.data(for: req)
+            if let http = response as? HTTPURLResponse, http.statusCode == 200 {
+                let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+                passengerRides = rows.compactMap { rideFromRow($0) }
+            }
+        }
+        
+        var allRides = hostedRides
+        allRides.append(contentsOf: passengerRides)
+        
+        return (allRides, myRequests, myBookings)
+    }
+
     // MARK: - Error
 
     enum RideRepoError: LocalizedError {

@@ -297,6 +297,11 @@ extension UIButton {
             var config = UIButton.Configuration.plain()
             config.baseForegroundColor = color
             config.contentInsets = .zero
+            config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                var outgoing = incoming
+                outgoing.font = font
+                return outgoing
+            }
             configuration = config
         } else {
             backgroundColor = .clear

@@ -36,9 +36,10 @@ class EventTableViewCell: UITableViewCell {
         dateLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         locationLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         badgeLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: AppDesign.Color.primary)
+        badgeLabel.isHidden = true // User requested removal of Today/Tomorrow/Soon labels
 
         attendButton.setTitle("View Details ›", for: .normal)
-        attendButton.applyTextActionStyle()
+        attendButton.applyTextActionStyle(font: AppDesign.Typography.caption)
     }
 
     override func layoutSubviews() {

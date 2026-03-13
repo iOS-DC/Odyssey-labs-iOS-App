@@ -76,7 +76,7 @@ final class RideTableViewCell: UITableViewCell {
         
 
         // Join/View Details button (text-only action for cleaner card)
-        joinButton.applyTextActionStyle(font: AppDesign.Typography.captionStrong)
+        joinButton.applyTextActionStyle(font: AppDesign.Typography.caption)
         joinButton.addTarget(self, action: #selector(joinTapped), for: .touchUpInside)
 
         fromLabel.numberOfLines = 2
@@ -162,7 +162,7 @@ final class RideTableViewCell: UITableViewCell {
         priceLabel.text = "₹\(price)"
 
         // MARK: Join / View Details Button
-        joinButton.setTitle("Details  →", for: .normal)
+        joinButton.setTitle("View Details ›", for: .normal)
         joinButton.isEnabled = ride.seatsAvailable > 0
         joinButton.alpha = ride.seatsAvailable > 0 ? 1.0 : 0.5
     }

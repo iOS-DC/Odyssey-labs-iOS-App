@@ -1,7 +1,5 @@
 // EventCardCell.swift
 // UniRide
-// Fully programmatic event card: hero image on top, gradient overlay,
-// compact metadata row, and a pill Attend button — no storyboard required.
 
 import UIKit
 
@@ -26,7 +24,6 @@ final class EventCardCell: UITableViewCell {
         return iv
     }()
 
-    // Gradient layer drawn over the bottom of the hero image
     private let gradientView: UIView = {
         let v = UIView()
         v.isUserInteractionEnabled = false
@@ -36,7 +33,7 @@ final class EventCardCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 18, weight: .bold)
+        l.font = .systemFont(ofSize: 22, weight: .bold)
         l.textColor = .white
         l.numberOfLines = 2
         l.adjustsFontSizeToFitWidth = true
@@ -46,8 +43,8 @@ final class EventCardCell: UITableViewCell {
 
     private let metaStack: UIStackView = {
         let s = UIStackView()
-        s.axis    = .vertical
-        s.spacing = 4
+        s.axis = .vertical
+        s.spacing = 6
         return s
     }()
 
@@ -56,21 +53,29 @@ final class EventCardCell: UITableViewCell {
 
     private let attendeesBadge: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 11, weight: .semibold)
+        l.font = .systemFont(ofSize: 12, weight: .semibold)
         l.textAlignment = .center
-        l.layer.cornerRadius = 10
+        l.layer.cornerRadius = 6
         l.layer.masksToBounds = true
         l.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         return l
     }()
 
     let attendButton: UIButton = {
-        let b = UIButton(type: .system)
-        b.setTitle("Attend →", for: .normal)
-        b.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
-        b.setTitleColor(.white, for: .normal)
-        b.layer.cornerRadius = 14
-        b.layer.masksToBounds = true
+        var config = UIButton.Configuration.filled()
+        
+        var attTitle = AttributedString("Attend")
+        attTitle.font = .systemFont(ofSize: 14, weight: .bold)
+        config.attributedTitle = attTitle
+        
+        config.image = UIImage(systemName: "arrow.right")
+        config.imagePlacement = .trailing
+        config.imagePadding = 6
+        config.cornerStyle = .capsule
+        config.baseBackgroundColor = .systemBlue
+        config.baseForegroundColor = .white
+        
+        let b = UIButton(configuration: config)
         b.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         return b
     }()
@@ -90,29 +95,27 @@ final class EventCardCell: UITableViewCell {
 
     private func buildLayout() {
         // Card container
-        card.backgroundColor    = .systemBackground
+        card.backgroundColor = .systemBackground
         card.layer.cornerRadius = 20
         card.layer.masksToBounds = false
-        card.layer.shadowColor   = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.12
-        card.layer.shadowRadius  = 16
-        card.layer.shadowOffset  = CGSize(width: 0, height: 6)
+        card.layer.shadowColor = UIColor.black.cgColor
+        card.layer.shadowOpacity = 0.08
+        card.layer.shadowRadius = 12
+        card.layer.shadowOffset = CGSize(width: 0, height: 4)
         card.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(card)
 
-        // Hero image (clips inside card)
+        // Hero image
         heroImageView.translatesAutoresizingMaskIntoConstraints = false
         heroImageView.layer.cornerRadius = 20
-        heroImageView.layer.maskedCorners = [
-            .layerMinXMinYCorner, .layerMaxXMinYCorner
-        ]
+        heroImageView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         card.addSubview(heroImageView)
 
         // Gradient overlay
         gradientView.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(gradientView)
 
-        // Title lives at bottom of hero
+        // Title
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(titleLabel)
 
@@ -122,50 +125,49 @@ final class EventCardCell: UITableViewCell {
         metaStack.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(metaStack)
 
-        // Bottom bar: attendees badge + attend button
+        // Bottom bar
         attendeesBadge.translatesAutoresizingMaskIntoConstraints = false
         attendButton.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(attendeesBadge)
         card.addSubview(attendButton)
 
-        // Card edge constraints
         NSLayoutConstraint.activate([
             card.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
             card.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
             card.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             card.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
 
-            // Hero image
+            // Hero image - 16:9 ratio
             heroImageView.topAnchor.constraint(equalTo: card.topAnchor),
             heroImageView.leadingAnchor.constraint(equalTo: card.leadingAnchor),
             heroImageView.trailingAnchor.constraint(equalTo: card.trailingAnchor),
-            heroImageView.heightAnchor.constraint(equalToConstant: 160),
+            heroImageView.heightAnchor.constraint(equalTo: heroImageView.widthAnchor, multiplier: 9.0/16.0),
 
-            // Gradient covers bottom 80pt of hero
+            // Gradient covers bottom half
             gradientView.leadingAnchor.constraint(equalTo: heroImageView.leadingAnchor),
             gradientView.trailingAnchor.constraint(equalTo: heroImageView.trailingAnchor),
             gradientView.bottomAnchor.constraint(equalTo: heroImageView.bottomAnchor),
-            gradientView.heightAnchor.constraint(equalToConstant: 90),
+            gradientView.heightAnchor.constraint(equalTo: heroImageView.heightAnchor, multiplier: 0.5),
 
-            // Title — sits at bottom of hero, horizontally inset
-            titleLabel.bottomAnchor.constraint(equalTo: heroImageView.bottomAnchor, constant: -12),
-            titleLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
-            titleLabel.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+            // Title bottom-left on image
+            titleLabel.bottomAnchor.constraint(equalTo: heroImageView.bottomAnchor, constant: -16),
+            titleLabel.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            titleLabel.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
 
-            // Meta stack below image
-            metaStack.topAnchor.constraint(equalTo: heroImageView.bottomAnchor, constant: 12),
-            metaStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
-            metaStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+            // Meta stack 16pt below image
+            metaStack.topAnchor.constraint(equalTo: heroImageView.bottomAnchor, constant: 16),
+            metaStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            metaStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
 
             // Bottom bar
-            attendButton.topAnchor.constraint(equalTo: metaStack.bottomAnchor, constant: 12),
-            attendButton.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14),
-            attendButton.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
-            attendButton.heightAnchor.constraint(equalToConstant: 34),
-            attendButton.widthAnchor.constraint(equalToConstant: 100),
+            attendButton.topAnchor.constraint(equalTo: metaStack.bottomAnchor, constant: 16),
+            attendButton.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+            attendButton.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            attendButton.heightAnchor.constraint(equalToConstant: 38),
+            attendButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 110),
 
             attendeesBadge.centerYAnchor.constraint(equalTo: attendButton.centerYAnchor),
-            attendeesBadge.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            attendeesBadge.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
             attendeesBadge.heightAnchor.constraint(equalToConstant: 24),
         ])
 
@@ -180,8 +182,8 @@ final class EventCardCell: UITableViewCell {
     private func applyGradient() {
         gradientLayer?.removeFromSuperlayer()
         let g = CAGradientLayer()
-        g.frame  = gradientView.bounds
-        g.colors = [UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.68).cgColor]
+        g.frame = gradientView.bounds
+        g.colors = [UIColor.clear.cgColor, UIColor.black.withAlphaComponent(0.40).cgColor]
         g.locations = [0, 1]
         gradientView.layer.insertSublayer(g, at: 0)
         gradientLayer = g
@@ -190,7 +192,6 @@ final class EventCardCell: UITableViewCell {
     // MARK: - Configure
 
     func configure(with event: EventItem, primaryColor: UIColor) {
-        // Image
         if let name = event.imageName, let img = UIImage(named: name) {
             heroImageView.image = img
             heroImageView.backgroundColor = .systemGray6
@@ -201,7 +202,6 @@ final class EventCardCell: UITableViewCell {
 
         titleLabel.text = event.title
 
-        // Date
         let df = DateFormatter()
         df.dateFormat = "MMM d, yyyy  •  h:mm a"
         dateLabel.attributedText = makeMetaString(
@@ -209,31 +209,24 @@ final class EventCardCell: UITableViewCell {
             text: df.string(from: event.startsAt)
         )
 
-        // Location
         locLabel.attributedText = makeMetaString(
             icon: "mappin.and.ellipse",
             text: event.location?.name ?? "TBA"
         )
 
-        // Attendees badge
         attendeesBadge.text = "  \(event.attendeeCount) attending  "
         attendeesBadge.textColor = primaryColor
         attendeesBadge.backgroundColor = primaryColor.withAlphaComponent(0.10)
 
-        // Attend button
-        attendButton.backgroundColor = primaryColor
+        attendButton.configuration?.baseBackgroundColor = primaryColor
     }
-
-    // MARK: - Actions
 
     @objc private func attendTapped() {
         delegate?.eventCardCellDidTapAttend(self)
     }
 
-    // MARK: - Helpers
-
     private func makeMetaString(icon: String, text: String) -> NSAttributedString {
-        let cfg = UIImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+        let cfg = UIImage.SymbolConfiguration(pointSize: 13, weight: .medium)
         let attachment = NSTextAttachment()
         attachment.image = UIImage(systemName: icon, withConfiguration: cfg)?
             .withTintColor(.secondaryLabel, renderingMode: .alwaysOriginal)
@@ -241,7 +234,7 @@ final class EventCardCell: UITableViewCell {
         result.append(NSAttributedString(
             string: "  " + text,
             attributes: [
-                .font: UIFont.systemFont(ofSize: 12, weight: .medium),
+                .font: UIFont.systemFont(ofSize: 14, weight: .medium),
                 .foregroundColor: UIColor.secondaryLabel
             ]
         ))
@@ -250,7 +243,7 @@ final class EventCardCell: UITableViewCell {
 
     private static func metaLabel() -> UILabel {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 12)
+        l.font = .systemFont(ofSize: 14)
         l.textColor = .secondaryLabel
         return l
     }

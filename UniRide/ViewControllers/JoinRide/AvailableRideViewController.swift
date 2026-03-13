@@ -7,6 +7,7 @@ final class AvailableRideViewController: UIViewController,
                                          UISearchResultsUpdating {
 
     @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var titleLabel: UILabel!
 
     // MARK: - Inputs (from JoinRideViewController or EventDetailsViewController)
     var fromCoordinate: CLLocationCoordinate2D?
@@ -128,17 +129,28 @@ final class AvailableRideViewController: UIViewController,
 
     private func setupResultCountLabel() {
         resultCountLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
-        resultCountLabel.textAlignment = .center
+        resultCountLabel.textAlignment = .left
         resultCountLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(resultCountLabel)
-        NSLayoutConstraint.activate([
-            resultCountLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: AppDesign.Spacing.xxs),
-            resultCountLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.md),
-            resultCountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.md),
-        ])
-        if let tv = tableView {
-            tv.contentInset.top = 28
+        
+        // Find and deactivate storyboard constraint: tableView.top = titleLabel.bottom + constant
+        view.constraints.forEach { c in
+            if (c.firstItem === tableView && c.secondItem === titleLabel && c.firstAttribute == .top) ||
+               (c.firstItem === titleLabel && c.secondItem === tableView && c.secondAttribute == .top) {
+                c.isActive = false
+            }
         }
+
+        NSLayoutConstraint.activate([
+            resultCountLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+            resultCountLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            resultCountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -30),
+            
+            tableView.topAnchor.constraint(equalTo: resultCountLabel.bottomAnchor, constant: 12)
+        ])
+        
+        // Remove the top contentInset we added before as we're using real constraints now
+        tableView.contentInset.top = 0
     }
 
     private func setupEmptyState() {

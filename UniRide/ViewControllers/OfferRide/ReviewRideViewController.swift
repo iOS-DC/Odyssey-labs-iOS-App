@@ -58,6 +58,15 @@ class ReviewRideViewController: UIViewController {
 
     var summary: RideSummary!
 
+    // MARK: - Recurring ride state
+    private var isRecurring: Bool = false
+    private var recurringDays: Set<Int> = []   // ISO: 1=Mon … 7=Sun
+
+    // UI references for the recurring card (built programmatically)
+    private var recurringCard: UIView?
+    private var recurringSwitch: UISwitch?
+    private var dayPillsStack: UIStackView?
+
     override func viewDidLoad() {
         super.viewDidLoad()
         cardView.applyCardStyle()
@@ -73,6 +82,7 @@ class ReviewRideViewController: UIViewController {
         totalLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 0)
         
         fillSummary()
+        buildRecurringCard()
     }
 
 
@@ -97,34 +107,117 @@ class ReviewRideViewController: UIViewController {
 
         fareLabel.text = "₹\(Int(summary.farePerSeat)) per person"
         totalLabel.text = "Total: ₹\(Int(summary.totalFare))"
+    }
 
-        // MARK: Recurring banner
-        if summary.isRecurring, !summary.recurringDays.isEmpty {
-            let dayNames = [1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat", 7: "Sun"]
-            let labels = summary.recurringDays.sorted().compactMap { dayNames[$0] }.joined(separator: ", ")
+    // MARK: - Recurring Card
+    /// Builds a "Repeat this ride" toggle card and places it on self.view
+    /// below cardView. A new programmatic Offer Ride button sits below it.
+    private func buildRecurringCard() {
+        // ── Recurring toggle card ──────────────────────────────────────────
+        let card = UIView()
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.backgroundColor = .secondarySystemGroupedBackground
+        card.layer.cornerRadius = AppDesign.Radius.md
+        card.layer.borderColor = AppDesign.Color.border.cgColor
+        card.layer.borderWidth = 1
 
-            // Insert a recurring info row below the total label (only once)
-            if cardView.viewWithTag(9901) == nil {
-                let recurringLabel = UILabel()
-                recurringLabel.tag = 9901
-                recurringLabel.translatesAutoresizingMaskIntoConstraints = false
-                recurringLabel.numberOfLines = 0
-                recurringLabel.text = "🔁 Repeats \(labels) · 4 weeks"
-                recurringLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-                recurringLabel.textColor = AppDesign.Color.primary
-                recurringLabel.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.08)
-                recurringLabel.layer.cornerRadius = 8
-                recurringLabel.clipsToBounds = true
-                recurringLabel.textAlignment = .center
-                cardView.addSubview(recurringLabel)
-                NSLayoutConstraint.activate([
-                    recurringLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
-                    recurringLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
-                    recurringLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16),
-                    recurringLabel.heightAnchor.constraint(equalToConstant: 36)
-                ])
-            }
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "Repeat this ride"
+        label.font = AppDesign.Typography.bodyStrong
+        label.textColor = .label
+
+        let sw = UISwitch()
+        sw.translatesAutoresizingMaskIntoConstraints = false
+        sw.onTintColor = AppDesign.Color.primary
+        sw.addTarget(self, action: #selector(recurringToggled(_:)), for: .valueChanged)
+        self.recurringSwitch = sw
+
+        let days = [(1, "Mon"), (2, "Tue"), (3, "Wed"), (4, "Thu"), (5, "Fri"), (6, "Sat"), (7, "Sun")]
+        let pillsStack = UIStackView()
+        pillsStack.translatesAutoresizingMaskIntoConstraints = false
+        pillsStack.axis = .horizontal
+        pillsStack.distribution = .fillEqually
+        pillsStack.spacing = 6
+        pillsStack.alpha = 0
+        pillsStack.isHidden = true
+        self.dayPillsStack = pillsStack
+
+        for (iso, name) in days {
+            let btn = UIButton(type: .system)
+            btn.tag = iso
+            btn.setTitle(name, for: .normal)
+            btn.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .semibold)
+            btn.layer.cornerRadius = 8
+            btn.clipsToBounds = true
+            btn.addTarget(self, action: #selector(dayPillTapped(_:)), for: .touchUpInside)
+            applyDayPillStyle(btn, selected: false)
+            pillsStack.addArrangedSubview(btn)
         }
+
+        card.addSubview(label)
+        card.addSubview(sw)
+        card.addSubview(pillsStack)
+
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            label.centerYAnchor.constraint(equalTo: sw.centerYAnchor),
+
+            sw.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+            sw.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+
+            pillsStack.topAnchor.constraint(equalTo: sw.bottomAnchor, constant: 12),
+            pillsStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            pillsStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+            pillsStack.heightAnchor.constraint(equalToConstant: 36),
+            pillsStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14)
+        ])
+
+        // Place the recurring card on self.view below cardView.
+        // The storyboard offerButton stays inside cardView untouched.
+        view.addSubview(card)
+        NSLayoutConstraint.activate([
+            card.topAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 16),
+            card.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            card.trailingAnchor.constraint(equalTo: cardView.trailingAnchor)
+        ])
+
+        self.recurringCard = card
+    }
+
+
+
+    @objc private func recurringToggled(_ sender: UISwitch) {
+        isRecurring = sender.isOn
+        AppHaptics.impact(.light)
+        guard let stack = dayPillsStack else { return }
+        if sender.isOn {
+            stack.isHidden = false
+            UIView.animate(withDuration: 0.25) { stack.alpha = 1 }
+        } else {
+            UIView.animate(withDuration: 0.2) { stack.alpha = 0 } completion: { _ in stack.isHidden = true }
+            recurringDays.removeAll()
+            stack.arrangedSubviews.compactMap { $0 as? UIButton }.forEach { applyDayPillStyle($0, selected: false) }
+        }
+    }
+
+    @objc private func dayPillTapped(_ sender: UIButton) {
+        let iso = sender.tag
+        AppHaptics.impact(.light)
+        if recurringDays.contains(iso) {
+            recurringDays.remove(iso)
+            applyDayPillStyle(sender, selected: false)
+        } else {
+            recurringDays.insert(iso)
+            applyDayPillStyle(sender, selected: true)
+        }
+    }
+
+    private func applyDayPillStyle(_ btn: UIButton, selected: Bool) {
+        btn.backgroundColor = selected ? AppDesign.Color.primary : AppDesign.Color.fieldBackground
+        btn.setTitleColor(selected ? .white : .label, for: .normal)
+        btn.layer.borderWidth = selected ? 0 : 1
+        btn.layer.borderColor = AppDesign.Color.border.cgColor
     }
 
  
@@ -150,6 +243,15 @@ class ReviewRideViewController: UIViewController {
             waypoints = rawWaypoints
         }
 
+        if isRecurring && recurringDays.isEmpty {
+            let alert = UIAlertController(title: "Select Repeat Days",
+                                          message: "Please select at least one weekday for this recurring ride.",
+                                          preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
+
         let ride = Ride(
             driverUserID: user.id,
             source: summary.from,
@@ -161,8 +263,8 @@ class ReviewRideViewController: UIViewController {
             farePerSeat: summary.farePerSeat,
             status: .published,
             notes: "",
-            isRecurring: summary.isRecurring,
-            recurringDays: summary.recurringDays
+            isRecurring: self.isRecurring,
+            recurringDays: Array(self.recurringDays).sorted()
         )
 
         // Show loading state inline on the button

@@ -21,10 +21,6 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     var time: Date?
     var selectedRoute: RideRoute?
 
-    // Recurring fields passed from OfferRideViewController
-    var isRecurring: Bool = false
-    var recurringDays: [Int] = []
-
     enum VehicleType { case car, bike }
     var selectedVehicle: VehicleType = .car {
         didSet { updateVehicleUI() }
@@ -193,7 +189,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     @IBAction func nextTapped(_ sender: UIButton) {
 
-        var summary = RideSummary(
+        let summary = RideSummary(
             from: source!,
             to: destination!,
             date: date!,
@@ -203,8 +199,6 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
             seats: seats,
             farePerSeat: Double(costTextField.text ?? "") ?? 0
         )
-        summary.isRecurring   = isRecurring
-        summary.recurringDays = recurringDays
 
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
         let vc = sb.instantiateViewController(withIdentifier: "ReviewRideViewController") as! ReviewRideViewController
