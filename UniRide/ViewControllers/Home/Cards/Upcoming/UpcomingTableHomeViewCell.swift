@@ -35,8 +35,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         backgroundColor = .clear
         contentView.backgroundColor = .clear
 
-        cardContainerView.layer.cornerRadius = 20
-        cardContainerView.backgroundColor = .systemBackground
+        cardContainerView.applyCardStyle()
 
         fromLabel.numberOfLines = 1
         toLabel.numberOfLines = 1
@@ -52,6 +51,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         timeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         viewDetailsButton.setContentHuggingPriority(.required, for: .horizontal)
         viewDetailsButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        viewDetailsButton.applyTextActionStyle(color: AppDesign.Color.primary, font: AppDesign.Typography.captionStrong)
     }
     
         @objc private func handleTap() {
@@ -72,6 +72,26 @@ class UpcomingTableHomeViewCell: UITableViewCell {
             timeLabel.text = formatter.string(from: ride.departureTime)
 
             viewDetailsButton.setTitle("View More Details", for: .normal)
+
+            // Live indicator — show "● Live" in green when trip is ongoing
+            let tag = 8821
+            (cardContainerView.viewWithTag(tag) as? UILabel)?.removeFromSuperview()
+            if ride.status == .ongoing {
+                let badge = UILabel()
+                badge.tag = tag
+                badge.text = "  ● Live  "
+                badge.font = AppDesign.Typography.captionStrong
+                badge.textColor = .white
+                badge.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                badge.layer.cornerRadius = 10
+                badge.layer.masksToBounds = true
+                badge.translatesAutoresizingMaskIntoConstraints = false
+                cardContainerView.addSubview(badge)
+                NSLayoutConstraint.activate([
+                    badge.trailingAnchor.constraint(equalTo: cardContainerView.trailingAnchor, constant: -AppDesign.Spacing.sm),
+                    badge.topAnchor.constraint(equalTo: cardContainerView.topAnchor, constant: AppDesign.Spacing.xs + AppDesign.Spacing.xxs / 2)
+                ])
+            }
         }
 
         private func formatLocation(_ address: String?) -> String {

@@ -1,0 +1,301 @@
+// PostDetailViewController.swift
+// UniRide
+// Full thread view: post body header + comments list + compose bar.
+
+import UIKit
+
+final class PostDetailViewController: UIViewController {
+
+    // MARK: - Data
+    var post: CommunityPost!
+
+    private var comments: [CommunityComment] = []
+
+    // MARK: - UI
+    private let tableView         = UITableView(frame: .zero, style: .plain)
+    private let composeBar        = UIView()
+    private let commentTextField  = UITextField()
+    private let sendButton        = UIButton(type: .system)
+    private let spinner           = UIActivityIndicatorView(style: .medium)
+    private var composeBarBottom: NSLayoutConstraint!
+
+    // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        title = "Post"
+        view.backgroundColor = .systemGroupedBackground
+        setupTableView()
+        setupComposeBar()
+        setupKeyboardObservers()
+        _ = NetworkMonitor.shared // ensure monitor is started
+        loadComments()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        view.endEditing(true)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Setup
+
+    private func setupTableView() {
+        tableView.dataSource        = self
+        tableView.delegate          = self
+        tableView.separatorStyle    = .singleLine
+        tableView.rowHeight         = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 80
+        tableView.keyboardDismissMode = .interactive
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tableView)
+
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
+
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PostHeaderCell")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "CommentCell")
+    }
+
+    private func setupComposeBar() {
+        composeBar.backgroundColor = .secondarySystemGroupedBackground
+        composeBar.translatesAutoresizingMaskIntoConstraints = false
+
+        let topSep = UIView()
+        topSep.backgroundColor = .separator
+        topSep.translatesAutoresizingMaskIntoConstraints = false
+        composeBar.addSubview(topSep)
+
+        commentTextField.placeholder     = "Add a comment…"
+        commentTextField.borderStyle     = .none
+        commentTextField.font            = .systemFont(ofSize: 15)
+        commentTextField.returnKeyType   = .send
+        commentTextField.delegate        = self
+        commentTextField.translatesAutoresizingMaskIntoConstraints = false
+
+        sendButton.setImage(UIImage(systemName: "paperplane.fill"), for: .normal)
+        sendButton.tintColor = AppDesign.Color.primary
+        sendButton.translatesAutoresizingMaskIntoConstraints = false
+        sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
+
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.hidesWhenStopped = true
+
+        composeBar.addSubview(commentTextField)
+        composeBar.addSubview(sendButton)
+        composeBar.addSubview(spinner)
+        view.addSubview(composeBar)
+
+        composeBarBottom = composeBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        NSLayoutConstraint.activate([
+            topSep.topAnchor.constraint(equalTo: composeBar.topAnchor),
+            topSep.leadingAnchor.constraint(equalTo: composeBar.leadingAnchor),
+            topSep.trailingAnchor.constraint(equalTo: composeBar.trailingAnchor),
+            topSep.heightAnchor.constraint(equalToConstant: 0.5),
+
+            composeBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            composeBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            composeBar.heightAnchor.constraint(equalToConstant: 52),
+            composeBarBottom,
+
+            tableView.bottomAnchor.constraint(equalTo: composeBar.topAnchor),
+
+            commentTextField.leadingAnchor.constraint(equalTo: composeBar.leadingAnchor, constant: 16),
+            commentTextField.centerYAnchor.constraint(equalTo: composeBar.centerYAnchor),
+            commentTextField.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
+
+            sendButton.trailingAnchor.constraint(equalTo: spinner.leadingAnchor, constant: -4),
+            sendButton.centerYAnchor.constraint(equalTo: composeBar.centerYAnchor),
+            sendButton.widthAnchor.constraint(equalToConstant: 32),
+
+            spinner.trailingAnchor.constraint(equalTo: composeBar.trailingAnchor, constant: -16),
+            spinner.centerYAnchor.constraint(equalTo: composeBar.centerYAnchor),
+            spinner.widthAnchor.constraint(equalToConstant: 22),
+        ])
+    }
+
+    private func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(keyboardWillChange(_:)),
+            name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+    }
+
+    @objc private func keyboardWillChange(_ note: Notification) {
+        guard let info = note.userInfo,
+              let frame = (info[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue,
+              let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else { return }
+
+        let keyboardHeight = max(0, view.bounds.height - frame.origin.y)
+        let safeBottom = view.safeAreaInsets.bottom
+        composeBarBottom.constant = -(keyboardHeight > 0 ? keyboardHeight - safeBottom : 0)
+        UIView.animate(withDuration: duration) { self.view.layoutIfNeeded() }
+    }
+
+    // MARK: - Data loading
+
+    private func loadComments() {
+        Task { @MainActor in
+            do {
+                comments = try await CommunityRepository.shared.fetchComments(postID: post.id)
+                tableView.reloadData()
+            } catch {
+                // Silently fail — offline users still see post header
+            }
+        }
+    }
+
+    // MARK: - Send comment
+
+    @objc private func sendTapped() {
+        submitComment()
+    }
+
+    private func submitComment() {
+        let text = (commentTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        commentTextField.text = ""
+        sendButton.isHidden = true
+        spinner.startAnimating()
+
+        Task { @MainActor in
+            defer {
+                self.spinner.stopAnimating()
+                self.sendButton.isHidden = false
+            }
+            do {
+                try await CommunityRepository.shared.insertComment(postID: post.id, text: text)
+                self.comments = try await CommunityRepository.shared.fetchComments(postID: post.id)
+                self.tableView.reloadData()
+                let lastRow = IndexPath(row: self.comments.count - 1, section: 1)
+                if !self.comments.isEmpty {
+                    self.tableView.scrollToRow(at: lastRow, at: .bottom, animated: true)
+                }
+            } catch {
+                self.commentTextField.text = text  // restore on failure
+                let alert = UIAlertController(title: "Couldn't post comment",
+                                              message: error.localizedDescription,
+                                              preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                self.present(alert, animated: true)
+            }
+        }
+    }
+}
+
+// MARK: - UITableViewDataSource
+
+extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
+
+    func numberOfSections(in tableView: UITableView) -> Int { 2 }
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        section == 0 ? 1 : comments.count
+    }
+
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        section == 1 && !comments.isEmpty ? "Comments" : nil
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if indexPath.section == 0 {
+            return buildPostHeaderCell()
+        }
+        return buildCommentCell(at: indexPath.row)
+    }
+
+    // Post header cell
+    private func buildPostHeaderCell() -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "PostHeaderCell")!
+        cell.selectionStyle = .none
+
+        var config = UIListContentConfiguration.subtitleCell()
+
+        // Author
+        let author = UserDataModel.shared.getUser(by: post.authorUserID)
+        let name = author?.fullName.isEmpty == false ? author!.fullName : "UniRide User"
+        let isVerified = author?.isEmailVerified == true
+
+        config.text          = name
+        config.textProperties.font = .systemFont(ofSize: 13, weight: .semibold)
+        config.textProperties.color = .secondaryLabel
+
+        // Timestamp
+        let df = RelativeDateTimeFormatter()
+        df.unitsStyle = .short
+        config.secondaryText = df.localizedString(for: post.createdAt, relativeTo: Date())
+        config.secondaryTextProperties.color = .tertiaryLabel
+
+        // Avatar
+        config.image = UIImage(systemName: "person.crop.circle.fill")
+        config.imageProperties.tintColor = AppDesign.Color.primary
+        config.imageToTextPadding = 8
+
+        cell.contentConfiguration = config
+
+        // Verified badge
+        if isVerified {
+            let badge = UIImageView(image: UIImage(systemName: "checkmark.seal.fill"))
+            badge.tintColor = AppDesign.Color.primary
+            badge.translatesAutoresizingMaskIntoConstraints = false
+            badge.widthAnchor.constraint(equalToConstant: 14).isActive = true
+            badge.heightAnchor.constraint(equalToConstant: 14).isActive = true
+            cell.accessoryView = badge
+        } else {
+            cell.accessoryView = nil
+        }
+
+        // Post body below header — add as a text view if not already present
+        if cell.viewWithTag(88) == nil {
+            let body = UILabel()
+            body.tag = 88
+            body.numberOfLines = 0
+            body.font = .systemFont(ofSize: 16)
+            body.textColor = .label
+            body.translatesAutoresizingMaskIntoConstraints = false
+            cell.contentView.addSubview(body)
+            NSLayoutConstraint.activate([
+                body.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 56),
+                body.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 16),
+                body.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -16),
+                body.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -16),
+            ])
+        }
+        (cell.viewWithTag(88) as? UILabel)?.text = post.text
+        return cell
+    }
+
+    // Comment cell
+    private func buildCommentCell(at row: Int) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "CommentCell")!
+        cell.selectionStyle = .none
+        let comment = comments[row]
+
+        let author = UserDataModel.shared.getUser(by: comment.authorUserID)
+        let name = author?.fullName.isEmpty == false ? author!.fullName : "User"
+
+        var config = UIListContentConfiguration.subtitleCell()
+        config.text = name
+        config.textProperties.font = .systemFont(ofSize: 13, weight: .semibold)
+        config.secondaryText = comment.text
+        config.secondaryTextProperties.numberOfLines = 0
+        config.secondaryTextProperties.font = .systemFont(ofSize: 14)
+        config.image = UIImage(systemName: "person.crop.circle")
+        config.imageProperties.tintColor = .secondaryLabel
+        config.imageToTextPadding = 8
+        cell.contentConfiguration = config
+        return cell
+    }
+}
+
+// MARK: - UITextFieldDelegate
+extension PostDetailViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        submitComment()
+        return false
+    }
+}

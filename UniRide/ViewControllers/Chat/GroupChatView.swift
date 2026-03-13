@@ -12,19 +12,33 @@ struct GroupChatView: View {
         return f
     }()
 
+    private let headerFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateStyle = .medium
+        f.timeStyle = .none
+        return f
+    }()
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 // MARK: - Messages
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 12) {
-                            ForEach(viewModel.messages) { message in
-                                MessageBubble(
-                                    message: message,
-                                    timeFormatter: timeFormatter
-                                )
-                                .id(message.id)
+                        LazyVStack(alignment: .leading, spacing: 2) {
+                            ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { idx, message in
+                                // ── Date separator ──
+                                if idx == 0 || !Calendar.current.isDate(
+                                    message.timestamp,
+                                    inSameDayAs: viewModel.messages[idx - 1].timestamp
+                                ) {
+                                    dateSeparator(for: message.timestamp)
+                                        .padding(.vertical, 8)
+                                }
+
+                                MessageBubble(message: message, timeFormatter: timeFormatter)
+                                    .padding(.bottom, 4)
+                                    .id(message.id)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -32,7 +46,7 @@ struct GroupChatView: View {
                     }
                     .onChange(of: viewModel.messages.count) { _ in
                         if let last = viewModel.messages.last {
-                            withAnimation(.easeOut(duration: 0.3)) {
+                            withAnimation(.easeOut(duration: 0.25)) {
                                 proxy.scrollTo(last.id, anchor: .bottom)
                             }
                         }
@@ -47,7 +61,6 @@ struct GroupChatView: View {
                 // MARK: - Input Bar
                 inputBar
             }
-            .navigationTitle(viewModel.rideTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -55,8 +68,8 @@ struct GroupChatView: View {
                         Text(viewModel.rideTitle)
                             .font(.system(size: 15, weight: .semibold))
                             .lineLimit(1)
-                        Text("Group Chat")
-                            .font(.system(size: 12))
+                        Text("Group Chat · \(viewModel.participants.count + 1) people")
+                            .font(.system(size: 11))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -65,17 +78,38 @@ struct GroupChatView: View {
         }
     }
 
+    // MARK: - Date Separator
+    private func dateSeparator(for date: Date) -> some View {
+        HStack {
+            Rectangle().fill(Color.secondary.opacity(0.3)).frame(height: 0.5)
+            Text(relativeDateString(date))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 8)
+                .fixedSize()
+            Rectangle().fill(Color.secondary.opacity(0.3)).frame(height: 0.5)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    private func relativeDateString(_ date: Date) -> String {
+        if Calendar.current.isDateInToday(date)     { return "Today" }
+        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
+        return headerFormatter.string(from: date)
+    }
+
     // MARK: - Input Bar
     private var inputBar: some View {
         HStack(spacing: 10) {
-            TextField("Message...", text: $inputText)
+            TextField("Message...", text: $inputText, axis: .vertical)
                 .focused($isInputFocused)
+                .lineLimit(1...5)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(Color(.systemBackground))
-                .clipShape(Capsule())
+                .clipShape(RoundedRectangle(cornerRadius: 22))
                 .overlay(
-                    Capsule()
+                    RoundedRectangle(cornerRadius: 22)
                         .stroke(Color(.systemGray4), lineWidth: 1)
                 )
 
@@ -87,7 +121,7 @@ struct GroupChatView: View {
                     .frame(width: 38, height: 38)
                     .foregroundColor(inputText.trimmingCharacters(in: .whitespaces).isEmpty
                                      ? Color(.systemGray3)
-                                     : .blue)
+                                     : .green)
             }
             .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty)
             .animation(.easeInOut(duration: 0.15), value: inputText)
@@ -96,14 +130,14 @@ struct GroupChatView: View {
         .padding(.vertical, 10)
         .background(
             Color(.systemBackground)
-                .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: -2)
+                .shadow(color: .black.opacity(0.07), radius: 8, x: 0, y: -2)
         )
     }
 
     private func sendMessage() {
-        viewModel.sendMessage(inputText)
+        let text = inputText
         inputText = ""
-        viewModel.simulateReply()
+        viewModel.sendMessage(text)
     }
 }
 

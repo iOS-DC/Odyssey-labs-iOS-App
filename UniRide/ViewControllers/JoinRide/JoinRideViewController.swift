@@ -43,9 +43,16 @@ class JoinRideViewController: UIViewController,
 
         setDefaultDateAndTime()
         setupPickers()
+        prefillLocationsIfPossible()
 
-        contentView.applyCardStyle(corner: 24)
-        findRideButton.layer.cornerRadius = 22
+        contentView.applyCardStyle(corner: AppDesign.Radius.lg)
+        fromTextField.applyRoundedField()
+        fromTextField.addLeftIcon("mappin")
+        toTextField.applyRoundedField()
+        toTextField.addLeftIcon("mappin")
+        suggestionsTable.applySmallCard()
+        let findTitle = findRideButton.currentTitle ?? "Find Ride"
+        findRideButton.applyProminentPrimaryCTA(title: findTitle, corner: AppDesign.Radius.md)
         view.bringSubviewToFront(findRideButton)
     }
 
@@ -57,6 +64,14 @@ class JoinRideViewController: UIViewController,
 
     private func setupPickers() {
         datePicker.minimumDate = Date()
+    }
+
+    private func prefillLocationsIfPossible() {
+        guard let prefill = UserDataModel.shared.suggestedCommutePrefill() else { return }
+        fromTextField.text = prefill.from.address ?? "Chitkara University"
+        toTextField.text = prefill.to.address ?? "Home"
+        fromCoordinate = CLLocationCoordinate2D(latitude: prefill.from.lat, longitude: prefill.from.lon)
+        toCoordinate = CLLocationCoordinate2D(latitude: prefill.to.lat, longitude: prefill.to.lon)
     }
 
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) {
@@ -115,11 +130,18 @@ class JoinRideViewController: UIViewController,
 
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle,
-                                   reuseIdentifier: "JoinSuggestCell")
+        let cell = tableView.dequeueReusableCell(withIdentifier: "JoinSuggestCell")
+            ?? UITableViewCell(style: .subtitle, reuseIdentifier: "JoinSuggestCell")
         let result = searchResults[indexPath.row]
         cell.textLabel?.text = result.title
+        cell.textLabel?.font = AppDesign.Typography.subheadline
         cell.detailTextLabel?.text = result.subtitle
+        cell.detailTextLabel?.font = AppDesign.Typography.caption
+        cell.detailTextLabel?.textColor = .secondaryLabel
+        cell.imageView?.image = UIImage(systemName: "mappin")
+        cell.imageView?.tintColor = AppDesign.Color.primary
+        cell.backgroundColor = .clear
+        cell.selectionStyle = .default
         return cell
     }
 
@@ -128,9 +150,8 @@ class JoinRideViewController: UIViewController,
         let result = searchResults[indexPath.row]
         let request = MKLocalSearch.Request(completion: result)
 
-        MKLocalSearch(request: request).start { response, error in
-            guard let item = response?.mapItems.first else { return }
-
+        MKLocalSearch(request: request).start { [weak self] response, _ in
+            guard let self, let item = response?.mapItems.first else { return }
             DispatchQueue.main.async {
                 if self.activeTextField == self.fromTextField {
                     self.fromTextField.text = item.name
@@ -140,6 +161,8 @@ class JoinRideViewController: UIViewController,
                     self.toCoordinate = item.placemark.coordinate
                 }
                 self.suggestionsTable.isHidden = true
+                self.activeTextField?.resignFirstResponder()
+                self.activeTextField = nil
             }
         }
     }
@@ -151,7 +174,7 @@ class JoinRideViewController: UIViewController,
 
         suggestionsTable.frame = CGRect(
             x: frameInView.minX,
-            y: frameInView.maxY + 4,
+            y: frameInView.maxY + AppDesign.Spacing.xxs,
             width: frameInView.width,
             height: 220
         )
@@ -163,33 +186,43 @@ class JoinRideViewController: UIViewController,
 
     // MARK: - Find Ride button
     @IBAction func didTapFindRide(_ sender: Any) {
-        guard
-            let fromCoord = fromCoordinate,
-            let toCoord = toCoordinate,
-            let fromText = fromTextField.text, !fromText.isEmpty,
-            let toText = toTextField.text, !toText.isEmpty
-        else {
-            print("Please choose From & To from suggestions")
+        let fromText = fromTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let toText   = toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        guard !fromText.isEmpty, !toText.isEmpty else {
+            showValidationAlert("Missing Location", message: "Please select both a pickup and a drop-off location from the suggestions.")
             return
         }
+        guard let fromCoord = fromCoordinate else {
+            showValidationAlert("Select from suggestions", message: "Please pick your pickup location from the autocomplete list so we can find nearby rides.")
+            return
+        }
+        guard let toCoord = toCoordinate else {
+            showValidationAlert("Select from suggestions", message: "Please pick your drop-off location from the autocomplete list so we can find nearby rides.")
+            return
+        }
+        guard fromText.lowercased() != toText.lowercased() else {
+            showValidationAlert("Same Location", message: "Your pickup and drop-off locations can't be the same. Please choose different locations.")
+            return
+        }
+
+        view.endEditing(true)
 
         guard let vc = storyboard?.instantiateViewController(
             identifier: "AvailableRideViewController"
-        ) as? AvailableRideViewController else {
-            print("Could not cast to AvailableRideViewController")
-            return
-        }
+        ) as? AvailableRideViewController else { return }
 
         vc.fromCoordinate = fromCoord
-        vc.toCoordinate = toCoord
+        vc.toCoordinate   = toCoord
         vc.date = datePicker.date
         vc.time = timePicker.date
 
-        guard let nav = navigationController else {
-            print("navigationController is nil")
-            return
-        }
+        navigationController?.pushViewController(vc, animated: true)
+    }
 
-        nav.pushViewController(vc, animated: true)
+    private func showValidationAlert(_ title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }

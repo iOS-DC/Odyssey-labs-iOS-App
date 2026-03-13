@@ -66,7 +66,7 @@
                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="252" verticalHuggingPriority="251" text="Badge" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="n2a-1O-0Yf">
                         <rect key="frame" x="177.33333333333334" y="82.666666666666671" width="37.666666666666657" height="14.333333333333329"/>
                         <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="12"/>
-                        <color key="textColor" systemColor="systemBlueColor"/>
+                        <color key="textColor" systemColor="labelColor"/>
                         <nil key="highlightedColor"/>
                     </label>
                 </subviews>
@@ -112,8 +112,5 @@
     <resources>
         <image name="mappin.and.ellipse" catalog="system" width="110" height="128"/>
         <image name="person.circle" catalog="system" width="128" height="123"/>
-        <systemColor name="systemBlueColor">
-            <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
     </resources>
 </document>

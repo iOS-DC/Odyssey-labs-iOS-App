@@ -17,25 +17,35 @@ final class RequestCell: UITableViewCell {
 
     weak var delegate: RequestCellDelegate?
 
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        setupUI()
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         profileImageView.layer.cornerRadius = profileImageView.bounds.height / 2
     }
 
     private func setupUI() {
+        selectionStyle = .none
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
         profileImageView.clipsToBounds = true
+        nameLabel.textColor = AppDesign.Color.textPrimary
+        routeLabel.textColor = .secondaryLabel
 
         approveButton.setImage(
             UIImage(systemName: "checkmark.circle.fill"),
             for: .normal
         )
-        approveButton.tintColor = .systemGreen
+        approveButton.tintColor = AppDesign.Color.success
 
         denyButton.setImage(
             UIImage(systemName: "xmark.circle.fill"),
             for: .normal
         )
-        denyButton.tintColor = .systemRed
+        denyButton.tintColor = AppDesign.Color.destructive
     }
 
     func configure(name: String, route: String, photoURL: URL? = nil) {

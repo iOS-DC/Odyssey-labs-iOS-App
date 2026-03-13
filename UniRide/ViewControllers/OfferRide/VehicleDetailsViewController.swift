@@ -1,6 +1,6 @@
 import UIKit
 
-class VehicleDetailsViewController: UIViewController {
+class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     // MARK: - Outlets
     @IBOutlet weak var ContainerView: UIView!
@@ -32,8 +32,22 @@ class VehicleDetailsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        ContainerView.applyCardStyle()
+        let nextTitle = nextButton.currentTitle ?? "Next"
+        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
+        carView.applySmallCard()
+        bikeView.applySmallCard()
+        seatsLabel.applyTextStyle(AppDesign.Typography.h2)
+        maxSeatsLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+        suggestedFareLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         updateVehicleUI()
         updateSeatsUI()
+
+        // Fare field: numbers only, max 5 digits (₹99,999)
+        costTextField.delegate = self
+        costTextField.keyboardType = .numberPad
+        costTextField.applyRoundedField()
+        costTextField.setLeftPaddingPoints(12)
     }
 
     // MARK: - Animate Selection
@@ -50,9 +64,9 @@ class VehicleDetailsViewController: UIViewController {
     // MARK: - Update UI for Vehicle Cards
     func updateVehicleUI() {
 
-        let selectedColor = UIColor.systemBlue
-        let selectedBG = UIColor.systemBlue.withAlphaComponent(0.08)
-        let normalBorder = UIColor.systemGray5.cgColor
+        let selectedColor = AppDesign.Color.primary
+        let selectedBG = AppDesign.Color.primary.withAlphaComponent(0.08)
+        let normalBorder = AppDesign.Color.border.cgColor
 
         if selectedVehicle == .car {
             animateSelection(carView)
@@ -109,14 +123,42 @@ class VehicleDetailsViewController: UIViewController {
             return
         }
 
+        // Combine date + time pickers into the departure timestamp
+        let departure = date ?? time ?? Date()
+
         let fare = PricingManager.shared.suggestedFare(
             distanceMeters: route.distanceMeters,
             seats: seats,
-            vehicle: selectedVehicle == .car ? "car" : "bike"
+            vehicle: selectedVehicle == .car ? "car" : "bike",
+            departureTime: departure
         )
 
         costTextField.text = "\(fare)"
-        suggestedFareLabel.text = "Suggested fare: ₹\(fare)"
+        let peakNote = PricingManager.shared.isPeakHour(departure) ? " (peak-hour)" : ""
+        suggestedFareLabel.text = "Suggested fare: ₹\(fare)\(peakNote)"
+    }
+
+    // MARK: - Fare TextField Delegate
+    func textField(_ textField: UITextField,
+                   shouldChangeCharactersIn range: NSRange,
+                   replacementString string: String) -> Bool {
+        guard textField == costTextField else { return true }
+
+        // Allow deletions
+        if string.isEmpty { return true }
+
+        // Only digits allowed
+        let allowedChars = CharacterSet.decimalDigits
+        guard string.unicodeScalars.allSatisfy({ allowedChars.contains($0) }) else { return false }
+
+        // Cap at 5 digits (max ₹99,999)
+        let current = (textField.text ?? "") as NSString
+        let newText = current.replacingCharacters(in: range, with: string)
+        return newText.count <= 5
+    }
+
+    func textFieldDidChangeSelection(_ textField: UITextField) {
+        if textField == costTextField { validateNextButton() }
     }
 
     // MARK: - Next Button Activation
@@ -124,8 +166,7 @@ class VehicleDetailsViewController: UIViewController {
         let cost = Double(costTextField.text ?? "") ?? 0
         let enabled = seats > 0 && cost > 0
 
-        nextButton.isEnabled = enabled
-        nextButton.alpha = enabled ? 1 : 0.5
+        nextButton.setPrimaryCTAEnabled(enabled)
     }
 
     // MARK: - Actions

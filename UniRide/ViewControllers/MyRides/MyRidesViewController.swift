@@ -11,15 +11,72 @@ final class MyRidesViewController: UIViewController {
     private var currentFilter: RideFilter = .all
 
     private var upcomingTrips: [RideDataModel.MyTrip] = []
-    private var pastTrips: [RideDataModel.MyTrip] = []
-    private var currentTrips: [RideDataModel.MyTrip] = []
+    private var pastTrips:     [RideDataModel.MyTrip] = []
+    private var currentTrips:  [RideDataModel.MyTrip] = []
+    /// Past rides grouped by "MMM yyyy" section titles — used when segment == 1
+    private var pastSections: [(title: String, trips: [RideDataModel.MyTrip])] = []
+    private var didAnimateListOnFirstShow = false
+
+    // Pull-to-refresh
+    private let refreshControl = UIRefreshControl()
+
+    // Loading overlay for async trip actions
+    private lazy var loadingOverlay: UIView = {
+        let overlay = UIView()
+        overlay.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.6)
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.startAnimating()
+        overlay.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)
+        ])
+        overlay.isHidden = true
+        return overlay
+    }()
+
+    // Notification bell
+    private let bellBtn   = UIButton(type: .system)
+    private let bellBadge = UILabel()
+
+    // Empty states
+    private lazy var upcomingEmptyState: EmptyStateView = {
+        let v = EmptyStateView(
+            systemImage: "car.2.fill",
+            title: "No upcoming rides",
+            body: "Rides you've offered or joined will appear here once approved.",
+            tintColor: AppDesign.Color.primary
+        )
+        return v
+    }()
+
+    private lazy var pastEmptyState: EmptyStateView = {
+        let v = EmptyStateView(
+            systemImage: "clock.arrow.circlepath",
+            title: "No past rides yet",
+            body: "Completed and cancelled rides will show up here.",
+            actionTitle: "Clear filter",
+            tintColor: .systemGray
+        )
+        v.onAction = { [weak self] in
+            self?.currentFilter = .all
+            self?.updateFilterButtonAppearance()
+            self?.applyFilter()
+        }
+        return v
+    }()
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTableView()
+        setupRefreshControl()
         setupFilterButton()
+        setupBellButton()
+        setupLoadingOverlay()
         reloadTrips()
         NotificationCenter.default.addObserver(
             self,
@@ -27,11 +84,26 @@ final class MyRidesViewController: UIViewController {
             name: .ridesUpdated,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(notificationsDidUpdate),
+            name: .appNotificationsUpdated,
+            object: nil
+        )
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         reloadTrips()
+        refreshBellBadge()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !didAnimateListOnFirstShow else { return }
+        didAnimateListOnFirstShow = true
+        tableView.layoutIfNeeded()
+        tableView.animateVisibleCellsStaggered()
     }
 
     deinit {
@@ -45,28 +117,92 @@ final class MyRidesViewController: UIViewController {
                            forCellReuseIdentifier: UpcomingTableViewCell.reuseIdentifier)
         tableView.register(UINib(nibName: "UpcomingPassengerTableViewCell", bundle: nil),
                            forCellReuseIdentifier: "UpcomingPassengerTableViewCell")
-        tableView.register(UINib(nibName: "PastRideCell", bundle: nil),
-                           forCellReuseIdentifier: PastRideCell.reuseIdentifier)
+        tableView.register(PastRideCell.self, forCellReuseIdentifier: PastRideCell.reuseIdentifier)
+        tableView.register(SkeletonTableViewCell.self, forCellReuseIdentifier: SkeletonTableViewCell.reuseIdentifier)
 
         tableView.dataSource = self
         tableView.delegate = self
         tableView.separatorStyle = .none
         tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 260
-        tableView.contentInset = UIEdgeInsets(top: 10, left: 0, bottom: 20, right: 0)
+        tableView.sectionHeaderTopPadding = 0
+        tableView.tableHeaderView = UIView(frame: .zero)
+        tableView.contentInset = UIEdgeInsets(top: AppDesign.Spacing.xs, left: 0, bottom: AppDesign.Spacing.lg, right: 0)
+    }
+
+    private func setupRefreshControl() {
+        refreshControl.tintColor = AppDesign.Color.primary
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        tableView.refreshControl = refreshControl
+    }
+
+    private func setupLoadingOverlay() {
+        view.addSubview(loadingOverlay)
+        NSLayoutConstraint.activate([
+            loadingOverlay.topAnchor.constraint(equalTo: view.topAnchor),
+            loadingOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            loadingOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            loadingOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
     }
 
     private func setupFilterButton() {
         guard let btn = filterButton else { return }
-        btn.layer.cornerRadius = 18
-        btn.backgroundColor = .systemBlue.withAlphaComponent(0.1)
-        btn.tintColor = .systemBlue
+        btn.layer.cornerRadius = AppDesign.Radius.md
+        btn.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.1)
+        btn.tintColor = AppDesign.Color.primary
         btn.setTitle(nil, for: .normal)
         btn.setImage(UIImage(systemName: "line.3.horizontal.decrease.circle"), for: .normal)
         btn.layer.shadowColor = UIColor.black.cgColor
-        btn.layer.shadowOpacity = 0.1
-        btn.layer.shadowOffset = CGSize(width: 0, height: 2)
-        btn.layer.shadowRadius = 4
+        btn.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
+        btn.layer.shadowOffset = AppDesign.Shadow.smallCardOffset
+        btn.layer.shadowRadius = AppDesign.Shadow.smallCardRadius
+        updateFilterButtonAppearance()
+    }
+
+    /// Updates the filter button icon and background to indicate whether a non-default filter is active.
+    private func updateFilterButtonAppearance() {
+        guard let btn = filterButton else { return }
+        let isFiltered = currentFilter != .all
+        UIView.animate(withDuration: 0.2) {
+            btn.backgroundColor = isFiltered
+                ? AppDesign.Color.primary.withAlphaComponent(0.2)
+                : AppDesign.Color.primary.withAlphaComponent(0.1)
+            btn.setImage(
+                UIImage(systemName: isFiltered
+                    ? "line.3.horizontal.decrease.circle.fill"
+                    : "line.3.horizontal.decrease.circle"),
+                for: .normal
+            )
+        }
+    }
+
+    // MARK: - Pull-to-refresh
+
+    @objc private func handleRefresh() {
+        AppHaptics.selection()
+        guard let user = UserDataModel.shared.getCurrentUser() else {
+            refreshControl.endRefreshing()
+            return
+        }
+        Task {
+            await RideDataModel.shared.syncMyFullHistoryAsync(userID: user.id)
+            await MainActor.run {
+                self.reloadTrips()
+                self.refreshControl.endRefreshing()
+            }
+        }
+    }
+
+    // MARK: - Loading overlay
+
+    private func showActionLoading() {
+        loadingOverlay.isHidden = false
+        view.bringSubviewToFront(loadingOverlay)
+    }
+
+    private func hideActionLoading() {
+        loadingOverlay.isHidden = true
     }
 
     // MARK: - Data
@@ -78,13 +214,33 @@ final class MyRidesViewController: UIViewController {
     private func reloadTrips() {
         guard let user = UserDataModel.shared.getCurrentUser() else { return }
         upcomingTrips = RideDataModel.shared.myUpcoming(userID: user.id)
-        pastTrips = RideDataModel.shared.myPast(userID: user.id)
+        pastTrips     = RideDataModel.shared.myPast(userID: user.id)
+        rebuildPastSections()
         updateForSelectedSegment()
+    }
+
+    /// Groups pastTrips into sections by departure month ("Jan 2025"), sorted newest-first.
+    private func rebuildPastSections() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM yyyy"
+        var seen: [String: [RideDataModel.MyTrip]] = [:]
+        var order: [String] = []
+        for trip in pastTrips {
+            let key = formatter.string(from: trip.ride.departureTime)
+            if seen[key] == nil { order.append(key) }
+            seen[key, default: []].append(trip)
+        }
+        pastSections = order
+            .sorted { lhs, rhs in
+                (formatter.date(from: lhs) ?? .distantPast) > (formatter.date(from: rhs) ?? .distantPast)
+            }
+            .map { (title: $0, trips: seen[$0]!) }
     }
 
     // MARK: - Segment & Filter
 
     @IBAction func segmentChanged(_ sender: UISegmentedControl) {
+        AppHaptics.selection()
         updateForSelectedSegment()
         UIView.animate(withDuration: 0.3) {
             self.filterButton?.isHidden = sender.selectedSegmentIndex == 0
@@ -99,19 +255,34 @@ final class MyRidesViewController: UIViewController {
             applyFilter()
         }
         tableView.reloadData()
+        refreshEmptyState()
     }
 
     @IBAction func filterButtonTapped(_ sender: UIButton) {
-        let alert = UIAlertController(title: "Filter Rides", message: "Select filter option", preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "All", style: .default) { [weak self] _ in
-            self?.currentFilter = .all; self?.applyFilter()
-        })
-        alert.addAction(UIAlertAction(title: "Completed", style: .default) { [weak self] _ in
-            self?.currentFilter = .completed; self?.applyFilter()
-        })
-        alert.addAction(UIAlertAction(title: "Cancelled", style: .default) { [weak self] _ in
-            self?.currentFilter = .cancelled; self?.applyFilter()
-        })
+        let alert = UIAlertController(title: "Filter Rides", message: nil, preferredStyle: .actionSheet)
+
+        func filterTitle(_ filter: RideFilter) -> String {
+            switch filter {
+            case .all:       return "All"
+            case .completed: return "Completed"
+            case .cancelled: return "Cancelled"
+            }
+        }
+
+        for filter in [RideFilter.all, .completed, .cancelled] {
+            let isSelected = currentFilter == filter
+            let action = UIAlertAction(
+                title: isSelected ? "✓ \(filterTitle(filter))" : filterTitle(filter),
+                style: .default
+            ) { [weak self] _ in
+                guard let self, self.currentFilter != filter else { return }
+                self.currentFilter = filter
+                self.updateFilterButtonAppearance()
+                self.applyFilter()
+            }
+            if isSelected { action.setValue(AppDesign.Color.primary, forKey: "titleTextColor") }
+            alert.addAction(action)
+        }
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         if let popover = alert.popoverPresentationController {
             popover.sourceView = sender
@@ -126,7 +297,39 @@ final class MyRidesViewController: UIViewController {
         case .completed: currentTrips = pastTrips.filter { $0.ride.status == .completed }
         case .cancelled: currentTrips = pastTrips.filter { $0.ride.status == .cancelled }
         }
+        // Rebuild sections for the filtered set
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM yyyy"
+        var seen: [String: [RideDataModel.MyTrip]] = [:]
+        var order: [String] = []
+        for trip in currentTrips {
+            let key = formatter.string(from: trip.ride.departureTime)
+            if seen[key] == nil { order.append(key) }
+            seen[key, default: []].append(trip)
+        }
+        pastSections = order
+            .sorted { lhs, rhs in
+                (formatter.date(from: lhs) ?? .distantPast) > (formatter.date(from: rhs) ?? .distantPast)
+            }
+            .map { (title: $0, trips: seen[$0]!) }
         tableView.reloadData()
+        refreshEmptyState()
+    }
+
+    // MARK: - Empty State
+
+    private func refreshEmptyState() {
+        let isEmpty = segmentedControl.selectedSegmentIndex == 0
+            ? currentTrips.isEmpty
+            : pastSections.isEmpty
+        if isEmpty {
+            tableView.backgroundView = segmentedControl.selectedSegmentIndex == 0
+                ? upcomingEmptyState
+                : pastEmptyState
+        } else {
+            tableView.backgroundView = nil
+        }
+        tableView.isScrollEnabled = !isEmpty
     }
 }
 
@@ -134,12 +337,59 @@ final class MyRidesViewController: UIViewController {
 
 extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
 
+    // MARK: Sections (past rides grouped by month)
+
+    func numberOfSections(in tableView: UITableView) -> Int {
+        if segmentedControl.selectedSegmentIndex == 0 { return 1 }
+        return max(pastSections.count, 1)   // at least 1 so the empty state background shows
+    }
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        currentTrips.count
+        if segmentedControl.selectedSegmentIndex == 0 { return currentTrips.count }
+        guard section < pastSections.count else { return 0 }
+        return pastSections[section].trips.count
+    }
+
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard segmentedControl.selectedSegmentIndex == 1, section < pastSections.count else { return nil }
+        let container = UIView()
+        container.backgroundColor = .clear
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = pastSections[section].title
+        label.font = AppDesign.Typography.captionStrong
+        label.textColor = .secondaryLabel
+        container.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: AppDesign.Spacing.md),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -AppDesign.Spacing.md),
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 6),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -4)
+        ])
+        return container
+    }
+
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        guard segmentedControl.selectedSegmentIndex == 1, section < pastSections.count else { return 0 }
+        return UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let trip = currentTrips[indexPath.row]
+        let trip: RideDataModel.MyTrip
+        if segmentedControl.selectedSegmentIndex == 0 {
+            guard indexPath.row < currentTrips.count else {
+                return tableView.dequeueReusableCell(
+                    withIdentifier: SkeletonTableViewCell.reuseIdentifier, for: indexPath)
+            }
+            trip = currentTrips[indexPath.row]
+        } else {
+            guard indexPath.section < pastSections.count,
+                  indexPath.row < pastSections[indexPath.section].trips.count else {
+                return tableView.dequeueReusableCell(
+                    withIdentifier: SkeletonTableViewCell.reuseIdentifier, for: indexPath)
+            }
+            trip = pastSections[indexPath.section].trips[indexPath.row]
+        }
 
         if segmentedControl.selectedSegmentIndex == 0 {
             switch trip.role {
@@ -159,6 +409,9 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
                 cell.cancelRequestButton.tag = indexPath.row
                 cell.cancelRequestButton.removeTarget(nil, action: nil, for: .touchUpInside)
                 cell.cancelRequestButton.addTarget(self, action: #selector(cancelPassengerRequest(_:)), for: .touchUpInside)
+                cell.messageButton.tag = indexPath.row
+                cell.messageButton.removeTarget(nil, action: nil, for: .touchUpInside)
+                cell.messageButton.addTarget(self, action: #selector(passengerChatTapped(_:)), for: .touchUpInside)
                 return cell
             }
         }
@@ -168,6 +421,9 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
             withIdentifier: PastRideCell.reuseIdentifier, for: indexPath
         ) as! PastRideCell
         cell.configure(with: trip)
+        cell.onRateTapped = { [weak self] tripToRate in
+            self?.presentRatingSheet(for: tripToRate)
+        }
         return cell
     }
 
@@ -185,12 +441,43 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         tableView.endUpdates()
     }
 
+    func upcomingCellDidTapViewRequests(_ cell: UpcomingTableViewCell) {
+        guard let index = tableView.indexPath(for: cell)?.row, index < currentTrips.count else { return }
+        let trip = currentTrips[index]
+        let vc = DriverRequestsViewController(trip: trip)
+        let nav = UINavigationController(rootViewController: vc)
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+        present(nav, animated: true)
+    }
+
     func upcomingCellDidTapMessage(_ cell: UpcomingTableViewCell) {
         guard let index = tableView.indexPath(for: cell)?.row, index < currentTrips.count else { return }
         let trip = currentTrips[index]
-        let from = trip.ride.source.address ?? "From"
-        let to   = trip.ride.destination.address ?? "To"
-        let vm = ChatViewModel(rideID: trip.ride.id.uuidString, rideTitle: "\(from) → \(to)")
+        let ride  = trip.ride
+        let from  = ride.source.address ?? "From"
+        let to    = ride.destination.address ?? "To"
+        let title = "\(from) → \(to)"
+
+        let approvedBookings = RideDataModel.shared.listBookings(for: ride.id)
+        let passengerProfiles: [UserProfile] = approvedBookings.compactMap {
+            UserDataModel.shared.getUser(by: $0.passengerUserID)
+        }
+        if let driverProfile = UserDataModel.shared.getUser(by: ride.driverUserID) {
+            ChatDataModel.shared.seedWelcomeIfNeeded(ride: ride, driverName: driverProfile.fullName)
+        }
+        let vm = ChatViewModel(rideID: ride.id.uuidString, rideTitle: title, participants: passengerProfiles)
+        openChatSheet(vm)
+    }
+
+    func upcomingCellDidTapCall(_ cell: UpcomingTableViewCell) {
+        // Future: initiate call
+    }
+
+    func openChatSheet(_ vm: ChatViewModel) {
         let host = UIHostingController(rootView: GroupChatView(viewModel: vm))
         host.modalPresentationStyle = .pageSheet
         if let sheet = host.sheetPresentationController {
@@ -201,14 +488,142 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         present(host, animated: true)
     }
 
-    func upcomingCellDidTapCall(_ cell: UpcomingTableViewCell) {
-        // Future: initiate call
+    // MARK: - Rating Sheet
+
+    func presentRatingSheet(for trip: RideDataModel.MyTrip) {
+        guard let myID = UserDataModel.shared.getCurrentUser()?.id else { return }
+        let ride = trip.ride
+        var toRate: [(UUID, String, URL?)] = []
+        if trip.role == .hosting {
+            let bookings = RideDataModel.shared.listBookings(for: ride.id).filter { $0.status == .confirmed }
+            for b in bookings {
+                guard !ReviewDataModel.shared.hasReviewed(rideID: ride.id,
+                                                          reviewerID: myID,
+                                                          revieweeID: b.passengerUserID) else { continue }
+                let p = UserDataModel.shared.getUser(by: b.passengerUserID)
+                toRate.append((b.passengerUserID, p?.fullName ?? "Passenger", p?.photoURL))
+            }
+        } else {
+            if !ReviewDataModel.shared.hasReviewed(rideID: ride.id,
+                                                   reviewerID: myID,
+                                                   revieweeID: ride.driverUserID) {
+                let d = UserDataModel.shared.getUser(by: ride.driverUserID)
+                toRate.append((ride.driverUserID, d?.fullName ?? "Driver", d?.photoURL))
+            }
+        }
+        guard !toRate.isEmpty else { return }
+        presentNextRating(rideID: ride.id, queue: toRate)
+    }
+
+    private func presentNextRating(rideID: UUID, queue: [(UUID, String, URL?)]) {
+        guard let first = queue.first else {
+            reloadTrips()
+            return
+        }
+        let remaining = Array(queue.dropFirst())
+        let vc = RateRideViewController(rideID: rideID, revieweeID: first.0, name: first.1, photoURL: first.2)
+        vc.onSubmitted = { [weak self] in
+            self?.presentNextRating(rideID: rideID, queue: remaining)
+        }
+        present(vc, animated: true)
     }
 
     func upcomingCellDidTapCancelRide(_ cell: UpcomingTableViewCell) {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
-        RideDataModel.shared.cancelRide(id: currentTrips[index].ride.id)
-        reloadTrips()
+        let rideID = currentTrips[index].ride.id
+
+        // Ask for cancellation reason before cancelling
+        let reasons = ["Change of plans", "Vehicle issue", "Emergency", "Found alternative", "Other"]
+        let sheet = UIAlertController(title: "Cancel Ride",
+                                      message: "Please select a reason for cancellation:",
+                                      preferredStyle: .actionSheet)
+        for reason in reasons {
+            sheet.addAction(UIAlertAction(title: reason, style: .destructive) { [weak self] _ in
+                guard let self else { return }
+                self.showActionLoading()
+                Task { @MainActor in
+                    defer { self.hideActionLoading() }
+                    do {
+                        _ = try await RideDataModel.shared.cancelRideAsync(id: rideID)
+                        self.reloadTrips()
+                    } catch {
+                        let alert = UIAlertController(
+                            title: "Couldn't cancel ride",
+                            message: error.localizedDescription,
+                            preferredStyle: .alert
+                        )
+                        alert.addAction(UIAlertAction(title: "OK", style: .default))
+                        self.present(alert, animated: true)
+                    }
+                }
+            })
+        }
+        sheet.addAction(UIAlertAction(title: "Keep Ride", style: .cancel))
+        if let popover = sheet.popoverPresentationController {
+            popover.sourceView = cell
+            popover.sourceRect = cell.bounds
+        }
+        present(sheet, animated: true)
+    }
+
+    func upcomingCellDidTapStartTrip(_ cell: UpcomingTableViewCell) {
+        guard let index = tableView.indexPath(for: cell)?.row else { return }
+        let rideID = currentTrips[index].ride.id
+        let alert = UIAlertController(
+            title: "Start Trip?",
+            message: "This will mark the ride as ongoing. Passengers will be notified.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Start Trip", style: .default) { [weak self] _ in
+            self?.showActionLoading()
+            Task { @MainActor in
+                defer { self?.hideActionLoading() }
+                do {
+                    _ = try await RideDataModel.shared.startRideAsync(id: rideID)
+                    self?.reloadTrips()
+                } catch {
+                    let alert = UIAlertController(
+                        title: "Couldn't start trip",
+                        message: error.localizedDescription,
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self?.present(alert, animated: true)
+                }
+            }
+        })
+        present(alert, animated: true)
+    }
+
+    func upcomingCellDidTapEndTrip(_ cell: UpcomingTableViewCell) {
+        guard let index = tableView.indexPath(for: cell)?.row else { return }
+        let rideID = currentTrips[index].ride.id
+        let alert = UIAlertController(
+            title: "End Trip?",
+            message: "This will mark the ride as completed. It will move to your past rides.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "End Trip", style: .destructive) { [weak self] _ in
+            self?.showActionLoading()
+            Task { @MainActor in
+                defer { self?.hideActionLoading() }
+                do {
+                    _ = try await RideDataModel.shared.endRideAsync(id: rideID)
+                    self?.reloadTrips()
+                } catch {
+                    let alert = UIAlertController(
+                        title: "Couldn't end trip",
+                        message: error.localizedDescription,
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self?.present(alert, animated: true)
+                }
+            }
+        })
+        present(alert, animated: true)
     }
 
     func upcomingCellDidTapPassenger(_ cell: UpcomingTableViewCell, passenger: UserProfile, ride: Ride) {
@@ -223,9 +638,34 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
     }
 }
 
-// MARK: - Passenger Cancel Action
+// MARK: - Passenger Actions
 
 extension MyRidesViewController {
+
+    @objc private func passengerChatTapped(_ sender: UIButton) {
+        let index = sender.tag
+        guard index < currentTrips.count else { return }
+        let trip = currentTrips[index]
+        let ride = trip.ride
+        let from  = ride.source.address ?? "From"
+        let to    = ride.destination.address ?? "To"
+        let title = "\(from) → \(to)"
+
+        if let driver = UserDataModel.shared.getUser(by: ride.driverUserID) {
+            ChatDataModel.shared.seedWelcomeIfNeeded(ride: ride, driverName: driver.fullName)
+        }
+
+        var participants: [UserProfile] = []
+        if let driver = UserDataModel.shared.getUser(by: ride.driverUserID) { participants.append(driver) }
+        let bookings = RideDataModel.shared.listBookings(for: ride.id)
+        let meID = UserDataModel.shared.getCurrentUser()?.id
+        let others = bookings.compactMap { UserDataModel.shared.getUser(by: $0.passengerUserID) }
+            .filter { $0.id != meID }
+        participants += others
+
+        let vm = ChatViewModel(rideID: ride.id.uuidString, rideTitle: title, participants: participants)
+        openChatSheet(vm)
+    }
 
     @objc private func cancelPassengerRequest(_ sender: UIButton) {
         let index = sender.tag
@@ -234,24 +674,155 @@ extension MyRidesViewController {
         guard trip.role == .passenger, let me = UserDataModel.shared.getCurrentUser() else { return }
 
         let isConfirmed = trip.requestStatus == .approved
-        let title  = isConfirmed ? "Cancel Booking" : "Cancel Request"
-        let msg    = isConfirmed ? "Are you sure you want to cancel your confirmed booking?"
-                                 : "Are you sure you want to cancel this ride request?"
+        let alertTitle = isConfirmed ? "Cancel Booking" : "Cancel Request"
+        let msg: String
+        if isConfirmed {
+            let from = trip.ride.source.address ?? "Origin"
+            let to   = trip.ride.destination.address ?? "Destination"
+            msg = "Cancel your confirmed booking for \(from) → \(to)?\n\nThe driver will be notified and your seat will be freed automatically."
+        } else {
+            msg = "Are you sure you want to cancel this ride request?"
+        }
 
-        let alert = UIAlertController(title: title, message: msg, preferredStyle: .alert)
+        let alert = UIAlertController(title: alertTitle, message: msg, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Keep", style: .cancel))
-        alert.addAction(UIAlertAction(title: title, style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: alertTitle, style: .destructive) { [weak self] _ in
             guard let self else { return }
-            if isConfirmed {
-                let bookings = RideDataModel.shared.listBookings(for: trip.ride.id)
-                if let booking = bookings.first(where: { $0.passengerUserID == me.id && $0.status == .confirmed }) {
-                    RideDataModel.shared.cancelBooking(bookingID: booking.id, by: me.id)
+            self.showActionLoading()
+            Task { @MainActor in
+                defer { self.hideActionLoading() }
+                do {
+                    if isConfirmed {
+                        let bookings = RideDataModel.shared.listBookings(for: trip.ride.id)
+                        if let booking = bookings.first(where: { $0.passengerUserID == me.id && $0.status == .confirmed }) {
+                            try await RideDataModel.shared.cancelBookingAsync(bookingID: booking.id, by: me.id)
+                        }
+                    } else if let requestID = trip.requestID {
+                        try await RideDataModel.shared.cancelMyRequestAsync(requestID: requestID, passengerUserID: me.id)
+                    }
+                    self.reloadTrips()
+                } catch {
+                    let fail = UIAlertController(
+                        title: "Couldn't cancel",
+                        message: error.localizedDescription,
+                        preferredStyle: .alert
+                    )
+                    fail.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(fail, animated: true)
                 }
-            } else if let requestID = trip.requestID {
-                RideDataModel.shared.cancelMyRequest(requestID: requestID, passengerUserID: me.id)
             }
-            self.reloadTrips()
         })
         present(alert, animated: true)
+    }
+
+    // MARK: - Notification Bell
+
+    private func setupBellButton() {
+        bellBtn.setImage(UIImage(systemName: "bell"), for: .normal)
+        bellBtn.tintColor = .label
+        bellBtn.addTarget(self, action: #selector(bellTapped), for: .touchUpInside)
+
+        bellBadge.font = AppDesign.Typography.captionStrong.withSize(9)
+        bellBadge.textColor = .white
+        bellBadge.backgroundColor = AppDesign.Color.destructive
+        bellBadge.textAlignment = .center
+        bellBadge.layer.cornerRadius = 7
+        bellBadge.layer.masksToBounds = true
+        bellBadge.isHidden = true
+        bellBadge.translatesAutoresizingMaskIntoConstraints = false
+        bellBtn.addSubview(bellBadge)
+        NSLayoutConstraint.activate([
+            bellBadge.topAnchor.constraint(equalTo: bellBtn.topAnchor, constant: -2),
+            bellBadge.trailingAnchor.constraint(equalTo: bellBtn.trailingAnchor, constant: 2),
+            bellBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 14),
+            bellBadge.heightAnchor.constraint(equalToConstant: 14),
+        ])
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: bellBtn)
+        refreshBellBadge()
+    }
+
+    func refreshBellBadge() {
+        guard let me = UserDataModel.shared.getCurrentUser() else { return }
+        let count = AppNotificationModel.shared.unreadCount(for: me.id)
+        bellBadge.isHidden = count == 0
+        bellBadge.text = count > 9 ? "9+" : "\(count)"
+        bellBtn.setImage(UIImage(systemName: count > 0 ? "bell.badge" : "bell"), for: .normal)
+        bellBtn.tintColor = count > 0 ? AppDesign.Color.destructive : .label
+    }
+
+    @objc private func notificationsDidUpdate() {
+        DispatchQueue.main.async { self.refreshBellBadge() }
+    }
+
+    @objc private func bellTapped() {
+        guard let me = UserDataModel.shared.getCurrentUser() else { return }
+        let notifs = AppNotificationModel.shared.notifications
+            .filter { $0.recipientUserID == me.id }
+
+        AppNotificationModel.shared.markAllRead(for: me.id)
+        refreshBellBadge()
+
+        if notifs.isEmpty {
+            let a = UIAlertController(title: "No Notifications",
+                                      message: "You're all caught up! ✅",
+                                      preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            present(a, animated: true)
+            return
+        }
+
+        let vc = NotificationInboxViewController(notifications: notifs)
+        vc.modalPresentationStyle = .pageSheet
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+        present(vc, animated: true)
+    }
+}
+
+// MARK: - SkeletonTableViewCell
+/// Simple shimmer-style placeholder cell used while rides are loading.
+final class SkeletonTableViewCell: UITableViewCell {
+    static let reuseIdentifier = "SkeletonTableViewCell"
+
+    private let shimmerView = UIView()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    private func setupUI() {
+        selectionStyle = .none
+        backgroundColor = .clear
+
+        shimmerView.backgroundColor = .systemGray5
+        shimmerView.layer.cornerRadius = AppDesign.Radius.md
+        shimmerView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(shimmerView)
+
+        NSLayoutConstraint.activate([
+            shimmerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            shimmerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            shimmerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            shimmerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+            shimmerView.heightAnchor.constraint(equalToConstant: 110),
+        ])
+
+        startPulse()
+    }
+
+    private func startPulse() {
+        let pulse = CABasicAnimation(keyPath: "opacity")
+        pulse.fromValue = 1.0
+        pulse.toValue   = 0.4
+        pulse.duration  = 0.9
+        pulse.autoreverses = true
+        pulse.repeatCount  = .infinity
+        shimmerView.layer.add(pulse, forKey: "pulse")
     }
 }

@@ -39,19 +39,19 @@ final class RideTableViewCell: UITableViewCell {
         selectionStyle = .none
         yearLabel.text = "3rd"
         // Card
-        cardContainerView.backgroundColor = .systemBackground
-        cardContainerView.layer.cornerRadius = 18
+        cardContainerView.backgroundColor = AppDesign.Color.surface
+        cardContainerView.layer.cornerRadius = AppDesign.Radius.lg
         cardContainerView.layer.masksToBounds = true
 
         // Shadow (on cell, not card)
         layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.08
-        layer.shadowOffset = CGSize(width: 0, height: 4)
-        layer.shadowRadius = 8
+        layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
+        layer.shadowOffset = AppDesign.Shadow.smallCardOffset
+        layer.shadowRadius = AppDesign.Shadow.smallCardRadius
         layer.masksToBounds = false
 
         // Profile image
-        profileImageView.layer.cornerRadius = 20
+        profileImageView.layer.cornerRadius = AppDesign.Radius.lg
         profileImageView.clipsToBounds = true
         profileImageView.contentMode = .scaleAspectFill
         profileImageView.tintColor = .secondaryLabel
@@ -61,27 +61,22 @@ final class RideTableViewCell: UITableViewCell {
         vehicleIconImageView.contentMode = .scaleAspectFit
 
         // Labels styling (safe defaults)
-        nameLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-        yearLabel.font = .systemFont(ofSize: 13)
-        yearLabel.textColor = .secondaryLabel
+        nameLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        yearLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        fromLabel.applyTextStyle(AppDesign.Typography.subheadline)
+        toLabel.applyTextStyle(AppDesign.Typography.subheadline)
+        timeLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        // Never let the time label be squeezed by the button
+        timeLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        timeLabel.adjustsFontSizeToFitWidth = true
+        timeLabel.minimumScaleFactor = 0.8
 
-        fromLabel.font = .systemFont(ofSize: 15, weight: .medium)
-        toLabel.font = .systemFont(ofSize: 15, weight: .medium)
-
-        timeLabel.font = .systemFont(ofSize: 14)
-        timeLabel.textColor = .secondaryLabel
-
-        priceLabel.font = .systemFont(ofSize: 18, weight: .semibold)
-        priceLabel.textColor = .label
-
-        seatsLabel.font = .systemFont(ofSize: 15, weight: .semibold)
+        priceLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        seatsLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         
 
-        // Join button
-        joinButton.layer.cornerRadius = 18
-        joinButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .semibold)
-        joinButton.backgroundColor = .systemBlue
-        joinButton.setTitleColor(.white, for: .normal)
+        // Join/View Details button (text-only action for cleaner card)
+        joinButton.applyTextActionStyle(font: AppDesign.Typography.caption)
         joinButton.addTarget(self, action: #selector(joinTapped), for: .touchUpInside)
 
         fromLabel.numberOfLines = 2
@@ -92,7 +87,7 @@ final class RideTableViewCell: UITableViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let inset: CGFloat = 10
+        let inset: CGFloat = AppDesign.Spacing.sm
         contentView.frame = contentView.frame.insetBy(dx: 0, dy: inset)
         layer.shadowPath = UIBezierPath(
             roundedRect: cardContainerView.frame,
@@ -166,8 +161,8 @@ final class RideTableViewCell: UITableViewCell {
         let price = Int(ride.farePerSeat)
         priceLabel.text = "₹\(price)"
 
-        // MARK: Join Button
-        joinButton.setTitle("Join Ride", for: .normal)
+        // MARK: Join / View Details Button
+        joinButton.setTitle("View Details ›", for: .normal)
         joinButton.isEnabled = ride.seatsAvailable > 0
         joinButton.alpha = ride.seatsAvailable > 0 ? 1.0 : 0.5
     }
@@ -212,9 +207,9 @@ final class RideTableViewCell: UITableViewCell {
         }
 
         if seats > 0 {
-            seatsLabel.textColor = UIColor.systemGreen
+            seatsLabel.textColor = AppDesign.Color.success
         } else {
-            seatsLabel.textColor = UIColor.systemRed
+            seatsLabel.textColor = AppDesign.Color.destructive
         }
     }
 
@@ -231,4 +226,3 @@ final class RideTableViewCell: UITableViewCell {
         return address
     }
 }
-

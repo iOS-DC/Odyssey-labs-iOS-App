@@ -49,22 +49,30 @@ struct Ride: Codable, Equatable {
     var notes: String?
     let createdAt: Date
 
+    // MARK: - Recurring
+    /// True when the driver schedules this ride on multiple weekdays.
+    var isRecurring: Bool = false
+    /// ISO weekday numbers the ride repeats on (1 = Monday, 7 = Sunday).
+    var recurringDays: [Int] = []
+
     init(driverUserID: UUID,
          source: LocationPoint,
          destination: LocationPoint,
          waypoints: [LocationPoint] = [],
-         selectedRoute: RideRoute? = nil,    // NEW param (default nil)
+         selectedRoute: RideRoute? = nil,
          departureTime: Date,
          seatsTotal: Int,
          farePerSeat: Double,
          status: RideStatus = .draft,
-         notes: String? = nil) {
+         notes: String? = nil,
+         isRecurring: Bool = false,
+         recurringDays: [Int] = []) {
         self.id = UUID()
         self.driverUserID = driverUserID
         self.source = source
         self.destination = destination
         self.waypoints = waypoints
-        self.selectedRoute = selectedRoute      // store
+        self.selectedRoute = selectedRoute
         self.departureTime = departureTime
         self.seatsTotal = seatsTotal
         self.seatsAvailable = seatsTotal
@@ -72,6 +80,40 @@ struct Ride: Codable, Equatable {
         self.status = status
         self.notes = notes
         self.createdAt = Date()
+        self.isRecurring = isRecurring
+        self.recurringDays = recurringDays
+    }
+
+    init(id: UUID,
+         driverUserID: UUID,
+         source: LocationPoint,
+         destination: LocationPoint,
+         waypoints: [LocationPoint] = [],
+         selectedRoute: RideRoute? = nil,
+         departureTime: Date,
+         seatsTotal: Int,
+         seatsAvailable: Int,
+         farePerSeat: Double,
+         status: RideStatus,
+         notes: String? = nil,
+         createdAt: Date = Date(),
+         isRecurring: Bool = false,
+         recurringDays: [Int] = []) {
+        self.id = id
+        self.driverUserID = driverUserID
+        self.source = source
+        self.destination = destination
+        self.waypoints = waypoints
+        self.selectedRoute = selectedRoute
+        self.departureTime = departureTime
+        self.seatsTotal = seatsTotal
+        self.seatsAvailable = seatsAvailable
+        self.farePerSeat = farePerSeat
+        self.status = status
+        self.notes = notes
+        self.createdAt = createdAt
+        self.isRecurring = isRecurring
+        self.recurringDays = recurringDays
     }
 
     static func ==(lhs: Ride, rhs: Ride) -> Bool { lhs.id == rhs.id }
@@ -104,6 +146,26 @@ struct RideRequest: Codable, Equatable {
         self.reviewedAt = nil
     }
 
+    init(id: UUID,
+         rideID: UUID,
+         passengerUserID: UUID,
+         pickupPoint: LocationPoint,
+         seats: Int,
+         minAcceptableFare: Double? = nil,
+         status: RideRequestStatus,
+         createdAt: Date,
+         reviewedAt: Date? = nil) {
+        self.id = id
+        self.rideID = rideID
+        self.passengerUserID = passengerUserID
+        self.pickupPoint = pickupPoint
+        self.seats = seats
+        self.minAcceptableFare = minAcceptableFare
+        self.status = status
+        self.createdAt = createdAt
+        self.reviewedAt = reviewedAt
+    }
+
     static func ==(lhs: RideRequest, rhs: RideRequest) -> Bool { lhs.id == rhs.id }
 }
 
@@ -129,6 +191,23 @@ struct Booking: Codable, Equatable {
         self.status = .confirmed
     }
 
+    /// Full memberwise init used by RideRepository when decoding from Supabase.
+    init(id: UUID,
+         rideID: UUID,
+         passengerUserID: UUID,
+         seats: Int,
+         pickupPoint: LocationPoint,
+         createdAt: Date,
+         status: BookingStatus) {
+        self.id = id
+        self.rideID = rideID
+        self.passengerUserID = passengerUserID
+        self.seats = seats
+        self.pickupPoint = pickupPoint
+        self.createdAt = createdAt
+        self.status = status
+    }
+
     static func ==(lhs: Booking, rhs: Booking) -> Bool { lhs.id == rhs.id }
 }
 
@@ -150,8 +229,12 @@ final class RideDataModel {
         requestsURL = documentsDirectory.appendingPathComponent("ride_requests").appendingPathExtension("json")
         bookingsURL = documentsDirectory.appendingPathComponent("ride_bookings").appendingPathExtension("json")
         loadAll()
-        
-        seedMockRidesIfNeeded()
+        // Only seed mock data when no Supabase session exists (dev/demo mode)
+        if SessionManager.shared.isLoggedIn {
+            removeSeededMockRides()
+        } else {
+            seedMockRidesIfNeeded()
+        }
         UserDataModel.shared.ensureDriverProfiles(for: rides.map { $0.driverUserID })
     }
 
@@ -172,6 +255,81 @@ final class RideDataModel {
         saveRides()
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
         return ride
+    }
+
+    @discardableResult
+    func createRideAndPublishAsync(_ ride: Ride) async throws -> Ride {
+        // Always persist to Supabase; use the signed-in user's ID as driver
+        var outboundRide = ride
+        if let authID = SessionManager.shared.userID, authID != ride.driverUserID {
+            outboundRide = Ride(
+                id: ride.id,
+                driverUserID: authID,
+                source: ride.source,
+                destination: ride.destination,
+                waypoints: ride.waypoints,
+                selectedRoute: ride.selectedRoute,
+                departureTime: ride.departureTime,
+                seatsTotal: ride.seatsTotal,
+                seatsAvailable: ride.seatsAvailable,
+                farePerSeat: ride.farePerSeat,
+                status: ride.status,
+                notes: ride.notes,
+                createdAt: ride.createdAt,
+                isRecurring: ride.isRecurring,
+                recurringDays: ride.recurringDays
+            )
+        }
+        try await RideRepository.shared.insertRide(outboundRide)
+        if outboundRide.status != .published {
+            try await RideRepository.shared.updateRideStatus(id: outboundRide.id, status: .published)
+        }
+        // Also keep local cache in sync
+        _ = createRide(outboundRide)
+        if outboundRide.status != .published { _ = publishRide(id: outboundRide.id) }
+
+        // MARK: Recurring — batch-create one ride per matching weekday for the next 4 weeks
+        if outboundRide.isRecurring, !outboundRide.recurringDays.isEmpty {
+            let cal = Calendar(identifier: .gregorian)
+            let baseComponents = cal.dateComponents([.hour, .minute], from: outboundRide.departureTime)
+            let startDay = cal.startOfDay(for: outboundRide.departureTime).addingTimeInterval(86400) // start from tomorrow
+
+            await withTaskGroup(of: Void.self) { group in
+                for offset in 0..<28 {  // 4 weeks
+                    guard let candidate = cal.date(byAdding: .day, value: offset, to: startDay) else { continue }
+                    let weekday = cal.component(.weekday, from: candidate)
+                    // Calendar weekday: 1=Sun,2=Mon…7=Sat  →  ISO: 1=Mon…7=Sun
+                    let isoWeekday = weekday == 1 ? 7 : weekday - 1
+                    guard outboundRide.recurringDays.contains(isoWeekday) else { continue }
+
+                    var departComps = cal.dateComponents([.year, .month, .day], from: candidate)
+                    departComps.hour   = baseComponents.hour
+                    departComps.minute = baseComponents.minute
+                    guard let fullDeparture = cal.date(from: departComps) else { continue }
+
+                    let instance = Ride(
+                        driverUserID: outboundRide.driverUserID,
+                        source: outboundRide.source,
+                        destination: outboundRide.destination,
+                        waypoints: outboundRide.waypoints,
+                        selectedRoute: outboundRide.selectedRoute,
+                        departureTime: fullDeparture,
+                        seatsTotal: outboundRide.seatsTotal,
+                        farePerSeat: outboundRide.farePerSeat,
+                        status: .published,
+                        notes: outboundRide.notes,
+                        isRecurring: true,
+                        recurringDays: outboundRide.recurringDays
+                    )
+                    group.addTask {
+                        try? await RideRepository.shared.insertRide(instance)
+                        _ = self.createRide(instance)
+                    }
+                }
+            }
+        }
+
+        return outboundRide
     }
 
     @discardableResult
@@ -204,6 +362,42 @@ final class RideDataModel {
     }
 
     @discardableResult
+    func cancelRideAsync(id: UUID) async throws -> Bool {
+        try await RideRepository.shared.updateRideStatus(id: id, status: .cancelled)
+        return cancelRide(id: id)
+    }
+
+    /// Manually start a published ride. Returns true if succeeded.
+    @discardableResult
+    func startRide(id: UUID) -> Bool {
+        guard var r = getRide(id) else { return false }
+        guard r.status == .published else { return false }
+        r.status = .ongoing
+        return updateRide(r)
+    }
+
+    @discardableResult
+    func startRideAsync(id: UUID) async throws -> Bool {
+        try await RideRepository.shared.updateRideStatus(id: id, status: .ongoing)
+        return startRide(id: id)
+    }
+
+    /// Manually end an ongoing ride (mark completed). Returns true if succeeded.
+    @discardableResult
+    func endRide(id: UUID) -> Bool {
+        guard var r = getRide(id) else { return false }
+        guard r.status == .ongoing else { return false }
+        r.status = .completed
+        return updateRide(r)
+    }
+
+    @discardableResult
+    func endRideAsync(id: UUID) async throws -> Bool {
+        try await RideRepository.shared.updateRideStatus(id: id, status: .completed)
+        return endRide(id: id)
+    }
+
+    @discardableResult
     func deleteRide(id: UUID) -> Bool {
         let initialCount = rides.count
         rides.removeAll { $0.id == id }
@@ -222,6 +416,25 @@ final class RideDataModel {
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
         return req
+    }
+
+    func createJoinRequestAsync(_ req: RideRequest) async throws -> RideRequest {
+        var outbound = req
+        // Use the signed-in user's Supabase ID as the passenger
+        if let authID = SessionManager.shared.userID, authID != req.passengerUserID {
+            outbound = RideRequest(
+                id: req.id,
+                rideID: req.rideID,
+                passengerUserID: authID,
+                pickupPoint: req.pickupPoint,
+                seats: req.seats,
+                status: req.status,
+                createdAt: req.createdAt,
+                reviewedAt: req.reviewedAt
+            )
+        }
+        try await RideRepository.shared.insertRequest(outbound)
+        return createJoinRequest(outbound)
     }
 
 
@@ -267,6 +480,51 @@ final class RideDataModel {
         // Notify UI that requests/bookings/rides changed
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+
+        // In-app notification → passenger
+        let route = "\(ride.source.address ?? "Origin") → \(ride.destination.address ?? "Destination")"
+        AppNotificationModel.shared.send(
+            to: rq.passengerUserID,
+            title: "Booking Approved ✅",
+            body: "Your request for \(route) has been approved. You're all set!",
+            type: .requestApproved
+        )
+        // Push notification → passenger's device(s)
+        PushNotificationService.shared.send(
+            to: rq.passengerUserID,
+            title: "Booking Approved ✅",
+            body: "Your request for \(route) has been approved. You're all set!",
+            data: ["action": "request_approved", "ride_id": ride.id.uuidString]
+        )
+    }
+
+    func approveRequestAsync(requestID: UUID, hostUserID: UUID) async throws {
+        // BUG FIX: Reordered for safer failure handling.
+        // 1. Insert booking first — if this fails, request stays 'pending' (safe to retry)
+        // 2. Update seat count
+        // 3. Mark request 'approved' last — treat this as the commit step
+        guard let req = requests.first(where: { $0.id == requestID }),
+              let ride = rides.first(where: { $0.id == req.rideID }) else {
+            throw NSError(domain: "Rides", code: 404,
+                          userInfo: [NSLocalizedDescriptionKey: "Request or ride not found locally"])
+        }
+
+        let booking = Booking(
+            rideID: req.rideID,
+            passengerUserID: req.passengerUserID,
+            seats: req.seats,
+            pickupPoint: req.pickupPoint
+        )
+        try await RideRepository.shared.insertBooking(booking)
+
+        let newSeats = max(0, ride.seatsAvailable - req.seats)
+        try await RideRepository.shared.updateSeatsAvailable(rideID: ride.id, seats: newSeats)
+
+        // Commit: mark the request approved only after booking + seats are persisted
+        try await RideRepository.shared.updateRequestStatus(id: requestID, status: .approved)
+
+        // Mirror the changes in the local cache
+        approveRequest(requestID: requestID, hostUserID: hostUserID)
     }
 
     func denyRequest(requestID: UUID, hostUserID: UUID) {
@@ -284,6 +542,27 @@ final class RideDataModel {
         saveRequests()
 
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+
+        // In-app notification → passenger
+        let route = "\(ride.source.address ?? "Origin") → \(ride.destination.address ?? "Destination")"
+        AppNotificationModel.shared.send(
+            to: rq.passengerUserID,
+            title: "Booking Request Declined",
+            body: "Your request for \(route) was not approved by the driver. Try another ride!",
+            type: .requestDenied
+        )
+        // Push notification → passenger's device(s)
+        PushNotificationService.shared.send(
+            to: rq.passengerUserID,
+            title: "Booking Request Declined",
+            body: "Your request for \(route) was not approved by the driver. Try another ride!",
+            data: ["action": "request_denied", "ride_id": ride.id.uuidString]
+        )
+    }
+
+    func denyRequestAsync(requestID: UUID, hostUserID: UUID) async throws {
+        try await RideRepository.shared.updateRequestStatus(id: requestID, status: .denied)
+        denyRequest(requestID: requestID, hostUserID: hostUserID)
     }
 
     func cancelMyRequest(requestID: UUID, passengerUserID: UUID) {
@@ -303,6 +582,11 @@ final class RideDataModel {
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
     }
 
+    func cancelMyRequestAsync(requestID: UUID, passengerUserID: UUID) async throws {
+        try await RideRepository.shared.updateRequestStatus(id: requestID, status: .cancelled)
+        cancelMyRequest(requestID: requestID, passengerUserID: passengerUserID)
+    }
+
     /// Cancel booking (by passenger or host) and return seats
     func cancelBooking(bookingID: UUID, by userID: UUID) {
         guard let bIdx = bookings.firstIndex(where: { $0.id == bookingID }) else { return }
@@ -320,9 +604,40 @@ final class RideDataModel {
 
         saveBookings()
 
+        // ── Notify the driver if a passenger cancelled ──
+        if userID == bk.passengerUserID {
+            let passengerName = UserDataModel.shared.getUser(by: bk.passengerUserID)?.fullName ?? "A passenger"
+            let from = ride.source.address ?? "Origin"
+            let to   = ride.destination.address ?? "Destination"
+            AppNotificationModel.shared.send(
+                to: ride.driverUserID,
+                title: "Booking Cancelled",
+                body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
+                type: .passengerCancelled
+            )
+            // Push notification → driver's device(s)
+            PushNotificationService.shared.send(
+                to: ride.driverUserID,
+                title: "Booking Cancelled",
+                body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
+                data: ["action": "passenger_cancelled", "ride_id": ride.id.uuidString]
+            )
+        }
+
         // Notify UI to update lists
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+    }
+
+    func cancelBookingAsync(bookingID: UUID, by userID: UUID) async throws {
+        try await RideRepository.shared.updateBookingStatus(id: bookingID, status: .cancelled)
+        // Return seats in Supabase too
+        if let booking = bookings.first(where: { $0.id == bookingID }),
+           let ride = rides.first(where: { $0.id == booking.rideID }) {
+            let restored = min(ride.seatsTotal, ride.seatsAvailable + booking.seats)
+            try await RideRepository.shared.updateSeatsAvailable(rideID: ride.id, seats: restored)
+        }
+        cancelBooking(bookingID: bookingID, by: userID)
     }
 
     func ridesNear(_ point: LocationPoint, maxMeters: Double = 2500) -> [Ride] {
@@ -336,6 +651,19 @@ final class RideDataModel {
             .filter { $0.status == .published }
             .filter { distM($0.source, point) <= maxMeters }
             .sorted { $0.departureTime < $1.departureTime }
+    }
+
+    /// All rides driven by a user with a specific status (used by ReviewDataModel for total rides)
+    func rides(driverID: UUID, status: RideStatus) -> [Ride] {
+        rides.filter { $0.driverUserID == driverID && $0.status == status }
+    }
+
+    /// All completed rides where this user was a confirmed passenger
+    func completedRides(passengerID: UUID) -> [Ride] {
+        let confirmedRideIDs = bookings
+            .filter { $0.passengerUserID == passengerID && $0.status == .confirmed }
+            .map { $0.rideID }
+        return rides.filter { confirmedRideIDs.contains($0.id) && $0.status == .completed }
     }
 
 
@@ -455,6 +783,58 @@ final class RideDataModel {
     func listBookings(for rideID: UUID) -> [Booking] { bookings.filter { $0.rideID == rideID } }
     func listMyBookings(userID: UUID) -> [Booking] { bookings.filter { $0.passengerUserID == userID } }
 
+    /// Merges backend rides into local cache without deleting local drafts/request state.
+    func mergeRemoteRides(_ incoming: [Ride]) {
+        guard !incoming.isEmpty else { return }
+        // BUG FIX: Always replace existing rides with the remote version so updated
+        // seat counts and statuses from Supabase are never ignored by a stale local copy.
+        // Local drafts are preserved because they won't appear in the remote list.
+        let localDrafts = rides.filter { $0.status == .draft }
+        let remoteIDs = Set(incoming.map { $0.id })
+        // Keep only local drafts that haven't been published to Supabase yet
+        var merged = localDrafts.filter { !remoteIDs.contains($0.id) }
+        merged.append(contentsOf: incoming)
+        rides = merged.sorted { $0.departureTime < $1.departureTime }
+        saveRides()
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+    }
+
+    func syncMyFullHistoryAsync(userID: UUID) async {
+        do {
+            let history = try await RideRepository.shared.fetchMyFullHistory(userID: userID)
+            await MainActor.run {
+                // Merge requests
+                let currentReqIDs = Set(requests.map { $0.id })
+                let newReqs = history.requests.filter { !currentReqIDs.contains($0.id) }
+                for r in history.requests {
+                    if let idx = requests.firstIndex(where: { $0.id == r.id }) {
+                        requests[idx] = r
+                    }
+                }
+                requests.append(contentsOf: newReqs)
+                
+                // Merge bookings
+                let currentBookingIDs = Set(bookings.map { $0.id })
+                let newBookings = history.bookings.filter { !currentBookingIDs.contains($0.id) }
+                for b in history.bookings {
+                    if let idx = bookings.firstIndex(where: { $0.id == b.id }) {
+                        bookings[idx] = b
+                    }
+                }
+                bookings.append(contentsOf: newBookings)
+                
+                // Merge rides
+                mergeRemoteRides(history.rides)
+                
+                saveRequests()
+                saveBookings()
+                NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
+            }
+        } catch {
+            print("Failed to sync my rides history: \(error.localizedDescription)")
+        }
+    }
+
     private func loadAll() {
         rides = load([Ride].self, from: ridesURL) ?? []
         requests = load([RideRequest].self, from: requestsURL) ?? []
@@ -488,34 +868,34 @@ final class RideDataModel {
     
     private func reconcileAllRideStatuses(now: Date = Date()) {
         var changed = false
+        var statusChanges: [(id: UUID, status: RideStatus)] = []
 
         for idx in rides.indices {
             var r = rides[idx]
 
-            // Never touch draft or cancelled
             // Never touch draft, cancelled, or completed rides
             if r.status == .draft || r.status == .cancelled || r.status == .completed {
                 continue
             }
-           
 
-            // Future rides → Published
+            // Future rides → keep as published (but never reset a manually-started ongoing ride)
             if r.departureTime > now {
+                if r.status == .ongoing { continue } // driver manually started — respect the decision
                 if r.status != .published {
                     r.status = .published
                     rides[idx] = r
                     changed = true
+                    statusChanges.append((id: r.id, status: .published))
                 }
                 continue
             }
 
-            // Calculate end time SAFELY
+            // Calculate end time
             let travelSeconds: TimeInterval
             if let route = r.selectedRoute {
                 travelSeconds = route.expectedTravelTime
             } else {
-                // fallback ONLY for completion logic
-                travelSeconds = 60 * 60   // 1 hour
+                travelSeconds = 60 * 60   // 1-hour fallback
             }
 
             let endTime = r.departureTime.addingTimeInterval(travelSeconds)
@@ -526,6 +906,7 @@ final class RideDataModel {
                     r.status = .completed
                     rides[idx] = r
                     changed = true
+                    statusChanges.append((id: r.id, status: .completed))
                 }
             } else {
                 // Between start and end → Ongoing
@@ -533,6 +914,7 @@ final class RideDataModel {
                     r.status = .ongoing
                     rides[idx] = r
                     changed = true
+                    statusChanges.append((id: r.id, status: .ongoing))
                 }
             }
         }
@@ -540,6 +922,15 @@ final class RideDataModel {
         if changed {
             saveRides()
             NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+
+            // BUG FIX: Sync the reconciled statuses back to Supabase so other users
+            // always see the correct ride state (previously these changes were local-only).
+            guard !statusChanges.isEmpty else { return }
+            Task {
+                for change in statusChanges {
+                    try? await RideRepository.shared.updateRideStatus(id: change.id, status: change.status)
+                }
+            }
         }
     }
 
@@ -547,15 +938,26 @@ final class RideDataModel {
     
 
 // Seed Mock Rides Once
-    private static let mockDataSeedKey = "mock_rides_seeded"
+    private static let mockDataSeedKey = "mock_rides_seeded_v2"
 
     func seedMockRidesIfNeeded() {
-        let seeded = UserDefaults.standard.bool(forKey: RideDataModel.mockDataSeedKey)
+        // Do not seed mock rides if user is logged into Supabase
+        guard !SessionManager.shared.isLoggedIn else { return }
         let mockIDs = Set(MockData.driverProfiles.map { $0.id })
-        let hasAnyMockDriver = rides.contains { mockIDs.contains($0.driverUserID) }
-        if seeded && hasAnyMockDriver { return }
 
-        print(" Seeding mock rides into JSON...")
+        // Re-seed if there are no active (published/ongoing) mock rides left.
+        // This ensures Rides Available never goes empty after a day passes.
+        let hasActiveMockRides = rides.contains {
+            mockIDs.contains($0.driverUserID) &&
+            ($0.status == .published || $0.status == .ongoing)
+        }
+        if hasActiveMockRides { return }
+
+        // Purge all stale mock rides (completed/cancelled from previous seed)
+        rides.removeAll { mockIDs.contains($0.driverUserID) }
+        saveRides()
+
+        print("🌱 Re-seeding mock rides with fresh departure times...")
 
         for ride in MockData.sampleRides {
             let created = createRide(ride)
@@ -563,7 +965,17 @@ final class RideDataModel {
         }
 
         UserDefaults.standard.set(true, forKey: RideDataModel.mockDataSeedKey)
-        print("Mock rides seeded successfully!")
+        print("✅ Mock rides seeded — \(MockData.sampleRides.count) rides added.")
+    }
+
+    private func removeSeededMockRides() {
+        let mockIDs = Set(MockData.driverProfiles.map { $0.id })
+        let before = rides.count
+        rides.removeAll { mockIDs.contains($0.driverUserID) }
+        if rides.count != before {
+            saveRides()
+            NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+        }
     }
 
 

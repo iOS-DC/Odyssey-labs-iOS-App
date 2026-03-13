@@ -335,6 +335,7 @@
                     </view>
                     <connections>
                         <outlet property="tableView" destination="5rj-yI-SyC" id="TWI-0v-6h3"/>
+                        <outlet property="titleLabel" destination="rbb-na-mf1" id="TIX-0v-6h1"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="89b-gP-eTj" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

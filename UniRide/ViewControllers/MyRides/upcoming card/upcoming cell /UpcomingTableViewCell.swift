@@ -6,7 +6,10 @@ protocol UpcomingTableViewCellDelegate: AnyObject {
     func upcomingCellDidTapMessage(_ cell: UpcomingTableViewCell)
     func upcomingCellDidTapCall(_ cell: UpcomingTableViewCell)
     func upcomingCellDidTapCancelRide(_ cell: UpcomingTableViewCell)
+    func upcomingCellDidTapStartTrip(_ cell: UpcomingTableViewCell)
+    func upcomingCellDidTapEndTrip(_ cell: UpcomingTableViewCell)
     func upcomingCellDidTapPassenger(_ cell: UpcomingTableViewCell, passenger: UserProfile, ride: Ride)
+    func upcomingCellDidTapViewRequests(_ cell: UpcomingTableViewCell)
 }
 
 final class UpcomingTableViewCell: UITableViewCell {
@@ -31,6 +34,7 @@ final class UpcomingTableViewCell: UITableViewCell {
     @IBOutlet weak var messageButton: UIButton!
     @IBOutlet weak var callButton: UIButton!
     @IBOutlet weak var cancelRideButton: UIButton!
+    @IBOutlet weak var startTripButton: UIButton!
     @IBOutlet weak var viewRequestButton: UIButton!
     @IBOutlet weak var requestContainerView: UIView!
     @IBOutlet weak var requestsTableView: UITableView!
@@ -44,10 +48,9 @@ final class UpcomingTableViewCell: UITableViewCell {
     @IBOutlet weak var avatarStackView: UIView!
 
     // MARK: - State
-    private var trip: RideDataModel.MyTrip?
+    var trip: RideDataModel.MyTrip?
     private var rideRequests: [RideRequest] = []
     private var approvedPassengers: [UserProfile] = []
-    private var showConfirmedBox = false
     private var isMapExpanded = false
 
     weak var delegate: UpcomingTableViewCellDelegate?
@@ -57,20 +60,20 @@ final class UpcomingTableViewCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
 
-        // Card styling is set in XIB (cornerRadius, masksToBounds, background).
-        // Shadow must stay in code — masksToBounds=false on the cell layer is required.
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = 0.08
-        layer.shadowOffset = CGSize(width: 0, height: 4)
-        layer.shadowRadius = 10
-        layer.masksToBounds = false
+        // Cell itself is transparent — the cardView is the visual "card"
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        selectionStyle = .none
 
-        // Hide the "View Requests" toggle — requests are shown inline
-        viewRequestButton.isHidden = true
-        viewRequestsHeightConstraint.constant = 0
-        viewRequestsTopConstraint.constant = 0
+        // Card appearance — corner radius + white background (XIB already has 12pt H margins, 8pt V margins)
+        cardView.applyCardStyle(
+            corner: AppDesign.Radius.lg,
+            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+            shadowRadius: AppDesign.Shadow.smallCardRadius,
+            shadowOffset: AppDesign.Shadow.smallCardOffset
+        )
 
-        // Requests container starts collapsed
+        // Requests container begins collapsed
         requestContainerView.isHidden = true
         requestContainerView.isUserInteractionEnabled = false
         requestsContainerHeightConstraint.constant = 0
@@ -81,33 +84,25 @@ final class UpcomingTableViewCell: UITableViewCell {
         mapView.isHidden = true
         mapHeightConstraint.constant = 1
 
-        // Table setup
-        requestsTableView.delegate = self
-        requestsTableView.dataSource = self
-        requestsTableView.isScrollEnabled = false
-        requestsTableView.rowHeight = UITableView.automaticDimension
-        requestsTableView.estimatedRowHeight = 72
-
-        approvedTableView.delegate = self
-        approvedTableView.dataSource = self
-        approvedTableView.isScrollEnabled = false
-        approvedTableView.rowHeight = UITableView.automaticDimension
-        approvedTableView.estimatedRowHeight = 60
-
         mapView.delegate = self
 
-        requestsTableView.register(UINib(nibName: "RequestCell", bundle: nil),
-                                   forCellReuseIdentifier: RequestCell.identifier)
-        approvedTableView.register(ApprovedPassengerCell.self,
-                                   forCellReuseIdentifier: ApprovedPassengerCell.identifier)
-        approvedTableView.register(UITableViewCell.self, forCellReuseIdentifier: "EmptyCell")
+        roleLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+        statusLabel.applyTextStyle(AppDesign.Typography.captionStrong)
+        dateLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        fromLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 2)
+        toLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 2)
+        startTimeLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        endTimeLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        durationLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        passengersLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        seatsLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        // Shadow path must be computed at runtime from the card's actual frame
-        layer.shadowPath = UIBezierPath(
-            roundedRect: cardView.frame,
+        // Shadow path on cardView so it hugs the rounded card edges
+        cardView.layer.shadowPath = UIBezierPath(
+            roundedRect: cardView.bounds,
             cornerRadius: cardView.layer.cornerRadius
         ).cgPath
     }
@@ -117,7 +112,6 @@ final class UpcomingTableViewCell: UITableViewCell {
         trip = nil
         rideRequests.removeAll()
         approvedPassengers.removeAll()
-        showConfirmedBox = false
         isMapExpanded = false
 
         viewRequestButton.isHidden = true
@@ -170,7 +164,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         let (statusIcon, bgColor): (String, UIColor) = {
             switch ride.status {
             case .published: return ("✓", UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0))
-            case .ongoing:   return ("▶", UIColor(red: 0.0, green: 0.48, blue: 1.0, alpha: 1.0))
+            case .ongoing:   return ("▶", AppDesign.Color.primary)
             default:         return ("•", UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 1.0))
             }
         }()
@@ -179,6 +173,21 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         // Pending requests
         rideRequests = RideDataModel.shared.listRequests(for: ride.id).filter { $0.status == .pending }
+
+        if rideRequests.isEmpty {
+            viewRequestButton.isHidden = true
+            viewRequestsHeightConstraint.constant = 0
+            viewRequestsTopConstraint.constant = 0
+        } else {
+            viewRequestButton.isHidden = false
+            viewRequestsHeightConstraint.constant = 36
+            viewRequestsTopConstraint.constant = AppDesign.Spacing.sm
+            
+            let reqCount = rideRequests.count
+            let title = reqCount == 1 ? "1 Pending Request" : "\(reqCount) Pending Requests"
+            viewRequestButton.setTitle(title, for: .normal)
+            viewRequestButton.applyTextActionStyle(font: AppDesign.Typography.captionStrong)
+        }
 
         // Approved passengers
         approvedPassengers = RideDataModel.shared
@@ -191,49 +200,88 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         renderAvatars(passengers: approvedPassengers, totalSeats: ride.seatsTotal, ride: ride)
 
-        // Show requests inline if any are pending
-        let hasRequests = !rideRequests.isEmpty
-        if hasRequests {
-            requestContainerView.isHidden = false
-            requestContainerView.isUserInteractionEnabled = true
-            requestsContainerHeightConstraint.constant = CGFloat(rideRequests.count) * 72 + 44
-            requestsContainerTopConstraint.constant = 10
-        } else if showConfirmedBox && !approvedPassengers.isEmpty {
-            requestContainerView.isHidden = false
-            requestContainerView.isUserInteractionEnabled = false
-            requestsContainerHeightConstraint.constant = CGFloat(approvedPassengers.count) * 60 + 44
-            requestsContainerTopConstraint.constant = 10
-        } else {
-            requestContainerView.isHidden = true
-            requestContainerView.isUserInteractionEnabled = false
-            requestsContainerHeightConstraint.constant = 0
-            requestsContainerTopConstraint.constant = 0
-        }
+        // Requests container always hidden now (moved to separate screen)
+        requestContainerView.isHidden = true
+        requestContainerView.isUserInteractionEnabled = false
+        requestsContainerHeightConstraint.constant = 0
+        requestsContainerTopConstraint.constant = 0
 
-        requestsTableView.reloadData()
-        approvedTableView.reloadData()
         drawRouteIfNeeded(for: ride)
+        
+        // Button Styles
+        cancelRideButton.applyTintActionStyle(title: "Cancel Ride", color: AppDesign.Color.destructive)
+
+        messageButton.applyTintActionStyle(title: "Chat", imageSystemName: "message.fill")
+
+        // ── Unread badge on Chat button ──
+        let rideIDStr = trip.ride.id.uuidString
+        applyUnreadBadge(to: messageButton, rideID: rideIDStr)
+
+        callButton.applyTintActionStyle(title: "Call", imageSystemName: "phone.fill")
+        
+        showMapButton.applyTintActionStyle(
+            title: isMapExpanded ? "Hide" : "Map",
+            imageSystemName: isMapExpanded ? "map.fill" : "map"
+        )
+
+        // Start / End Trip button
+        startTripButton.backgroundColor = .clear
+        switch ride.status {
+        case .published:
+            var startConfig = UIButton.Configuration.filled()
+            startConfig.title = "Start Trip"
+            startConfig.image = UIImage(systemName: "play.fill")
+            startConfig.imagePlacement = .leading
+            startConfig.imagePadding = 6
+            startConfig.baseBackgroundColor = AppDesign.Color.success
+            startConfig.baseForegroundColor = .white
+            startConfig.cornerStyle = .capsule
+            startTripButton.configuration = startConfig
+            startTripButton.isHidden = false
+        case .ongoing:
+            var endConfig = UIButton.Configuration.filled()
+            endConfig.title = "End Trip"
+            endConfig.image = UIImage(systemName: "stop.fill")
+            endConfig.imagePlacement = .leading
+            endConfig.imagePadding = 6
+            endConfig.baseBackgroundColor = .systemOrange
+            endConfig.baseForegroundColor = .white
+            endConfig.cornerStyle = .capsule
+            startTripButton.configuration = endConfig
+            startTripButton.isHidden = false
+        default:
+            startTripButton.isHidden = true
+        }
     }
 
     // MARK: - Actions
 
     @IBAction func viewRequestsTapped(_ sender: UIButton) {
-        // Requests are always shown inline — no-op
+        delegate?.upcomingCellDidTapViewRequests(self)
     }
 
     @IBAction func toggleMap(_ sender: UIButton) {
         isMapExpanded.toggle()
         mapView.isHidden = !isMapExpanded
         mapHeightConstraint.constant = isMapExpanded ? 180 : 1
-        var config = sender.configuration ?? UIButton.Configuration.filled()
-        config.title = isMapExpanded ? "Hide Map" : "Show Map"
+        var config = sender.configuration ?? UIButton.Configuration.tinted()
+        config.title = isMapExpanded ? "Hide" : "Map"
+        config.image = UIImage(systemName: isMapExpanded ? "map.fill" : "map")
         sender.configuration = config
         delegate?.upcomingCellRequestsToggled(self)
     }
 
-    @IBAction func messageTapped(_ sender: UIButton) { delegate?.upcomingCellDidTapMessage(self) }
-    @IBAction func callTapped(_ sender: UIButton)    { delegate?.upcomingCellDidTapCall(self) }
+    @IBAction func messageTapped(_ sender: UIButton)    { delegate?.upcomingCellDidTapMessage(self) }
+    @IBAction func callTapped(_ sender: UIButton)       { delegate?.upcomingCellDidTapCall(self) }
     @IBAction func cancelRideTapped(_ sender: UIButton) { delegate?.upcomingCellDidTapCancelRide(self) }
+    @IBAction func startTripTapped(_ sender: UIButton) {
+        guard let trip = trip else { return }
+        if trip.ride.status == .published {
+            delegate?.upcomingCellDidTapStartTrip(self)
+        } else if trip.ride.status == .ongoing {
+            delegate?.upcomingCellDidTapEndTrip(self)
+        }
+    }
 
     // MARK: - Route Drawing
 
@@ -254,8 +302,8 @@ final class UpcomingTableViewCell: UITableViewCell {
     private func applyBadgeStyle(to label: UILabel, backgroundColor: UIColor, textColor: UIColor) {
         label.backgroundColor = backgroundColor
         label.textColor = textColor
-        label.font = .systemFont(ofSize: 13, weight: .bold)
-        label.layer.cornerRadius = 13
+        label.font = AppDesign.Typography.captionStrong
+        label.layer.cornerRadius = AppDesign.Radius.sm
         label.layer.masksToBounds = true
         label.textAlignment = .center
     }
@@ -286,7 +334,7 @@ final class UpcomingTableViewCell: UITableViewCell {
                 let label = UILabel(frame: CGRect(x: 0, y: 0, width: size, height: size))
                 label.text = initial
                 label.textAlignment = .center
-                label.font = .systemFont(ofSize: 18, weight: .semibold)
+                label.font = AppDesign.Typography.bodyStrong
                 label.textColor = .systemGray
                 avatarView.addSubview(label)
 
@@ -319,132 +367,49 @@ final class UpcomingTableViewCell: UITableViewCell {
     }
 }
 
-// MARK: - TableView (Requests + Confirmed Passengers)
 
-extension UpcomingTableViewCell: UITableViewDataSource, UITableViewDelegate {
-
-    func numberOfSections(in tableView: UITableView) -> Int { 1 }
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if tableView == requestsTableView {
-            return rideRequests.isEmpty ? approvedPassengers.count : rideRequests.count
-        }
-        return max(approvedPassengers.count, 1)
-    }
-
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard tableView == requestsTableView else { return nil }
-        return makeBoxHeader(title: rideRequests.isEmpty
-            ? "Confirmed Passengers"
-            : "Requests (\(rideRequests.count))")
-    }
-
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        tableView == requestsTableView ? 44 : 0
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if tableView == requestsTableView {
-            if !rideRequests.isEmpty {
-                let cell = tableView.dequeueReusableCell(withIdentifier: RequestCell.identifier, for: indexPath) as! RequestCell
-                let req = rideRequests[indexPath.row]
-                let passenger = UserDataModel.shared.getUser(by: req.passengerUserID)
-                cell.configure(
-                    name: passenger?.fullName ?? "Passenger",
-                    route: "\(trip?.ride.source.address ?? "From") → \(trip?.ride.destination.address ?? "To")",
-                    photoURL: passenger?.photoURL
-                )
-                cell.delegate = self
-                return cell
-            } else {
-                // Confirmed passenger row (shown briefly after approving a request)
-                let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
-                let passenger = approvedPassengers[indexPath.row]
-                cell.textLabel?.text = passenger.fullName
-                cell.textLabel?.font = .systemFont(ofSize: 15, weight: .medium)
-                cell.detailTextLabel?.text = "Confirmed"
-                cell.detailTextLabel?.textColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1)
-                cell.selectionStyle = .none
-                cell.backgroundColor = .clear
-                let badge = UILabel()
-                badge.text = "  ✓ Accepted  "
-                badge.font = .systemFont(ofSize: 12, weight: .bold)
-                badge.textColor = .white
-                badge.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1)
-                badge.layer.cornerRadius = 11
-                badge.layer.masksToBounds = true
-                badge.sizeToFit()
-                badge.frame.size.height = 26
-                cell.accessoryView = badge
-                return cell
-            }
-        }
-
-        // approvedTableView
-        if approvedPassengers.isEmpty {
-            let cell = tableView.dequeueReusableCell(withIdentifier: "EmptyCell", for: indexPath)
-            cell.textLabel?.text = "No passengers yet"
-            cell.textLabel?.textAlignment = .center
-            cell.textLabel?.font = .systemFont(ofSize: 13)
-            cell.textLabel?.textColor = .tertiaryLabel
-            cell.selectionStyle = .none
-            cell.backgroundColor = .clear
-            return cell
-        }
-        let cell = tableView.dequeueReusableCell(withIdentifier: ApprovedPassengerCell.identifier, for: indexPath) as! ApprovedPassengerCell
-        cell.configure(name: approvedPassengers[indexPath.row].fullName, photoURL: approvedPassengers[indexPath.row].photoURL)
-        return cell
-    }
-
-    private func makeBoxHeader(title: String) -> UIView {
-        let container = UIView()
-        container.backgroundColor = .clear
-        let label = UILabel()
-        label.text = title
-        label.font = .systemFont(ofSize: 15, weight: .bold)
-        label.textColor = .label
-        label.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
-            label.centerYAnchor.constraint(equalTo: container.centerYAnchor)
-        ])
-        return container
-    }
-}
-
-// MARK: - RequestCellDelegate
-
-extension UpcomingTableViewCell: RequestCellDelegate {
-
-    func requestCellApproveTapped(_ cell: RequestCell) {
-        guard let index = requestsTableView.indexPath(for: cell)?.row,
-              let ride = trip?.ride else { return }
-        RideDataModel.shared.approveRequest(requestID: rideRequests[index].id, hostUserID: ride.driverUserID)
-        showConfirmedBox = true
-        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
-            self?.showConfirmedBox = false
-            NotificationCenter.default.post(name: .ridesUpdated, object: nil)
-        }
-    }
-
-    func requestCellDenyTapped(_ cell: RequestCell) {
-        guard let index = requestsTableView.indexPath(for: cell)?.row,
-              let ride = trip?.ride else { return }
-        RideDataModel.shared.denyRequest(requestID: rideRequests[index].id, hostUserID: ride.driverUserID)
-        showConfirmedBox = false
-        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
-    }
-}
 
 // MARK: - Map Renderer
 
 extension UpcomingTableViewCell: MKMapViewDelegate {
     func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let r = MKPolylineRenderer(overlay: overlay)
-        r.strokeColor = .systemBlue
+        r.strokeColor = AppDesign.Color.primary
         r.lineWidth = 4
         return r
+    }
+}
+
+// MARK: - Unread Badge Helper
+
+extension UpcomingTableViewCell {
+
+    /// Attaches a red pill badge to the top-right corner of any button.
+    /// Pass count = 0 to hide the badge.
+    func applyUnreadBadge(to button: UIButton, rideID: String) {
+        let tag = 9901
+        // Remove stale badge from recycled cell
+        button.subviews.first(where: { $0.tag == tag })?.removeFromSuperview()
+
+        let count = ChatDataModel.shared.unreadCount(for: rideID)
+        guard count > 0 else { return }
+
+        let badge = UILabel()
+        badge.tag = tag
+        badge.text = count > 99 ? "99+" : "\(count)"
+        badge.font = AppDesign.Typography.captionStrong.withSize(10)
+        badge.textColor = .white
+        badge.backgroundColor = AppDesign.Color.destructive
+        badge.textAlignment = .center
+        badge.layer.cornerRadius = 9
+        badge.layer.masksToBounds = true
+        badge.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(badge)
+        NSLayoutConstraint.activate([
+            badge.topAnchor.constraint(equalTo: button.topAnchor, constant: -5),
+            badge.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: 5),
+            badge.heightAnchor.constraint(equalToConstant: 18),
+            badge.widthAnchor.constraint(greaterThanOrEqualToConstant: 18),
+        ])
     }
 }

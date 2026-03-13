@@ -11,42 +11,59 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
         guard let _ = (scene as? UIWindowScene) else { return }
-    }
-
-    func sceneDidDisconnect(_ scene: UIScene) {
-        // Called as the scene is being released by the system.
-        // This occurs shortly after the scene enters the background, or when its session is discarded.
-        // Release any resources associated with this scene that can be re-created the next time the scene connects.
-        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
-    }
-
-    func sceneDidBecomeActive(_ scene: UIScene) {
-        // Called when the scene has moved from an inactive state to an active state.
-        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
-    }
-
-    func sceneWillResignActive(_ scene: UIScene) {
-        // Called when the scene will move from an active state to an inactive state.
-        // This may occur due to temporary interruptions (ex. an incoming phone call).
+        // Restore or reject persisted session on cold launch
+        Task { await restoreSessionOrShowAuth() }
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
-        // Called as the scene transitions from the background to the foreground.
-        // Use this method to undo the changes made on entering the background.
+        // Silently refresh the access token each time the app comes to the foreground
+        Task { await SessionManager.shared.refreshIfNeeded() }
     }
 
-    func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background.
-        // Use this method to save data, release shared resources, and store enough scene-specific state information
-        // to restore the scene back to its current state.
+    // MARK: - Session restoration
+
+    private func restoreSessionOrShowAuth() async {
+        guard let window = window else { return }
+        let session = SessionManager.shared
+
+        guard session.isLoggedIn else {
+            // No valid session — show auth flow on main thread
+            await MainActor.run { showAuthFlow(window: window) }
+            return
+        }
+
+        // 1️⃣ Refresh the access token FIRST — before any API calls fire
+        await session.refreshIfNeeded()
+
+        // 2️⃣ Restore currentUserID in UserDataModel from the saved session
+        await UserDataModel.shared.restoreSessionUser()
+
+        // 3️⃣ Jump to main tab bar
+        await MainActor.run {
+            let mainSB = UIStoryboard(name: "Main", bundle: nil)
+            let tabBar = mainSB.instantiateViewController(withIdentifier: "MainTabBarController")
+            window.rootViewController = tabBar
+            window.makeKeyAndVisible()
+        }
     }
 
+    private func showAuthFlow(window: UIWindow) {
+        if !(window.rootViewController is EmailViewController) {
+            let authSB = UIStoryboard(name: "RoleSelection", bundle: nil)
+            if let authRoot = authSB.instantiateInitialViewController() {
+                window.rootViewController = authRoot
+                window.makeKeyAndVisible()
+            }
+        }
+    }
 
+    // MARK: - Unused lifecycle stubs
+
+    func sceneDidDisconnect(_ scene: UIScene) {}
+    func sceneDidBecomeActive(_ scene: UIScene) {}
+    func sceneWillResignActive(_ scene: UIScene) {}
+    func sceneDidEnterBackground(_ scene: UIScene) {}
 }
 
