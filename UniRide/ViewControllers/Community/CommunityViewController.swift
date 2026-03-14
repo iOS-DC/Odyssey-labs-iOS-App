@@ -570,24 +570,18 @@ class CommunityViewController: UIViewController,
         guard let index = selectedPostIndex, let postID = feedPosts[index].remoteID else { return }
 
         Task {
-            // 1. Write to Supabase
-            try? await CommunityRepository.shared.insertComment(postID: postID, text: text)
-
-            // 2. Wait for DB trigger to update comment_count
-            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s
-
-            // 3. Fetch the real (trigger-updated) counts for this post
-            if let counts = try? await CommunityRepository.shared.fetchPostCounts(postID: postID) {
+            // 1. Write to Supabase and get the new definitive total count
+            if let newCount = try? await CommunityRepository.shared.insertComment(postID: postID, text: text) {
                 await MainActor.run {
-                    // Update the cell count from DB — reflects ALL users' comments globally
+                    // Update the cell count from the backend truth
                     if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                        self.feedPosts[i].remoteCommentCount = counts.commentCount
+                        self.feedPosts[i].remoteCommentCount = newCount
                         self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
                     }
                 }
             }
 
-            // 4. Reload live comments in the popup with real names
+            // 2. Reload live comments in the popup with real names
             await loadLiveComments(for: postID)
         }
     }
@@ -784,7 +778,11 @@ class CommunityViewController: UIViewController,
             var mapped: [Post] = remotePosts.map { rp in
                 let df = RelativeDateTimeFormatter()
                 df.unitsStyle = .short
-                let when = df.localizedString(for: rp.createdAt, relativeTo: Date())
+                var when = df.localizedString(for: rp.createdAt, relativeTo: Date())
+                // Handle future dates (clock sync issues) and very recent posts
+                if when.contains("in ") || when.contains("0 sec") {
+                    when = "Just now"
+                }
                 return Post(
                     name: "UniRide User",          // placeholder — replaced below
                     subtitle: "Community Member",  // placeholder
@@ -964,8 +962,11 @@ class CommunityViewController: UIViewController,
                 shareButton.titleLabel?.font = AppDesign.Typography.subheadline
             }
 
-            let commentsLabel = cell.viewWithTag(20) as? UILabel
-            commentsLabel?.text = post.comments.joined(separator: "\n")
+            // Hide the redundant comments label to fix the card layout (excessive whitespace)
+            if let commentsLabel = cell.viewWithTag(20) as? UILabel {
+                commentsLabel.isHidden = true
+                commentsLabel.text = ""
+            }
 
             // Verified badge — injected programmatically next to the name label (tag 1)
             let badgeTag = 9001
