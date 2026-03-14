@@ -804,8 +804,17 @@ class CommunityViewController: UIViewController,
             }
             guard !mapped.isEmpty else { return }
 
-            // Show posts immediately with placeholder names
+            // Show posts immediately with placeholder names.
+            // Preserve hasLiked + likeCount from the current session so that
+            // a refresh (timer/comment) never resets the user's own like.
             await MainActor.run {
+                for i in mapped.indices {
+                    if let existing = self.feedPosts.first(where: { $0.remoteID == mapped[i].remoteID }),
+                       existing.hasLiked {
+                        mapped[i].hasLiked  = true
+                        mapped[i].likeCount = max(mapped[i].likeCount, existing.likeCount)
+                    }
+                }
                 self.feedPosts = mapped
                 self.tableView.reloadData()
             }
