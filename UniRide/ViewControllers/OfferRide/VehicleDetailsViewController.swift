@@ -145,7 +145,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     private func makeTypeSelector() -> UIView {
         configTypeButton(carButton,  icon: "car.fill", label: "Car",         type: .car)
-        configTypeButton(bikeButton, icon: "bicycle",  label: "Two-Wheeler", type: .bike)
+        configTypeButton(bikeButton, icon: "motorcycle",  label: "Two-Wheeler", type: .bike)
 
         let row           = UIStackView(arrangedSubviews: [carButton, bikeButton])
         row.axis          = .horizontal
