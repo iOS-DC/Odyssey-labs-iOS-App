@@ -111,40 +111,54 @@ final class CommunityRepository {
         return id
     }
 
+    /// Deletes a post. Only succeeds if the post belongs to the current user.
+    func deletePost(postID: UUID) async throws {
+        try await SessionManager.shared.validateSession()
+        guard let uid = SessionManager.shared.userID else { throw CommunityError.notLoggedIn }
+        let url = mgr.restURL(table: "community_posts",
+                              query: "id=eq.\(postID.uuidString)&author_user_id=eq.\(uid.uuidString)")
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        req.allHTTPHeaderFields = mgr.userHeaders
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkHTTP(response, data: data)
+    }
+
     // MARK: - Likes
 
-    /// Toggles a like on a post. Returns true if the post is now liked.
-    func toggleLike(postID: UUID) async throws -> Bool {
+    /// Toggles a like on a post.
+    /// - Inserts or deletes a row in `community_likes`
+    /// - Counts all likes and PATCHes `community_posts.like_count` directly (no DB trigger needed)
+    /// - Returns `(isNowLiked, newLikeCount)` so the UI can update precisely
+    @discardableResult
+    func toggleLike(postID: UUID) async throws -> (isLiked: Bool, count: Int) {
         try await SessionManager.shared.validateSession()
         guard let uid = SessionManager.shared.userID else { throw CommunityError.notLoggedIn }
 
-        // Check if already liked
+        // ── Step 1: check if already liked ──
         let checkURL = mgr.restURL(table: "community_likes",
                                    query: "post_id=eq.\(postID.uuidString)&user_id=eq.\(uid.uuidString)&limit=1")
         var checkReq = URLRequest(url: checkURL)
         checkReq.allHTTPHeaderFields = mgr.userHeaders
         let (checkData, checkResp) = try await URLSession.shared.data(for: checkReq)
         try checkHTTP(checkResp, data: checkData)
-
         let existing = (try? JSONSerialization.jsonObject(with: checkData) as? [[String: Any]]) ?? []
+
+        let isNowLiked: Bool
         if existing.isEmpty {
-            // Not yet liked → insert
-            let payload: [String: Any] = [
-                "post_id": postID.uuidString,
-                "user_id": uid.uuidString
-            ]
+            // ── Step 2a: insert like ──
+            let payload: [String: Any] = ["post_id": postID.uuidString, "user_id": uid.uuidString]
             let body = try JSONSerialization.data(withJSONObject: payload)
-            let insertURL = mgr.restURL(table: "community_likes")
-            var insertReq = URLRequest(url: insertURL)
+            var insertReq = URLRequest(url: mgr.restURL(table: "community_likes"))
             insertReq.httpMethod = "POST"
             insertReq.allHTTPHeaderFields = mgr.userHeaders
             insertReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
             insertReq.httpBody = body
             let (_, insertResp) = try await URLSession.shared.data(for: insertReq)
             try checkHTTP(insertResp, data: Data())
-            return true
+            isNowLiked = true
         } else {
-            // Already liked → delete (unlike)
+            // ── Step 2b: delete like ──
             let deleteURL = mgr.restURL(table: "community_likes",
                                         query: "post_id=eq.\(postID.uuidString)&user_id=eq.\(uid.uuidString)")
             var deleteReq = URLRequest(url: deleteURL)
@@ -152,8 +166,30 @@ final class CommunityRepository {
             deleteReq.allHTTPHeaderFields = mgr.userHeaders
             let (_, deleteResp) = try await URLSession.shared.data(for: deleteReq)
             try checkHTTP(deleteResp, data: Data())
-            return false
+            isNowLiked = false
         }
+
+        // ── Step 3: count the real total likes for this post ──
+        let countURL = mgr.restURL(table: "community_likes",
+                                   query: "post_id=eq.\(postID.uuidString)&select=id")
+        var countReq = URLRequest(url: countURL)
+        countReq.allHTTPHeaderFields = mgr.userHeaders
+        let (countData, _) = try await URLSession.shared.data(for: countReq)
+        let allLikes = (try? JSONSerialization.jsonObject(with: countData) as? [[String: Any]]) ?? []
+        let newCount = allLikes.count
+
+        // ── Step 4: PATCH like_count on community_posts ──
+        let patchURL = mgr.restURL(table: "community_posts",
+                                   query: "id=eq.\(postID.uuidString)")
+        var patchReq = URLRequest(url: patchURL)
+        patchReq.httpMethod = "PATCH"
+        patchReq.allHTTPHeaderFields = mgr.userHeaders
+        patchReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        patchReq.httpBody = try JSONSerialization.data(withJSONObject: ["like_count": newCount])
+        let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
+        try checkHTTP(patchResp, data: Data())
+
+        return (isNowLiked, newCount)
     }
 
     // MARK: - Comments

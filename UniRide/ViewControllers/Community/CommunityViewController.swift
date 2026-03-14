@@ -602,26 +602,21 @@ class CommunityViewController: UIViewController,
         guard let cell = getCell(from: sender),
               let index = tableView.indexPath(for: cell)?.row else { return }
 
-        if feedPosts[index].hasLiked { return }
-
-        // Optimistic local update so the button feels instant
-        feedPosts[index].hasLiked = true
-        feedPosts[index].likeCount += 1
+        // Optimistic local toggle so the button feels instant
+        let currentlyLiked = feedPosts[index].hasLiked
+        feedPosts[index].hasLiked = !currentlyLiked
+        feedPosts[index].likeCount += (currentlyLiked ? -1 : 1)
         tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
 
         guard let postID = feedPosts[index].remoteID else { return }
         Task {
-            // 1. Write to Supabase
-            try? await CommunityRepository.shared.toggleLike(postID: postID)
-
-            // 2. Wait for DB trigger to update like_count
-            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s
-
-            // 3. Fetch the real (trigger-updated) count — reflects ALL users' likes globally
-            if let counts = try? await CommunityRepository.shared.fetchPostCounts(postID: postID) {
+            // Write to Supabase and get the final truth (isLiked, newTotalCount)
+            if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
                 await MainActor.run {
                     if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                        self.feedPosts[i].likeCount = counts.likeCount
+                        // Sync with backend truth
+                        self.feedPosts[i].hasLiked = result.isLiked
+                        self.feedPosts[i].likeCount = result.count
                         self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
                     }
                 }
@@ -1019,6 +1014,47 @@ class CommunityViewController: UIViewController,
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // Card tap does nothing — only the 💬 comment button opens the comment section.
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+
+    // MARK: - Swipe to delete own posts
+    func tableView(_ tableView: UITableView,
+                   trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath)
+    -> UISwipeActionsConfiguration? {
+
+        // Only the feed tab, not comment popup table, not events
+        guard tableView != commentTableView,
+              segmentedControl.selectedSegmentIndex == 1,
+              indexPath.row < feedPosts.count else { return nil }
+
+        let post = feedPosts[indexPath.row]
+        let currentUserID = SessionManager.shared.userID
+
+        // Show delete only for the user's own posts
+        guard let authorID = post.authorUserID, authorID == currentUserID else { return nil }
+
+        let deleteAction = UIContextualAction(style: .destructive, title: nil) { [weak self] _, _, completion in
+            guard let self, let postID = post.remoteID else { completion(false); return }
+
+            // 1. Remove locally immediately — snappy feel
+            self.feedPosts.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .automatic)
+
+            // 2. Delete from Supabase in background
+            Task {
+                do {
+                    try await CommunityRepository.shared.deletePost(postID: postID)
+                    completion(true)
+                } catch {
+                    // Restore by re-fetching if server delete failed
+                    self.fetchPostsFromSupabase()
+                    completion(false)
+                }
+            }
+        }
+
+        deleteAction.image           = UIImage(systemName: "trash.fill")
+        deleteAction.backgroundColor = .systemRed
+        return UISwipeActionsConfiguration(actions: [deleteAction])
     }
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
