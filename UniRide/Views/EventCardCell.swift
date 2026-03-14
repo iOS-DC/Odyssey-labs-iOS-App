@@ -65,12 +65,9 @@ final class EventCardCell: UITableViewCell {
         var config = UIButton.Configuration.filled()
         
         var attTitle = AttributedString("Attend")
-        attTitle.font = .systemFont(ofSize: 14, weight: .bold)
+        attTitle.font = .systemFont(ofSize: 16, weight: .bold)
         config.attributedTitle = attTitle
         
-        config.image = UIImage(systemName: "arrow.right")
-        config.imagePlacement = .trailing
-        config.imagePadding = 6
         config.cornerStyle = .capsule
         config.baseBackgroundColor = .systemBlue
         config.baseForegroundColor = .white

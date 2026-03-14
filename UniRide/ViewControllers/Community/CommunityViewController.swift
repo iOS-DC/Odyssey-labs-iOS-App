@@ -42,6 +42,8 @@ class CommunityViewController: UIViewController,
     /// Polls Supabase every 30 s so likes/comments from other users appear automatically.
     private var refreshTimer: Timer?
     private let refreshControl = UIRefreshControl()
+    /// Tracks posts currently being liked/unliked to prevent auto-refresh flickers
+    private var pendingLikeOperations: Set<UUID> = []
 
     // MARK: - Models
     struct Post {
@@ -634,7 +636,17 @@ class CommunityViewController: UIViewController,
         tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
 
         guard let postID = feedPosts[index].remoteID else { return }
+        
+        // Track as pending so auto-refresh doesn't overwrite our optimistic state
+        pendingLikeOperations.insert(postID)
+        
         Task {
+            defer {
+                Task { @MainActor in
+                    self.pendingLikeOperations.remove(postID)
+                }
+            }
+            
             // Write to Supabase and get the final truth (isLiked, newTotalCount)
             if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
                 await MainActor.run {
@@ -798,6 +810,13 @@ class CommunityViewController: UIViewController,
     }
 
     @objc private func handleRefresh() {
+        // Show spinner if not already refreshing (e.g. if button was tapped)
+        if !refreshControl.isRefreshing {
+            refreshControl.beginRefreshing()
+            // Pull the table down slightly to show the spinner
+            tableView.setContentOffset(CGPoint(x: 0, y: tableView.contentOffset.y - refreshControl.frame.size.height), animated: true)
+        }
+
         if segmentedControl.selectedSegmentIndex == 1 {
             fetchPostsFromSupabase()
         } else {
@@ -855,7 +874,19 @@ class CommunityViewController: UIViewController,
             // a refresh (timer/comment) never resets the user's own like.
             await MainActor.run {
                 for i in mapped.indices {
-                    if let existing = self.feedPosts.first(where: { $0.remoteID == mapped[i].remoteID }),
+                    guard let remoteID = mapped[i].remoteID else { continue }
+                    
+                    // If we are currently liking/unlinking this post, DON'T let the server 
+                    // overwrite our local optimistic state yet.
+                    if self.pendingLikeOperations.contains(remoteID) {
+                        if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }) {
+                            mapped[i].hasLiked = existing.hasLiked
+                            mapped[i].likeCount = existing.likeCount
+                        }
+                        continue
+                    }
+
+                    if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }),
                        existing.hasLiked {
                         mapped[i].hasLiked  = true
                         mapped[i].likeCount = max(mapped[i].likeCount, existing.likeCount)
