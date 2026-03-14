@@ -152,8 +152,9 @@ final class RideTableViewCell: UITableViewCell {
         timeLabel.text = formatter.string(from: ride.departureTime)
 
         // MARK: Vehicle + Seats
+        let vType = driver?.vehicles?.first?.type.rawValue ?? "car"
         configureVehicle(
-            vehicleType: "car",
+            vehicleType: vType,
             seats: ride.seatsAvailable
         )
 
@@ -198,7 +199,7 @@ final class RideTableViewCell: UITableViewCell {
             seatsLabel.text = "\(seats) seats"
 
         case "bike", "two wheeler", "two-wheeler":
-            vehicleIconImageView.image = UIImage(systemName: "bicycle")
+            vehicleIconImageView.image = UIImage(systemName: "motorcycle")
             seatsLabel.text = "\(seats) seat"
 
         default:

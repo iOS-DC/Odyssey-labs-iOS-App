@@ -64,7 +64,7 @@ enum ProfileCompletionCalculator {
         switch step {
         case .photo:   return user.photoURL != nil
         case .phone:   return !(user.phone ?? "").trimmingCharacters(in: .whitespaces).isEmpty
-        case .vehicle: return user.vehicle != nil
+        case .vehicle: return !(user.vehicles ?? []).isEmpty
         }
     }
 }

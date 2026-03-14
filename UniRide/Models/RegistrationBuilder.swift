@@ -70,7 +70,7 @@ final class RegistrationBuilder {
             year: year,
             employeeID: employeeID,
             photoURL: nil,
-            vehicle: vehicle,
+            vehicles: vehicle.map { [$0] },
             savedHomeLocation: homeLocation,
             savedHomeLocations: [home],
             lastKnownLocation: nil

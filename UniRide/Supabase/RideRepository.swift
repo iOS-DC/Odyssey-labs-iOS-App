@@ -81,7 +81,11 @@ final class RideRepository {
                     departureTime: parseDate(deptStr), seatsTotal: seatsTotal,
                     seatsAvailable: seatsAvail, farePerSeat: fare, status: status,
                     notes: row["notes"] as? String,
-                    createdAt: parseDate(row["created_at"] as? String))
+                    createdAt: parseDate(row["created_at"] as? String),
+                    isRecurring: row["is_recurring"] as? Bool ?? false,
+                    recurringDays: (row["recurring_days"] as? String)?.data(using: .utf8).flatMap { try? JSONDecoder().decode([Int].self, from: $0) } ?? [],
+                    vehicleModel: row["vehicle_model"] as? String,
+                    registrationPlate: row["registration_plate"] as? String)
     }
 
     private func requestFromRow(_ row: [String: Any]) -> RideRequest? {
@@ -175,6 +179,8 @@ final class RideRepository {
         if let v = ride.source.address      { p["source_address"]      = v }
         if let v = ride.destination.address { p["destination_address"] = v }
         if let v = ride.notes                { p["notes"]          = v }
+        // vehicle_model and registration_plate are not columns in the rides table;
+        // vehicle identity is stored in user_vehicles. Omit them from the insert.
         if !ride.waypoints.isEmpty, let v = encodeJSON(ride.waypoints) { p["waypoints"] = v }
         if let rt = ride.selectedRoute, let v = encodeJSON(rt) { p["selected_route"] = v }
         req.httpBody = try JSONSerialization.data(withJSONObject: p)

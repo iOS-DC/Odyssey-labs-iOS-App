@@ -310,21 +310,72 @@ class EditProfileViewController: UIViewController,
 
     private func refreshVehicleCard() {
         vehicleDetailsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-
-        if let v = UserDataModel.shared.getCurrentUser()?.vehicle {
-            let typeName = v.type == .car ? "Car" : "Two-Wheeler"
-            vehicleDetailsStack.addArrangedSubview(vehicleRow(icon: "car.side",       label: "Type",  value: typeName))
-            vehicleDetailsStack.addArrangedSubview(vehicleRow(icon: "checkmark.seal", label: "Plate", value: v.registrationNumber))
-            vehicleDetailsStack.addArrangedSubview(vehicleRow(icon: "star.fill",      label: "Model", value: v.model))
-            vehicleDetailsStack.addArrangedSubview(vehicleRow(icon: "person.2.fill",  label: "Seats", value: "\(v.seats) seats"))
-            vehicleCTABtn.setTitle("Change Vehicle", for: .normal)
+ 
+        if let vehicles = UserDataModel.shared.getCurrentUser()?.vehicles, !vehicles.isEmpty {
+            for v in vehicles {
+                let name = v.alias ?? v.model
+                let vehicleRow = buildVehicleRowForList(vehicle: v)
+                vehicleDetailsStack.addArrangedSubview(vehicleRow)
+                
+                // Add a separator between vehicles if not the last one
+                if v != vehicles.last {
+                    vehicleDetailsStack.addArrangedSubview(makeSeparator())
+                }
+            }
+            vehicleCTABtn.setTitle("Add Another Vehicle", for: .normal)
         } else {
             let empty = UILabel()
-            empty.text      = "No vehicle added yet."
+            empty.text      = "No vehicles added yet."
             empty.applyTextStyle(AppDesign.Typography.subheadline, color: .tertiaryLabel)
             vehicleDetailsStack.addArrangedSubview(empty)
             vehicleCTABtn.setTitle("Add Vehicle", for: .normal)
         }
+    }
+ 
+    private func buildVehicleRowForList(vehicle: Vehicle) -> UIView {
+        let nameLbl = UILabel()
+        nameLbl.text = vehicle.alias ?? vehicle.model
+        nameLbl.applyTextStyle(AppDesign.Typography.bodyStrong)
+        
+        let subLbl = UILabel()
+        subLbl.text = "\(vehicle.model) • \(vehicle.registrationNumber)"
+        subLbl.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        
+        let textStack = UIStackView(arrangedSubviews: [nameLbl, subLbl])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+        
+        let icon = UIImageView(image: UIImage(systemName: vehicle.type == .car ? "car.fill" : "bicycle"))
+        icon.tintColor = AppDesign.Color.primary
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 24).isActive = true
+        
+        let editIcon = UIImageView(image: UIImage(systemName: "pencil"))
+        editIcon.tintColor = .tertiaryLabel
+        editIcon.contentMode = .scaleAspectFit
+        
+        let row = UIStackView(arrangedSubviews: [icon, textStack, editIcon])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+        
+        let tap = UIAction { [weak self] _ in
+            let vc = VehicleRegistrationViewController()
+            vc.vehicleToEdit = vehicle
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
+        let btn = UIButton(type: .system, primaryAction: tap)
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        row.addSubview(btn)
+        NSLayoutConstraint.activate([
+            btn.topAnchor.constraint(equalTo: row.topAnchor),
+            btn.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+            btn.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+            btn.bottomAnchor.constraint(equalTo: row.bottomAnchor),
+        ])
+        
+        return row
     }
 
     private func vehicleRow(icon: String, label: String, value: String) -> UIView {
