@@ -50,13 +50,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func showAuthFlow(window: UIWindow) {
-        if !(window.rootViewController is EmailViewController) {
-            let authSB = UIStoryboard(name: "RoleSelection", bundle: nil)
-            if let authRoot = authSB.instantiateInitialViewController() {
-                window.rootViewController = authRoot
-                window.makeKeyAndVisible()
-            }
+        let hasSeenOnboarding = UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
+        let mainSB = UIStoryboard(name: "Main", bundle: nil)
+        
+        if !hasSeenOnboarding {
+            // First time ever: Show Onboarding
+            let onboardingVC = mainSB.instantiateViewController(withIdentifier: "OnboardingViewController")
+            window.rootViewController = onboardingVC
+        } else {
+            // Returning logged-out user: Show Email Login
+            let emailVC = mainSB.instantiateViewController(withIdentifier: "EmailViewController")
+            let nav = UINavigationController(rootViewController: emailVC)
+            window.rootViewController = nav
         }
+        window.makeKeyAndVisible()
     }
 
     // MARK: - Unused lifecycle stubs
