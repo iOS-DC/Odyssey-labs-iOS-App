@@ -256,6 +256,23 @@ final class CommunityRepository {
 
     // MARK: - Helpers
 
+    /// Fetches the live like_count and comment_count for a single post.
+    /// Use this after a toggle-like or insert-comment to get the trigger-updated values.
+    func fetchPostCounts(postID: UUID) async throws -> (likeCount: Int, commentCount: Int) {
+        try await SessionManager.shared.validateSession()
+        let url = mgr.restURL(table: "community_posts",
+                              query: "id=eq.\(postID.uuidString)&select=like_count,comment_count&limit=1")
+        var req = URLRequest(url: url)
+        req.allHTTPHeaderFields = mgr.userHeaders
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkHTTP(response, data: data)
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        let row = rows.first ?? [:]
+        let likes    = row["like_count"]    as? Int ?? 0
+        let comments = row["comment_count"] as? Int ?? 0
+        return (likes, comments)
+    }
+
     private func postFromRemote(_ r: RemotePost) -> CommunityPost? {
         guard let id   = UUID(uuidString: r.id),
               let auth = UUID(uuidString: r.authorUserId) else { return nil }

@@ -567,17 +567,28 @@ class CommunityViewController: UIViewController,
 
         commentTextField.text = ""
 
-        if let index = selectedPostIndex, let postID = feedPosts[index].remoteID {
-            feedPosts[index].remoteCommentCount += 1
-            tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+        guard let index = selectedPostIndex, let postID = feedPosts[index].remoteID else { return }
 
-            Task {
-                try? await CommunityRepository.shared.insertComment(postID: postID, text: text)
-                // Reload live comments so the new one (with real name) shows immediately
-                await loadLiveComments(for: postID)
-                // Also refresh feed counts for all users
-                fetchPostsFromSupabase()
+        Task {
+            // 1. Write to Supabase
+            try? await CommunityRepository.shared.insertComment(postID: postID, text: text)
+
+            // 2. Wait for DB trigger to update comment_count
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s
+
+            // 3. Fetch the real (trigger-updated) counts for this post
+            if let counts = try? await CommunityRepository.shared.fetchPostCounts(postID: postID) {
+                await MainActor.run {
+                    // Update the cell count from DB — reflects ALL users' comments globally
+                    if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                        self.feedPosts[i].remoteCommentCount = counts.commentCount
+                        self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+                    }
+                }
             }
+
+            // 4. Reload live comments in the popup with real names
+            await loadLiveComments(for: postID)
         }
     }
 
@@ -593,16 +604,27 @@ class CommunityViewController: UIViewController,
 
         if feedPosts[index].hasLiked { return }
 
+        // Optimistic local update so the button feels instant
         feedPosts[index].hasLiked = true
         feedPosts[index].likeCount += 1
         tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
 
-        // Persist like to Supabase (requires a remote post ID)
-        if let postID = feedPosts[index].remoteID {
-            Task {
-                try? await CommunityRepository.shared.toggleLike(postID: postID)
-                // Re-fetch so the updated like count appears for all users
-                fetchPostsFromSupabase()
+        guard let postID = feedPosts[index].remoteID else { return }
+        Task {
+            // 1. Write to Supabase
+            try? await CommunityRepository.shared.toggleLike(postID: postID)
+
+            // 2. Wait for DB trigger to update like_count
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5s
+
+            // 3. Fetch the real (trigger-updated) count — reflects ALL users' likes globally
+            if let counts = try? await CommunityRepository.shared.fetchPostCounts(postID: postID) {
+                await MainActor.run {
+                    if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                        self.feedPosts[i].likeCount = counts.likeCount
+                        self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+                    }
+                }
             }
         }
     }
