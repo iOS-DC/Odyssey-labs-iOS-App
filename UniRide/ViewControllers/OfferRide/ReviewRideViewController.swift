@@ -10,6 +10,10 @@ struct RideSummary {
     let seats: Int
     let farePerSeat: Double
 
+    // Vehicle identity (added in Offer Ride Step 2)
+    var registrationPlate: String = ""
+    var vehicleModel: String = ""
+
     // Recurring support
     var isRecurring: Bool = false
     var recurringDays: [Int] = []  // ISO: 1=Mon … 7=Sun
@@ -102,7 +106,11 @@ class ReviewRideViewController: UIViewController {
         dateLabel.text = DateFormatterHelper.shared.formattedDate(summary.date)
         timeLabel.text = DateFormatterHelper.shared.formattedTime(summary.time)
 
-        vehicleLabel.text = summary.vehicleType
+        // Show: "Car • Maruti Swift • PB-08-AB-1234" (or just "Car" if no extras saved)
+        var vehicleText = summary.vehicleType
+        if !summary.vehicleModel.isEmpty { vehicleText += " • " + summary.vehicleModel }
+        if !summary.registrationPlate.isEmpty { vehicleText += " • " + summary.registrationPlate }
+        vehicleLabel.text = vehicleText
         seatsLabel.text = "\(summary.seats) seat\(summary.seats == 1 ? "" : "s") available"
 
         fareLabel.text = "₹\(Int(summary.farePerSeat)) per person"
