@@ -121,7 +121,7 @@ final class ProfileRepository {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "home_locations",
-                              query: "user_id=eq.\(userID.uuidString)&order=is_primary.desc,created_at.asc")
+                              query: "user_id=eq.\(userID.uuidString)&order=is_primary.desc,created_at.desc")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
