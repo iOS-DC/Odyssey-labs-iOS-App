@@ -49,37 +49,171 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     private var isLoadingVisible = false
 
-    // Sets up everything when the screen first loads
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Step 1"
         setDefaultDateAndTime()
+        view.backgroundColor = .systemGroupedBackground
 
-        contentView.applyCardStyle()
-        fromTextField.applyRoundedField()
-        fromTextField.addLeftIcon("mappin")
-        toTextField.applyRoundedField()
-        toTextField.addLeftIcon("mappin")
-        suggestionsTable.applySmallCard()
-        let nextTitle = nextButton.currentTitle ?? "Next"
-        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
-        titleLabel.applyTextStyle(AppDesign.Typography.h2)
-        fromLabelTitle.applyTextStyle(AppDesign.Typography.bodyStrong)
-        toLabelTitle.applyTextStyle(AppDesign.Typography.bodyStrong)
-        chooseRouteLabel.applyTextStyle(AppDesign.Typography.title)
-        loadingLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
-        emptyStateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
         setupAutocomplete()
         setupPickers()
-        routePillsContainer.applySmallCard()
+        rebuildLayout()
+        
         setInitialRouteUIState()
         prefillLocationsIfPossible()
         updateNextButtonState()
 
-        // Tap anywhere on the map to dismiss the keyboard
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tapGesture.cancelsTouchesInView = false
         mapView.addGestureRecognizer(tapGesture)
     }
+
+    private func rebuildLayout() {
+        // Hide original XIB container
+        contentView?.isHidden = true
+        
+        let scroll = UIScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.alwaysBounceVertical = true
+        view.addSubview(scroll)
+        
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = AppDesign.Spacing.lg
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        scroll.addSubview(stack)
+        
+        NSLayoutConstraint.activate([
+            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.xl),
+            stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
+            stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
+            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl),
+            stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.md * 2)
+        ])
+        
+        // Header
+        let headerLabel = UILabel()
+        headerLabel.text = "Enter your pickup, drop-off, date and time to find matching commuters."
+        headerLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
+        stack.addArrangedSubview(headerLabel)
+        
+        // Cards
+        fromTextField.borderStyle = .none
+        fromTextField.applyRoundedField()
+        fromTextField.layer.cornerRadius = 16 
+        fromTextField.clipsToBounds = true
+        fromTextField.addLeftIcon("mappin")
+        fromTextField.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        stack.addArrangedSubview(makeStepCard(title: "From", content: fromTextField))
+        
+        toTextField.borderStyle = .none
+        toTextField.applyRoundedField()
+        toTextField.layer.cornerRadius = 16
+        toTextField.clipsToBounds = true
+        toTextField.addLeftIcon("mappin")
+        toTextField.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        stack.addArrangedSubview(makeStepCard(title: "To", content: toTextField))
+        
+        // 4. Date and Time
+        let dateView = makeLabeledPicker(picker: datePicker, icon: "calendar")
+        let timeView = makeLabeledPicker(picker: timePicker, icon: "clock")
+        
+        let whenStack = UIStackView(arrangedSubviews: [dateView, timeView])
+        whenStack.axis = .horizontal
+        whenStack.spacing = 10
+        whenStack.distribution = .fillEqually
+        stack.addArrangedSubview(makeStepCard(title: "When", content: whenStack))
+        
+        // 5. Choose Route Section
+        chooseRouteLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+        stack.addArrangedSubview(chooseRouteLabel)
+        
+        mapView.layer.cornerRadius = AppDesign.Radius.md
+        mapView.clipsToBounds = true
+        mapView.heightAnchor.constraint(equalToConstant: 240).isActive = true
+        stack.addArrangedSubview(mapView)
+        
+        routePillsContainer.applySmallCard()
+        stack.addArrangedSubview(routePillsContainer)
+        
+        // 8. Next
+        let nextTitle = nextButton.currentTitle ?? "Next"
+        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
+        stack.addArrangedSubview(nextButton)
+        
+        // Ensure overlay elements (XIB outlets) are on top of our new scroll view
+        view.bringSubviewToFront(suggestionsTable)
+        view.bringSubviewToFront(loadingContainer)
+        view.bringSubviewToFront(emptyStateLabel)
+        
+        // Loading & Empty States
+        loadingLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+        emptyStateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
+    }
+
+    private func makeLabeledPicker(picker: UIDatePicker, icon: String) -> UIView {
+        let container = UIView()
+        container.backgroundColor = AppDesign.Color.fieldBackground
+        container.layer.cornerRadius = 16 // Consistent with from/to fields
+        container.clipsToBounds = true
+        
+        let iconView = UIImageView(image: UIImage(systemName: icon))
+        iconView.tintColor = .systemGray
+        iconView.contentMode = .scaleAspectFit
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(iconView)
+        
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        picker.transform = .identity
+        container.addSubview(picker)
+        
+        NSLayoutConstraint.activate([
+            container.heightAnchor.constraint(equalToConstant: 54),
+            
+            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
+            iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 20),
+            iconView.heightAnchor.constraint(equalToConstant: 20),
+            
+            picker.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 4),
+            picker.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -4),
+            picker.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        
+        return container
+    }
+
+    private func makeStepCard(title: String, content: UIView) -> UIView {
+        let card = UIView()
+        card.backgroundColor = .systemBackground
+        card.applyCardStyle(corner: AppDesign.Radius.md,
+                            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                            shadowRadius: AppDesign.Shadow.smallCardRadius)
+
+        let titleLbl = UILabel()
+        titleLbl.text = title // Match Step 2 (non-caps)
+        titleLbl.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+
+        let innerStack = UIStackView(arrangedSubviews: [titleLbl, content])
+        innerStack.axis = .vertical
+        innerStack.spacing = 8
+        innerStack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(innerStack)
+        
+        NSLayoutConstraint.activate([
+            innerStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
+            innerStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            innerStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            innerStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
+        ])
+        return card
+    }
+
 
     // Sets the date to today and time to 10 minutes from now (minimum lead time)
     private func setDefaultDateAndTime() {
