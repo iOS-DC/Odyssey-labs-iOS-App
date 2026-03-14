@@ -21,6 +21,8 @@ final class PastRideCell: UITableViewCell {
     private let priceLabel     = UILabel()
     private let totalLabel     = UILabel()
     private var rateBtn: UIButton?
+    // Kept so we can restore it in prepareForReuse after addRateButtonIfNeeded deactivates it
+    private var priceLabelBottomConstraint: NSLayoutConstraint?
 
     // MARK: - Data
     var onRateTapped: ((RideDataModel.MyTrip) -> Void)?
@@ -41,6 +43,8 @@ final class PastRideCell: UITableViewCell {
         rateBtn = nil
         onRateTapped = nil
         currentTrip = nil
+        // Restore the card's bottom anchor so the cell sizes correctly on reuse
+        priceLabelBottomConstraint?.isActive = true
     }
 
     // MARK: - Build UI
@@ -142,6 +146,9 @@ final class PastRideCell: UITableViewCell {
     private func addConstraints() {
         let P: CGFloat = 16  // padding
 
+        // Card bottom anchored to priceLabel — stored so prepareForReuse can restore it
+        let priceBottom = priceLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -P)
+        priceLabelBottomConstraint = priceBottom
         NSLayoutConstraint.activate([
             // Card insets
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
@@ -215,8 +222,7 @@ final class PastRideCell: UITableViewCell {
             totalLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -P),
             totalLabel.leadingAnchor.constraint(greaterThanOrEqualTo: priceLabel.trailingAnchor, constant: 8),
 
-            // Card bottom anchored to priceLabel (rate button added below this dynamically)
-            priceLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -P),
+            priceBottom,
         ])
     }
 
@@ -369,10 +375,7 @@ final class PastRideCell: UITableViewCell {
         guard !pending.isEmpty else { return }
 
         // Detach priceLabel from cardView.bottom so button can push card down
-        cardView.constraints
-            .filter { ($0.firstItem as? UIView == priceLabel || $0.secondItem as? UIView == priceLabel)
-                   && ($0.firstAttribute == .bottom || $0.secondAttribute == .bottom) }
-            .forEach { $0.isActive = false }
+        priceLabelBottomConstraint?.isActive = false
 
         let btn = UIButton(type: .system)
         btn.applyTintActionStyle(title: "Rate this ride", imageSystemName: "star.fill", color: AppDesign.Color.primary)
