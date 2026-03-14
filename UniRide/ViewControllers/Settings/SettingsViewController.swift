@@ -218,22 +218,50 @@ final class SettingsViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
             guard let self else { return }
+            
+            // Show simple loading alert
+            let loading = UIAlertController(title: "Deleting Account...", message: "Please wait", preferredStyle: .alert)
+            self.present(loading, animated: true)
+            
             Task { @MainActor in
-                // Try server-side account deletion; fall back to local-only sign-out
-                try? await AuthService.shared.signOut()
-                UserDataModel.shared.logout()
-                AppHaptics.impact(.heavy)
-                let sb      = UIStoryboard(name: "Main", bundle: nil)
-                let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
-                let nav     = UINavigationController(rootViewController: emailVC)
-                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let window = scene.windows.first {
-                    window.rootViewController = nav
-                    window.makeKeyAndVisible()
+                do {
+                    // 1. Try server-side account deletion via RPC
+                    try await AuthService.shared.deleteAccount()
+                    
+                    // 2. Perform local logout cleanup
+                    UserDataModel.shared.logout()
+                    AppHaptics.impact(.heavy)
+                    
+                    // Dismiss loading and exit
+                    loading.dismiss(animated: true) {
+                        self.navigateToLogin()
+                    }
+                } catch {
+                    // Fallback: If server deletion fails, alert the user but don't just log out
+                    loading.dismiss(animated: true) {
+                        let errorAlert = UIAlertController(
+                            title: "Deletion Failed",
+                            message: "We couldn't delete your account on the server: \(error.localizedDescription). Please try again or contact support.",
+                            preferredStyle: .alert
+                        )
+                        errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
+                        self.present(errorAlert, animated: true)
+                    }
                 }
             }
         })
         present(alert, animated: true)
+    }
+
+    private func navigateToLogin() {
+        let sb      = UIStoryboard(name: "Main", bundle: nil)
+        let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
+        let nav     = UINavigationController(rootViewController: emailVC)
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first {
+            window.rootViewController = nav
+            window.makeKeyAndVisible()
+        }
     }
 
     private func openURL(_ string: String) {
