@@ -612,8 +612,8 @@ class OfferRideViewController: UIViewController,
         showLoading()
         MapKitManager.shared.getRoutes(from: f, to: t) { routes in
             DispatchQueue.main.async {
-                self.routes = routes
-                self.selectedRoute = routes.first
+                self.routes = Array(routes.prefix(2))
+                self.selectedRoute = self.routes.first
                 guard let selected = self.selectedRoute else {
                     self.hideLoading()
                     self.emptyStateLabel.text = "No routes available for this trip"

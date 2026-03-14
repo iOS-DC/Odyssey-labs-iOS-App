@@ -73,6 +73,30 @@ final class AuthService {
         session.clear()
     }
 
+    // MARK: - Delete Account
+    
+    /// Permanently deletes the user data from Supabase.
+    /// This calls an RPC 'delete_user_data' which must handle the deletion of auth.users
+    /// and all related public tables due to RLS/Foreign Key constraints.
+    func deleteAccount() async throws {
+        guard let token = session.accessToken else { 
+            session.clear()
+            return 
+        }
+        
+        // 1. Call the RPC to delete data from Supabase
+        let url = mgr.restURL(table: "rpc/delete_user_data")
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.allHTTPHeaderFields = mgr.authHeaders(token: token)
+        
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkHTTP(response, data: data)
+        
+        // 2. Perform local cleanup
+        session.clear()
+    }
+
     // MARK: - Get current user profile from Supabase Auth
 
     func getCurrentUser() async throws -> [String: Any] {
