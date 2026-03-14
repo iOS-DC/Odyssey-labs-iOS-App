@@ -10,6 +10,8 @@ final class PostDetailViewController: UIViewController {
     var post: CommunityPost!
 
     private var comments: [CommunityComment] = []
+    /// Real names fetched from Supabase `profiles` table — always preferred over local cache.
+    private var authorNames: [UUID: String] = [:]
 
     // MARK: - UI
     private let tableView         = UITableView(frame: .zero, style: .plain)
@@ -143,10 +145,51 @@ final class PostDetailViewController: UIViewController {
             do {
                 comments = try await CommunityRepository.shared.fetchComments(postID: post.id)
                 tableView.reloadData()
+                // Fetch real names from Supabase for all comment authors
+                await fetchRealAuthorNames()
             } catch {
                 // Silently fail — offline users still see post header
             }
         }
+    }
+
+    /// Fetches real `full_name` values from Supabase `profiles` for every unique
+    /// author UUID in the current comments list. Populates `authorNames` and
+    /// reloads the table so mock/stale names are replaced with real ones.
+    private func fetchRealAuthorNames() async {
+        // Collect unique author IDs (include post author for the header cell too)
+        var ids = Set(comments.map { $0.authorUserID })
+        ids.insert(post.authorUserID)
+
+        // Also include current user so their name is always correct
+        if let currentID = UserDataModel.shared.getCurrentUser()?.id {
+            ids.insert(currentID)
+        }
+
+        await withTaskGroup(of: (UUID, String)?.self) { group in
+            for id in ids {
+                group.addTask {
+                    guard let row = try? await ProfileRepository.shared.fetchProfile(userID: id),
+                          let name = row["full_name"] as? String,
+                          !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    else { return nil }
+                    return (id, name)
+                }
+            }
+            for await result in group {
+                if let (id, name) = result {
+                    authorNames[id] = name
+                }
+            }
+        }
+
+        // Also always put current user's name (profile is always available locally)
+        if let me = UserDataModel.shared.getCurrentUser(),
+           !me.fullName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            authorNames[me.id] = me.fullName
+        }
+
+        tableView.reloadData()
     }
 
     // MARK: - Send comment
@@ -170,7 +213,7 @@ final class PostDetailViewController: UIViewController {
             do {
                 try await CommunityRepository.shared.insertComment(postID: post.id, text: text)
                 self.comments = try await CommunityRepository.shared.fetchComments(postID: post.id)
-                self.tableView.reloadData()
+                await self.fetchRealAuthorNames()
                 let lastRow = IndexPath(row: self.comments.count - 1, section: 1)
                 if !self.comments.isEmpty {
                     self.tableView.scrollToRow(at: lastRow, at: .bottom, animated: true)
@@ -215,10 +258,15 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
 
         var config = UIListContentConfiguration.subtitleCell()
 
-        // Author
-        let author = UserDataModel.shared.getUser(by: post.authorUserID)
-        let name = author?.fullName.isEmpty == false ? author!.fullName : "UniRide User"
-        let isVerified = author?.isEmailVerified == true
+        // Author — prefer real Supabase name, fall back to local cache
+        let name: String
+        if let realName = authorNames[post.authorUserID], !realName.isEmpty {
+            name = realName
+        } else {
+            let author = UserDataModel.shared.getUser(by: post.authorUserID)
+            name = author?.fullName.isEmpty == false ? author!.fullName : "UniRide User"
+        }
+        let isVerified = UserDataModel.shared.getUser(by: post.authorUserID)?.isEmailVerified == true
 
         config.text          = name
         config.textProperties.font = .systemFont(ofSize: 13, weight: .semibold)
@@ -275,8 +323,19 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
         cell.selectionStyle = .none
         let comment = comments[row]
 
-        let author = UserDataModel.shared.getUser(by: comment.authorUserID)
-        let name = author?.fullName.isEmpty == false ? author!.fullName : "User"
+        // 1. Real name freshly fetched from Supabase (highest priority)
+        // 2. Current user's local profile (always accurate for own comments)
+        // 3. Local cache as last resort
+        let name: String
+        if let realName = authorNames[comment.authorUserID], !realName.isEmpty {
+            name = realName
+        } else if let me = UserDataModel.shared.getCurrentUser(), me.id == comment.authorUserID,
+                  !me.fullName.isEmpty {
+            name = me.fullName
+        } else {
+            let cached = UserDataModel.shared.getUser(by: comment.authorUserID)
+            name = cached?.fullName.isEmpty == false ? cached!.fullName : "UniRide User"
+        }
 
         var config = UIListContentConfiguration.subtitleCell()
         config.text = name

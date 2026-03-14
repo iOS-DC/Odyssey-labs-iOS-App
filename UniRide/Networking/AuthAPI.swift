@@ -290,7 +290,7 @@ final class AuthAPI {
         let _: EmptyResponse = try await client.send(profileEndpoint, as: EmptyResponse.self)
 
         try await replaceHomeLocations(for: userID, from: profile)
-        try await upsertVehicle(for: userID, vehicle: profile.vehicle)
+        try await upsertVehicle(for: userID, vehicle: profile.vehicles?.first)
     }
 
     func currentAuthUserID() -> UUID? {

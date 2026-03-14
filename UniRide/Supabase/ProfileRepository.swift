@@ -66,6 +66,7 @@ final class ProfileRepository {
         req.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
         let payload: [String: Any] = [
             "user_id":             userID.uuidString,
+            "alias":               vehicle.alias ?? "",
             "type":                vehicle.type.rawValue,
             "model":               vehicle.model,
             "registration_number": vehicle.registrationNumber,
@@ -76,23 +77,26 @@ final class ProfileRepository {
         try checkHTTP(response, data: data)
     }
 
-    func fetchVehicle(userID: UUID) async throws -> Vehicle? {
+    func fetchVehicles(userID: UUID) async throws -> [Vehicle] {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
-        let url = mgr.restURL(table: "user_vehicles", query: "user_id=eq.\(userID.uuidString)&limit=1")
+        let url = mgr.restURL(table: "user_vehicles", query: "user_id=eq.\(userID.uuidString)")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
-        guard let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-              let row = rows.first,
-              let typeRaw = row["type"] as? String,
-              let vType   = VehicleType(rawValue: typeRaw),
-              let model   = row["model"] as? String,
-              let regNum  = row["registration_number"] as? String,
-              let seats   = row["seats"] as? Int
-        else { return nil }
-        return Vehicle(type: vType, model: model, registrationNumber: regNum, seats: seats)
+        guard let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
+        
+        return rows.compactMap { row in
+            guard let typeRaw = row["type"] as? String,
+                  let vType   = VehicleType(rawValue: typeRaw),
+                  let model   = row["model"] as? String,
+                  let regNum  = row["registration_number"] as? String,
+                  let seats   = row["seats"] as? Int
+            else { return nil }
+            let alias = row["alias"] as? String
+            return Vehicle(alias: alias, type: vType, model: model, registrationNumber: regNum, seats: seats)
+        }
     }
 
     // MARK: - Home locations (home_locations table)
@@ -121,7 +125,7 @@ final class ProfileRepository {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "home_locations",
-                              query: "user_id=eq.\(userID.uuidString)&order=is_primary.desc,created_at.asc")
+                              query: "user_id=eq.\(userID.uuidString)&order=is_primary.desc,created_at.desc")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)

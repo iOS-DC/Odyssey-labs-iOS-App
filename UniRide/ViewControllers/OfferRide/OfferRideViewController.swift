@@ -1,23 +1,18 @@
-////
-////  OfferRideViewController.swift
-////  UniRide
-////
-////  Created by Krish Bahukhandi on 21/11/25.
-////
-
-
-
 import UIKit
 import MapKit
 
-class OfferRideViewController: UIViewController, UITableViewDelegate, UITableViewDataSource,UITextFieldDelegate,MKMapViewDelegate {
-    private let minimumLeadTimeSeconds: TimeInterval = 10 * 60
+// MARK: - OfferRideViewController (Step 1)
+// Route + datetime + vehicle selection + seats + fare in a single screen.
+// On "Next" jumps directly to ReviewRideViewController (old Step 3).
+class OfferRideViewController: UIViewController,
+                                UITableViewDelegate, UITableViewDataSource,
+                                UITextFieldDelegate, MKMapViewDelegate {
 
+    // MARK: - Storyboard Outlets (route / map section — unchanged)
     @IBOutlet weak var fromTextField: UITextField!
     @IBOutlet weak var toTextField: UITextField!
     @IBOutlet weak var suggestionsTable: UITableView!
     @IBOutlet weak var mapView: MKMapView!
-
     @IBOutlet weak var routePillsStack: UIStackView!
     @IBOutlet weak var routePillsContainer: UIView!
     @IBOutlet weak var chooseRouteLabel: UILabel!
@@ -34,78 +29,478 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     @IBOutlet weak var toFieldContainer: UIView!
     @IBOutlet weak var datePicker: UIDatePicker!
     @IBOutlet weak var timePicker: UIDatePicker!
+    @IBOutlet weak var contentView: UIView!
 
+    // MARK: - Route state
+    private let minimumLeadTimeSeconds: TimeInterval = 10 * 60
     private var fromCoord: CLLocationCoordinate2D?
     private var toCoord: CLLocationCoordinate2D?
     private var activeField: UITextField?
-
     private var suggestions: [MKLocalSearchCompletion] = []
     private var routes: [MKRoute] = []
-    // Persistent Routes Sheet
-
     private var selectedRoute: MKRoute?
-
-    @IBOutlet weak var contentView: UIView!
-
     private var isLoadingVisible = false
 
-    // Sets up everything when the screen first loads
+    // MARK: - Vehicle / seat / fare state
+    private var vehicles: [Vehicle] = []
+    private var selectedVehicle: Vehicle? {
+        didSet { refreshVehicleCards(); updateSeatsMax(); calculateSuggestedFare(); updateNextButtonState() }
+    }
+    private var seatCount: Int = 0 {
+        didSet { updateSeatsUI(); calculateSuggestedFare(); updateNextButtonState() }
+    }
+
+    // MARK: - Programmatic vehicle / seats / fare views
+    private let vehicleCardsStack  = UIStackView()   // rows inside Vehicle card
+    private let seatCountLbl       = UILabel()
+    private let minusSeat          = UIButton(type: .system)
+    private let plusSeat           = UIButton(type: .system)
+    private let fareField          = UITextField()
+    private let suggestedLbl       = UILabel()
+
+    // Keep a ref to the seats card so we can show/hide it
+    private var seatsCard: UIView?
+    private var fareCard: UIView?
+
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Step 1"
         setDefaultDateAndTime()
-
-        contentView.applyCardStyle()
-        fromTextField.applyRoundedField()
-        fromTextField.addLeftIcon("mappin")
-        toTextField.applyRoundedField()
-        toTextField.addLeftIcon("mappin")
-        suggestionsTable.applySmallCard()
-        let nextTitle = nextButton.currentTitle ?? "Next"
-        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
-        titleLabel.applyTextStyle(AppDesign.Typography.h2)
-        fromLabelTitle.applyTextStyle(AppDesign.Typography.bodyStrong)
-        toLabelTitle.applyTextStyle(AppDesign.Typography.bodyStrong)
-        chooseRouteLabel.applyTextStyle(AppDesign.Typography.title)
-        loadingLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
-        emptyStateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
+        view.backgroundColor = .systemGroupedBackground
         setupAutocomplete()
         setupPickers()
-        routePillsContainer.applySmallCard()
+        rebuildLayout()
         setInitialRouteUIState()
         prefillLocationsIfPossible()
         updateNextButtonState()
 
-        // Tap anywhere on the map to dismiss the keyboard
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        tapGesture.cancelsTouchesInView = false
-        mapView.addGestureRecognizer(tapGesture)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        mapView.addGestureRecognizer(tap)
     }
 
-    // Sets the date to today and time to 10 minutes from now (minimum lead time)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Refresh vehicles every time user comes back (e.g. after adding a new one)
+        reloadVehicles()
+    }
+
+    // MARK: - Layout
+    private func rebuildLayout() {
+        contentView?.isHidden = true
+
+        let scroll = UIScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.alwaysBounceVertical = true
+        view.addSubview(scroll)
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = AppDesign.Spacing.lg
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        scroll.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.xl),
+            stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
+            stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
+            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl),
+            stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.md * 2)
+        ])
+
+        // Header
+        let headerLabel = UILabel()
+        headerLabel.text = "Enter your pickup, drop-off, date and time to find matching commuters."
+        headerLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
+        stack.addArrangedSubview(headerLabel)
+
+        // From / To fields
+        fromTextField.borderStyle = .none
+        fromTextField.applyRoundedField()
+        fromTextField.layer.cornerRadius = 16
+        fromTextField.clipsToBounds = true
+        fromTextField.addLeftIcon("mappin")
+        fromTextField.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        stack.addArrangedSubview(makeStepCard(title: "From", content: fromTextField))
+
+        toTextField.borderStyle = .none
+        toTextField.applyRoundedField()
+        toTextField.layer.cornerRadius = 16
+        toTextField.clipsToBounds = true
+        toTextField.addLeftIcon("mappin")
+        toTextField.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        stack.addArrangedSubview(makeStepCard(title: "To", content: toTextField))
+
+        // Date / Time pickers
+        let dateView = makeLabeledPicker(picker: datePicker, icon: "calendar")
+        let timeView = makeLabeledPicker(picker: timePicker, icon: "clock")
+        let whenStack = UIStackView(arrangedSubviews: [dateView, timeView])
+        whenStack.axis = .horizontal
+        whenStack.spacing = 10
+        whenStack.distribution = .fillEqually
+        stack.addArrangedSubview(makeStepCard(title: "When", content: whenStack))
+
+        // Route section
+        chooseRouteLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+        stack.addArrangedSubview(chooseRouteLabel)
+
+        mapView.layer.cornerRadius = AppDesign.Radius.md
+        mapView.clipsToBounds = true
+        mapView.heightAnchor.constraint(equalToConstant: 240).isActive = true
+        stack.addArrangedSubview(mapView)
+
+        routePillsContainer.applySmallCard()
+        stack.addArrangedSubview(routePillsContainer)
+
+        // ── NEW: Vehicle selection ──────────────────────────────────────────
+        vehicleCardsStack.axis = .vertical
+        vehicleCardsStack.spacing = 8
+        let vehicleCard = makeStepCard(title: "Select Vehicle", content: vehicleCardsStack)
+        stack.addArrangedSubview(vehicleCard)
+        reloadVehicles()   // populate vehicleCardsStack
+
+        // ── NEW: Seats ──────────────────────────────────────────────────────
+        let sc = makeSeatsCard()
+        seatsCard = sc
+        sc.isHidden = true
+        stack.addArrangedSubview(sc)
+
+        // ── NEW: Fare ───────────────────────────────────────────────────────
+        let fc = makeStepCard(title: "Fare Per Seat (₹)", content: makeFareContent())
+        fareCard = fc
+        fc.isHidden = true
+        stack.addArrangedSubview(fc)
+
+        // Next button
+        let nextTitle = nextButton.currentTitle ?? "Next"
+        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
+        stack.addArrangedSubview(nextButton)
+
+        // Keep autocomplete overlay on top
+        view.bringSubviewToFront(suggestionsTable)
+        view.bringSubviewToFront(loadingContainer)
+        view.bringSubviewToFront(emptyStateLabel)
+
+        loadingLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+        emptyStateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
+    }
+
+    // MARK: - Vehicle list helpers
+
+    private func reloadVehicles() {
+        vehicles = UserDataModel.shared.getCurrentUser()?.vehicles ?? []
+        refreshVehicleCards()
+    }
+
+    private func refreshVehicleCards() {
+        vehicleCardsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        for vehicle in vehicles {
+            let row = makeVehicleRow(vehicle)
+            vehicleCardsStack.addArrangedSubview(row)
+        }
+
+        // "＋ Add New Vehicle" row
+        let addRow = makeAddVehicleRow()
+        vehicleCardsStack.addArrangedSubview(addRow)
+    }
+
+    private func makeVehicleRow(_ vehicle: Vehicle) -> UIView {
+        let isSelected = selectedVehicle?.registrationNumber == vehicle.registrationNumber
+
+        let container = UIView()
+        container.backgroundColor = isSelected
+            ? AppDesign.Color.primary.withAlphaComponent(0.08)
+            : AppDesign.Color.fieldBackground
+        container.layer.cornerRadius = 12
+        container.layer.borderWidth = isSelected ? 2 : 1
+        container.layer.borderColor = isSelected
+            ? AppDesign.Color.primary.cgColor
+            : AppDesign.Color.border.cgColor
+
+        // Icon
+        let iconName: String
+        switch vehicle.type {
+        case .car:   iconName = "car.fill"
+        case .bike:  iconName = "bicycle"
+        case .other: iconName = "car"
+        }
+        let icon = UIImageView(image: UIImage(systemName: iconName))
+        icon.tintColor = isSelected ? AppDesign.Color.primary : .secondaryLabel
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 28).isActive = true
+
+        // Labels
+        let nameLabel = UILabel()
+        let displayName = vehicle.alias?.isEmpty == false ? vehicle.alias! : vehicle.model
+        nameLabel.text = displayName
+        nameLabel.font = AppDesign.Typography.bodyStrong
+        nameLabel.textColor = isSelected ? AppDesign.Color.primary : .label
+
+        let detailLabel = UILabel()
+        detailLabel.text = "\(vehicle.model) • \(vehicle.registrationNumber)"
+        detailLabel.font = AppDesign.Typography.caption
+        detailLabel.textColor = .secondaryLabel
+
+        let textStack = UIStackView(arrangedSubviews: [nameLabel, detailLabel])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+
+        // Checkmark
+        let checkmark = UIImageView(image: UIImage(systemName: "checkmark.circle.fill"))
+        checkmark.tintColor = AppDesign.Color.primary
+        checkmark.alpha = isSelected ? 1 : 0
+        checkmark.translatesAutoresizingMaskIntoConstraints = false
+        checkmark.widthAnchor.constraint(equalToConstant: 22).isActive = true
+        checkmark.heightAnchor.constraint(equalToConstant: 22).isActive = true
+
+        let row = UIStackView(arrangedSubviews: [icon, textStack, checkmark])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+        row.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
+            row.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+            row.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            row.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
+        ])
+
+        // Tap to select
+        let tap = UITapGestureRecognizer(target: self, action: #selector(vehicleRowTapped(_:)))
+        container.addGestureRecognizer(tap)
+        container.tag = vehicles.firstIndex(where: { $0.registrationNumber == vehicle.registrationNumber }) ?? 0
+        container.isUserInteractionEnabled = true
+
+        return container
+    }
+
+    @objc private func vehicleRowTapped(_ sender: UITapGestureRecognizer) {
+        guard let view = sender.view, vehicles.indices.contains(view.tag) else { return }
+        AppHaptics.selection()
+        selectedVehicle = vehicles[view.tag]
+        // Show seats + fare cards
+        seatsCard?.isHidden = false
+        fareCard?.isHidden = false
+    }
+
+    private func makeAddVehicleRow() -> UIView {
+        let container = UIView()
+        container.backgroundColor = AppDesign.Color.fieldBackground
+        container.layer.cornerRadius = 12
+        container.layer.borderWidth = 1
+        container.layer.borderColor = AppDesign.Color.border.cgColor
+
+        let icon = UIImageView(image: UIImage(systemName: "plus.circle.fill"))
+        icon.tintColor = AppDesign.Color.primary
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 28).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 28).isActive = true
+
+        let label = UILabel()
+        label.text = "Add New Vehicle"
+        label.font = AppDesign.Typography.bodyStrong
+        label.textColor = AppDesign.Color.primary
+
+        let row = UIStackView(arrangedSubviews: [icon, label])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+        row.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
+            row.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+            row.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            row.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
+        ])
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(addVehicleTapped))
+        container.addGestureRecognizer(tap)
+        container.isUserInteractionEnabled = true
+        return container
+    }
+
+    @objc private func addVehicleTapped() {
+        let vc = VehicleRegistrationViewController()
+        vc.vehicleToEdit = nil
+        // After the user saves and pops back, viewWillAppear will reload vehicles
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
+    // MARK: - Seats card
+
+    private func makeSeatsCard() -> UIView {
+        // Minus
+        var minusCfg = UIButton.Configuration.filled()
+        minusCfg.image               = UIImage(systemName: "minus")
+        minusCfg.baseBackgroundColor = .systemGray5
+        minusCfg.baseForegroundColor = .label
+        minusCfg.cornerStyle         = .capsule
+        minusSeat.configuration      = minusCfg
+        minusSeat.translatesAutoresizingMaskIntoConstraints = false
+        minusSeat.widthAnchor.constraint(equalToConstant: 44).isActive  = true
+        minusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        minusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(-1) }, for: .touchUpInside)
+
+        // Count
+        seatCountLbl.text          = "0"
+        seatCountLbl.font          = AppDesign.Typography.h2
+        seatCountLbl.textAlignment = .center
+        seatCountLbl.widthAnchor.constraint(equalToConstant: 60).isActive = true
+
+        // Plus
+        var plusCfg = UIButton.Configuration.filled()
+        plusCfg.image               = UIImage(systemName: "plus")
+        plusCfg.baseBackgroundColor = AppDesign.Color.primary
+        plusCfg.baseForegroundColor = .white
+        plusCfg.cornerStyle         = .capsule
+        plusSeat.configuration      = plusCfg
+        plusSeat.translatesAutoresizingMaskIntoConstraints = false
+        plusSeat.widthAnchor.constraint(equalToConstant: 44).isActive  = true
+        plusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        plusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(1) }, for: .touchUpInside)
+
+        let hint = UILabel()
+        hint.text = "Maximum 4 seats"
+        hint.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
+
+        let row = UIStackView(arrangedSubviews: [minusSeat, seatCountLbl, plusSeat])
+        row.axis = .horizontal
+        row.spacing = 16
+        row.alignment = .center
+
+        let inner = UIStackView(arrangedSubviews: [row, hint])
+        inner.axis = .vertical
+        inner.spacing = 6
+        inner.alignment = .center
+
+        return makeStepCard(title: "Seats You Can Offer", content: inner)
+    }
+
+    private func updateSeatsMax() {
+        let maxSeats = selectedVehicle?.type == .bike ? 1 : 4
+        if seatCount > maxSeats { seatCount = maxSeats }
+
+        // Update hint label inside the seats card
+        seatsCard?.subviews.flatMap { $0.subviews }
+            .compactMap { $0 as? UIStackView }
+            .flatMap { $0.arrangedSubviews }
+            .compactMap { $0 as? UIStackView }
+            .flatMap { $0.arrangedSubviews }
+            .compactMap { $0 as? UILabel }
+            .filter { $0.font == AppDesign.Typography.caption }
+            .first?.text = "Maximum \(maxSeats) seat\(maxSeats == 1 ? "" : "s")"
+    }
+
+    private func adjustSeats(_ delta: Int) {
+        let maxSeats = selectedVehicle?.type == .bike ? 1 : 4
+        let newVal = seatCount + delta
+        guard newVal >= 0, newVal <= maxSeats else { return }
+        seatCount = newVal
+    }
+
+    private func updateSeatsUI() {
+        seatCountLbl.text   = "\(seatCount)"
+        let maxSeats        = selectedVehicle?.type == .bike ? 1 : 4
+        minusSeat.isEnabled = seatCount > 0
+        minusSeat.alpha     = seatCount > 0 ? 1 : 0.4
+        plusSeat.isEnabled  = seatCount < maxSeats
+        plusSeat.alpha      = seatCount < maxSeats ? 1 : 0.4
+    }
+
+    // MARK: - Fare content
+
+    private func makeFareContent() -> UIView {
+        fareField.placeholder    = "Enter fare"
+        fareField.keyboardType   = .numberPad
+        fareField.clearButtonMode = .whileEditing
+        fareField.applyRoundedField()
+        fareField.setLeftPaddingPoints(12)
+        fareField.font = AppDesign.Typography.body
+        fareField.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        fareField.delegate = self
+        fareField.addTarget(self, action: #selector(fareChanged), for: .editingChanged)
+
+        suggestedLbl.text = "Suggested fare: ₹—"
+        suggestedLbl.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+
+        let container = UIStackView(arrangedSubviews: [fareField, suggestedLbl])
+        container.axis    = .vertical
+        container.spacing = 6
+        return container
+    }
+
+    @objc private func fareChanged() { updateNextButtonState() }
+
+    private func calculateSuggestedFare() {
+        guard let route = selectedRoute, seatCount > 0, let vehicle = selectedVehicle else {
+            suggestedLbl.text = "Suggested fare: ₹—"
+            fareField.text = ""
+            return
+        }
+        let vehicleStr = vehicle.type == .bike ? "bike" : "car"
+        let departure  = datePicker.date
+        let rideRoute  = MapKitManager.shared.convert(route)
+        let fare = PricingManager.shared.suggestedFare(
+            distanceMeters: rideRoute.distanceMeters,
+            seats: seatCount,
+            vehicle: vehicleStr,
+            departureTime: departure
+        )
+        fareField.text = "\(fare)"
+        let peak = PricingManager.shared.isPeakHour(departure) ? " (peak-hour)" : ""
+        suggestedLbl.text = "Suggested fare: ₹\(fare)\(peak)"
+        updateNextButtonState()
+    }
+
+    // MARK: - Pickers & date helpers
+
     private func setDefaultDateAndTime() {
         datePicker.date = Date()
         timePicker.date = minimumRideDateTime()
     }
 
-    // Hides the map and route options until user enters locations
-    private func setInitialRouteUIState() {
-        chooseRouteLabel.alpha = 0
-        chooseRouteLabel.isHidden = true
-        mapView.alpha = 0
-        mapView.isHidden = true
-        routePillsContainer.alpha = 0
-        routePillsContainer.isHidden = true
-
-        emptyStateLabel.alpha = 1
-        emptyStateLabel.isHidden = false
-        loadingContainer.alpha = 0
-        loadingContainer.isHidden = true
-        loadingSpinner.stopAnimating()
+    private func setupPickers() {
+        datePicker.minimumDate = Date()
+        if datePicker.date < Date() { datePicker.date = Date() }
+        if timePicker.date < minimumRideDateTime() { timePicker.date = minimumRideDateTime() }
+        refreshTimeConstraintIfNeeded()
+        timePicker.transform = CGAffineTransform(translationX: -20, y: 0)
     }
 
-    // Hooks up location autocomplete so suggestions appear when user types
+    private func minimumRideDateTime() -> Date { Date().addingTimeInterval(minimumLeadTimeSeconds) }
+
+    private func refreshTimeConstraintIfNeeded() {
+        let min = minimumRideDateTime()
+        if Calendar.current.isDateInToday(datePicker.date) {
+            timePicker.minimumDate = min
+            if timePicker.date < min { timePicker.date = min }
+        } else {
+            timePicker.minimumDate = nil
+        }
+    }
+
+    @IBAction func datePickerValueChanged(_ sender: UIDatePicker) { refreshTimeConstraintIfNeeded() }
+    @IBAction func timePickerValueChanged(_ sender: UIDatePicker) { refreshTimeConstraintIfNeeded() }
+
+    // MARK: - Autocomplete
+
     private func setupAutocomplete() {
-        MapKitManager.shared.onSuggestionsUpdate = { results in
+        MapKitManager.shared.onSuggestionsUpdate = { [weak self] results in
+            guard let self else { return }
             self.suggestions = results
             self.suggestionsTable.reloadData()
             self.suggestionsTable.isHidden = results.isEmpty
@@ -114,154 +509,65 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     private func prefillLocationsIfPossible() {
         guard let prefill = UserDataModel.shared.suggestedCommutePrefill() else { return }
-
         fromTextField.text = prefill.from.address ?? "Chitkara University"
-        toTextField.text = prefill.to.address ?? "Home"
+        toTextField.text   = prefill.to.address   ?? "Home"
         fromCoord = CLLocationCoordinate2D(latitude: prefill.from.lat, longitude: prefill.from.lon)
-        toCoord = CLLocationCoordinate2D(latitude: prefill.to.lat, longitude: prefill.to.lon)
-
+        toCoord   = CLLocationCoordinate2D(latitude: prefill.to.lat,   longitude: prefill.to.lon)
         updateNextButtonState()
         tryFetchRoutes()
     }
 
-    // MARK: - Setup Pickers
-    // Makes sure user can't pick dates/times in the past.
-    private func setupPickers() {
-        datePicker.minimumDate = Date()
-        if datePicker.date < Date() { datePicker.date = Date() }
-        if timePicker.date < minimumRideDateTime() { timePicker.date = minimumRideDateTime() }
-        refreshTimeConstraintIfNeeded()
+    // MARK: - TextField delegates (location typing)
 
-        // The compact UIDatePicker has internal left padding (~6pt) that makes the
-        // clock icon appear further from the picker than in JoinRide.
-        // Shift the picker left to cancel that internal inset.
-        timePicker.transform = CGAffineTransform(translationX: -20, y: 0)
-    }
-
-
-
-    // When user picks a different date, update the time constraints
-    @IBAction func datePickerValueChanged(_ sender: UIDatePicker) {
-        refreshTimeConstraintIfNeeded()
-    }
-
-    // When user picks a different time, update the constraints
-    @IBAction func timePickerValueChanged(_ sender: UIDatePicker) {
-        refreshTimeConstraintIfNeeded()
-    }
-
-    // Returns the earliest time a ride can be scheduled (10 minutes from now)
-    private func minimumRideDateTime() -> Date {
-        Date().addingTimeInterval(minimumLeadTimeSeconds)
-    }
-
-    // If they pick today, enforce the 10-minute minimum. For future dates, no time restrictions
-    private func refreshTimeConstraintIfNeeded() {
-        let minDateTime = minimumRideDateTime()
-        var didAdjustTime = false
-        if Calendar.current.isDateInToday(datePicker.date) {
-            timePicker.minimumDate = minDateTime
-            if timePicker.date < minDateTime {
-                timePicker.date = minDateTime
-                didAdjustTime = true
-            }
-        } else {
-            timePicker.minimumDate = nil
+    func textField(_ textField: UITextField,
+                   shouldChangeCharactersIn range: NSRange,
+                   replacementString string: String) -> Bool {
+        // Location fields: drive autocomplete
+        if textField == fromTextField || textField == toTextField {
+            let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
+            activeField = textField
+            MapKitManager.shared.updateQuery(updated)
+            updateSuggestionTablePosition()
+            return true
         }
-
-        if didAdjustTime {
-            // keep picker value in valid range for same-day rides
+        // Fare field: digits only, max 5 chars
+        if textField == fareField {
+            if string.isEmpty { return true }
+            let allowed = CharacterSet.decimalDigits
+            guard string.unicodeScalars.allSatisfy({ allowed.contains($0) }) else { return false }
+            let current = (textField.text ?? "") as NSString
+            let newText = current.replacingCharacters(in: range, with: string)
+            return newText.count <= 5
         }
-    }
-
-
-    // MARK: - Text Change
-    // Called whenever user types in the from/to field - triggers location suggestions
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
-
-        activeField = textField
-        MapKitManager.shared.updateQuery(updated)
-        updateSuggestionTablePosition()
-
         return true
     }
 
-    // Always allow user to edit the text fields
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder(); return true
+    }
+
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool { true }
 
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
+    @objc private func dismissKeyboard() { view.endEditing(true) }
+
+    @IBAction private func locationFieldEditingChanged(_ sender: UITextField) { updateNextButtonState() }
+
+    // MARK: - Table (suggestions)
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { suggestions.count }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "sCell")
+        let r = suggestions[indexPath.row]
+        cell.textLabel?.text       = r.title
+        cell.detailTextLabel?.text = r.subtitle
+        return cell
     }
 
-    @IBAction private func locationFieldEditingChanged(_ sender: UITextField) {
-        updateNextButtonState()
-    }
-    // Creates those pill buttons showing different route options (Fastest, Shortest, etc.)
-    private func buildRoutePills() {
-        routePillsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        routePillsContainer.subviews.compactMap { $0 as? UIVisualEffectView }.forEach { $0.removeFromSuperview() }
-        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
-        blur.frame = routePillsContainer.bounds
-        blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        routePillsContainer.insertSubview(blur, at: 0)
-
-        for (index, route) in routes.enumerated() {
-
-            let minutes = Int(route.expectedTravelTime / 60)
-            let km = String(format: "%.1f", route.distance / 1000)
-
-            let title: String
-            if index == 0 {
-                title = "Fastest\n\(km) km • \(minutes) min"
-            } else if index == 1 {
-                title = "Shortest\n\(km) km • \(minutes) min"
-            } else {
-                title = "Alternative\n\(km) km • \(minutes) min"
-            }
-
-            let button = UIButton(type: .system)
-            button.tag = index
-            button.setTitle(title, for: .normal)
-
-            let isSelected = (route == selectedRoute)
-            button.applyRoutePill(selected: isSelected)
-
-            let capturedIndex = index
-            button.addAction(UIAction { [weak self] _ in
-                guard let self, self.routes.indices.contains(capturedIndex) else { return }
-                self.selectedRoute = self.routes[capturedIndex]
-                self.drawRoutes()
-                if let route = self.selectedRoute {
-                    self.mapView.setVisibleRoute(route)
-                }
-                UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0.5) {
-                    if let route = self.selectedRoute {
-                        self.mapView.setVisibleRoute(route)
-                    }
-                }
-                for case let btn as UIButton in self.routePillsStack.arrangedSubviews {
-                    btn.applyRoutePill(selected: btn.tag == capturedIndex)
-                }
-            }, for: .touchUpInside)
-
-            routePillsStack.addArrangedSubview(button)
-        }
-
-        routePillsContainer.isHidden = false
-    }
-
-
-
-    // MARK: - Suggestion Selected
-    // When user taps a location from the autocomplete dropdown
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-
         let completion = suggestions[indexPath.row]
-
         MapKitManager.shared.resolveCompletion(completion) { mapItem in
             guard let item = mapItem else { return }
-
             DispatchQueue.main.async {
                 if self.activeField == self.fromTextField {
                     self.fromTextField.text = item.name
@@ -270,7 +576,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
                     self.toTextField.text = item.name
                     self.toCoord = item.placemark.coordinate
                 }
-
                 self.suggestionsTable.isHidden = true
                 self.activeField?.resignFirstResponder()
                 self.activeField = nil
@@ -280,16 +585,35 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         }
     }
 
-    // MARK: - Fetch Routes
-    // Grabs route options from MapKit once both locations are selected
+    private func updateSuggestionTablePosition() {
+        guard let tf = activeField else { return }
+        let frame = tf.convert(tf.bounds, to: view)
+        UIView.animate(withDuration: 0.2) {
+            self.suggestionsTable.frame = CGRect(
+                x: frame.minX, y: frame.maxY + AppDesign.Spacing.xxs,
+                width: frame.width, height: 220
+            )
+        }
+    }
+
+    // MARK: - Route fetching
+
+    private func setInitialRouteUIState() {
+        chooseRouteLabel.alpha = 0;   chooseRouteLabel.isHidden = true
+        mapView.alpha = 0;            mapView.isHidden = true
+        routePillsContainer.alpha = 0; routePillsContainer.isHidden = true
+        emptyStateLabel.alpha = 1;    emptyStateLabel.isHidden = false
+        loadingContainer.alpha = 0;   loadingContainer.isHidden = true
+        loadingSpinner.stopAnimating()
+    }
+
     private func tryFetchRoutes() {
         guard let f = fromCoord, let t = toCoord else { return }
-
         showLoading()
         MapKitManager.shared.getRoutes(from: f, to: t) { routes in
             DispatchQueue.main.async {
-                self.routes = routes
-                self.selectedRoute = routes.first
+                self.routes = Array(routes.prefix(2))
+                self.selectedRoute = self.routes.first
                 guard let selected = self.selectedRoute else {
                     self.hideLoading()
                     self.emptyStateLabel.text = "No routes available for this trip"
@@ -298,216 +622,243 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
                     self.setInitialRouteUIState()
                     return
                 }
-
                 self.drawRoutes()
                 self.mapView.setVisibleRoute(selected)
-
                 self.buildRoutePills()
                 self.hideLoading()
                 self.revealRouteUI()
+                self.calculateSuggestedFare()   // recalc once route is known
             }
         }
     }
 
+    private func buildRoutePills() {
+        routePillsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        routePillsContainer.subviews.compactMap { $0 as? UIVisualEffectView }.forEach { $0.removeFromSuperview() }
+        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+        blur.frame = routePillsContainer.bounds
+        blur.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        routePillsContainer.insertSubview(blur, at: 0)
 
+        for (index, route) in routes.enumerated() {
+            let minutes = Int(route.expectedTravelTime / 60)
+            let km = String(format: "%.1f", route.distance / 1000)
+            let title: String
+            if index == 0 { title = "Fastest\n\(km) km • \(minutes) min" }
+            else if index == 1 { title = "Shortest\n\(km) km • \(minutes) min" }
+            else { title = "Alternative\n\(km) km • \(minutes) min" }
 
-    // Draws all the route lines on the map, highlighting the selected one
+            let btn = UIButton(type: .system)
+            btn.tag = index
+            btn.setTitle(title, for: .normal)
+            btn.applyRoutePill(selected: route == selectedRoute)
+
+            let captured = index
+            btn.addAction(UIAction { [weak self] _ in
+                guard let self, self.routes.indices.contains(captured) else { return }
+                self.selectedRoute = self.routes[captured]
+                self.drawRoutes()
+                if let r = self.selectedRoute { self.mapView.setVisibleRoute(r) }
+                for case let b as UIButton in self.routePillsStack.arrangedSubviews {
+                    b.applyRoutePill(selected: b.tag == captured)
+                }
+                self.calculateSuggestedFare()
+            }, for: .touchUpInside)
+
+            routePillsStack.addArrangedSubview(btn)
+        }
+        routePillsContainer.isHidden = false
+    }
+
     private func drawRoutes() {
         mapView.isHidden = false
         mapView.removeOverlays(mapView.overlays)
-
         for route in routes {
-            let polyline = route.polyline
-            polyline.title = (route == selectedRoute) ? "selected" : "unselected"
-            mapView.addOverlay(polyline)
+            let poly = route.polyline
+            poly.title = (route == selectedRoute) ? "selected" : "unselected"
+            mapView.addOverlay(poly)
         }
     }
 
-    // Shows the loading spinner while fetching routes
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        let r = MKPolylineRenderer(overlay: overlay)
+        if overlay.title == "selected" {
+            r.strokeColor = AppDesign.Color.primary; r.lineWidth = 9; r.alpha = 1
+        } else {
+            r.strokeColor = UIColor.systemGray4; r.lineWidth = 4; r.alpha = 0.5
+        }
+        r.lineCap = .round; r.lineJoin = .round
+        return r
+    }
+
     private func showLoading() {
         guard !isLoadingVisible else { return }
         isLoadingVisible = true
         loadingContainer.isHidden = false
         loadingSpinner.startAnimating()
-        emptyStateLabel.alpha = 0
-        emptyStateLabel.isHidden = true
-
-        if UIAccessibility.isReduceMotionEnabled {
-            loadingContainer.alpha = 1
-            return
-        }
-
+        emptyStateLabel.alpha = 0; emptyStateLabel.isHidden = true
         loadingContainer.transform = CGAffineTransform(translationX: 0, y: 6)
-        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
+        UIView.animate(withDuration: 0.25) {
             self.loadingContainer.alpha = 1
             self.loadingContainer.transform = .identity
         }
     }
 
-    // Hides the loading spinner once routes are loaded
     private func hideLoading() {
         guard isLoadingVisible else { return }
         isLoadingVisible = false
-
-        let finish = {
-            self.loadingContainer.alpha = 0
+        UIView.animate(withDuration: 0.2) { self.loadingContainer.alpha = 0 } completion: { _ in
             self.loadingContainer.isHidden = true
-            self.loadingSpinner.stopAnimating()
-        }
-
-        if UIAccessibility.isReduceMotionEnabled {
-            finish()
-            return
-        }
-
-        UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseIn]) {
-            self.loadingContainer.alpha = 0
-        } completion: { _ in
             self.loadingSpinner.stopAnimating()
         }
     }
 
-    // Smoothly animates in the map and route options after routes load
     private func revealRouteUI() {
         chooseRouteLabel.isHidden = false
         mapView.isHidden = false
         routePillsContainer.isHidden = false
-
         loadingContainer.isHidden = true
 
-        if UIAccessibility.isReduceMotionEnabled {
-            chooseRouteLabel.alpha = 1
-            mapView.alpha = 1
-            routePillsContainer.alpha = 1
-            emptyStateLabel.alpha = 0
-            emptyStateLabel.isHidden = true
-            self.view.layoutIfNeeded()
-            return
-        }
-
         chooseRouteLabel.transform = CGAffineTransform(translationX: 0, y: 8)
-        mapView.transform = CGAffineTransform(translationX: 0, y: 8)
+        mapView.transform          = CGAffineTransform(translationX: 0, y: 8)
         routePillsContainer.transform = CGAffineTransform(translationX: 0, y: 8)
 
-        UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut]) {
-            self.chooseRouteLabel.alpha = 1
-            self.mapView.alpha = 1
-            self.routePillsContainer.alpha = 1
+        UIView.animate(withDuration: 0.3) {
+            self.chooseRouteLabel.alpha = 1;   self.chooseRouteLabel.transform = .identity
+            self.mapView.alpha = 1;            self.mapView.transform = .identity
+            self.routePillsContainer.alpha = 1; self.routePillsContainer.transform = .identity
             self.emptyStateLabel.alpha = 0
-            self.chooseRouteLabel.transform = .identity
-            self.mapView.transform = .identity
-            self.routePillsContainer.transform = .identity
             self.view.layoutIfNeeded()
-        } completion: { _ in
-            self.emptyStateLabel.isHidden = true
-        }
+        } completion: { _ in self.emptyStateLabel.isHidden = true }
     }
 
-    // Enables next button only when both from and to fields have values
+    // MARK: - Validation
+
     private func updateNextButtonState() {
-        let hasFrom = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasTo = !(toTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let enabled = hasFrom && hasTo
-        nextButton.setPrimaryCTAEnabled(enabled)
+        let hasFrom    = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasTo      = !(toTextField.text   ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasVehicle = selectedVehicle != nil
+        let hasSeats   = seatCount > 0
+        let hasFare    = (Double(fareField.text ?? "") ?? 0) > 0
+        nextButton.setPrimaryCTAEnabled(hasFrom && hasTo && hasVehicle && hasSeats && hasFare)
     }
 
+    // MARK: - Next button → ReviewRideViewController
 
-
-    // MARK: - Renderer
-    // Styles the route lines - selected route is thick blue, others are thin gray
-    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-
-        let renderer = MKPolylineRenderer(overlay: overlay)
-
-        if overlay.title == "selected" {
-            //  Hero route
-            renderer.strokeColor = AppDesign.Color.primary
-            renderer.lineWidth = 9
-            renderer.alpha = 1.0
-        } else {
-            //  Background suggestions
-            renderer.strokeColor = UIColor.systemGray4
-            renderer.lineWidth = 4
-            renderer.alpha = 0.5
-        }
-
-        renderer.lineCap = .round
-        renderer.lineJoin = .round
-
-        return renderer
-    }
-
-    // MARK: - Table DataSource
-    // Returns how many location suggestions to show
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return suggestions.count
-    }
-
-    // Fills each suggestion cell with location name and address
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "sCell")
-        let r = suggestions[indexPath.row]
-        cell.textLabel?.text = r.title
-        cell.detailTextLabel?.text = r.subtitle
-        return cell
-    }
-
-    // Positions the suggestions dropdown right below whichever text field is active
-    private func updateSuggestionTablePosition() {
-        guard let tf = activeField else { return }
-
-        let frame = tf.convert(tf.bounds, to: view)
-
-        UIView.animate(withDuration: 0.2) {
-            self.suggestionsTable.frame = CGRect(x: frame.minX, y: frame.maxY + AppDesign.Spacing.xxs, width: frame.width, height: 220)
-        }
-
-    }
-
-    // MARK: - NEXT BUTTON
-    // Moves to vehicle details screen with all the route info
     @IBAction func nextTapped(_ sender: Any) {
         let fromText = fromTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let toText   = toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         guard !fromText.isEmpty, !toText.isEmpty else {
-            showValidationAlert("Missing Location", message: "Please enter both a pickup and a drop-off location.")
+            showAlert("Missing Location", message: "Please enter both a pickup and drop-off location.")
             return
         }
         guard let from = fromCoord else {
-            showValidationAlert("Select from suggestions", message: "Please pick your pickup location from the autocomplete list.")
+            showAlert("Select from suggestions", message: "Please pick your pickup location from the list.")
             return
         }
         guard let to = toCoord else {
-            showValidationAlert("Select from suggestions", message: "Please pick your drop-off location from the autocomplete list.")
+            showAlert("Select from suggestions", message: "Please pick your drop-off location from the list.")
             return
         }
         guard fromText.lowercased() != toText.lowercased() else {
-            showValidationAlert("Same Location", message: "Pickup and drop-off can't be the same. Please choose different locations.")
+            showAlert("Same Location", message: "Pickup and drop-off can't be the same.")
+            return
+        }
+        guard let vehicle = selectedVehicle else {
+            showAlert("No Vehicle Selected", message: "Please select a vehicle or add a new one.")
+            return
+        }
+        guard seatCount > 0 else {
+            showAlert("No Seats", message: "Please set how many seats you are offering.")
+            return
+        }
+        let fareValue = Double(fareField.text ?? "") ?? 0
+        guard fareValue > 0 else {
+            showAlert("No Fare", message: "Please enter the fare per seat.")
             return
         }
 
         view.endEditing(true)
 
+        let summary = RideSummary(
+            from: LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text),
+            to:   LocationPoint(lat: to.latitude,   lon: to.longitude,   address: toTextField.text),
+            date: datePicker.date,
+            time: timePicker.date,
+            route: selectedRoute.map { MapKitManager.shared.convert($0) },
+            vehicleType: vehicle.type == .bike ? "Bike" : "Car",
+            seats: seatCount,
+            farePerSeat: fareValue,
+            registrationPlate: vehicle.registrationNumber,
+            vehicleModel: vehicle.model
+        )
+
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
-        let vc = sb.instantiateViewController(withIdentifier: "VehicleDetailsViewController") as! VehicleDetailsViewController
-
-        vc.date = datePicker.date
-        vc.time = timePicker.date
-        vc.source      = LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text)
-        vc.destination = LocationPoint(lat: to.latitude,   lon: to.longitude,   address: toTextField.text)
-
-        if let route = selectedRoute {
-            vc.selectedRoute = MapKitManager.shared.convert(route)
-        }
-
+        let vc = sb.instantiateViewController(withIdentifier: "ReviewRideViewController") as! ReviewRideViewController
+        vc.summary = summary
         navigationController?.pushViewController(vc, animated: true)
     }
 
-    private func showValidationAlert(_ title: String, message: String) {
+    private func showAlert(_ title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
+    }
+
+    // MARK: - UI helpers
+
+    private func makeLabeledPicker(picker: UIDatePicker, icon: String) -> UIView {
+        let container = UIView()
+        container.backgroundColor = AppDesign.Color.fieldBackground
+        container.layer.cornerRadius = 16
+        container.clipsToBounds = true
+
+        let iconView = UIImageView(image: UIImage(systemName: icon))
+        iconView.tintColor = .systemGray
+        iconView.contentMode = .scaleAspectFit
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        picker.transform = .identity
+        container.addSubview(iconView)
+        container.addSubview(picker)
+
+        NSLayoutConstraint.activate([
+            container.heightAnchor.constraint(equalToConstant: 54),
+            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
+            iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 20),
+            iconView.heightAnchor.constraint(equalToConstant: 20),
+            picker.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 4),
+            picker.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -4),
+            picker.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+        return container
+    }
+
+    private func makeStepCard(title: String, content: UIView) -> UIView {
+        let card = UIView()
+        card.backgroundColor = .systemBackground
+        card.applyCardStyle(corner: AppDesign.Radius.md,
+                            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                            shadowRadius: AppDesign.Shadow.smallCardRadius)
+
+        let titleLbl = UILabel()
+        titleLbl.text = title
+        titleLbl.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+
+        let innerStack = UIStackView(arrangedSubviews: [titleLbl, content])
+        innerStack.axis = .vertical
+        innerStack.spacing = 8
+        innerStack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(innerStack)
+        NSLayoutConstraint.activate([
+            innerStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
+            innerStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            innerStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            innerStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
+        ])
+        return card
     }
 }

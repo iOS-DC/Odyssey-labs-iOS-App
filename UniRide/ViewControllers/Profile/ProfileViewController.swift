@@ -35,6 +35,9 @@ class ProfileViewController: UIViewController {
     private let emailValueLabel  = UILabel()
     private let phoneValueLabel  = UILabel()
     private let homeValueLabel   = UILabel()
+ 
+    // MARK: - Vehicle card
+    private let vehicleStack     = UIStackView()
 
     // MARK: - Loading skeleton
     private lazy var skeletonOverlay: UIView = {
@@ -109,6 +112,7 @@ class ProfileViewController: UIViewController {
 
         contentStack.addArrangedSubview(buildHeroCard())
         contentStack.addArrangedSubview(buildContactCard())
+        contentStack.addArrangedSubview(buildVehicleCard())
 
         // Skeleton overlay covers the content until the first profile loads
         view.addSubview(skeletonOverlay)
@@ -289,6 +293,111 @@ class ProfileViewController: UIViewController {
         return row
     }
 
+    // MARK: - Vehicle Card
+    private func buildVehicleCard() -> UIView {
+        let card = UIView()
+        card.applyCardStyle()
+
+        let titleLabel = UILabel()
+        titleLabel.text = "My Vehicles"
+        titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        
+        let addBtn = UIButton(type: .system)
+        var cfg = UIButton.Configuration.plain()
+        cfg.image = UIImage(systemName: "plus.circle.fill")
+        cfg.baseForegroundColor = AppDesign.Color.primary
+        addBtn.configuration = cfg
+        addBtn.addTarget(self, action: #selector(openVehicleDetails), for: .touchUpInside)
+
+        let headerRow = UIStackView(arrangedSubviews: [titleLabel, addBtn])
+        headerRow.axis = .horizontal
+        headerRow.alignment = .center
+        headerRow.distribution = .equalSpacing
+
+        vehicleStack.axis    = .vertical
+        vehicleStack.spacing = 12
+
+        let mainStack = UIStackView(arrangedSubviews: [headerRow, makeSeparator(), vehicleStack])
+        mainStack.axis = .vertical
+        mainStack.spacing = 12
+        mainStack.translatesAutoresizingMaskIntoConstraints = false
+
+        card.addSubview(mainStack)
+        NSLayoutConstraint.activate([
+            mainStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
+            mainStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            mainStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            mainStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
+        ])
+        return card
+    }
+
+    private func refreshVehicles(for profile: UserProfile) {
+        vehicleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        
+        if let vehicles = profile.vehicles, !vehicles.isEmpty {
+            for v in vehicles {
+                let row = buildVehicleSummaryRow(vehicle: v)
+                vehicleStack.addArrangedSubview(row)
+                if v != vehicles.last {
+                    vehicleStack.addArrangedSubview(makeSeparator())
+                }
+            }
+        } else {
+            let emptyLabel = UILabel()
+            emptyLabel.text = "No vehicles added. Tap + to add one."
+            emptyLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
+            emptyLabel.textAlignment = .center
+            vehicleStack.addArrangedSubview(emptyLabel)
+        }
+    }
+    
+    private func buildVehicleSummaryRow(vehicle: Vehicle) -> UIView {
+        let icon = UIImageView(image: UIImage(systemName: vehicle.type == .car ? "car.fill" : "bicycle"))
+        icon.tintColor = AppDesign.Color.primary
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.widthAnchor.constraint(equalToConstant: 24).isActive = true
+        
+        let nameLbl = UILabel()
+        nameLbl.text = vehicle.alias ?? vehicle.model
+        nameLbl.applyTextStyle(AppDesign.Typography.subheadline)
+        
+        let regLbl = UILabel()
+        regLbl.text = vehicle.registrationNumber
+        regLbl.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        
+        let textStack = UIStackView(arrangedSubviews: [nameLbl, regLbl])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+        
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+        chevron.tintColor = .tertiaryLabel
+        chevron.contentMode = .scaleAspectFit
+        
+        let row = UIStackView(arrangedSubviews: [icon, textStack, chevron])
+        row.axis = .horizontal
+        row.spacing = 12
+        row.alignment = .center
+        
+        let tap = UIAction { [weak self] _ in
+            let vc = VehicleRegistrationViewController()
+            vc.vehicleToEdit = vehicle
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
+        let btn = UIButton(type: .system, primaryAction: tap)
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        row.addSubview(btn)
+        NSLayoutConstraint.activate([
+            btn.topAnchor.constraint(equalTo: row.topAnchor),
+            btn.leadingAnchor.constraint(equalTo: row.leadingAnchor),
+            btn.trailingAnchor.constraint(equalTo: row.trailingAnchor),
+            btn.bottomAnchor.constraint(equalTo: row.bottomAnchor),
+        ])
+        
+        return row
+    }
+
     // MARK: - Load Profile
     private func loadProfile() {
         // 1. Show whatever we have locally right now (fast path)
@@ -386,6 +495,7 @@ class ProfileViewController: UIViewController {
             UserDefaults.standard.removeObject(forKey: bannerDismissedKey)
         }
         refreshCompletionBanner(for: profile)
+        refreshVehicles(for: profile)
     }
 
     // MARK: - Completion Banner
@@ -432,7 +542,7 @@ class ProfileViewController: UIViewController {
         navigationController?.pushViewController(vc, animated: true)
     }
 
-    private func openVehicleDetails() {
+    @objc private func openVehicleDetails() {
         let vc = VehicleRegistrationViewController()
         navigationController?.pushViewController(vc, animated: true)
     }

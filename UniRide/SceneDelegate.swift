@@ -12,8 +12,29 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let _ = (scene as? UIWindowScene) else { return }
-        // Restore or reject persisted session on cold launch
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+
+        // 1. Manually create the window
+        let window = UIWindow(windowScene: windowScene)
+        self.window = window
+
+        // 2. Synchronous check to set the very first screen the user sees.
+        // This prevents UIKit from defaulting to the "Email" storyboard VC and flickering.
+        let isLoggedIn = SessionManager.shared.isLoggedIn
+        
+        if isLoggedIn {
+            // Logged in: Show a neutral color (Splash) while restoreSessionOrShowAuth runs
+            let splashVC = UIViewController()
+            splashVC.view.backgroundColor = .systemBackground // or matches LaunchScreen
+            window.rootViewController = splashVC
+        } else {
+            // Not logged in: Route to Onboarding or Email immediately
+            showAuthFlow(window: window)
+        }
+        
+        window.makeKeyAndVisible()
+
+        // 3. Kick off async restoration (token refresh, user hydration)
         Task { await restoreSessionOrShowAuth() }
     }
 
@@ -50,13 +71,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     private func showAuthFlow(window: UIWindow) {
-        if !(window.rootViewController is EmailViewController) {
-            let authSB = UIStoryboard(name: "RoleSelection", bundle: nil)
-            if let authRoot = authSB.instantiateInitialViewController() {
-                window.rootViewController = authRoot
-                window.makeKeyAndVisible()
-            }
+        let hasSeenOnboarding = UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
+        let mainSB = UIStoryboard(name: "Main", bundle: nil)
+        
+        if !hasSeenOnboarding {
+            // First time ever: Show Onboarding
+            let onboardingVC = mainSB.instantiateViewController(withIdentifier: "OnboardingViewController")
+            window.rootViewController = onboardingVC
+        } else {
+            // Returning logged-out user: Show Email Login
+            let emailVC = mainSB.instantiateViewController(withIdentifier: "EmailViewController")
+            let nav = UINavigationController(rootViewController: emailVC)
+            window.rootViewController = nav
         }
+        window.makeKeyAndVisible()
     }
 
     // MARK: - Unused lifecycle stubs

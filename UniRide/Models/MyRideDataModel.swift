@@ -48,6 +48,10 @@ struct Ride: Codable, Equatable {
     var status: RideStatus
     var notes: String?
     let createdAt: Date
+ 
+    // New: Link to specific vehicle used for this ride
+    var vehicleModel: String?
+    var registrationPlate: String?
 
     // MARK: - Recurring
     /// True when the driver schedules this ride on multiple weekdays.
@@ -66,7 +70,9 @@ struct Ride: Codable, Equatable {
          status: RideStatus = .draft,
          notes: String? = nil,
          isRecurring: Bool = false,
-         recurringDays: [Int] = []) {
+         recurringDays: [Int] = [],
+         vehicleModel: String? = nil,
+         registrationPlate: String? = nil) {
         self.id = UUID()
         self.driverUserID = driverUserID
         self.source = source
@@ -82,6 +88,8 @@ struct Ride: Codable, Equatable {
         self.createdAt = Date()
         self.isRecurring = isRecurring
         self.recurringDays = recurringDays
+        self.vehicleModel = vehicleModel
+        self.registrationPlate = registrationPlate
     }
 
     init(id: UUID,
@@ -98,7 +106,9 @@ struct Ride: Codable, Equatable {
          notes: String? = nil,
          createdAt: Date = Date(),
          isRecurring: Bool = false,
-         recurringDays: [Int] = []) {
+         recurringDays: [Int] = [],
+         vehicleModel: String? = nil,
+         registrationPlate: String? = nil) {
         self.id = id
         self.driverUserID = driverUserID
         self.source = source
@@ -114,6 +124,8 @@ struct Ride: Codable, Equatable {
         self.createdAt = createdAt
         self.isRecurring = isRecurring
         self.recurringDays = recurringDays
+        self.vehicleModel = vehicleModel
+        self.registrationPlate = registrationPlate
     }
 
     static func ==(lhs: Ride, rhs: Ride) -> Bool { lhs.id == rhs.id }

@@ -145,7 +145,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     private func makeTypeSelector() -> UIView {
         configTypeButton(carButton,  icon: "car.fill", label: "Car",         type: .car)
-        configTypeButton(bikeButton, icon: "bicycle",  label: "Two-Wheeler", type: .bike)
+        configTypeButton(bikeButton, icon: "motorcycle",  label: "Two-Wheeler", type: .bike)
 
         let row           = UIStackView(arrangedSubviews: [carButton, bikeButton])
         row.axis          = .horizontal
@@ -357,7 +357,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     // MARK: - Pre-fill from saved vehicle
     private func preloadVehicleIdentity() {
-        guard let vehicle = UserDataModel.shared.getCurrentUser()?.vehicle else { return }
+        guard let vehicle = UserDataModel.shared.getCurrentUser()?.vehicles?.first else { return }
         plateField.text = vehicle.registrationNumber
         modelField.text = vehicle.model
         switch vehicle.type {

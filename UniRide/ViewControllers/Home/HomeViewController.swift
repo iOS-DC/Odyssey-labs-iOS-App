@@ -343,7 +343,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if isLoading { return 100 }
-        if indexPath.section == upcomingSectionIndex { return 90 }
+        if indexPath.section == upcomingSectionIndex { return UITableView.automaticDimension }
         if indexPath.section == ridesSectionIndex { return nearbyRides.isEmpty ? 200 : 220 }
         return 150
     }
