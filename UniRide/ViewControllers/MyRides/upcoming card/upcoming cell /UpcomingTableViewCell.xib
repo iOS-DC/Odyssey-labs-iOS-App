@@ -18,7 +18,7 @@
                 <rect key="frame" x="0.0" y="0.0" width="340" height="420"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="D9v-9f-Ikl" userLabel="cardView">
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="D9v-9f-Ikl" userLabel="cardView">
                         <rect key="frame" x="12" y="8" width="316" height="404"/>
                         <subviews>
                             <!-- Row 1: Hosting badge (left) + Date label (right) -->
@@ -153,7 +153,7 @@
                                 </constraints>
                             </view>
 
-                            <!-- Avatar stack view -->
+                            <!-- Avatar/Map stack view -->
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="avt-stk-001" userLabel="avatarStackView">
                                 <rect key="frame" x="16" y="202" width="140" height="52"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -162,54 +162,40 @@
                                 </constraints>
                             </view>
 
-                            <!-- Show Map button (right of avatarStackView) -->
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dtu-2E-2EU">
-                                <rect key="frame" x="168" y="206" width="132" height="44"/>
-                                <color key="backgroundColor" systemColor="systemBlueColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="44" id="route-btn-h"/>
-                                </constraints>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="filled" image="map" catalog="system" imagePlacement="leading" title="Show Map" imagePadding="8">
-                                    <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="14"/>
-                                    <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                    <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
-                                </buttonConfiguration>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                        <integer key="value" value="22"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="NO"/>
-                                </userDefinedRuntimeAttributes>
-                                <connections>
-                                    <action selector="toggleMap:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="zty-HU-st5"/>
-                                </connections>
-                            </button>
-
-                            <!-- Map view -->
-                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="cPc-UZ-AsZ">
-                                <rect key="frame" x="10" y="266" width="296" height="1"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="1" id="IA1-oo-bk4"/>
-                                </constraints>
-                                <standardMapConfiguration key="preferredConfiguration"/>
-                            </mapView>
-
-                            <!-- Message + Call buttons -->
+                            <!-- Three Buttons Row: Map / Message / Call -->
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="b3K-SC-fYV">
-                                <rect key="frame" x="16" y="279" width="284" height="48"/>
+                                <rect key="frame" x="16" y="270" width="284" height="40"/>
                                 <subviews>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="KtP-x6-58P">
-                                        <rect key="frame" x="0.0" y="0.0" width="136" height="48"/>
-                                        <color key="backgroundColor" red="0.93" green="0.93" blue="0.94" alpha="1" colorSpace="calibratedRGB"/>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="dtu-2E-2EU">
+                                        <rect key="frame" x="0.0" y="0.0" width="86.67" height="40"/>
+                                        <color key="backgroundColor" systemColor="labelColor"/>
                                         <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="plain" title="Message">
-                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="14"/>
-                                            <color key="baseForegroundColor" systemColor="systemBlueColor"/>
+                                        <buttonConfiguration key="configuration" style="filled" image="map" catalog="system" imagePlacement="leading" title=" Map" imagePadding="4">
+                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="13"/>
+                                            <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                            <color key="baseBackgroundColor" systemColor="labelColor"/>
                                         </buttonConfiguration>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                                <integer key="value" value="24"/>
+                                                <integer key="value" value="20"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="NO"/>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="toggleMap:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="zty-HU-st5"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="KtP-x6-58P">
+                                        <rect key="frame" x="98.67" y="0.0" width="86.67" height="40"/>
+                                        <color key="backgroundColor" red="0.93" green="0.93" blue="0.94" alpha="1" colorSpace="calibratedRGB"/>
+                                        <state key="normal" title="Button"/>
+                                        <buttonConfiguration key="configuration" style="plain" title="Chat">
+                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="13"/>
+                                            <color key="baseForegroundColor" systemColor="labelColor"/>
+                                        </buttonConfiguration>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                                <integer key="value" value="20"/>
                                             </userDefinedRuntimeAttribute>
                                             <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="NO"/>
                                         </userDefinedRuntimeAttributes>
@@ -218,17 +204,17 @@
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="GeT-Jd-KZA">
-                                        <rect key="frame" x="148" y="0.0" width="136" height="48"/>
-                                        <color key="backgroundColor" systemColor="systemBlueColor"/>
+                                        <rect key="frame" x="197.33" y="0.0" width="86.67" height="40"/>
+                                        <color key="backgroundColor" systemColor="labelColor"/>
                                         <state key="normal" title="Button"/>
                                         <buttonConfiguration key="configuration" style="filled" title="Call">
-                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="14"/>
+                                            <fontDescription key="titleFontDescription" type="system" weight="semibold" pointSize="13"/>
                                             <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                            <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
+                                            <color key="baseBackgroundColor" systemColor="labelColor"/>
                                         </buttonConfiguration>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
-                                                <integer key="value" value="24"/>
+                                                <integer key="value" value="20"/>
                                             </userDefinedRuntimeAttribute>
                                             <userDefinedRuntimeAttribute type="boolean" keyPath="layer.masksToBounds" value="NO"/>
                                         </userDefinedRuntimeAttributes>
@@ -238,22 +224,31 @@
                                     </button>
                                 </subviews>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="48" id="msgcall-h"/>
+                                    <constraint firstAttribute="height" constant="40" id="msgcall-h"/>
                                 </constraints>
                             </stackView>
 
+                            <!-- Map view (Pinned below buttons now) -->
+                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="cPc-UZ-AsZ">
+                                <rect key="frame" x="10" y="322" width="296" height="1"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="1" id="IA1-oo-bk4"/>
+                                </constraints>
+                                <standardMapConfiguration key="preferredConfiguration"/>
+                            </mapView>
+
                             <!-- Cancel Ride button -->
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="MqO-bM-fGV">
-                                <rect key="frame" x="16" y="339" width="284" height="52"/>
-                                <color key="backgroundColor" systemColor="systemRedColor"/>
+                                <rect key="frame" x="16" y="335" width="284" height="40"/>
+                                <color key="backgroundColor" systemColor="labelColor"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="52" id="cancel-h"/>
+                                    <constraint firstAttribute="height" constant="40" id="cancel-h"/>
                                 </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="filled" title="Cancel Ride">
                                     <fontDescription key="titleFontDescription" type="boldSystem" pointSize="15"/>
                                     <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                    <color key="baseBackgroundColor" systemColor="systemRedColor"/>
+                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
                                 </buttonConfiguration>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
@@ -266,6 +261,18 @@
                                 </connections>
                             </button>
 
+                            <!-- Start / End Trip button -->
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="str-ip-001">
+                                <rect key="frame" x="16" y="387" width="284" height="44"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="44" id="str-h-001"/>
+                                </constraints>
+                                <state key="normal" title="Start Trip"/>
+                                <connections>
+                                    <action selector="startTripTapped:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="str-act-001"/>
+                                </connections>
+                            </button>
+
                             <!-- Hidden legacy button (kept for outlet compatibility) -->
                             <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="pw5-A7-20w">
                                 <rect key="frame" x="16" y="0.0" width="136" height="0.0"/>
@@ -274,7 +281,7 @@
                                 </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="View Requests">
-                                    <color key="baseForegroundColor" systemColor="systemBlueColor"/>
+                                    <color key="baseForegroundColor" systemColor="labelColor"/>
                                 </buttonConfiguration>
                                 <connections>
                                     <action selector="viewRequestsTapped:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="jNA-RX-OlC"/>
@@ -343,28 +350,27 @@
                             <constraint firstItem="avt-stk-001" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="16" id="avt-lead"/>
                             <constraint firstItem="avt-stk-001" firstAttribute="width" constant="140" id="avt-w"/>
 
-                            <!-- Show Map button: right of avatarStackView, centered vertically -->
-                            <constraint firstItem="dtu-2E-2EU" firstAttribute="centerY" secondItem="avt-stk-001" secondAttribute="centerY" id="route-cy"/>
-                            <constraint firstItem="dtu-2E-2EU" firstAttribute="leading" secondItem="avt-stk-001" secondAttribute="trailing" constant="12" id="route-lead"/>
-                            <constraint firstAttribute="trailing" secondItem="dtu-2E-2EU" secondAttribute="trailing" constant="16" id="route-trail"/>
-
-                            <!-- Map view: below avatarStackView -->
-                            <constraint firstItem="cPc-UZ-AsZ" firstAttribute="top" secondItem="avt-stk-001" secondAttribute="bottom" constant="12" id="GPK-G0-UgV"/>
-                            <constraint firstItem="cPc-UZ-AsZ" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="10" id="bWX-gR-7RL"/>
-                            <constraint firstAttribute="trailing" secondItem="cPc-UZ-AsZ" secondAttribute="trailing" constant="10" id="RYq-hM-Mot"/>
-
-                            <!-- Message/Call stack: below map -->
-                            <constraint firstItem="b3K-SC-fYV" firstAttribute="top" secondItem="cPc-UZ-AsZ" secondAttribute="bottom" constant="12" id="L2t-xx-pye"/>
+                            <!-- Show Map / Call / Msg stack: below avatarStackView -->
+                            <constraint firstItem="b3K-SC-fYV" firstAttribute="top" secondItem="avt-stk-001" secondAttribute="bottom" constant="16" id="L2t-xx-pye"/>
                             <constraint firstItem="b3K-SC-fYV" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="16" id="Jb5-Pq-KNs"/>
                             <constraint firstAttribute="trailing" secondItem="b3K-SC-fYV" secondAttribute="trailing" constant="16" id="oZ1-ji-EIe"/>
 
-                            <!-- Cancel Ride: below message/call -->
-                            <constraint firstItem="MqO-bM-fGV" firstAttribute="top" secondItem="b3K-SC-fYV" secondAttribute="bottom" constant="12" id="lvD-5O-eHu"/>
+                            <!-- Map view: below Action Stack -->
+                            <constraint firstItem="cPc-UZ-AsZ" firstAttribute="top" secondItem="b3K-SC-fYV" secondAttribute="bottom" constant="12" id="GPK-G0-UgV"/>
+                            <constraint firstItem="cPc-UZ-AsZ" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="10" id="bWX-gR-7RL"/>
+                            <constraint firstAttribute="trailing" secondItem="cPc-UZ-AsZ" secondAttribute="trailing" constant="10" id="RYq-hM-Mot"/>
+
+                            <!-- Cancel Ride: below Map View -->
+                            <constraint firstItem="MqO-bM-fGV" firstAttribute="top" secondItem="cPc-UZ-AsZ" secondAttribute="bottom" constant="12" id="lvD-5O-eHu"/>
                             <constraint firstItem="MqO-bM-fGV" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="16" id="cancel-lead"/>
                             <constraint firstAttribute="trailing" secondItem="MqO-bM-fGV" secondAttribute="trailing" constant="16" id="cancel-trail"/>
 
-                            <!-- cardView bottom pinned to cancelRide bottom -->
-                            <constraint firstAttribute="bottom" secondItem="MqO-bM-fGV" secondAttribute="bottom" constant="16" id="2gG-ab-lVm"/>
+                            <!-- cardView bottom pinned to startTrip button bottom -->
+                            <constraint firstAttribute="bottom" secondItem="str-ip-001" secondAttribute="bottom" constant="16" id="2gG-ab-lVm"/>
+                            <!-- startTripButton layout -->
+                            <constraint firstItem="str-ip-001" firstAttribute="top" secondItem="MqO-bM-fGV" secondAttribute="bottom" constant="10" id="str-top-001"/>
+                            <constraint firstItem="str-ip-001" firstAttribute="leading" secondItem="D9v-9f-Ikl" secondAttribute="leading" constant="16" id="str-lead-001"/>
+                            <constraint firstAttribute="trailing" secondItem="str-ip-001" secondAttribute="trailing" constant="16" id="str-trail-001"/>
 
                             <!-- Legacy hidden elements pinned to top (zero height) -->
                             <constraint firstItem="pw5-A7-20w" firstAttribute="top" secondItem="D9v-9f-Ikl" secondAttribute="top" id="E3g-bu-jZ8"/>
@@ -415,6 +421,7 @@
                 <outlet property="startTimeLabel" destination="OQt-xS-B3K" id="lhf-lz-Y3P"/>
                 <outlet property="statusLabel" destination="5Z3-Wd-ys2" id="AVB-lG-IJB"/>
                 <outlet property="toLabel" destination="TK3-ha-Aac" id="eVW-Or-oEa"/>
+                <outlet property="startTripButton" destination="str-ip-001" id="str-out-001"/>
                 <outlet property="viewRequestButton" destination="pw5-A7-20w" id="iJk-AE-QgG"/>
                 <outlet property="viewRequestsHeightConstraint" destination="h-view-req-btn" id="5Uf-6p-u7a"/>
                 <outlet property="viewRequestsTopConstraint" destination="E3g-bu-jZ8" id="s-view-req-top"/>
@@ -433,12 +440,6 @@
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="systemBlueColor">
-            <color red="0.0" green="0.478" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
-        <systemColor name="systemRedColor">
-            <color red="1" green="0.231" blue="0.188" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="tertiaryLabelColor">
             <color red="0.235" green="0.235" blue="0.263" alpha="0.3" colorSpace="custom" customColorSpace="sRGB"/>

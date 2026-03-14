@@ -29,7 +29,7 @@ final class ApprovedPassengerCell: UITableViewCell {
         contentView.addSubview(avatarImageView)
         
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        nameLabel.font = .systemFont(ofSize: 14, weight: .bold)
+        nameLabel.font = AppDesign.Typography.captionStrong
         nameLabel.textColor = .label
         contentView.addSubview(nameLabel)
         
@@ -47,7 +47,7 @@ final class ApprovedPassengerCell: UITableViewCell {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        avatarImageView.layer.cornerRadius = 17.5 // 35 / 2
+        avatarImageView.layer.cornerRadius = avatarImageView.bounds.height / 2
     }
     
     func configure(name: String, photoURL: URL?) {

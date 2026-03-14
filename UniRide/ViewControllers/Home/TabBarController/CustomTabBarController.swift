@@ -23,6 +23,7 @@ final class CustomTabBarController: UITabBarController, UITabBarControllerDelega
 
     // When switching tabs, always reset the navigation stack
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        AppHaptics.selection()
 
         // If the selected tab has a navigation controller, reset to root
         if let nav = viewController as? UINavigationController {

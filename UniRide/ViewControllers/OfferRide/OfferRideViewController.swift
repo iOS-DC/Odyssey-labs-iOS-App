@@ -42,7 +42,6 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     private var suggestions: [MKLocalSearchCompletion] = []
     private var routes: [MKRoute] = []
     // Persistent Routes Sheet
-    
 
     private var selectedRoute: MKRoute?
 
@@ -56,13 +55,32 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         setDefaultDateAndTime()
 
         contentView.applyCardStyle()
+        fromTextField.applyRoundedField()
+        fromTextField.addLeftIcon("mappin")
+        toTextField.applyRoundedField()
+        toTextField.addLeftIcon("mappin")
+        suggestionsTable.applySmallCard()
+        let nextTitle = nextButton.currentTitle ?? "Next"
+        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
+        titleLabel.applyTextStyle(AppDesign.Typography.h2)
+        fromLabelTitle.applyTextStyle(AppDesign.Typography.bodyStrong)
+        toLabelTitle.applyTextStyle(AppDesign.Typography.bodyStrong)
+        chooseRouteLabel.applyTextStyle(AppDesign.Typography.title)
+        loadingLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+        emptyStateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
         setupAutocomplete()
         setupPickers()
         routePillsContainer.applySmallCard()
         setInitialRouteUIState()
+        prefillLocationsIfPossible()
         updateNextButtonState()
 
+        // Tap anywhere on the map to dismiss the keyboard
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        mapView.addGestureRecognizer(tapGesture)
     }
+
     // Sets the date to today and time to 10 minutes from now (minimum lead time)
     private func setDefaultDateAndTime() {
         datePicker.date = Date()
@@ -92,6 +110,18 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
             self.suggestionsTable.reloadData()
             self.suggestionsTable.isHidden = results.isEmpty
         }
+    }
+
+    private func prefillLocationsIfPossible() {
+        guard let prefill = UserDataModel.shared.suggestedCommutePrefill() else { return }
+
+        fromTextField.text = prefill.from.address ?? "Chitkara University"
+        toTextField.text = prefill.to.address ?? "Home"
+        fromCoord = CLLocationCoordinate2D(latitude: prefill.from.lat, longitude: prefill.from.lon)
+        toCoord = CLLocationCoordinate2D(latitude: prefill.to.lat, longitude: prefill.to.lon)
+
+        updateNextButtonState()
+        tryFetchRoutes()
     }
 
     // MARK: - Setup Pickers
@@ -159,6 +189,10 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
     // Always allow user to edit the text fields
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool { true }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
 
     @IBAction private func locationFieldEditingChanged(_ sender: UITextField) {
         updateNextButtonState()
@@ -238,6 +272,8 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
                 }
 
                 self.suggestionsTable.isHidden = true
+                self.activeField?.resignFirstResponder()
+                self.activeField = nil
                 self.updateNextButtonState()
                 self.tryFetchRoutes()
             }
@@ -372,8 +408,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         let hasFrom = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasTo = !(toTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let enabled = hasFrom && hasTo
-        nextButton.isEnabled = enabled
-        nextButton.alpha = enabled ? 1.0 : 0.4
+        nextButton.setPrimaryCTAEnabled(enabled)
     }
 
 
@@ -386,7 +421,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
 
         if overlay.title == "selected" {
             //  Hero route
-            renderer.strokeColor = .systemBlue
+            renderer.strokeColor = AppDesign.Color.primary
             renderer.lineWidth = 9
             renderer.alpha = 1.0
         } else {
@@ -425,7 +460,7 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
         let frame = tf.convert(tf.bounds, to: view)
 
         UIView.animate(withDuration: 0.2) {
-            self.suggestionsTable.frame = CGRect( x: frame.minX, y: frame.maxY + 3, width: frame.width, height: 220)
+            self.suggestionsTable.frame = CGRect(x: frame.minX, y: frame.maxY + AppDesign.Spacing.xxs, width: frame.width, height: 220)
         }
 
     }
@@ -433,21 +468,46 @@ class OfferRideViewController: UIViewController, UITableViewDelegate, UITableVie
     // MARK: - NEXT BUTTON
     // Moves to vehicle details screen with all the route info
     @IBAction func nextTapped(_ sender: Any) {
-        guard let from = fromCoord, let to = toCoord else { return }
+        let fromText = fromTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let toText   = toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        guard !fromText.isEmpty, !toText.isEmpty else {
+            showValidationAlert("Missing Location", message: "Please enter both a pickup and a drop-off location.")
+            return
+        }
+        guard let from = fromCoord else {
+            showValidationAlert("Select from suggestions", message: "Please pick your pickup location from the autocomplete list.")
+            return
+        }
+        guard let to = toCoord else {
+            showValidationAlert("Select from suggestions", message: "Please pick your drop-off location from the autocomplete list.")
+            return
+        }
+        guard fromText.lowercased() != toText.lowercased() else {
+            showValidationAlert("Same Location", message: "Pickup and drop-off can't be the same. Please choose different locations.")
+            return
+        }
+
+        view.endEditing(true)
 
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
         let vc = sb.instantiateViewController(withIdentifier: "VehicleDetailsViewController") as! VehicleDetailsViewController
 
         vc.date = datePicker.date
         vc.time = timePicker.date
-
-        vc.source = LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text)
-        vc.destination = LocationPoint(lat: to.latitude, lon: to.longitude, address: toTextField.text)
+        vc.source      = LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text)
+        vc.destination = LocationPoint(lat: to.latitude,   lon: to.longitude,   address: toTextField.text)
 
         if let route = selectedRoute {
             vc.selectedRoute = MapKitManager.shared.convert(route)
         }
 
         navigationController?.pushViewController(vc, animated: true)
+    }
+
+    private func showValidationAlert(_ title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
