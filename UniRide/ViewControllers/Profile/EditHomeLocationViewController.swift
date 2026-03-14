@@ -345,10 +345,34 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
     @objc private func saveTapped() {
         guard let loc = selectedLocation else { return }
         
-        // Because UserDataModel expects an array of homes normally, we provide it.
-        // It saves to UserDefaults + pushes to Supabase in the background if logged in.
-        UserDataModel.shared.setHomeLocations([loc])
-        AppHaptics.success()
-        navigationController?.popViewController(animated: true)
+        saveButton.setPrimaryCTAEnabled(false)
+        saveButton.setTitle("Saving...", for: .normal)
+        
+        Task {
+            guard let user = UserDataModel.shared.getCurrentUser() else { return }
+            do {
+                // 1. Push to Supabase synchronously
+                try await ProfileRepository.shared.upsertHomeLocation(userID: user.id, location: loc, isPrimary: true)
+                
+                // 2. Save locally
+                UserDataModel.shared.setHomeLocations([loc])
+                
+                // 3. Return to profile
+                await MainActor.run {
+                    AppHaptics.success()
+                    self.navigationController?.popViewController(animated: true)
+                }
+            } catch {
+                await MainActor.run {
+                    print("[EditHome] Failed to push to backend:", error)
+                    self.saveButton.setPrimaryCTAEnabled(true)
+                    self.saveButton.setTitle("Save Location", for: .normal)
+                    
+                    let alert = UIAlertController(title: "Save Failed", message: error.localizedDescription, preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(alert, animated: true)
+                }
+            }
+        }
     }
 }

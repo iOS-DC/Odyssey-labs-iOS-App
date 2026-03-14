@@ -37,7 +37,7 @@ class CommunityViewController: UIViewController,
 
     // MARK: - Models
     struct Post {
-        let name: String
+        var name: String
         let subtitle: String
         let message: String
         let timestamp: String
@@ -46,13 +46,20 @@ class CommunityViewController: UIViewController,
         /// Used to target like / comment / share calls to the correct row.
         var remoteID: UUID?
 
+        /// The real Supabase UUID of the author — stored so we never look up by name.
+        var authorUserID: UUID?
+
         var likeCount: Int
         var shareCount: Int
         var hasLiked: Bool = false
         var hasShared: Bool = false
 
         var comments: [String] = []
-        var commentCount: Int { comments.count }
+        /// Real comment count from the DB — always accurate even before comments are loaded.
+        var remoteCommentCount: Int = 0
+        var commentCount: Int {
+            remoteCommentCount > 0 ? remoteCommentCount : comments.count
+        }
     }
 
 
@@ -87,6 +94,8 @@ class CommunityViewController: UIViewController,
         fetchPostsFromSupabase()
 
 
+        segmentedControl.setTitle("Events", forSegmentAt: 0)
+        segmentedControl.setTitle("Feed", forSegmentAt: 1)
         segmentedControl.selectedSegmentIndex = 0
 
         tableView.delegate = self
@@ -134,7 +143,7 @@ class CommunityViewController: UIViewController,
             if let remote = try? await EventsAPI.shared.fetchTopEvents(limit: 30), !remote.isEmpty {
                 await MainActor.run {
                     self.eventPosts = remote
-                    if self.segmentedControl.selectedSegmentIndex == 1 {
+                    if self.segmentedControl.selectedSegmentIndex == 0 {
                         self.tableView.reloadData()
                     }
                 }
@@ -374,8 +383,8 @@ class CommunityViewController: UIViewController,
         AppHaptics.selection()
         tableView.reloadData()
         
-        // Hide "New Post" button (plus) when in Events tab
-        if segmentedControl.selectedSegmentIndex == 1 {
+        // Hide "New Post" button (plus) when in Events tab (index 0)
+        if segmentedControl.selectedSegmentIndex == 0 {
             navigationItem.rightBarButtonItem = nil
         } else {
             navigationItem.rightBarButtonItem = newPostBarButton
@@ -577,7 +586,7 @@ class CommunityViewController: UIViewController,
     }
     
     @IBAction func shareEventTapped(_ sender: UIButton) {
-        if segmentedControl.selectedSegmentIndex == 1 {
+        if segmentedControl.selectedSegmentIndex == 0 {
             EventShareButtonTapped(sender)
         } else {
             shareButtonTapped(sender)
@@ -632,7 +641,7 @@ class CommunityViewController: UIViewController,
         }
 
         // Increase share count for whichever post is currently selected
-        if segmentedControl.selectedSegmentIndex == 0 {
+        if segmentedControl.selectedSegmentIndex == 1 {
             feedPosts[currentPostIndex].shareCount += 1
         } else {
             eventPosts[currentPostIndex].shareCount += 1
@@ -683,30 +692,68 @@ class CommunityViewController: UIViewController,
     private func fetchPostsFromSupabase() {
         Task {
             guard let remotePosts = try? await CommunityRepository.shared.fetchPosts() else { return }
-            let mapped: [Post] = remotePosts.map { rp in
-                // Resolve author name from local profile cache, fall back to "Community Member"
-                let author = UserDataModel.shared.getUser(by: rp.authorUserID)
-                let authorName = author?.fullName.isEmpty == false ? author!.fullName : "Community Member"
-                let role: String
-                if let r = author?.role { role = r == .faculty ? "Faculty" : "Student" }
-                else { role = "Community Member" }
 
+            // Build initial posts with placeholder names and real counts
+            var mapped: [Post] = remotePosts.map { rp in
                 let df = RelativeDateTimeFormatter()
                 df.unitsStyle = .short
                 let when = df.localizedString(for: rp.createdAt, relativeTo: Date())
                 return Post(
-                    name: authorName,
-                    subtitle: role,
+                    name: "UniRide User",          // placeholder — replaced below
+                    subtitle: "Community Member",  // placeholder
                     message: rp.text,
                     timestamp: when,
-                    remoteID: rp.id,        // ← store remote ID so likes/comments can target the right row
+                    remoteID: rp.id,
+                    authorUserID: rp.authorUserID, // ← store real UUID directly
                     likeCount: rp.likeCount,
-                    shareCount: rp.shareCount
+                    shareCount: rp.shareCount,
+                    remoteCommentCount: rp.commentCount // ← real count from DB
                 )
             }
             guard !mapped.isEmpty else { return }
+
+            // Show posts immediately with placeholder names
             await MainActor.run {
-                // Replace local seed posts with remote data
+                self.feedPosts = mapped
+                self.tableView.reloadData()
+            }
+
+            // Fetch real names from Supabase profiles in parallel
+            let uniqueAuthorIDs = Set(remotePosts.map { $0.authorUserID })
+            await withTaskGroup(of: (UUID, String, String)?.self) { group in
+                for authorID in uniqueAuthorIDs {
+                    group.addTask {
+                        // Try local cache first (fast), then Supabase
+                        if let cached = UserDataModel.shared.getUser(by: authorID),
+                           !cached.fullName.isEmpty {
+                            let role = cached.role == .faculty ? "Faculty" : "Student"
+                            return (authorID, cached.fullName, role)
+                        }
+                        guard let row = try? await ProfileRepository.shared.fetchProfile(userID: authorID),
+                              let name = row["full_name"] as? String,
+                              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        else { return nil }
+                        let role = (row["role"] as? String) == "faculty" ? "Faculty" : "Student"
+                        return (authorID, name, role)
+                    }
+                }
+                for await result in group {
+                    guard let (authorID, name, role) = result else { continue }
+                    // Update all posts by this author
+                    for i in mapped.indices where mapped[i].authorUserID == authorID {
+                        mapped[i].name = name
+                        mapped[i] = Post(
+                            name: name, subtitle: role,
+                            message: mapped[i].message, timestamp: mapped[i].timestamp,
+                            remoteID: mapped[i].remoteID, authorUserID: mapped[i].authorUserID,
+                            likeCount: mapped[i].likeCount, shareCount: mapped[i].shareCount,
+                            remoteCommentCount: mapped[i].remoteCommentCount
+                        )
+                    }
+                }
+            }
+
+            await MainActor.run {
                 self.feedPosts = mapped
                 self.tableView.reloadData()
             }
@@ -748,7 +795,7 @@ class CommunityViewController: UIViewController,
             return selectedComments.count
         }
 
-        return segmentedControl.selectedSegmentIndex == 0
+        return segmentedControl.selectedSegmentIndex == 1
             ? feedPosts.count
             : eventPosts.count
     }
@@ -769,7 +816,7 @@ class CommunityViewController: UIViewController,
         }
 
         // FEED LIST
-        if segmentedControl.selectedSegmentIndex == 0 {
+        if segmentedControl.selectedSegmentIndex == 1 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
             let post = feedPosts[indexPath.row]
 
@@ -869,22 +916,21 @@ class CommunityViewController: UIViewController,
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         guard tableView != commentTableView,
-              segmentedControl.selectedSegmentIndex == 0,
+              segmentedControl.selectedSegmentIndex == 1,
               indexPath.row < feedPosts.count else { return }
 
         let localPost = feedPosts[indexPath.row]
         guard let remoteID = localPost.remoteID else { return }
 
-        // Map local Post → CommunityPost for PostDetailVC
+        // Use the stored authorUserID directly — never look up by name
         let communityPost = CommunityPost(
             id: remoteID,
-            authorUserID: UserDataModel.shared.allUsers()
-                .first(where: { $0.fullName == localPost.name })?.id ?? UUID(),
+            authorUserID: localPost.authorUserID ?? UUID(),
             text: localPost.message,
             imageURL: nil,
             likeCount: localPost.likeCount,
             shareCount: localPost.shareCount,
-            commentCount: localPost.commentCount,
+            commentCount: localPost.remoteCommentCount,
             createdAt: Date()
         )
         let vc = PostDetailViewController()
@@ -895,13 +941,13 @@ class CommunityViewController: UIViewController,
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         guard tableView != commentTableView else { return UITableView.automaticDimension }
         // Event cards have a fixed hero height + metadata — estimate generously
-        if segmentedControl.selectedSegmentIndex == 1 { return UITableView.automaticDimension }
+        if segmentedControl.selectedSegmentIndex == 0 { return UITableView.automaticDimension }
         return UITableView.automaticDimension
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         guard tableView != commentTableView else { return 80 }
-        return segmentedControl.selectedSegmentIndex == 1 ? 270 : 160
+        return segmentedControl.selectedSegmentIndex == 0 ? 270 : 160
     }
 }
 
@@ -996,9 +1042,8 @@ class CommentTableViewCell: UITableViewCell {
         ])
     }
     
-    func configure(text: String) {
-        let randomNames = ["Alex", "Jordan", "Taylor", "Casey", "Riley", "Jamie"]
-        nameLabel.text = randomNames.randomElement()
+    func configure(text: String, authorName: String = "") {
+        nameLabel.text = authorName.isEmpty ? UserDataModel.shared.getCurrentUser()?.fullName ?? "" : authorName
         commentLabel.text = text
     }
 }
