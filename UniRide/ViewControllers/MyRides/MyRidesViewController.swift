@@ -208,7 +208,9 @@ final class MyRidesViewController: UIViewController {
     // MARK: - Data
 
     @objc private func ridesDidUpdate() {
-        reloadTrips()
+        DispatchQueue.main.async { [weak self] in
+            self?.reloadTrips()
+        }
     }
 
     private func reloadTrips() {
@@ -427,9 +429,7 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
         return cell
     }
 
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        cell.contentView.frame = cell.contentView.frame.insetBy(dx: 0, dy: 6)
-    }
+
 }
 
 // MARK: - Host Cell Delegate
