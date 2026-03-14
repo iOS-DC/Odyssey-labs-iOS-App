@@ -7,6 +7,7 @@ enum VehicleType: String, Codable {
 
 // Vehicle Struct
 struct Vehicle: Codable, Equatable {
+    var alias: String? // e.g. "My Swift"
     var type: VehicleType
     var model: String
     var registrationNumber: String
@@ -30,7 +31,7 @@ struct UserProfile: Equatable, Codable {
     var year: Int?
     var employeeID: String?
     var photoURL: URL?
-    var vehicle: Vehicle?
+    var vehicles: [Vehicle]?
 
     var savedHomeLocation: LocationPoint?
     var savedHomeLocations: [LocationPoint]?
@@ -46,7 +47,7 @@ struct UserProfile: Equatable, Codable {
          year: Int? = nil,
          employeeID: String? = nil,
          photoURL: URL? = nil,
-         vehicle: Vehicle? = nil,
+         vehicles: [Vehicle]? = nil,
          savedHomeLocation: LocationPoint? = nil,
          savedHomeLocations: [LocationPoint]? = nil,
          lastKnownLocation: LocationPoint? = nil) {
@@ -60,7 +61,7 @@ struct UserProfile: Equatable, Codable {
         self.year = year
         self.employeeID = employeeID
         self.photoURL = photoURL
-        self.vehicle = vehicle
+        self.vehicles = vehicles
         self.savedHomeLocation = savedHomeLocation
         self.savedHomeLocations = savedHomeLocations
         self.lastKnownLocation = lastKnownLocation
@@ -76,7 +77,7 @@ struct UserProfile: Equatable, Codable {
          year: Int? = nil,
          employeeID: String? = nil,
          photoURL: URL? = nil,
-         vehicle: Vehicle? = nil,
+         vehicles: [Vehicle]? = nil,
          savedHomeLocation: LocationPoint? = nil,
          savedHomeLocations: [LocationPoint]? = nil,
          lastKnownLocation: LocationPoint? = nil) {
@@ -90,7 +91,7 @@ struct UserProfile: Equatable, Codable {
         self.year = year
         self.employeeID = employeeID
         self.photoURL = photoURL
-        self.vehicle = vehicle
+        self.vehicles = vehicles
         self.savedHomeLocation = savedHomeLocation
         self.savedHomeLocations = savedHomeLocations
         self.lastKnownLocation = lastKnownLocation
@@ -269,9 +270,9 @@ final class UserDataModel {
         // Build local profile from the Supabase row
         var profile = profileFromRow(row, fallbackEmail: email, uid: uid)
 
-        // Hydrate vehicle from user_vehicles table
-        if let vehicle = try? await ProfileRepository.shared.fetchVehicle(userID: uid) {
-            profile.vehicle = vehicle
+        // Hydrate vehicles from user_vehicles table
+        if let vehicles = try? await ProfileRepository.shared.fetchVehicles(userID: uid) {
+            profile.vehicles = vehicles
         }
 
         // Hydrate home locations from home_locations table
@@ -293,7 +294,7 @@ final class UserDataModel {
                 phone: profile.phone,
                 fullName: profile.fullName, role: profile.role, courseName: profile.courseName,
                 year: profile.year, employeeID: profile.employeeID, photoURL: profile.photoURL,
-                vehicle: profile.vehicle, savedHomeLocation: profile.savedHomeLocation,
+                vehicles: profile.vehicles, savedHomeLocation: profile.savedHomeLocation,
                 savedHomeLocations: profile.savedHomeLocations, lastKnownLocation: profile.lastKnownLocation)
         } else {
             persisted = profile
@@ -321,7 +322,7 @@ final class UserDataModel {
             courseName: department,
             year: year,
             photoURL: nil,
-            vehicle: nil
+            vehicles: nil
         )
 
         users.append(newUser)
@@ -354,8 +355,8 @@ final class UserDataModel {
 
         var profile = profileFromRow(row, fallbackEmail: SessionManager.shared.userEmail ?? "", uid: uid)
 
-        if let vehicle = try? await ProfileRepository.shared.fetchVehicle(userID: uid) {
-            profile.vehicle = vehicle
+        if let vehicles = try? await ProfileRepository.shared.fetchVehicles(userID: uid) {
+            profile.vehicles = vehicles
         }
         let homes = (try? await ProfileRepository.shared.fetchHomeLocations(userID: uid)) ?? []
         if !homes.isEmpty {
@@ -386,7 +387,7 @@ final class UserDataModel {
         year: Int? = nil,
         employeeID: String? = nil,
         photoURL: URL? = nil,
-        vehicle: Vehicle? = nil
+        vehicles: [Vehicle]? = nil
     ) {
         guard let id = currentUserID,
               let index = users.firstIndex(where: { $0.id == id }) else { return }
@@ -398,7 +399,7 @@ final class UserDataModel {
         if let y = year { user.year = y }
         if let e = employeeID { user.employeeID = e }
         if let p = photoURL { user.photoURL = p }
-        if let v = vehicle { user.vehicle = v }
+        if let v = vehicles { user.vehicles = v }
 
         users[index] = user
         saveUsers()
@@ -519,7 +520,7 @@ final class UserDataModel {
             year: remote.year,
             employeeID: remote.employeeID,
             photoURL: parsedPhotoURL,
-            vehicle: remote.vehicle,
+            vehicles: remote.vehicle.map { [$0] },
             savedHomeLocation: remote.savedHomeLocation,
             savedHomeLocations: remote.savedHomeLocations,
             lastKnownLocation: nil
@@ -574,8 +575,10 @@ final class UserDataModel {
 
         try await ProfileRepository.shared.upsertProfile(fields)
 
-        if let vehicle = user.vehicle {
-            try await ProfileRepository.shared.upsertVehicle(userID: user.id, vehicle: vehicle)
+        if let vehicles = user.vehicles {
+            for v in vehicles {
+                try await ProfileRepository.shared.upsertVehicle(userID: user.id, vehicle: v)
+            }
         }
 
         // BUG FIX: Sync ALL saved home locations, not just the primary one.
@@ -619,7 +622,7 @@ final class UserDataModel {
                 year: incoming.year,
                 employeeID: incoming.employeeID,
                 photoURL: incoming.photoURL,
-                vehicle: incoming.vehicle,
+                vehicles: incoming.vehicles,
                 savedHomeLocation: incoming.savedHomeLocation,
                 savedHomeLocations: incoming.savedHomeLocations,
                 lastKnownLocation: incoming.lastKnownLocation

@@ -357,7 +357,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
     // MARK: - Pre-fill from saved vehicle
     private func preloadVehicleIdentity() {
-        guard let vehicle = UserDataModel.shared.getCurrentUser()?.vehicle else { return }
+        guard let vehicle = UserDataModel.shared.getCurrentUser()?.vehicles?.first else { return }
         plateField.text = vehicle.registrationNumber
         modelField.text = vehicle.model
         switch vehicle.type {

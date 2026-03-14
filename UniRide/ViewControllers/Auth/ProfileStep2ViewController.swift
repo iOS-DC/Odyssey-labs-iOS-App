@@ -355,7 +355,7 @@ class ProfileStep2ViewController: UIViewController {
     }
 
     private func preloadSavedState() {
-        let vehicle = RegistrationBuilder.shared.vehicle ?? UserDataModel.shared.getCurrentUser()?.vehicle
+        let vehicle = RegistrationBuilder.shared.vehicle ?? UserDataModel.shared.getCurrentUser()?.vehicles?.first
         if let vehicle = vehicle {
             selectedHasVehicle = true
             selectedVehicleType = vehicle.type == .bike ? "Two-Wheeler" : "Car"

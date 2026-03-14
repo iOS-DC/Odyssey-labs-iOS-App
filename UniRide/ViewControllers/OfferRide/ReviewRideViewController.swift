@@ -73,6 +73,7 @@ class ReviewRideViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Step 2"
         cardView.applyCardStyle()
         let offerTitle = offerButton.currentTitle ?? "Offer Ride"
         offerButton.applyProminentPrimaryCTA(title: offerTitle, corner: AppDesign.Radius.md)
@@ -240,6 +241,7 @@ class ReviewRideViewController: UIViewController {
             return
         }
 
+
         let finalDeparture = merge(summary.date, summary.time)
 
         let rawWaypoints = summary.route?.coordinates ?? []
@@ -272,7 +274,9 @@ class ReviewRideViewController: UIViewController {
             status: .published,
             notes: "",
             isRecurring: self.isRecurring,
-            recurringDays: Array(self.recurringDays).sorted()
+            recurringDays: Array(self.recurringDays).sorted(),
+            vehicleModel: summary.vehicleModel,
+            registrationPlate: summary.registrationPlate
         )
 
         // Show loading state inline on the button

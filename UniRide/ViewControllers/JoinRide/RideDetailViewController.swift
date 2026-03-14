@@ -255,7 +255,9 @@ final class RideDetailViewController: UIViewController {
         let fareChip  = makeChip(icon: "indianrupeesign.circle.fill", color: .systemOrange, text: "₹\(Int(ride.farePerSeat)) per seat")
 
         let vehicleText: String
-        if let v = driver?.vehicle {
+        if let model = ride.vehicleModel, let plate = ride.registrationPlate {
+            vehicleText = "\(model)  ·  \(plate)"
+        } else if let v = driver?.vehicles?.first {
             vehicleText = "\(v.type.rawValue.capitalized)  ·  \(v.model)"
         } else {
             vehicleText = "Car"

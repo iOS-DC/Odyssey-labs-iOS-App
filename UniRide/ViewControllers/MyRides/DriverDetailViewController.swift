@@ -92,7 +92,10 @@ final class DriverDetailViewController: UIViewController {
             ("Contact",   driver.phone             ?? "—"),
         ]
 
-        if let v = driver.vehicle {
+        if let model = ride.vehicleModel, let plate = ride.registrationPlate {
+            rows.append(("Vehicle", model))
+            rows.append(("Plate",   plate))
+        } else if let v = driver.vehicles?.first {
             let typeStr = (v.type == .car) ? "Car" : "Bike"
             rows.append(("Vehicle",    "\(typeStr) · \(v.model)"))
             rows.append(("Plate",      v.registrationNumber))
