@@ -448,11 +448,8 @@ class ProfileViewController: UIViewController {
     }
 
     @objc private func editHomeLocationTapped() {
-        let sb = UIStoryboard(name: "Main", bundle: nil)
-        if let vc = sb.instantiateViewController(withIdentifier: "ProfileStep3ViewController") as? ProfileStep3ViewController {
-            vc.isEditingMode = true
-            navigationController?.pushViewController(vc, animated: true)
-        }
+        let vc = EditHomeLocationViewController()
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     @objc private func logoutTapped() {

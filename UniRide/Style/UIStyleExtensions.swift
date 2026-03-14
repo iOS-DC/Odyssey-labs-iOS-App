@@ -362,9 +362,7 @@ extension UITextField {
 
     /// Rounded border + padding
     func applyRoundedField() {
-        layer.cornerRadius = AppDesign.Radius.sm
-        layer.borderWidth = 1
-        layer.borderColor = AppDesign.Color.border.cgColor
+        layer.cornerRadius = AppDesign.Radius.md
         backgroundColor = AppDesign.Color.fieldBackground
         setLeftPaddingPoints(14)
         setMinimumHeight(AppDesign.Size.fieldHeight, for: self)
