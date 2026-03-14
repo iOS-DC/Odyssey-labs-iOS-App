@@ -156,13 +156,8 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         fromLabel.text = ride.source.address ?? "From"
         toLabel.text   = ride.destination.address ?? "To"
 
-        // Vehicle info in seatsLabel slot
-        if let vehicle = UserDataModel.shared.getUser(by: ride.driverUserID)?.vehicle {
-            let icon = (vehicle.type == .car) ? "🚗" : "🛵"
-            seatsLabel.text = "\(icon) \(vehicle.model)"
-        } else {
-            seatsLabel.text = "\(ride.seatsTotal - ride.seatsAvailable)/\(ride.seatsTotal) seats"
-        }
+        // Seat count
+        seatsLabel.text = "\(ride.seatsTotal - ride.seatsAvailable)/\(ride.seatsTotal) seats"
 
         rideStatusLabel.isHidden = true
 
@@ -187,7 +182,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let cancelTitle: String
         if isConfirmed {
             if ride.status == .ongoing {
-                requestStatusLabel.text            = "  🚗 Trip Started  "
+                requestStatusLabel.text            = "  Trip Started  "
                 requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
                 requestStatusLabel.textColor       = .white
                 cancelTitle = "Cancel Booking"
@@ -259,10 +254,28 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     }
 
     private func animateIfNeeded(_ animated: Bool, completion: (() -> Void)? = nil) {
-        guard animated else { completion?(); return }
-        UIView.animate(withDuration: 0.3, animations: {
-            self.superview?.layoutIfNeeded()
-        }, completion: { _ in completion?() })
+        // Tell tableView to recalculate this row's height
+        func updateTableHeight() {
+            var v: UIView? = superview
+            while let current = v {
+                if let tv = current as? UITableView {
+                    tv.beginUpdates()
+                    tv.endUpdates()
+                    return
+                }
+                v = current.superview
+            }
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.3) {
+                self.superview?.layoutIfNeeded()
+                updateTableHeight()
+            } completion: { _ in completion?() }
+        } else {
+            completion?()
+            updateTableHeight()
+        }
     }
 
     private func drawRouteIfNeeded(for ride: Ride) {
