@@ -53,6 +53,9 @@ final class UpcomingTableViewCell: UITableViewCell {
     private var approvedPassengers: [UserProfile] = []
     private var isMapExpanded = false
 
+    // Programmatic inline badge (replaces XIB viewRequestButton which overlaps roleLabel)
+    private let pendingBadge = UILabel()
+
     weak var delegate: UpcomingTableViewCellDelegate?
 
     // MARK: - Lifecycle
@@ -96,6 +99,31 @@ final class UpcomingTableViewCell: UITableViewCell {
         durationLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         passengersLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         seatsLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+
+        // Inline pending badge — sits to the right of roleLabel on the same row
+        pendingBadge.font       = AppDesign.Typography.captionStrong
+        pendingBadge.textColor  = AppDesign.Color.primary
+        pendingBadge.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.12)
+        pendingBadge.textAlignment   = .center
+        pendingBadge.layer.cornerRadius  = AppDesign.Radius.sm
+        pendingBadge.layer.masksToBounds = true
+        pendingBadge.isHidden            = true
+        pendingBadge.isUserInteractionEnabled = true
+        pendingBadge.translatesAutoresizingMaskIntoConstraints = false
+        pendingBadge.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(pendingBadgeTapped))
+        )
+        cardView.addSubview(pendingBadge)
+        NSLayoutConstraint.activate([
+            pendingBadge.leadingAnchor.constraint(equalTo: roleLabel.trailingAnchor, constant: 8),
+            pendingBadge.centerYAnchor.constraint(equalTo: roleLabel.centerYAnchor),
+            pendingBadge.heightAnchor.constraint(equalToConstant: 24),
+        ])
+
+        // Always hide the XIB button — it sits at cardView.top+0 and overlaps roleLabel
+        viewRequestButton.isHidden = true
+        viewRequestsHeightConstraint.constant = 0
+        viewRequestsTopConstraint.constant    = 0
     }
 
     override func layoutSubviews() {
@@ -116,7 +144,8 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         viewRequestButton.isHidden = true
         viewRequestsHeightConstraint.constant = 0
-        viewRequestsTopConstraint.constant = 0
+        viewRequestsTopConstraint.constant    = 0
+        pendingBadge.isHidden = true
 
         requestContainerView.isHidden = true
         requestContainerView.isUserInteractionEnabled = false
@@ -171,23 +200,20 @@ final class UpcomingTableViewCell: UITableViewCell {
         statusLabel.text = "  \(statusIcon) \(ride.status.rawValue.capitalized)  "
         applyBadgeStyle(to: statusLabel, backgroundColor: bgColor, textColor: .white)
 
-        // Pending requests
+        // Pending request badge (inline with roleLabel)
         rideRequests = RideDataModel.shared.listRequests(for: ride.id).filter { $0.status == .pending }
-
         if rideRequests.isEmpty {
-            viewRequestButton.isHidden = true
-            viewRequestsHeightConstraint.constant = 0
-            viewRequestsTopConstraint.constant = 0
+            pendingBadge.isHidden = true
         } else {
-            viewRequestButton.isHidden = false
-            viewRequestsHeightConstraint.constant = 36
-            viewRequestsTopConstraint.constant = AppDesign.Spacing.sm
-            
-            let reqCount = rideRequests.count
-            let title = reqCount == 1 ? "1 Pending Request" : "\(reqCount) Pending Requests"
-            viewRequestButton.setTitle(title, for: .normal)
-            viewRequestButton.applyTextActionStyle(font: AppDesign.Typography.captionStrong)
+            let count = rideRequests.count
+            pendingBadge.text    = "  \(count) Pending  "
+            pendingBadge.isHidden = false
         }
+
+        // XIB viewRequestButton is permanently hidden (wrong position in XIB)
+        viewRequestButton.isHidden            = true
+        viewRequestsHeightConstraint.constant = 0
+        viewRequestsTopConstraint.constant    = 0
 
         // Approved passengers
         approvedPassengers = RideDataModel.shared
@@ -257,6 +283,10 @@ final class UpcomingTableViewCell: UITableViewCell {
     // MARK: - Actions
 
     @IBAction func viewRequestsTapped(_ sender: UIButton) {
+        delegate?.upcomingCellDidTapViewRequests(self)
+    }
+
+    @objc private func pendingBadgeTapped() {
         delegate?.upcomingCellDidTapViewRequests(self)
     }
 

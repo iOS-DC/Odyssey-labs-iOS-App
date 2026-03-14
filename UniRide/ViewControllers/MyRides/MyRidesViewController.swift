@@ -408,6 +408,7 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
                     withIdentifier: "UpcomingPassengerTableViewCell", for: indexPath
                 ) as! UpcomingPassengerTableViewCell
                 cell.configure(with: trip)
+                cell.delegate = self
                 cell.cancelRequestButton.tag = indexPath.row
                 cell.cancelRequestButton.removeTarget(nil, action: nil, for: .touchUpInside)
                 cell.cancelRequestButton.addTarget(self, action: #selector(cancelPassengerRequest(_:)), for: .touchUpInside)
@@ -629,6 +630,23 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
     func upcomingCellDidTapPassenger(_ cell: UpcomingTableViewCell, passenger: UserProfile, ride: Ride) {
         let vc = PassengerDetailViewController(passenger: passenger, ride: ride)
         vc.onRemovePassenger = { [weak self] in self?.reloadTrips() }
+        if let sheet = vc.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 24
+        }
+        present(vc, animated: true)
+    }
+}
+
+// MARK: - UpcomingPassengerCellDelegate
+extension MyRidesViewController: UpcomingPassengerCellDelegate {
+    func passengerCellDidTapDriver(
+        _ cell: UpcomingPassengerTableViewCell,
+        driver: UserProfile,
+        ride: Ride
+    ) {
+        let vc = DriverDetailViewController(driver: driver, ride: ride)
         if let sheet = vc.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
