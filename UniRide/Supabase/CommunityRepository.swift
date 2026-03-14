@@ -217,9 +217,16 @@ final class CommunityRepository {
         }
     }
 
-    func insertComment(postID: UUID, text: String) async throws {
+    /// Inserts a new comment for a post.
+    /// - Inserts a row in `community_comments`
+    /// - Counts all comments for the post and PATCHes `community_posts.comment_count` directly
+    /// - Returns the `newTotalCount`
+    @discardableResult
+    func insertComment(postID: UUID, text: String) async throws -> Int {
         try await SessionManager.shared.validateSession()
         guard let uid = SessionManager.shared.userID else { throw CommunityError.notLoggedIn }
+        
+        // 1. Insert the comment
         let payload: [String: Any] = [
             "post_id": postID.uuidString,
             "author_user_id": uid.uuidString,
@@ -234,6 +241,62 @@ final class CommunityRepository {
         req.httpBody = body
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
+
+        // 2. Count the real total comments for this post
+        let countURL = mgr.restURL(table: "community_comments",
+                                   query: "post_id=eq.\(postID.uuidString)&select=id")
+        var countReq = URLRequest(url: countURL)
+        countReq.allHTTPHeaderFields = mgr.userHeaders
+        let (countData, _) = try await URLSession.shared.data(for: countReq)
+        let allComments = (try? JSONSerialization.jsonObject(with: countData) as? [[String: Any]]) ?? []
+        let newCount = allComments.count
+
+        // 3. PATCH comment_count on community_posts
+        let patchURL = mgr.restURL(table: "community_posts",
+                                   query: "id=eq.\(postID.uuidString)")
+        var patchReq = URLRequest(url: patchURL)
+        patchReq.httpMethod = "PATCH"
+        patchReq.allHTTPHeaderFields = mgr.userHeaders
+        patchReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        patchReq.httpBody = try JSONSerialization.data(withJSONObject: ["comment_count": newCount])
+        let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
+        try checkHTTP(patchResp, data: Data())
+
+        return newCount
+    }
+
+    /// Deletes a specific comment and updates the post's comment count.
+    func deleteComment(commentID: UUID, postID: UUID) async throws -> Int {
+        try await SessionManager.shared.validateSession()
+        
+        // 1. Delete the comment
+        let url = mgr.restURL(table: "community_comments", query: "id=eq.\(commentID.uuidString)")
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        req.allHTTPHeaderFields = mgr.userHeaders
+        let (_, response) = try await URLSession.shared.data(for: req)
+        try checkHTTP(response, data: Data())
+
+        // 2. Count the real total comments for this post
+        let countURL = mgr.restURL(table: "community_comments",
+                                   query: "post_id=eq.\(postID.uuidString)&select=id")
+        var countReq = URLRequest(url: countURL)
+        countReq.allHTTPHeaderFields = mgr.userHeaders
+        let (countData, _) = try await URLSession.shared.data(for: countReq)
+        let allComments = (try? JSONSerialization.jsonObject(with: countData) as? [[String: Any]]) ?? []
+        let newCount = allComments.count
+
+        // 3. Update the post's comment_count field
+        let patchURL = mgr.restURL(table: "community_posts", query: "id=eq.\(postID.uuidString)")
+        var patchReq = URLRequest(url: patchURL)
+        patchReq.httpMethod = "PATCH"
+        patchReq.allHTTPHeaderFields = mgr.userHeaders
+        patchReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        patchReq.httpBody = try JSONSerialization.data(withJSONObject: ["comment_count": newCount])
+        let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
+        try checkHTTP(patchResp, data: Data())
+
+        return newCount
     }
 
     // MARK: - Shares
