@@ -224,7 +224,6 @@ final class AvailableRideViewController: UIViewController,
             // This ensures rides posted on other devices appear in this list.
             if let remote = try? await RideRepository.shared.fetchPublishedRides(), !remote.isEmpty {
                 RideDataModel.shared.mergeRemoteRides(remote)
-                UserDataModel.shared.ensureDriverProfiles(for: remote.map { $0.driverUserID })
             }
 
             spinner.removeFromSuperview()
@@ -342,7 +341,7 @@ extension AvailableRideViewController {
         else { return UITableViewCell() }
 
         let ride   = filteredRides[indexPath.row]
-        let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
+        let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
         cell.configure(with: ride, driver: driver)
         cell.onJoinTapped = { [weak self] in
             self?.openDetail(ride: ride, driver: driver)
@@ -359,7 +358,8 @@ extension AvailableRideViewController {
         tableView.deselectRow(at: indexPath, animated: true)
         guard indexPath.row < filteredRides.count else { return }
         let ride = filteredRides[indexPath.row]
-        openDetail(ride: ride, driver: UserDataModel.shared.getUser(by: ride.driverUserID))
+        let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
+        openDetail(ride: ride, driver: driver)
     }
 
     private func openDetail(ride: Ride, driver: UserProfile?) {

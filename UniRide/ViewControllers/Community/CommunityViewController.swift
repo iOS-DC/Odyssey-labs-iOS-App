@@ -58,6 +58,9 @@ class CommunityViewController: UIViewController,
 
         /// The real Supabase UUID of the author — stored so we never look up by name.
         var authorUserID: UUID?
+        
+        /// The author's profile data, bundled from Supabase.
+        var authorProfile: UserProfile?
 
         var likeCount: Int
         var shareCount: Int
@@ -81,22 +84,8 @@ class CommunityViewController: UIViewController,
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        let defaultPost = Post(
-            name: "Admin",
-            subtitle: "Community Manager",
-            message: "Welcome to the community! Feel free to share your thoughts 👋",
-            timestamp: "1h ago",
-            likeCount: 2,
-            shareCount: 1,
-            comments: [
-                "This is really helpful 👍",
-                "Glad to be here!"
-            ]
-        )
-        eventPosts = EventDataModel.shared.eventList()
-
-
-        feedPosts.append(defaultPost)
+        // Feed is now entirely driven by Supabase. 
+        // fetchPostsFromSupabase() is called below.
         tableView.reloadData()
 
         // BUG FIX: Load posts from Supabase on first appearance.
@@ -531,12 +520,14 @@ class CommunityViewController: UIViewController,
         let role    = user?.role == .faculty ? "Faculty" :
                       (user?.courseName.flatMap { c in user?.year.map { y in "\(c) · Year \(y)" } } ?? "Student")
 
-        let newPost = Post(name: name,
+        var newPost = Post(name: name,
                            subtitle: role,
                            message: typedText,
                            timestamp: "Just now",
                            likeCount: 0,
                            shareCount: 0)
+        newPost.authorProfile = user // Ensure profile pic shows immediately
+        newPost.authorUserID = user?.id
 
         feedPosts.insert(newPost, at: 0)
         tableView.reloadData()
@@ -586,32 +577,8 @@ class CommunityViewController: UIViewController,
     private func loadLiveComments(for postID: UUID) async {
         guard let comments = try? await CommunityRepository.shared.fetchComments(postID: postID) else { return }
 
-        // Fetch author names in parallel
-        var names: [UUID: String] = [:]
-        let uniqueIDs = Set(comments.map { $0.authorUserID })
-        await withTaskGroup(of: (UUID, String)?.self) { group in
-            for id in uniqueIDs {
-                group.addTask {
-                    // Fast path: local cache
-                    if let cached = UserDataModel.shared.getUser(by: id), !cached.fullName.isEmpty {
-                        return (id, cached.fullName)
-                    }
-                    // Slow path: Supabase profiles
-                    guard let row = try? await ProfileRepository.shared.fetchProfile(userID: id),
-                          let name = row["full_name"] as? String,
-                          !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    else { return nil }
-                    return (id, name)
-                }
-            }
-            for await result in group {
-                if let (id, name) = result { names[id] = name }
-            }
-        }
-
         await MainActor.run {
             self.liveCommunityComments = comments
-            self.liveCommentAuthorNames = names
             self.commentTableView.reloadData()
         }
     }
@@ -869,15 +836,16 @@ class CommunityViewController: UIViewController,
                     when = "Just now"
                 }
                 return Post(
-                    name: "UniRide User",          // placeholder — replaced below
-                    subtitle: "Community Member",  // placeholder
+                    name: rp.authorProfile?.fullName ?? "UniRide User",
+                    subtitle: (rp.authorProfile?.role == .faculty ? "Faculty" : "Student"),
                     message: rp.text,
                     timestamp: when,
                     remoteID: rp.id,
-                    authorUserID: rp.authorUserID, // ← store real UUID directly
+                    authorUserID: rp.authorUserID,
+                    authorProfile: rp.authorProfile,
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount,
-                    remoteCommentCount: rp.commentCount // ← real count from DB
+                    remoteCommentCount: rp.commentCount
                 )
             }
             guard !mapped.isEmpty else { return }
@@ -909,40 +877,8 @@ class CommunityViewController: UIViewController,
                 self.tableView.reloadData()
             }
 
-            // Fetch real names from Supabase profiles in parallel
-            let uniqueAuthorIDs = Set(remotePosts.map { $0.authorUserID })
-            await withTaskGroup(of: (UUID, String, String)?.self) { group in
-                for authorID in uniqueAuthorIDs {
-                    group.addTask {
-                        // Try local cache first (fast), then Supabase
-                        if let cached = UserDataModel.shared.getUser(by: authorID),
-                           !cached.fullName.isEmpty {
-                            let role = cached.role == .faculty ? "Faculty" : "Student"
-                            return (authorID, cached.fullName, role)
-                        }
-                        guard let row = try? await ProfileRepository.shared.fetchProfile(userID: authorID),
-                              let name = row["full_name"] as? String,
-                              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        else { return nil }
-                        let role = (row["role"] as? String) == "faculty" ? "Faculty" : "Student"
-                        return (authorID, name, role)
-                    }
-                }
-                for await result in group {
-                    guard let (authorID, name, role) = result else { continue }
-                    // Update all posts by this author
-                    for i in mapped.indices where mapped[i].authorUserID == authorID {
-                        mapped[i].name = name
-                        mapped[i] = Post(
-                            name: name, subtitle: role,
-                            message: mapped[i].message, timestamp: mapped[i].timestamp,
-                            remoteID: mapped[i].remoteID, authorUserID: mapped[i].authorUserID,
-                            likeCount: mapped[i].likeCount, shareCount: mapped[i].shareCount,
-                            remoteCommentCount: mapped[i].remoteCommentCount
-                        )
-                    }
-                }
-            }
+            // UI is already updated with placeholder names (or real names if authorProfile was present).
+            // The refresh spinner is hidden below.
 
             await MainActor.run {
                 self.feedPosts = mapped
@@ -1004,8 +940,7 @@ class CommunityViewController: UIViewController,
                 return UITableViewCell()
             }
             let comment = liveCommunityComments[indexPath.row]
-            let authorName = liveCommentAuthorNames[comment.authorUserID] ?? "UniRide User"
-            cell.configure(text: comment.text, authorName: authorName)
+            cell.configure(with: comment)
             return cell
         }
 
@@ -1024,10 +959,9 @@ class CommunityViewController: UIViewController,
             }
 
             if let imgView = cell.viewWithTag(100) as? UIImageView {
-                imgView.layer.cornerRadius = AppDesign.Radius.lg
+                imgView.layer.cornerRadius = 20
                 imgView.clipsToBounds = true
-                // Use initials-based avatar for the post author
-                imgView.image = UIImage.generatedAvatar(for: post.name, size: CGSize(width: 40, height: 40))
+                imgView.loadAndFallback(from: post.authorProfile?.photoURL, name: post.name)
             }
 
             if let label = cell.viewWithTag(1) as? UILabel {
@@ -1234,93 +1168,5 @@ extension CommunityViewController: EventCardCellDelegate {
         guard let indexPath = tableView.indexPath(for: cell),
               indexPath.row < eventPosts.count else { return }
         openEventDetailsScreen(event: eventPosts[indexPath.row])
-    }
-}
-
-// MARK: - Custom Cells
-class CommentTableViewCell: UITableViewCell {
-    
-    static let identifier = "CommentTableViewCell"
-    
-    private let avatarImageView: UIImageView = {
-        let iv = UIImageView()
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        iv.contentMode = .scaleAspectFill
-        iv.clipsToBounds = true
-        iv.layer.cornerRadius = AppDesign.Radius.md
-        iv.backgroundColor = AppDesign.Color.fieldBackground
-        iv.image = UIImage(systemName: "person.circle.fill")
-        iv.tintColor = AppDesign.Color.border
-        return iv
-    }()
-    
-    private let bubbleView: UIView = {
-        let v = UIView()
-        v.translatesAutoresizingMaskIntoConstraints = false
-        v.backgroundColor = AppDesign.Color.fieldBackground
-        v.layer.cornerRadius = AppDesign.Radius.sm
-        return v
-    }()
-    
-    private let nameLabel: UILabel = {
-        let l = UILabel()
-        l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = AppDesign.Typography.captionStrong
-        l.textColor = .secondaryLabel
-        return l
-    }()
-    
-    private let commentLabel: UILabel = {
-        let l = UILabel()
-        l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = AppDesign.Typography.subheadline
-        l.numberOfLines = 0
-        l.textColor = .label
-        return l
-    }()
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        backgroundColor = .clear
-        selectionStyle = .none
-        
-        contentView.addSubview(avatarImageView)
-        contentView.addSubview(bubbleView)
-        bubbleView.addSubview(nameLabel)
-        bubbleView.addSubview(commentLabel)
-        
-        NSLayoutConstraint.activate([
-            avatarImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            avatarImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            avatarImageView.widthAnchor.constraint(equalToConstant: 32),
-            avatarImageView.heightAnchor.constraint(equalToConstant: 32),
-            
-            bubbleView.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
-            bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            bubbleView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -32),
-            bubbleView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
-            
-            nameLabel.topAnchor.constraint(equalTo: bubbleView.topAnchor, constant: 8),
-            nameLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            nameLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            
-            commentLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
-            commentLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            commentLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            commentLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -8)
-        ])
-    }
-    
-    func configure(text: String, authorName: String = "") {
-        nameLabel.text = authorName.isEmpty ? UserDataModel.shared.getCurrentUser()?.fullName ?? "" : authorName
-        commentLabel.text = text
     }
 }

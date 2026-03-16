@@ -100,6 +100,39 @@ struct UserProfile: Equatable, Codable {
     static func == (lhs: UserProfile, rhs: UserProfile) -> Bool {
         lhs.id == rhs.id
     }
+
+    /// Convenience initializer from Supabase row
+    init?(row: [String: Any]) {
+        guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr),
+              let email = row["email"] as? String else { return nil }
+        
+        self.id = id
+        self.email = email
+        self.fullName = row["full_name"] as? String ?? ""
+        self.isEmailVerified = row["is_email_verified"] as? Bool ?? false
+        self.phone = row["phone"] as? String
+        
+        if let roleStr = row["role"] as? String {
+            self.role = UserRole(rawValue: roleStr)
+        } else {
+            self.role = nil
+        }
+        
+        self.courseName = row["course_name"] as? String
+        self.year = row["year"] as? Int
+        self.employeeID = row["employee_id"] as? String
+        
+        if let photoStr = row["photo_url"] as? String {
+            self.photoURL = URL(string: photoStr)
+        } else {
+            self.photoURL = nil
+        }
+        
+        self.vehicles = nil // Vehicles are in a separate table/join if needed
+        self.savedHomeLocation = nil
+        self.savedHomeLocations = nil
+        self.lastKnownLocation = nil
+    }
 }
 
 // Singleton Data Manager
@@ -468,29 +501,10 @@ final class UserDataModel {
     }
 
     // MARK: - Ensure driver profiles exist for ride owners
+    // MARK: - Ensure driver profiles exist (Legacy - now handled by Supabase joins)
     func ensureDriverProfiles(for driverIDs: [UUID]) {
-        let existing = Set(users.map { $0.id })
-        var added = 0
-
-        for id in driverIDs where !existing.contains(id) {
-            let idx = abs(id.uuidString.hashValue) % MockData.driverNames.count
-            let name = MockData.driverNames[idx]
-            let profile = UserProfile(
-                id: id,
-                email: "driver\(idx + 1)@chitkara.edu.in",
-                isEmailVerified: true,
-                fullName: name,
-                role: .student,
-                courseName: "CSE",
-                year: 3
-            )
-            users.append(profile)
-            added += 1
-        }
-
-        if added > 0 {
-            saveUsers()
-        }
+        // No-op: We now rely on Supabase joins to bundle real profiles with rides/requests.
+        // Generating random mock names here causes identity inconsistency across devices.
     }
 
     // MARK: - Mock Users

@@ -102,10 +102,10 @@ extension DriverRequestsViewController: UITableViewDataSource, UITableViewDelega
         let cell = tableView.dequeueReusableCell(
             withIdentifier: RequestCell.identifier, for: indexPath) as! RequestCell
         let req       = requests[indexPath.row]
-        let passenger = UserDataModel.shared.getUser(by: req.passengerUserID)
+        let passenger = req.passengerProfile ?? UserDataModel.shared.getUser(by: req.passengerUserID)
         cell.configure(
             name: passenger?.fullName ?? "Passenger",
-            subtitle: passenger?.role == .student ? "Student" : "Faculty",
+            subtitle: (passenger?.role?.rawValue.capitalized) ?? "User",
             photoURL: passenger?.photoURL
         )
         cell.delegate = self

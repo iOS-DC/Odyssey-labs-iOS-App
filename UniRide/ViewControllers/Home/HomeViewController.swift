@@ -316,7 +316,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
             if nearbyRides.isEmpty { return emptyRidesCell(for: tableView, at: indexPath) }
             let cell = tableView.dequeueReusableCell(withIdentifier: "RideCell", for: indexPath) as! RideTableViewCell
             let ride = nearbyRides[indexPath.row]
-            let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
+            let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
             cell.configure(with: ride, driver: driver)
             cell.onJoinTapped = { [weak self] in self?.openRideDetail(ride: ride, driver: driver) }
             return cell
@@ -359,7 +359,8 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 
         if indexPath.section == ridesSectionIndex && !nearbyRides.isEmpty {
             let ride = nearbyRides[indexPath.row]
-            openRideDetail(ride: ride, driver: UserDataModel.shared.getUser(by: ride.driverUserID))
+            let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
+            openRideDetail(ride: ride, driver: driver)
         } else if indexPath.section == eventsSectionIndex && !events.isEmpty {
             openEventDetailsScreen(event: events[indexPath.row])
         }

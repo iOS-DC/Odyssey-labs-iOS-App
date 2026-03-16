@@ -53,10 +53,12 @@ final class ChatViewModel: ObservableObject {
     private func fetchFromSupabase() async {
         guard let rideUUID = UUID(uuidString: rideID) else { return }
         guard let remote = try? await ChatRepository.shared.fetchMessages(rideID: rideUUID) else { return }
-        for msg in remote {
-            ChatDataModel.shared.append(msg, to: rideID)
-        }
-        messages = ChatDataModel.shared.messages(for: rideID)
+        
+        // Bulk append with deduplication to avoid notification storm
+        ChatDataModel.shared.appendContents(of: remote, to: rideID)
+        
+        // Reload locally to reflect merged state
+        self.messages = ChatDataModel.shared.messages(for: rideID)
         ChatDataModel.shared.markAsRead(rideID: rideID)
     }
 
@@ -143,6 +145,7 @@ final class ChatViewModel: ObservableObject {
         if let rideUUID = UUID(uuidString: rideID) {
             Task {
                 try? await ChatRepository.shared.sendMessage(
+                    id: msg.id, // SYNC LOCAL ID WITH SERVER
                     rideID: rideUUID,
                     senderID: UUID(uuidString: currentUserID) ?? UUID(),
                     senderName: currentUserName,

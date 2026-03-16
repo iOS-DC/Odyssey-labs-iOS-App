@@ -10,4 +10,5 @@ struct CommunityComment {
     let authorUserID: UUID
     let text: String
     let createdAt: Date
+    var authorProfile: UserProfile?
 }

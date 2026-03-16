@@ -293,7 +293,8 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     // MARK: – Helpers
 
     private func configureHostInfo(driverID: UUID) {
-        guard let host = UserDataModel.shared.getUser(by: driverID) else {
+        let host = currentTrip?.ride.driverProfile ?? UserDataModel.shared.getUser(by: driverID)
+        guard let host = host else {
             hostNameLabel.text = "Driver"
             hostImageView.loadAndFallback(from: nil, name: "Driver")
             return

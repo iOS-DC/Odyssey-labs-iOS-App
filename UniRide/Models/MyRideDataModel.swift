@@ -59,6 +59,9 @@ struct Ride: Codable, Equatable {
     /// ISO weekday numbers the ride repeats on (1 = Monday, 7 = Sunday).
     var recurringDays: [Int] = []
 
+    // Bundled profile (added for multi-device consistency)
+    var driverProfile: UserProfile?
+
     init(driverUserID: UUID,
          source: LocationPoint,
          destination: LocationPoint,
@@ -90,6 +93,7 @@ struct Ride: Codable, Equatable {
         self.recurringDays = recurringDays
         self.vehicleModel = vehicleModel
         self.registrationPlate = registrationPlate
+        self.driverProfile = nil
     }
 
     init(id: UUID,
@@ -126,6 +130,7 @@ struct Ride: Codable, Equatable {
         self.recurringDays = recurringDays
         self.vehicleModel = vehicleModel
         self.registrationPlate = registrationPlate
+        self.driverProfile = nil
     }
 
     static func ==(lhs: Ride, rhs: Ride) -> Bool { lhs.id == rhs.id }
@@ -142,20 +147,25 @@ struct RideRequest: Codable, Equatable {
     let createdAt: Date
     var reviewedAt: Date?
 
+    // Bundled profile (added for multi-device consistency)
+    var passengerProfile: UserProfile?
+
     init(rideID: UUID,
          passengerUserID: UUID,
          pickupPoint: LocationPoint,
          seats: Int,
-         minAcceptableFare: Double? = nil) {
+         minAcceptableFare: Double? = nil,
+         status: RideRequestStatus = .pending) {
         self.id = UUID()
         self.rideID = rideID
         self.passengerUserID = passengerUserID
         self.pickupPoint = pickupPoint
         self.seats = seats
         self.minAcceptableFare = minAcceptableFare
-        self.status = .pending
+        self.status = status
         self.createdAt = Date()
         self.reviewedAt = nil
+        self.passengerProfile = nil
     }
 
     init(id: UUID,
@@ -176,6 +186,7 @@ struct RideRequest: Codable, Equatable {
         self.status = status
         self.createdAt = createdAt
         self.reviewedAt = reviewedAt
+        self.passengerProfile = nil
     }
 
     static func ==(lhs: RideRequest, rhs: RideRequest) -> Bool { lhs.id == rhs.id }
@@ -189,18 +200,23 @@ struct Booking: Codable, Equatable {
     var pickupPoint: LocationPoint
     let createdAt: Date
     var status: BookingStatus
+    
+    // Bundled profile (added for multi-device consistency)
+    var passengerProfile: UserProfile?
 
     init(rideID: UUID,
          passengerUserID: UUID,
          seats: Int,
-         pickupPoint: LocationPoint) {
+         pickupPoint: LocationPoint,
+         status: BookingStatus = .confirmed) {
         self.id = UUID()
         self.rideID = rideID
         self.passengerUserID = passengerUserID
         self.seats = seats
         self.pickupPoint = pickupPoint
+        self.status = status
         self.createdAt = Date()
-        self.status = .confirmed
+        self.passengerProfile = nil
     }
 
     /// Full memberwise init used by RideRepository when decoding from Supabase.
@@ -218,6 +234,7 @@ struct Booking: Codable, Equatable {
         self.pickupPoint = pickupPoint
         self.createdAt = createdAt
         self.status = status
+        self.passengerProfile = nil
     }
 
     static func ==(lhs: Booking, rhs: Booking) -> Bool { lhs.id == rhs.id }
@@ -247,7 +264,6 @@ final class RideDataModel {
         } else {
             seedMockRidesIfNeeded()
         }
-        UserDataModel.shared.ensureDriverProfiles(for: rides.map { $0.driverUserID })
     }
 
     
@@ -289,7 +305,9 @@ final class RideDataModel {
                 notes: ride.notes,
                 createdAt: ride.createdAt,
                 isRecurring: ride.isRecurring,
-                recurringDays: ride.recurringDays
+                recurringDays: ride.recurringDays,
+                vehicleModel: ride.vehicleModel,
+                registrationPlate: ride.registrationPlate
             )
         }
         try await RideRepository.shared.insertRide(outboundRide)
@@ -450,8 +468,8 @@ final class RideDataModel {
     }
 
 
-    /// Host approves: moves seats, creates booking
-    func approveRequest(requestID: UUID, hostUserID: UUID) {
+    /// Host approves: moves seats, updates status, and adds the booking
+    func approveRequest(requestID: UUID, hostUserID: UUID, booking: Booking) {
         guard let rqIdx = requests.firstIndex(where: { $0.id == requestID }) else { return }
         var rq = requests[rqIdx]
 
@@ -478,14 +496,10 @@ final class RideDataModel {
         // reduce seats
         ride.seatsAvailable -= rq.seats
         updateRide(ride)
-
-        // booking
-        let booking = Booking(rideID: rq.rideID,
-                              passengerUserID: rq.passengerUserID,
-                              seats: rq.seats,
-                              pickupPoint: rq.pickupPoint)
+ 
+        // Add the provided booking (which has the correct server-matched UUID)
         bookings.append(booking)
-
+ 
         saveRequests()
         saveBookings()
 
@@ -534,9 +548,9 @@ final class RideDataModel {
 
         // Commit: mark the request approved only after booking + seats are persisted
         try await RideRepository.shared.updateRequestStatus(id: requestID, status: .approved)
-
-        // Mirror the changes in the local cache
-        approveRequest(requestID: requestID, hostUserID: hostUserID)
+ 
+        // Mirror the changes in the local cache using the SAME booking object
+        approveRequest(requestID: requestID, hostUserID: hostUserID, booking: booking)
     }
 
     func denyRequest(requestID: UUID, hostUserID: UUID) {
