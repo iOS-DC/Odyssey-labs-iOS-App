@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 // Vehicle Types
 enum VehicleType: String, Codable {
@@ -103,11 +104,13 @@ struct UserProfile: Equatable, Codable {
 
     /// Convenience initializer from Supabase row
     init?(row: [String: Any]) {
-        guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr),
-              let email = row["email"] as? String else { return nil }
+        guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr) else { return nil }
         
         self.id = id
-        self.email = email
+        // `email` may be absent in joined profile rows (PostgREST foreign-key joins only return
+        // columns from the `profiles` table, not `auth.users`). Fall back to empty string so
+        // the init doesn't fail — display-only callers only need id, full_name and photo_url.
+        self.email = row["email"] as? String ?? ""
         self.fullName = row["full_name"] as? String ?? ""
         self.isEmailVerified = row["is_email_verified"] as? Bool ?? false
         self.phone = row["phone"] as? String
@@ -326,6 +329,9 @@ final class UserDataModel {
     }
 
     func registerNewUser(profile: UserProfile) {
+        // Capture optional image from builder before it gets reset by the caller
+        let imageToUpload = RegistrationBuilder.shared.profileImage
+
         // Use the Supabase auth UID if available
         let persisted: UserProfile
         if let authID = SessionManager.shared.userID, authID != profile.id {
@@ -342,13 +348,34 @@ final class UserDataModel {
         users.append(persisted)
         currentUserID = persisted.id
         saveUsers()
-        // Persist to Supabase
+
+        // Persist to Supabase and handle photo upload if needed
         Task {
-            do { try await pushProfileToSupabase(persisted) } catch {
+            var finalProfile = persisted
+
+            if let img = imageToUpload, let data = img.jpegData(compressionQuality: 0.7) {
+                do {
+                    let urlStr = try await ProfileRepository.shared.uploadAvatar(userID: finalProfile.id, imageData: data)
+                    if let url = URL(string: urlStr) {
+                        finalProfile.photoURL = url
+                        // Update local cache with URL immediately
+                        await MainActor.run {
+                            if let idx = self.users.firstIndex(where: { $0.id == finalProfile.id }) {
+                                self.users[idx] = finalProfile
+                                self.saveUsers()
+                            }
+                        }
+                    }
+                } catch {
+                    print("Onboarding photo upload failed:", error.localizedDescription)
+                }
+            }
+
+            do { try await pushProfileToSupabase(finalProfile) } catch {
                 print("Profile upsert failed:", error.localizedDescription)
             }
         }
-        print("New user completely registered:", persisted)
+        print("New user registered (background upload started if photo present):", persisted)
     }
 
     func createNewUser(fullName: String, role: UserRole, department: String, year: Int?, phone: String) {

@@ -19,6 +19,7 @@ final class PostDetailViewController: UIViewController {
     private let commentTextField  = UITextField()
     private let sendButton        = UIButton(type: .system)
     private let spinner           = UIActivityIndicatorView(style: .medium)
+    private let refreshControl    = UIRefreshControl()
     private var composeBarBottom: NSLayoutConstraint!
 
     // MARK: - Lifecycle
@@ -31,6 +32,8 @@ final class PostDetailViewController: UIViewController {
         setupKeyboardObservers()
         _ = NetworkMonitor.shared // ensure monitor is started
         loadComments()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleGlobalUpdate(_:)), name: .CommunityCommentDidUpdate, object: nil)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -62,6 +65,9 @@ final class PostDetailViewController: UIViewController {
 
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PostHeaderCell")
         tableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
+        
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        tableView.refreshControl = refreshControl
     }
 
     private func setupComposeBar() {
@@ -143,15 +149,31 @@ final class PostDetailViewController: UIViewController {
     private func loadComments() {
         Task { @MainActor in
             do {
-                comments = try await CommunityRepository.shared.fetchComments(postID: post.id)
+                async let fetchedComments = CommunityRepository.shared.fetchComments(postID: post.id)
+                async let fetchedCounts = CommunityRepository.shared.fetchPostCounts(postID: post.id)
+                
+                let (newComments, counts) = try await (fetchedComments, fetchedCounts)
+                
+                self.comments = newComments
+                self.post.commentCount = counts.commentCount
+                self.post.likeCount = counts.likeCount
+                
                 tableView.reloadData()
+                refreshControl.endRefreshing()
+                
                 // Fetch real names from Supabase for all comment authors
                 await fetchRealAuthorNames()
             } catch {
+                refreshControl.endRefreshing()
                 // Silently fail — offline users still see post header
             }
         }
     }
+
+    @objc private func handleRefresh() {
+        loadComments()
+    }
+    
 
     /// Fetches real `full_name` values from Supabase `profiles` for every unique
     /// author UUID in the current comments list. Populates `authorNames` and
@@ -360,5 +382,17 @@ extension PostDetailViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         submitComment()
         return false
+    }
+
+    @objc private func handleGlobalUpdate(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let postID = userInfo["postID"] as? UUID,
+              let newCount = userInfo["newCount"] as? Int,
+              postID == post.id else { return }
+        
+        DispatchQueue.main.async {
+            self.post.commentCount = newCount
+            self.tableView.reloadSections(IndexSet(integer: 0), with: .none)
+        }
     }
 }
