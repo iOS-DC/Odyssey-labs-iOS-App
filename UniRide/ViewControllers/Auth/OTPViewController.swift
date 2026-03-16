@@ -61,12 +61,18 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
         resendLabel.isUserInteractionEnabled = false
 
         startResendTimer()
-        otpField1.becomeFirstResponder() // Focuses on otpField1 and brings up the keyboard when the screen appears
+        otpField1.becomeFirstResponder()
+        setupLogo()
+    }
+
+    private var logoImageView: UIImageView!
+    private func setupLogo() {
+        logoImageView = addOnboardingLogo(above: containerCard)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        animateOnboardingEntrance([containerCard, titleLabel, verifyButton, resendLabel])
+        animateOnboardingEntrance([logoImageView, containerCard, titleLabel, verifyButton, resendLabel])
     }
 
     deinit {
