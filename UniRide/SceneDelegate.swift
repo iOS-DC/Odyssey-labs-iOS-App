@@ -21,9 +21,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 2. Synchronous check to set the very first screen the user sees.
         // This prevents UIKit from defaulting to the "Email" storyboard VC and flickering.
         let isLoggedIn = SessionManager.shared.isLoggedIn
+        let isGuest = SessionManager.shared.isGuest
         
-        if isLoggedIn {
-            // Logged in: Show a neutral color (Splash) while restoreSessionOrShowAuth runs
+        if isLoggedIn || isGuest {
+            // Logged in or Guest: Show a neutral color (Splash) while restoreSessionOrShowAuth runs
             let splashVC = UIViewController()
             splashVC.view.backgroundColor = .systemBackground // or matches LaunchScreen
             window.rootViewController = splashVC
@@ -62,17 +63,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let window = window else { return }
         let session = SessionManager.shared
 
-        guard session.isLoggedIn else {
+        guard session.isLoggedIn || session.isGuest else {
             // No valid session — show auth flow on main thread
             await MainActor.run { showAuthFlow(window: window) }
             return
         }
 
-        // 1️⃣ Refresh the access token FIRST — before any API calls fire
-        await session.refreshIfNeeded()
+        if session.isLoggedIn {
+            // 1️⃣ Refresh the access token FIRST — before any API calls fire
+            await session.refreshIfNeeded()
 
-        // 2️⃣ Restore currentUserID in UserDataModel from the saved session
-        await UserDataModel.shared.restoreSessionUser()
+            // 2️⃣ Restore currentUserID in UserDataModel from the saved session
+            await UserDataModel.shared.restoreSessionUser()
+        }
 
         // 3️⃣ Jump to main tab bar
         await MainActor.run {

@@ -64,7 +64,6 @@ final class CommunityRepository {
 
     /// Fetches the most recent `limit` posts, ordered newest first.
     func fetchPosts(limit: Int = 50) async throws -> [CommunityPost] {
-        try await SessionManager.shared.validateSession()
         let url = mgr.restURL(table: "community_posts",
                               query: "select=*,profiles!author_user_id(*),community_comments(count),community_likes(count)&order=created_at.desc&limit=\(limit)")
         var req = URLRequest(url: url)
@@ -200,7 +199,6 @@ final class CommunityRepository {
     // MARK: - Comments
 
     func fetchComments(postID: UUID) async throws -> [CommunityComment] {
-        try await SessionManager.shared.validateSession()
         let url = mgr.restURL(table: "community_comments",
                                query: "post_id=eq.\(postID.uuidString)&select=*,profiles!author_user_id(*)&order=created_at.asc")
         var req = URLRequest(url: url)

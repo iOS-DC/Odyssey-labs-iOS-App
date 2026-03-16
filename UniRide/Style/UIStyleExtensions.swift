@@ -516,3 +516,43 @@ extension UIImageView {
     }
 }
 
+// MARK: - Guest Restrictions
+extension UIViewController {
+    
+    /// Checks if the current user is a guest. If so, shows a standardized login prompt and returns true (blocking the action).
+    /// If the user is authenticated, executes the completion block.
+    func ensureAuthenticated(action: String, completion: @escaping () -> Void) {
+        if SessionManager.shared.isGuest {
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            let alert = UIAlertController(
+                title: "Login Required",
+                message: "You must be logged in to \(action).",
+                preferredStyle: .alert
+            )
+            
+            let loginAction = UIAlertAction(title: "Log In", style: .default) { _ in
+                SessionManager.shared.clear()
+                let mainSB = UIStoryboard(name: "Main", bundle: nil)
+                let emailVC = mainSB.instantiateViewController(withIdentifier: "EmailViewController")
+                let nav = UINavigationController(rootViewController: emailVC)
+                nav.modalPresentationStyle = .fullScreen
+                
+                if let scene = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
+                   let window = scene.window {
+                    window.rootViewController = nav
+                    UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil)
+                }
+            }
+            
+            let cancelAction = UIAlertAction(title: "Not Now", style: .cancel)
+            
+            alert.addAction(cancelAction)
+            alert.addAction(loginAction)
+            alert.preferredAction = loginAction
+            
+            present(alert, animated: true)
+        } else {
+            completion()
+        }
+    }
+}
