@@ -278,10 +278,29 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
         config.secondaryText = df.localizedString(for: post.createdAt, relativeTo: Date())
         config.secondaryTextProperties.color = .tertiaryLabel
 
-        // Avatar
-        cell.imageView?.layer.cornerRadius = 20
-        cell.imageView?.clipsToBounds = true
-        cell.imageView?.loadAndFallback(from: post.authorProfile?.photoURL, name: name)
+        // Avatar — dedicated view for reliability
+        if cell.contentView.viewWithTag(101) == nil {
+            let iv = UIImageView()
+            iv.tag = 101
+            iv.contentMode = .scaleAspectFill
+            iv.clipsToBounds = true
+            iv.layer.cornerRadius = 18
+            iv.backgroundColor = .systemGray6
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            cell.contentView.addSubview(iv)
+            NSLayoutConstraint.activate([
+                iv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 16),
+                iv.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 12),
+                iv.widthAnchor.constraint(equalToConstant: 36),
+                iv.heightAnchor.constraint(equalToConstant: 36)
+            ])
+        }
+        
+        let avatar = cell.contentView.viewWithTag(101) as? UIImageView
+        avatar?.loadAndFallback(from: post.authorProfile?.photoURL, name: name)
+
+        config.image = nil // Disable standard image
+        config.imageToTextPadding = 52 // Room for avatar
         
         cell.contentConfiguration = config
 

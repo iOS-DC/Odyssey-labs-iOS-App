@@ -238,17 +238,23 @@ final class UpcomingTableViewCell: UITableViewCell {
         cancelRideButton.applyTintActionStyle(title: "Cancel Ride", color: AppDesign.Color.destructive)
 
         messageButton.applyTintActionStyle(title: "Chat", imageSystemName: "message.fill")
-
+        // High visibility size increase
+        messageButton.configuration?.buttonSize = .large
+        messageButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 24, bottom: 12, trailing: 24)
+        
         // ── Unread badge on Chat button ──
         let rideIDStr = trip.ride.id.uuidString
         applyUnreadBadge(to: messageButton, rideID: rideIDStr)
 
-        callButton.applyTintActionStyle(title: "Call", imageSystemName: "phone.fill")
+        // Remote Call button as requested
+        callButton.isHidden = true
         
         showMapButton.applyTintActionStyle(
             title: isMapExpanded ? "Hide" : "Map",
             imageSystemName: isMapExpanded ? "map.fill" : "map"
         )
+        showMapButton.configuration?.buttonSize = .large
+        showMapButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 24, bottom: 12, trailing: 24)
 
         // Start / End Trip button
         startTripButton.backgroundColor = .clear
