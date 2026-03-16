@@ -10,39 +10,11 @@ struct CommunityPost {
     let authorUserID: UUID
     let text: String
     let imageURL: URL?
-    
-    var likeCount: Int {
-        get { PostRegistry.shared.getLikeCount(for: id) ?? _likeCount }
-        set { _likeCount = newValue }
-    }
-    internal var _likeCount: Int
-    
-    var shareCount: Int {
-        get { PostRegistry.shared.getShareCount(for: id) ?? _shareCount }
-        set { _shareCount = newValue }
-    }
-    internal var _shareCount: Int
-    
-    var commentCount: Int {
-        get { PostRegistry.shared.getCommentCount(for: id) ?? _commentCount }
-        set { _commentCount = newValue }
-    }
-    internal var _commentCount: Int
-    
+    var likeCount: Int
+    var shareCount: Int
+    var commentCount: Int
     let createdAt: Date
     var authorProfile: UserProfile?
-    
-    init(id: UUID, authorUserID: UUID, text: String, imageURL: URL?, likeCount: Int, shareCount: Int, commentCount: Int, createdAt: Date, authorProfile: UserProfile? = nil) {
-        self.id = id
-        self.authorUserID = authorUserID
-        self.text = text
-        self.imageURL = imageURL
-        self._likeCount = likeCount
-        self._shareCount = shareCount
-        self._commentCount = commentCount
-        self.createdAt = createdAt
-        self.authorProfile = authorProfile
-    }
 }
 
 // MARK: - Repository
@@ -66,22 +38,13 @@ final class CommunityRepository {
     func fetchPosts(limit: Int = 50) async throws -> [CommunityPost] {
         try await SessionManager.shared.validateSession()
         let url = mgr.restURL(table: "community_posts",
-                              query: "select=*,profiles!author_user_id(*),community_comments(count),community_likes(count)&order=created_at.desc&limit=\(limit)")
+                              query: "select=*,profiles!author_user_id(*)&order=created_at.desc&limit=\(limit)")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
         let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
-        let posts = rows.compactMap(postFromRow)
-        
-        // Sync with global registry — use raw private values so we don't pick up stale registry data
-        for p in posts {
-            PostRegistry.shared.updateCommentCount(for: p.id, to: p._commentCount)
-            PostRegistry.shared.updateLikeCount(for: p.id, to: p._likeCount)
-            PostRegistry.shared.updateShareCount(for: p.id, to: p._shareCount)
-        }
-        
-        return posts
+        return rows.compactMap(postFromRow)
     }
 
     /// Inserts a new post for the current user.
@@ -192,9 +155,7 @@ final class CommunityRepository {
         let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
         try checkHTTP(patchResp, data: Data())
 
-        let val = (isNowLiked, newCount)
-        PostRegistry.shared.updateLikeCount(for: postID, to: newCount)
-        return val
+        return (isNowLiked, newCount)
     }
 
     // MARK: - Comments
@@ -214,6 +175,11 @@ final class CommunityRepository {
         }
     }
 
+    /// Inserts a new comment for a post.
+    /// - Inserts a row in `community_comments`
+    /// - Counts all comments for the post and PATCHes `community_posts.comment_count` directly
+    /// - Returns the `newTotalCount`
+    @discardableResult
     func insertComment(postID: UUID, text: String) async throws -> Int {
         try await SessionManager.shared.validateSession()
         guard let uid = SessionManager.shared.userID else { throw CommunityError.notLoggedIn }
@@ -254,10 +220,10 @@ final class CommunityRepository {
         let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
         try checkHTTP(patchResp, data: Data())
 
-        PostRegistry.shared.updateCommentCount(for: postID, to: newCount)
         return newCount
     }
 
+    /// Deletes a specific comment and updates the post's comment count.
     func deleteComment(commentID: UUID, postID: UUID) async throws -> Int {
         try await SessionManager.shared.validateSession()
         
@@ -288,7 +254,6 @@ final class CommunityRepository {
         let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
         try checkHTTP(patchResp, data: Data())
 
-        PostRegistry.shared.updateCommentCount(for: postID, to: newCount)
         return newCount
     }
 
@@ -334,8 +299,7 @@ final class CommunityRepository {
         patchReq.httpBody = try JSONSerialization.data(withJSONObject: ["share_count": newCount])
         let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
         try checkHTTP(patchResp, data: Data())
-        
-        PostRegistry.shared.updateShareCount(for: postID, to: newCount)
+
         return newCount
     }
 
@@ -375,28 +339,19 @@ final class CommunityRepository {
     // MARK: - Helpers
 
     /// Fetches the live like_count and comment_count for a single post.
-    /// This uses authoritative counts from the underlying tables.
+    /// Use this after a toggle-like or insert-comment to get the trigger-updated values.
     func fetchPostCounts(postID: UUID) async throws -> (likeCount: Int, commentCount: Int) {
         try await SessionManager.shared.validateSession()
         let url = mgr.restURL(table: "community_posts",
-                              query: "id=eq.\(postID.uuidString)&select=id,community_comments(count),community_likes(count)&limit=1")
+                              query: "id=eq.\(postID.uuidString)&select=like_count,comment_count&limit=1")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
         let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
         let row = rows.first ?? [:]
-        
-        var likes = 0
-        if let nested = row["community_likes"] as? [[String: Any]], let first = nested.first, let count = first["count"] as? Int {
-            likes = count
-        }
-        
-        var comments = 0
-        if let nested = row["community_comments"] as? [[String: Any]], let first = nested.first, let count = first["count"] as? Int {
-            comments = count
-        }
-        
+        let likes    = row["like_count"]    as? Int ?? 0
+        let comments = row["comment_count"] as? Int ?? 0
         return (likes, comments)
     }
 
@@ -406,19 +361,9 @@ final class CommunityRepository {
         
         let text = row["text"] as? String ?? ""
         let imgUrl = row["image_url"] as? String
-        
-        // Authoritative counts from nested count query if available
-        var likes = row["like_count"] as? Int ?? 0
-        if let nested = row["community_likes"] as? [[String: Any]], let first = nested.first, let count = first["count"] as? Int {
-            likes = count
-        }
-        
-        var shares = row["share_count"] as? Int ?? 0
-        
-        var comments = row["comment_count"] as? Int ?? 0
-        if let nested = row["community_comments"] as? [[String: Any]], let first = nested.first, let count = first["count"] as? Int {
-            comments = count
-        }
+        let likes = row["like_count"] as? Int ?? 0
+        let shares = row["share_count"] as? Int ?? 0
+        let comments = row["comment_count"] as? Int ?? 0
         
         let createdStr = row["created_at"] as? String ?? ""
         let iso = ISO8601DateFormatter()

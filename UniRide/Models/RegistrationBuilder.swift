@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 /// A singleton builder object used to temporarily store user data while navigating
 /// through the onboarding flow. Once all screens are complete, `buildUser()` is called
@@ -19,7 +18,6 @@ final class RegistrationBuilder {
 
     var vehicle: Vehicle?
     var homeLocation: LocationPoint?
-    var profileImage: UIImage?
 
     private init() {}
 
@@ -35,7 +33,6 @@ final class RegistrationBuilder {
         employeeID = nil
         vehicle = nil
         homeLocation = nil
-        profileImage = nil
     }
 
     /// Assembles the final `UserProfile` and ensures required fields exist.

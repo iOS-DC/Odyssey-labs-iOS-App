@@ -359,22 +359,6 @@ final class RideDataModel {
             }
         }
 
-
-        // Notify the driver that the ride has been published successfully
-        AppNotificationModel.shared.send(
-            to: outboundRide.driverUserID,
-            title: "Ride Published 🚗",
-            body: "Your ride from \(outboundRide.source.address ?? "Origin") to \(outboundRide.destination.address ?? "Destination") is now live!",
-            type: .ridePublished
-        )
-
-        PushNotificationService.shared.send(
-            to: outboundRide.driverUserID,
-            title: "Ride Published 🚗",
-            body: "Your ride is now live! Passengers can now request to join.",
-            data: ["action": "ride_published", "ride_id": outboundRide.id.uuidString]
-        )
-
         return outboundRide
     }
 
@@ -409,28 +393,6 @@ final class RideDataModel {
 
     @discardableResult
     func cancelRideAsync(id: UUID) async throws -> Bool {
-        // Fetch passengers to notify them before the ride is officially cancelled in the DB
-        if let ride = getRide(id) {
-            let confirmedBookings = bookings.filter { $0.rideID == id && $0.status == .confirmed }
-            let route = "\(ride.source.address ?? "Origin") → \(ride.destination.address ?? "Destination")"
-            
-            for booking in confirmedBookings {
-                AppNotificationModel.shared.send(
-                    to: booking.passengerUserID,
-                    title: "Ride Cancelled ⚠️",
-                    body: "The driver has cancelled the ride: \(route). Any pending payment will be handled.",
-                    type: .rideCancelled
-                )
-                
-                PushNotificationService.shared.send(
-                    to: booking.passengerUserID,
-                    title: "Ride Cancelled ⚠️",
-                    body: "The driver has cancelled the ride: \(route).",
-                    data: ["action": "ride_cancelled", "ride_id": id.uuidString]
-                )
-            }
-        }
-
         try await RideRepository.shared.updateRideStatus(id: id, status: .cancelled)
         return cancelRide(id: id)
     }
@@ -502,29 +464,7 @@ final class RideDataModel {
             )
         }
         try await RideRepository.shared.insertRequest(outbound)
-        let created = createJoinRequest(outbound)
-        
-        // Notify the driver
-        if let ride = try? await RideRepository.shared.fetchRide(id: req.rideID) {
-            let passengerName = UserDataModel.shared.getCurrentUser()?.fullName ?? "A passenger"
-            let route = "\(ride.source.address ?? "Origin") → \(ride.destination.address ?? "Destination")"
-            
-            AppNotificationModel.shared.send(
-                to: ride.driverUserID,
-                title: "New Ride Request 🚗",
-                body: "\(passengerName) wants to join your ride: \(route)",
-                type: .newRequest
-            )
-            
-            PushNotificationService.shared.send(
-                to: ride.driverUserID,
-                title: "New Ride Request 🚗",
-                body: "\(passengerName) wants to join your ride: \(route)",
-                data: ["action": "new_request", "ride_id": ride.id.uuidString]
-            )
-        }
-        
-        return created
+        return createJoinRequest(outbound)
     }
 
 
@@ -707,25 +647,6 @@ final class RideDataModel {
                 title: "Booking Cancelled",
                 body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
                 data: ["action": "passenger_cancelled", "ride_id": ride.id.uuidString]
-            )
-        } else if userID == ride.driverUserID {
-            // ── Notify the passenger if the driver cancelled their booking ──
-            let driverName = UserDataModel.shared.getCurrentUser()?.fullName ?? "The driver"
-            let from = ride.source.address ?? "Origin"
-            let to   = ride.destination.address ?? "Destination"
-            
-            AppNotificationModel.shared.send(
-                to: bk.passengerUserID,
-                title: "Booking Cancelled by Driver ⚠️",
-                body: "\(driverName) cancelled your booking on the ride \(from) → \(to).",
-                type: .bookingCancelledByHost
-            )
-            
-            PushNotificationService.shared.send(
-                to: bk.passengerUserID,
-                title: "Booking Cancelled by Driver ⚠️",
-                body: "\(driverName) cancelled your booking on the ride \(from) → \(to).",
-                data: ["action": "booking_cancelled_by_host", "ride_id": ride.id.uuidString]
             )
         }
 
