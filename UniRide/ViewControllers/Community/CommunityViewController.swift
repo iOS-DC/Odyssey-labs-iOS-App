@@ -52,23 +52,47 @@ class CommunityViewController: UIViewController,
         let message: String
         let timestamp: String
 
-        /// Remote Supabase ID — non-nil for posts fetched from or inserted into the backend.
-        /// Used to target like / comment / share calls to the correct row.
         var remoteID: UUID?
-
-        /// The real Supabase UUID of the author — stored so we never look up by name.
         var authorUserID: UUID?
-        
-        /// The author's profile data, bundled from Supabase.
         var authorProfile: UserProfile?
+        var imageURL: URL?
 
-        var likeCount: Int
-        var shareCount: Int
+        var likeCount: Int {
+            get { PostRegistry.shared.getLikeCount(for: remoteID) ?? _likeCount }
+            set { _likeCount = newValue }
+        }
+        internal var _likeCount: Int
+
+        var shareCount: Int {
+            get { PostRegistry.shared.getShareCount(for: remoteID) ?? _shareCount }
+            set { _shareCount = newValue }
+        }
+        internal var _shareCount: Int
+
+        var commentCount: Int {
+            get { PostRegistry.shared.getCommentCount(for: remoteID) ?? _commentCount }
+            set { _commentCount = newValue }
+        }
+        internal var _commentCount: Int
+
         var hasLiked: Bool = false
         var hasShared: Bool = false
-
-        /// Real comment count from the DB — always accurate.
-        var commentCount: Int = 0
+        
+        init(name: String, subtitle: String, message: String, timestamp: String, remoteID: UUID? = nil, authorUserID: UUID? = nil, authorProfile: UserProfile? = nil, imageURL: URL? = nil, likeCount: Int = 0, shareCount: Int = 0, commentCount: Int = 0, hasLiked: Bool = false, hasShared: Bool = false) {
+            self.name = name
+            self.subtitle = subtitle
+            self.message = message
+            self.timestamp = timestamp
+            self.remoteID = remoteID
+            self.authorUserID = authorUserID
+            self.authorProfile = authorProfile
+            self.imageURL = imageURL
+            self._likeCount = likeCount
+            self._shareCount = shareCount
+            self._commentCount = commentCount
+            self.hasLiked = hasLiked
+            self.hasShared = hasShared
+        }
     }
 
 
@@ -134,7 +158,6 @@ class CommunityViewController: UIViewController,
         
         setupPopupUI()
         setupNewPostUI()
-        setupShareUI()
         
         // Save reference to button
         newPostBarButton = navigationItem.rightBarButtonItem
@@ -311,65 +334,6 @@ class CommunityViewController: UIViewController,
         commentTextField.rightViewMode = .always
     }
 
-    func setupShareUI() {
-        // Container
-        sharePopView.backgroundColor = .systemBackground
-        sharePopView.layer.cornerRadius = AppDesign.Radius.lg
-        sharePopView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        sharePopView.layer.shadowColor = UIColor.black.cgColor
-        sharePopView.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
-        sharePopView.layer.shadowOffset = CGSize(width: 0, height: -AppDesign.Spacing.xs)
-        sharePopView.layer.shadowRadius = AppDesign.Shadow.cardRadius
-        
-        // Title (Tag 201)
-        if let titleLabel = sharePopView.viewWithTag(201) as? UILabel {
-            titleLabel.text = "Share Post"
-            titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
-        }
-        
-        // Style Buttons (Tags 1, 2, 3, 4)
-        let socialColors: [Int: UIColor] = [
-            1: AppDesign.Color.success, // WhatsApp
-            2: AppDesign.Color.primary, // Instagram
-            3: AppDesign.Color.primary, // Facebook
-            4: AppDesign.Color.textPrimary.withAlphaComponent(0.7) // More
-        ]
-        
-        for i in 1...4 {
-            if let btn = sharePopView.viewWithTag(i) as? UIButton {
-                btn.layer.cornerRadius = AppDesign.Radius.sm
-                btn.backgroundColor = .secondarySystemBackground
-                btn.tintColor = socialColors[i] ?? .label
-                btn.titleLabel?.font = AppDesign.Typography.subheadline
-                
-                // Add icons programmatically if needed, or rely on text
-                switch i {
-                case 1: btn.setImage(UIImage(systemName: "message.fill"), for: .normal)
-                case 2: btn.setImage(UIImage(systemName: "camera.fill"), for: .normal)
-                case 3: btn.setImage(UIImage(systemName: "safari.fill"), for: .normal) // Facebook-ish
-                case 4: btn.setImage(UIImage(systemName: "ellipsis.circle.fill"), for: .normal)
-                default: break
-                }
-                
-                // Padding for icon
-                btn.configuration = .borderedTinted()
-                btn.configuration?.imagePadding = 8
-                btn.configuration?.baseBackgroundColor = socialColors[i]?.withAlphaComponent(0.1)
-                btn.configuration?.baseForegroundColor = socialColors[i]
-            }
-        }
-        
-        // Cancel Button (Tag 202)
-        if let cancelBtn = sharePopView.viewWithTag(202) as? UIButton {
-            cancelBtn.layer.cornerRadius = AppDesign.Radius.md
-            cancelBtn.backgroundColor = AppDesign.Color.fieldBackground
-            cancelBtn.setTitleColor(.label, for: .normal)
-            cancelBtn.titleLabel?.font = AppDesign.Typography.button
-            // Remove defaultFilled if it conflicts
-            cancelBtn.configuration = .plain()
-            cancelBtn.setTitle("Cancel", for: .normal)
-        }
-    }
 
     private func setupPopupConstraints() {
         // Add a "Top Cap" constraint to prevent popups from sliding under/over the navigation tabs.
@@ -427,7 +391,6 @@ class CommunityViewController: UIViewController,
         // Ensure all popups are dismissed when switching tabs
         hideComposer()
         hideCommentPopup()
-        hideSharePopup()
         
         tableView.reloadData()
         
@@ -438,19 +401,11 @@ class CommunityViewController: UIViewController,
             navigationItem.rightBarButtonItem = newPostBarButton
         }
     }
-    func hideSharePopup() {
-        sharePopUpBottomConstraint.constant = sheetHiddenOffset
-        animateSheetHide(sharePopView) { [weak self] in
-            guard let self else { return }
-            self.sharePopView.isHidden = true
-        }
-    }
 
     // MARK: - COMMENT POPUP
     func showCommentPopup() {
         AppHaptics.impact(.light)
         hideComposer()
-        hideSharePopup()
 
         commentPopupView.isHidden = false
         commentPopupView.alpha = 0
@@ -662,15 +617,14 @@ class CommunityViewController: UIViewController,
     }
 
     @IBAction func shareCancelButtonTapped(_ sender: Any) {
-       hideSharePopup()
     }
     
     @IBAction func shareButtonTapped(_ sender: UIButton) {
         guard let cell = getCell(from: sender),
               let index = tableView.indexPath(for: cell)?.row else { return }
         
-        currentPostIndex = index
-        showSharePopup()
+        let post = feedPosts[index]
+        openNativeShareSheet(for: post)
     }
     
     @IBAction func EventShareButtonTapped(_ sender: Any) {
@@ -678,8 +632,8 @@ class CommunityViewController: UIViewController,
         guard let button = sender as? UIView,
               let indexPath = getCellIndexPath(sender: button) else { return }
         
-        currentPostIndex = indexPath.row
-        showSharePopup()
+        let event = eventPosts[indexPath.row]
+        openNativeShareSheet(forEvent: event)
     }
     
     @IBAction func shareEventTapped(_ sender: UIButton) {
@@ -692,7 +646,6 @@ class CommunityViewController: UIViewController,
 
     
     @IBAction func shareOptionTapped(_ sender: UIButton) {
-        hideSharePopup()
         
         // Get the partial message or link to share
         let textToShare: String
@@ -856,9 +809,10 @@ class CommunityViewController: UIViewController,
                     remoteID: rp.id,
                     authorUserID: rp.authorUserID,
                     authorProfile: effectiveProfile,
-                    likeCount: rp.likeCount,
-                    shareCount: rp.shareCount,
-                    commentCount: rp.commentCount
+                    imageURL: rp.imageURL,
+                    likeCount: rp._likeCount,
+                    shareCount: rp._shareCount,
+                    commentCount: rp._commentCount
                 )
             }
             guard !mapped.isEmpty else { return }
@@ -876,9 +830,9 @@ class CommunityViewController: UIViewController,
 
                         // Take the higher count (server vs local) to avoid flickering
                         // if the server hasn't finished its internal trigger updates.
-                        mapped[i].likeCount    = max(mapped[i].likeCount, existing.likeCount)
-                        mapped[i].shareCount   = max(mapped[i].shareCount, existing.shareCount)
-                        mapped[i].commentCount = max(mapped[i].commentCount, existing.commentCount)
+                        mapped[i]._likeCount    = max(mapped[i]._likeCount, existing._likeCount)
+                        mapped[i]._shareCount   = max(mapped[i]._shareCount, existing._shareCount)
+                        mapped[i]._commentCount = max(mapped[i]._commentCount, existing._commentCount)
                         
                         // If we are currently in middle of an optimistic like operation,
                         // definitely keep the local state.
@@ -902,9 +856,11 @@ class CommunityViewController: UIViewController,
               let postID = userInfo["postID"] as? UUID,
               let newCount = userInfo["newCount"] as? Int else { return }
 
-        if let index = feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-            feedPosts[index].commentCount = newCount
-            tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+        DispatchQueue.main.async {
+            if let index = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                self.feedPosts[index].commentCount = newCount
+                self.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+            }
         }
     }
 
@@ -1179,6 +1135,42 @@ class CommunityViewController: UIViewController,
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         guard tableView != commentTableView else { return 80 }
         return segmentedControl.selectedSegmentIndex == 0 ? 270 : 160
+    }
+
+    private func openNativeShareSheet(for post: Post) {
+        guard let postID = post.remoteID else { return }
+        
+        let shareText = post.message
+        var items: [Any] = [shareText]
+        
+        if let imageURL = post.imageURL {
+            items.append(imageURL)
+        }
+        
+        let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        
+        activityVC.completionWithItemsHandler = { [weak self] (_, completed, _, _) in
+            if completed {
+                Task {
+                    if let newCount = try? await CommunityRepository.shared.recordShare(postID: postID) {
+                        await MainActor.run {
+                            if let index = self?.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                                self?.feedPosts[index].shareCount = newCount
+                                self?.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        present(activityVC, animated: true)
+    }
+
+    private func openNativeShareSheet(forEvent event: EventItem) {
+        let shareText = "Check out this event: \(event.title) on \(event.startsAt)"
+        let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+        present(activityVC, animated: true)
     }
 }
 

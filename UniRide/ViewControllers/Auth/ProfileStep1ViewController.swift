@@ -196,8 +196,8 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
             RegistrationBuilder.shared.phone = phone
         }
 
-        let vc = storyboard?.instantiateViewController(withIdentifier: "ProfileStep2ViewController")
-        if let vc { navigationController?.pushViewController(vc, animated: true) }
+        let vc = ProfilePhotoViewController()
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     // MARK: - Helpers

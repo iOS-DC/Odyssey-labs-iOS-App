@@ -459,28 +459,60 @@ extension UIImage {
     }
 }
 
+// MARK: - Image Loading Cache
+
+private let imageCache = NSCache<NSURL, UIImage>()
+private var imageLoadTasks: [UIImageView: URLSessionDataTask] = [:]
+
 extension UIImageView {
     func loadAndFallback(from url: URL?, name: String) {
-        // Clear current image to avoid flicker
+        // Cancel any in-flight load for this image view (cell reuse guard)
+        imageLoadTasks[self]?.cancel()
+        imageLoadTasks[self] = nil
+
+        // Always clear immediately so we don't show a stale image while loading
         self.image = nil
-        
+
         guard let url = url else {
-            self.image = UIImage.generatedAvatar(for: name, size: self.bounds.size.width > 0 ? self.bounds.size : CGSize(width: 40, height: 40))
+            setFallbackAvatar(name: name)
             return
         }
-        
-        // Use a background task to load data
-        DispatchQueue.global(qos: .userInitiated).async {
-            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self.image = image
+
+        // 1. Serve from cache if available
+        if let cached = imageCache.object(forKey: url as NSURL) {
+            self.image = cached
+            return
+        }
+
+        // 2. Fetch via URLSession (non-blocking, respects cell reuse)
+        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let self = self, error == nil,
+                  let data = data, let image = UIImage(data: data) else {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    if imageLoadTasks[self] == nil {
+                        self.setFallbackAvatar(name: name)
+                    }
                 }
-            } else {
-                DispatchQueue.main.async {
-                    self.image = UIImage.generatedAvatar(for: name, size: self.bounds.size.width > 0 ? self.bounds.size : CGSize(width: 40, height: 40))
+                return
+            }
+            imageCache.setObject(image, forKey: url as NSURL)
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                // Guard: only apply if this task is still current for this view
+                if imageLoadTasks[self] != nil || self.image == nil {
+                    self.image = image
+                    imageLoadTasks[self] = nil
                 }
             }
         }
+        imageLoadTasks[self] = task
+        task.resume()
+    }
+
+    private func setFallbackAvatar(name: String) {
+        let size = bounds.size.width > 0 ? bounds.size : CGSize(width: 40, height: 40)
+        image = UIImage.generatedAvatar(for: name, size: size)
     }
 }
 
