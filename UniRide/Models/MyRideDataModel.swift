@@ -59,6 +59,9 @@ struct Ride: Codable, Equatable {
     /// ISO weekday numbers the ride repeats on (1 = Monday, 7 = Sunday).
     var recurringDays: [Int] = []
 
+    // Bundled profile (added for multi-device consistency)
+    var driverProfile: UserProfile?
+
     init(driverUserID: UUID,
          source: LocationPoint,
          destination: LocationPoint,
@@ -90,6 +93,7 @@ struct Ride: Codable, Equatable {
         self.recurringDays = recurringDays
         self.vehicleModel = vehicleModel
         self.registrationPlate = registrationPlate
+        self.driverProfile = nil
     }
 
     init(id: UUID,
@@ -126,6 +130,7 @@ struct Ride: Codable, Equatable {
         self.recurringDays = recurringDays
         self.vehicleModel = vehicleModel
         self.registrationPlate = registrationPlate
+        self.driverProfile = nil
     }
 
     static func ==(lhs: Ride, rhs: Ride) -> Bool { lhs.id == rhs.id }
@@ -142,20 +147,25 @@ struct RideRequest: Codable, Equatable {
     let createdAt: Date
     var reviewedAt: Date?
 
+    // Bundled profile (added for multi-device consistency)
+    var passengerProfile: UserProfile?
+
     init(rideID: UUID,
          passengerUserID: UUID,
          pickupPoint: LocationPoint,
          seats: Int,
-         minAcceptableFare: Double? = nil) {
+         minAcceptableFare: Double? = nil,
+         status: RideRequestStatus = .pending) {
         self.id = UUID()
         self.rideID = rideID
         self.passengerUserID = passengerUserID
         self.pickupPoint = pickupPoint
         self.seats = seats
         self.minAcceptableFare = minAcceptableFare
-        self.status = .pending
+        self.status = status
         self.createdAt = Date()
         self.reviewedAt = nil
+        self.passengerProfile = nil
     }
 
     init(id: UUID,
@@ -176,6 +186,7 @@ struct RideRequest: Codable, Equatable {
         self.status = status
         self.createdAt = createdAt
         self.reviewedAt = reviewedAt
+        self.passengerProfile = nil
     }
 
     static func ==(lhs: RideRequest, rhs: RideRequest) -> Bool { lhs.id == rhs.id }

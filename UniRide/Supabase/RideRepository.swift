@@ -76,16 +76,21 @@ final class RideRepository {
            let rtData = rtStr.data(using: .utf8) {
             selectedRoute = try? JSONDecoder().decode(RideRoute.self, from: rtData)
         }
-        return Ride(id: id, driverUserID: driverID, source: source, destination: dest,
-                    waypoints: waypoints, selectedRoute: selectedRoute,
-                    departureTime: parseDate(deptStr), seatsTotal: seatsTotal,
-                    seatsAvailable: seatsAvail, farePerSeat: fare, status: status,
-                    notes: row["notes"] as? String,
-                    createdAt: parseDate(row["created_at"] as? String),
-                    isRecurring: row["is_recurring"] as? Bool ?? false,
-                    recurringDays: (row["recurring_days"] as? String)?.data(using: .utf8).flatMap { try? JSONDecoder().decode([Int].self, from: $0) } ?? [],
-                    vehicleModel: row["vehicle_model"] as? String,
-                    registrationPlate: row["registration_plate"] as? String)
+        var ride = Ride(id: id, driverUserID: driverID, source: source, destination: dest,
+                     waypoints: waypoints, selectedRoute: selectedRoute,
+                     departureTime: parseDate(deptStr), seatsTotal: seatsTotal,
+                     seatsAvailable: seatsAvail, farePerSeat: fare, status: status,
+                     notes: row["notes"] as? String,
+                     createdAt: parseDate(row["created_at"] as? String),
+                     isRecurring: row["is_recurring"] as? Bool ?? false,
+                     recurringDays: (row["recurring_days"] as? String)?.data(using: .utf8).flatMap { try? JSONDecoder().decode([Int].self, from: $0) } ?? [],
+                     vehicleModel: row["vehicle_model"] as? String,
+                     registrationPlate: row["registration_plate"] as? String)
+        
+        if let profRow = row["profiles"] as? [String: Any], let prof = UserProfile(row: profRow) {
+            ride.driverProfile = prof
+        }
+        return ride
     }
 
     private func requestFromRow(_ row: [String: Any]) -> RideRequest? {
@@ -100,11 +105,16 @@ final class RideRepository {
         else { return nil }
 
         let pickup = LocationPoint(lat: pickLat, lon: pickLon, address: row["pickup_address"] as? String)
-        return RideRequest(id: id, rideID: rideID, passengerUserID: passID, pickupPoint: pickup,
+        var req = RideRequest(id: id, rideID: rideID, passengerUserID: passID, pickupPoint: pickup,
                            seats: seats, minAcceptableFare: row["min_acceptable_fare"] as? Double,
                            status: status, createdAt: parseDate(row["created_at"] as? String),
                            reviewedAt: (row["reviewed_at"] != nil && !(row["reviewed_at"] is NSNull))
                                ? parseDate(row["reviewed_at"] as? String) : nil)
+        
+        if let profRow = row["profiles"] as? [String: Any], let prof = UserProfile(row: profRow) {
+            req.passengerProfile = prof
+        }
+        return req
     }
 
     private func bookingFromRow(_ row: [String: Any]) -> Booking? {
@@ -129,7 +139,7 @@ final class RideRepository {
     func fetchPublishedRides() async throws -> [Ride] {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
-        let url = mgr.restURL(table: "rides", query: "status=eq.published&order=departure_time.asc")
+        let url = mgr.restURL(table: "rides", query: "status=eq.published&order=departure_time.asc&select=*,profiles!driver_user_id(*)")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
@@ -141,7 +151,7 @@ final class RideRepository {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "rides",
-                              query: "driver_user_id=eq.\(driverID.uuidString)&order=departure_time.desc")
+                              query: "driver_user_id=eq.\(driverID.uuidString)&order=departure_time.desc&select=*,profiles!driver_user_id(*)")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
@@ -152,7 +162,7 @@ final class RideRepository {
     func fetchRide(id: UUID) async throws -> Ride? {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
-        let url = mgr.restURL(table: "rides", query: "id=eq.\(id.uuidString)&limit=1")
+        let url = mgr.restURL(table: "rides", query: "id=eq.\(id.uuidString)&limit=1&select=*,profiles!driver_user_id(*)")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
@@ -215,7 +225,7 @@ final class RideRepository {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_requests",
-                              query: "ride_id=eq.\(rideID.uuidString)&order=created_at.asc")
+                              query: "ride_id=eq.\(rideID.uuidString)&order=created_at.asc&select=*,profiles!passenger_user_id(*)")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
@@ -227,7 +237,7 @@ final class RideRepository {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_requests",
-                              query: "passenger_user_id=eq.\(passengerID.uuidString)&order=created_at.desc")
+                              query: "passenger_user_id=eq.\(passengerID.uuidString)&order=created_at.desc&select=*,profiles!passenger_user_id(*)")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)

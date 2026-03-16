@@ -98,8 +98,9 @@ final class RideTableViewCell: UITableViewCell {
     // MARK: - Configure (FULLY DYNAMIC)
     func configure(
         with ride: Ride,
-        driver: UserProfile?
+        driver fallbackDriver: UserProfile?
     ) {
+        let driver = ride.driverProfile ?? fallbackDriver
         let driverName = driver?.fullName ?? "Unknown Driver"
         let photoURL = driver?.photoURL
 
