@@ -102,6 +102,14 @@ final class PushNotificationService: NSObject {
         body: String,
         data: [String: String]
     ) async throws {
+        // ── Local Fallback for Simulators & Immediate Feedback ────────────────
+        // If the recipient is the current user, show a local notification immediately
+        // so the user sees a "system" banner even on simulators or without APNs.
+        if recipientUserID == SessionManager.shared.userID {
+            triggerLocalNotification(title: title, body: body, data: data)
+        }
+        // ────────────────────────────────────────────────────────────────────
+
         guard let token = SessionManager.shared.accessToken else { return }
         var req = URLRequest(url: edgeFunctionURL)
         req.httpMethod = "POST"
@@ -115,6 +123,27 @@ final class PushNotificationService: NSObject {
         if !data.isEmpty { payload["data"] = data }
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (_, _) = try await URLSession.shared.data(for: req)
+    }
+
+    /// Triggers a local system notification banner.
+    func triggerLocalNotification(title: String, body: String, data: [String: String] = [:]) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        content.userInfo = data
+        
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil // deliver immediately
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("[PushNotificationService] Local notification error: \(error.localizedDescription)")
+            }
+        }
     }
 }
 
