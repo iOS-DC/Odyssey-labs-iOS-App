@@ -30,13 +30,43 @@ class EmailViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        animateOnboardingEntrance([logoImageView, containerCard, emailTextField, continueButton])
+        animateOnboardingEntrance([logoImageView, containerCard, emailTextField, continueButton, guestButton])
     }
+
     @IBOutlet weak var containerCard: UIView!
     private var logoImageView: UIImageView!
+    private let guestButton = UIButton(type: .system)
 
     private func setupLogo() {
         logoImageView = addOnboardingLogo(above: containerCard)
+        setupGuestButton()
+    }
+
+    private func setupGuestButton() {
+        guestButton.translatesAutoresizingMaskIntoConstraints = false
+        guestButton.setTitle("Explore as Guest", for: .normal)
+        guestButton.setTitleColor(.secondaryLabel, for: .normal)
+        guestButton.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .medium)
+        guestButton.addTarget(self, action: #selector(guestTapped), for: .touchUpInside)
+        
+        view.addSubview(guestButton)
+        NSLayoutConstraint.activate([
+            guestButton.topAnchor.constraint(equalTo: continueButton.bottomAnchor, constant: 16),
+            guestButton.centerXAnchor.constraint(equalTo: continueButton.centerXAnchor),
+            guestButton.heightAnchor.constraint(equalToConstant: 44)
+        ])
+    }
+
+    @objc private func guestTapped() {
+        AppHaptics.selection()
+        let sb = UIStoryboard(name: "Main", bundle: nil)
+        let rootVC = sb.instantiateViewController(withIdentifier: "MainTabBarController")
+        
+        if let scene = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
+           let window = scene.window {
+            window.rootViewController = rootVC
+            UIView.transition(with: window, duration: 0.45, options: .transitionCrossDissolve, animations: nil)
+        }
     }
 
     private func configureAccessibility() {

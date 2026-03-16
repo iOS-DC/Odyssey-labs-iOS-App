@@ -231,27 +231,20 @@ class ReviewRideViewController: UIViewController {
 
  
     @IBAction func offerTapped(_ sender: UIButton) {
+        ensureNonGuest { [weak self] in
+            guard let self = self,
+                  let user = UserDataModel.shared.getCurrentUser() else { return }
 
-        guard let user = UserDataModel.shared.getCurrentUser() else {
-            let alert = UIAlertController(title: "Not Signed In",
-                                          message: "Please sign in before offering a ride.",
-                                          preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(alert, animated: true)
-            return
-        }
-
-
-        let finalDeparture = merge(summary.date, summary.time)
-
-        let rawWaypoints = summary.route?.coordinates ?? []
-        let waypoints: [LocationPoint]
-        if rawWaypoints.count > 120 {
-            let step = max(1, rawWaypoints.count / 100)
-            waypoints = stride(from: 0, to: rawWaypoints.count, by: step).map { rawWaypoints[$0] }
-        } else {
-            waypoints = rawWaypoints
-        }
+            let finalDeparture = self.merge(self.summary.date, self.summary.time)
+            
+            let rawWaypoints = self.summary.route?.coordinates ?? []
+            let waypoints: [LocationPoint]
+            if rawWaypoints.count > 120 {
+                let step = max(1, rawWaypoints.count / 100)
+                waypoints = stride(from: 0, to: rawWaypoints.count, by: step).map { rawWaypoints[$0] }
+            } else {
+                waypoints = rawWaypoints
+            }
 
         if isRecurring && recurringDays.isEmpty {
             let alert = UIAlertController(title: "Select Repeat Days",
@@ -308,10 +301,12 @@ class ReviewRideViewController: UIViewController {
                     preferredStyle: .alert
                 )
                 alert.addAction(UIAlertAction(title: "OK", style: .default))
-                present(alert, animated: true)
+                self.present(alert, animated: true)
             }
         }
     }
+}
+
     func merge(_ date: Date, _ time: Date) -> Date {
         let calendar = Calendar.current
 

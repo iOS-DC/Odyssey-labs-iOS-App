@@ -100,6 +100,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.makeKeyAndVisible()
     }
 
+    static func setRootToAuth() {
+        guard let scene = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
+              let window = scene.window else { return }
+        
+        let mainSB = UIStoryboard(name: "Main", bundle: nil)
+        let emailVC = mainSB.instantiateViewController(withIdentifier: "EmailViewController")
+        let nav = UINavigationController(rootViewController: emailVC)
+        
+        window.rootViewController = nav
+        UIView.transition(with: window, duration: 0.45, options: .transitionCrossDissolve, animations: nil)
+    }
+
     // MARK: - Unused lifecycle stubs
 
     func sceneDidDisconnect(_ scene: UIScene) {}
