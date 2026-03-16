@@ -264,7 +264,6 @@ final class RideDataModel {
         } else {
             seedMockRidesIfNeeded()
         }
-        UserDataModel.shared.ensureDriverProfiles(for: rides.map { $0.driverUserID })
     }
 
     
@@ -469,8 +468,8 @@ final class RideDataModel {
     }
 
 
-    /// Host approves: moves seats, creates booking
-    func approveRequest(requestID: UUID, hostUserID: UUID) {
+    /// Host approves: moves seats, updates status, and adds the booking
+    func approveRequest(requestID: UUID, hostUserID: UUID, booking: Booking) {
         guard let rqIdx = requests.firstIndex(where: { $0.id == requestID }) else { return }
         var rq = requests[rqIdx]
 
@@ -497,14 +496,10 @@ final class RideDataModel {
         // reduce seats
         ride.seatsAvailable -= rq.seats
         updateRide(ride)
-
-        // booking
-        let booking = Booking(rideID: rq.rideID,
-                              passengerUserID: rq.passengerUserID,
-                              seats: rq.seats,
-                              pickupPoint: rq.pickupPoint)
+ 
+        // Add the provided booking (which has the correct server-matched UUID)
         bookings.append(booking)
-
+ 
         saveRequests()
         saveBookings()
 
@@ -553,9 +548,9 @@ final class RideDataModel {
 
         // Commit: mark the request approved only after booking + seats are persisted
         try await RideRepository.shared.updateRequestStatus(id: requestID, status: .approved)
-
-        // Mirror the changes in the local cache
-        approveRequest(requestID: requestID, hostUserID: hostUserID)
+ 
+        // Mirror the changes in the local cache using the SAME booking object
+        approveRequest(requestID: requestID, hostUserID: hostUserID, booking: booking)
     }
 
     func denyRequest(requestID: UUID, hostUserID: UUID) {

@@ -501,29 +501,10 @@ final class UserDataModel {
     }
 
     // MARK: - Ensure driver profiles exist for ride owners
+    // MARK: - Ensure driver profiles exist (Legacy - now handled by Supabase joins)
     func ensureDriverProfiles(for driverIDs: [UUID]) {
-        let existing = Set(users.map { $0.id })
-        var added = 0
-
-        for id in driverIDs where !existing.contains(id) {
-            let idx = abs(id.uuidString.hashValue) % MockData.driverNames.count
-            let name = MockData.driverNames[idx]
-            let profile = UserProfile(
-                id: id,
-                email: "driver\(idx + 1)@chitkara.edu.in",
-                isEmailVerified: true,
-                fullName: name,
-                role: .student,
-                courseName: "CSE",
-                year: 3
-            )
-            users.append(profile)
-            added += 1
-        }
-
-        if added > 0 {
-            saveUsers()
-        }
+        // No-op: We now rely on Supabase joins to bundle real profiles with rides/requests.
+        // Generating random mock names here causes identity inconsistency across devices.
     }
 
     // MARK: - Mock Users
