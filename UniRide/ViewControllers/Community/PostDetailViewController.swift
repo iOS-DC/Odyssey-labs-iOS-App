@@ -61,7 +61,7 @@ final class PostDetailViewController: UIViewController {
         ])
 
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PostHeaderCell")
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "CommentCell")
+        tableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
     }
 
     private func setupComposeBar() {
@@ -279,10 +279,10 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
         config.secondaryTextProperties.color = .tertiaryLabel
 
         // Avatar
-        config.image = UIImage(systemName: "person.crop.circle.fill")
-        config.imageProperties.tintColor = AppDesign.Color.primary
-        config.imageToTextPadding = 8
-
+        cell.imageView?.layer.cornerRadius = 20
+        cell.imageView?.clipsToBounds = true
+        cell.imageView?.loadAndFallback(from: post.authorProfile?.photoURL, name: name)
+        
         cell.contentConfiguration = config
 
         // Verified badge
@@ -319,34 +319,11 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
 
     // Comment cell
     private func buildCommentCell(at row: Int) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CommentCell")!
-        cell.selectionStyle = .none
-        let comment = comments[row]
-
-        // 1. Real name freshly fetched from Supabase (highest priority)
-        // 2. Current user's local profile (always accurate for own comments)
-        // 3. Local cache as last resort
-        let name: String
-        if let realName = authorNames[comment.authorUserID], !realName.isEmpty {
-            name = realName
-        } else if let me = UserDataModel.shared.getCurrentUser(), me.id == comment.authorUserID,
-                  !me.fullName.isEmpty {
-            name = me.fullName
-        } else {
-            let cached = UserDataModel.shared.getUser(by: comment.authorUserID)
-            name = cached?.fullName.isEmpty == false ? cached!.fullName : "UniRide User"
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: CommentTableViewCell.identifier) as? CommentTableViewCell else {
+            return UITableViewCell()
         }
-
-        var config = UIListContentConfiguration.subtitleCell()
-        config.text = name
-        config.textProperties.font = .systemFont(ofSize: 13, weight: .semibold)
-        config.secondaryText = comment.text
-        config.secondaryTextProperties.numberOfLines = 0
-        config.secondaryTextProperties.font = .systemFont(ofSize: 14)
-        config.image = UIImage(systemName: "person.crop.circle")
-        config.imageProperties.tintColor = .secondaryLabel
-        config.imageToTextPadding = 8
-        cell.contentConfiguration = config
+        let comment = comments[row]
+        cell.configure(with: comment)
         return cell
     }
 }

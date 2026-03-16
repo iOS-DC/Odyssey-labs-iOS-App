@@ -531,12 +531,14 @@ class CommunityViewController: UIViewController,
         let role    = user?.role == .faculty ? "Faculty" :
                       (user?.courseName.flatMap { c in user?.year.map { y in "\(c) · Year \(y)" } } ?? "Student")
 
-        let newPost = Post(name: name,
+        var newPost = Post(name: name,
                            subtitle: role,
                            message: typedText,
                            timestamp: "Just now",
                            likeCount: 0,
                            shareCount: 0)
+        newPost.authorProfile = user // Ensure profile pic shows immediately
+        newPost.authorUserID = user?.id
 
         feedPosts.insert(newPost, at: 0)
         tableView.reloadData()
@@ -959,11 +961,7 @@ class CommunityViewController: UIViewController,
                 return UITableViewCell()
             }
             let comment = liveCommunityComments[indexPath.row]
-            let authorName = comment.authorProfile?.fullName ?? "UniRide User"
-            cell.configure(text: comment.text, authorName: authorName)
-            if let profile = comment.authorProfile {
-                cell.updateAvatar(name: profile.fullName)
-            }
+            cell.configure(with: comment)
             return cell
         }
 
@@ -982,10 +980,9 @@ class CommunityViewController: UIViewController,
             }
 
             if let imgView = cell.viewWithTag(100) as? UIImageView {
-                imgView.layer.cornerRadius = AppDesign.Radius.lg
+                imgView.layer.cornerRadius = 20
                 imgView.clipsToBounds = true
-                // Use initials-based avatar for the post author
-                imgView.image = UIImage.generatedAvatar(for: post.name, size: CGSize(width: 40, height: 40))
+                imgView.loadAndFallback(from: post.authorProfile?.photoURL, name: post.name)
             }
 
             if let label = cell.viewWithTag(1) as? UILabel {
@@ -1192,97 +1189,5 @@ extension CommunityViewController: EventCardCellDelegate {
         guard let indexPath = tableView.indexPath(for: cell),
               indexPath.row < eventPosts.count else { return }
         openEventDetailsScreen(event: eventPosts[indexPath.row])
-    }
-}
-
-// MARK: - Custom Cells
-class CommentTableViewCell: UITableViewCell {
-    
-    static let identifier = "CommentTableViewCell"
-    
-    private let avatarImageView: UIImageView = {
-        let iv = UIImageView()
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        iv.contentMode = .scaleAspectFill
-        iv.clipsToBounds = true
-        iv.layer.cornerRadius = AppDesign.Radius.md
-        iv.backgroundColor = AppDesign.Color.fieldBackground
-        iv.image = UIImage(systemName: "person.circle.fill")
-        iv.tintColor = AppDesign.Color.border
-        return iv
-    }()
-    
-    private let bubbleView: UIView = {
-        let v = UIView()
-        v.translatesAutoresizingMaskIntoConstraints = false
-        v.backgroundColor = AppDesign.Color.fieldBackground
-        v.layer.cornerRadius = AppDesign.Radius.sm
-        return v
-    }()
-    
-    private let nameLabel: UILabel = {
-        let l = UILabel()
-        l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = AppDesign.Typography.captionStrong
-        l.textColor = .secondaryLabel
-        return l
-    }()
-    
-    private let commentLabel: UILabel = {
-        let l = UILabel()
-        l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = AppDesign.Typography.subheadline
-        l.numberOfLines = 0
-        l.textColor = .label
-        return l
-    }()
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        backgroundColor = .clear
-        selectionStyle = .none
-        
-        contentView.addSubview(avatarImageView)
-        contentView.addSubview(bubbleView)
-        bubbleView.addSubview(nameLabel)
-        bubbleView.addSubview(commentLabel)
-        
-        NSLayoutConstraint.activate([
-            avatarImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            avatarImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            avatarImageView.widthAnchor.constraint(equalToConstant: 32),
-            avatarImageView.heightAnchor.constraint(equalToConstant: 32),
-            
-            bubbleView.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
-            bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            bubbleView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -32),
-            bubbleView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
-            
-            nameLabel.topAnchor.constraint(equalTo: bubbleView.topAnchor, constant: 8),
-            nameLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            nameLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            
-            commentLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
-            commentLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            commentLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            commentLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -8)
-        ])
-    }
-    
-    func configure(text: String, authorName: String = "") {
-        nameLabel.text = authorName.isEmpty ? UserDataModel.shared.getCurrentUser()?.fullName ?? "" : authorName
-        commentLabel.text = text
-    }
-    
-    func updateAvatar(name: String) {
-        avatarImageView.image = UIImage.generatedAvatar(for: name, size: CGSize(width: 32, height: 32))
     }
 }

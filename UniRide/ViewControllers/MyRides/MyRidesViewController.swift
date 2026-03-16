@@ -90,6 +90,12 @@ final class MyRidesViewController: UIViewController {
             name: .appNotificationsUpdated,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(chatDidUpdate),
+            name: .chatMessagesUpdated,
+            object: nil
+        )
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -210,6 +216,12 @@ final class MyRidesViewController: UIViewController {
     @objc private func ridesDidUpdate() {
         DispatchQueue.main.async { [weak self] in
             self?.reloadTrips()
+        }
+    }
+    
+    @objc private func chatDidUpdate() {
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.reloadData()
         }
     }
 
