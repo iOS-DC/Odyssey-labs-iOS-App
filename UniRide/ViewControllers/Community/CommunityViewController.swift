@@ -147,6 +147,12 @@ class CommunityViewController: UIViewController,
         
         // Save reference to button
         newPostBarButton = navigationItem.rightBarButtonItem
+        
+        // Initial visibility check for the plus button
+        segmentChanged(segmentedControl)
+        
+        setupKeyboardDismissal()
+        setupPopupConstraints()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -178,36 +184,47 @@ class CommunityViewController: UIViewController,
     }
     
     @objc func keyboardWillShow(notification: NSNotification) {
-        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
-            // Adjust bottom constraint to keyboard height
-            // Check if NewPost is visible
-            if !newPostContainerView.isHidden {
-                self.newPostBottomConstraint.constant = keyboardSize.height - view.safeAreaInsets.bottom
-                UIView.animate(withDuration: 0.3) {
-                    self.view.layoutIfNeeded()
-                }
-            }
-            if !commentPopupView.isHidden {
-                self.commentPopupBottomConstraint.constant = keyboardSize.height - view.safeAreaInsets.bottom
-                UIView.animate(withDuration: 0.3) {
-                    self.view.layoutIfNeeded()
-                }
-            }
+        guard let userInfo = notification.userInfo,
+              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curveRaw = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
+        
+        let keyboardHeight = keyboardFrame.cgRectValue.height
+        let safeAreaBottom = view.safeAreaInsets.bottom
+        let animationCurve = UIView.AnimationOptions(rawValue: curveRaw << 16)
+        
+        // Robust approach: Let Auto Layout handle the top limit via constraints added in setupPopupConstraints.
+        // We simply tell the view to move up by the keyboard height.
+        let targetConstant = -(keyboardHeight - safeAreaBottom)
+
+        if !newPostContainerView.isHidden {
+            self.newPostBottomConstraint.constant = targetConstant
+        }
+        if !commentPopupView.isHidden {
+            self.commentPopupBottomConstraint.constant = targetConstant
+        }
+
+        UIView.animate(withDuration: duration, delay: 0, options: [animationCurve, .beginFromCurrentState]) {
+            self.view.layoutIfNeeded()
         }
     }
 
     @objc func keyboardWillHide(notification: NSNotification) {
+        guard let userInfo = notification.userInfo,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curveRaw = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
+        
+        let animationCurve = UIView.AnimationOptions(rawValue: curveRaw << 16)
+
         if !newPostContainerView.isHidden {
-             self.newPostBottomConstraint.constant = 0
-             UIView.animate(withDuration: 0.3) {
-                 self.view.layoutIfNeeded()
-             }
+            self.newPostBottomConstraint.constant = 0
         }
         if !commentPopupView.isHidden {
-             self.commentPopupBottomConstraint.constant = 0
-             UIView.animate(withDuration: 0.3) {
-                 self.view.layoutIfNeeded()
-             }
+            self.commentPopupBottomConstraint.constant = 0
+        }
+
+        UIView.animate(withDuration: duration, delay: 0, options: [animationCurve, .beginFromCurrentState]) {
+            self.view.layoutIfNeeded()
         }
     }
     
@@ -373,6 +390,23 @@ class CommunityViewController: UIViewController,
             cancelBtn.configuration = .plain()
             cancelBtn.setTitle("Cancel", for: .normal)
         }
+    }
+
+    private func setupKeyboardDismissal() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+
+    private func setupPopupConstraints() {
+        // Add a "Top Cap" constraint to prevent popups from sliding under/over the navigation tabs.
+        // This constraint ensures the top of the popup stays at least 140 points from the safe area top.
+        newPostContainerView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 140).isActive = true
+        commentPopupView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 140).isActive = true
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 
     // MARK: - NEW POST POPUP
