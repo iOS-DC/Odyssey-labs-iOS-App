@@ -129,9 +129,13 @@ final class RideRepository {
         else { return nil }
 
         let pickup = LocationPoint(lat: pickLat, lon: pickLon, address: row["pickup_address"] as? String)
-        return Booking(id: id, rideID: rideID, passengerUserID: passID, seats: seats,
-                       pickupPoint: pickup, createdAt: parseDate(row["created_at"] as? String),
-                       status: status)
+        var booking = Booking(id: id, rideID: rideID, passengerUserID: passID, seats: seats, pickupPoint: pickup,
+                           createdAt: parseDate(row["created_at"] as? String), status: status)
+        
+        if let profRow = row["profiles"] as? [String: Any], let prof = UserProfile(row: profRow) {
+            booking.passengerProfile = prof
+        }
+        return booking
     }
 
     // MARK: - Rides
@@ -182,15 +186,15 @@ final class RideRepository {
             "departure_time": iso.string(from: ride.departureTime),
             "seats_total": ride.seatsTotal, "seats_available": ride.seatsAvailable,
             "fare_per_seat": ride.farePerSeat, "status": ride.status.rawValue,
-            "created_at": iso.string(from: ride.createdAt),
+            "notes": ride.notes ?? "", "created_at": iso.string(from: ride.createdAt),
             "is_recurring": ride.isRecurring,
-            "recurring_days": ride.recurringDays
+            "recurring_days": ride.recurringDays,
+            "vehicle_model": ride.vehicleModel ?? "",
+            "registration_plate": ride.registrationPlate ?? ""
         ]
+        
         if let v = ride.source.address      { p["source_address"]      = v }
         if let v = ride.destination.address { p["destination_address"] = v }
-        if let v = ride.notes                { p["notes"]          = v }
-        // vehicle_model and registration_plate are not columns in the rides table;
-        // vehicle identity is stored in user_vehicles. Omit them from the insert.
         if !ride.waypoints.isEmpty, let v = encodeJSON(ride.waypoints) { p["waypoints"] = v }
         if let rt = ride.selectedRoute, let v = encodeJSON(rt) { p["selected_route"] = v }
         req.httpBody = try JSONSerialization.data(withJSONObject: p)
@@ -281,20 +285,18 @@ final class RideRepository {
     func fetchBookings(rideID: UUID) async throws -> [Booking] {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
-        let url = mgr.restURL(table: "ride_bookings",
-                              query: "ride_id=eq.\(rideID.uuidString)&order=created_at.asc")
+        let url = mgr.restURL(table: "ride_bookings", query: "ride_id=eq.\(rideID.uuidString)&select=*,profiles!passenger_user_id(*)")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
         let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
         return rows.compactMap { bookingFromRow($0) }
     }
-
+    
     func fetchMyBookings(passengerID: UUID) async throws -> [Booking] {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
-        let url = mgr.restURL(table: "ride_bookings",
-                              query: "passenger_user_id=eq.\(passengerID.uuidString)&order=created_at.desc")
+        let url = mgr.restURL(table: "ride_bookings", query: "passenger_user_id=eq.\(passengerID.uuidString)&select=*,profiles!passenger_user_id(*)")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)

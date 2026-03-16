@@ -200,18 +200,23 @@ struct Booking: Codable, Equatable {
     var pickupPoint: LocationPoint
     let createdAt: Date
     var status: BookingStatus
+    
+    // Bundled profile (added for multi-device consistency)
+    var passengerProfile: UserProfile?
 
     init(rideID: UUID,
          passengerUserID: UUID,
          seats: Int,
-         pickupPoint: LocationPoint) {
+         pickupPoint: LocationPoint,
+         status: BookingStatus = .confirmed) {
         self.id = UUID()
         self.rideID = rideID
         self.passengerUserID = passengerUserID
         self.seats = seats
         self.pickupPoint = pickupPoint
+        self.status = status
         self.createdAt = Date()
-        self.status = .confirmed
+        self.passengerProfile = nil
     }
 
     /// Full memberwise init used by RideRepository when decoding from Supabase.
@@ -229,6 +234,7 @@ struct Booking: Codable, Equatable {
         self.pickupPoint = pickupPoint
         self.createdAt = createdAt
         self.status = status
+        self.passengerProfile = nil
     }
 
     static func ==(lhs: Booking, rhs: Booking) -> Bool { lhs.id == rhs.id }
@@ -300,7 +306,9 @@ final class RideDataModel {
                 notes: ride.notes,
                 createdAt: ride.createdAt,
                 isRecurring: ride.isRecurring,
-                recurringDays: ride.recurringDays
+                recurringDays: ride.recurringDays,
+                vehicleModel: ride.vehicleModel,
+                registrationPlate: ride.registrationPlate
             )
         }
         try await RideRepository.shared.insertRide(outboundRide)

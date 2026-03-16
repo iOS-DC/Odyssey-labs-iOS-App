@@ -219,7 +219,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         approvedPassengers = RideDataModel.shared
             .listBookings(for: ride.id)
             .filter { $0.status == .confirmed }
-            .compactMap { UserDataModel.shared.getUser(by: $0.passengerUserID) }
+            .compactMap { $0.passengerProfile ?? UserDataModel.shared.getUser(by: $0.passengerUserID) }
 
         passengersLabel.text = "Passengers: \(approvedPassengers.count) / \(ride.seatsTotal)"
         approvedContainerHeightConstraint.constant = 0
