@@ -259,9 +259,12 @@ final class CommunityRepository {
 
     // MARK: - Shares
 
-    func recordShare(postID: UUID, destination: String? = nil) async throws {
+    @discardableResult
+    func recordShare(postID: UUID, destination: String? = nil) async throws -> Int {
         try await SessionManager.shared.validateSession()
         guard let uid = SessionManager.shared.userID else { throw CommunityError.notLoggedIn }
+        
+        // 1. Record the share event
         var payload: [String: Any] = [
             "post_id": postID.uuidString,
             "user_id": uid.uuidString
@@ -276,6 +279,28 @@ final class CommunityRepository {
         req.httpBody = body
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
+
+        // 2. Count the real total shares for this post
+        let countURL = mgr.restURL(table: "community_shares",
+                                   query: "post_id=eq.\(postID.uuidString)&select=id")
+        var countReq = URLRequest(url: countURL)
+        countReq.allHTTPHeaderFields = mgr.userHeaders
+        let (countData, _) = try await URLSession.shared.data(for: countReq)
+        let allShares = (try? JSONSerialization.jsonObject(with: countData) as? [[String: Any]]) ?? []
+        let newCount = allShares.count
+
+        // 3. PATCH share_count on community_posts
+        let patchURL = mgr.restURL(table: "community_posts",
+                                   query: "id=eq.\(postID.uuidString)")
+        var patchReq = URLRequest(url: patchURL)
+        patchReq.httpMethod = "PATCH"
+        patchReq.allHTTPHeaderFields = mgr.userHeaders
+        patchReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        patchReq.httpBody = try JSONSerialization.data(withJSONObject: ["share_count": newCount])
+        let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
+        try checkHTTP(patchResp, data: Data())
+
+        return newCount
     }
 
     // MARK: - Event Attendance

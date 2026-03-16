@@ -67,12 +67,8 @@ class CommunityViewController: UIViewController,
         var hasLiked: Bool = false
         var hasShared: Bool = false
 
-        var comments: [String] = []
-        /// Real comment count from the DB — always accurate even before comments are loaded.
-        var remoteCommentCount: Int = 0
-        var commentCount: Int {
-            remoteCommentCount > 0 ? remoteCommentCount : comments.count
-        }
+        /// Real comment count from the DB — always accurate.
+        var commentCount: Int = 0
     }
 
 
@@ -91,7 +87,13 @@ class CommunityViewController: UIViewController,
         // BUG FIX: Load posts from Supabase on first appearance.
         // Falls back to the seeded defaultPost if network is unavailable.
         fetchPostsFromSupabase()
-
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleGlobalCommentUpdate(_:)),
+            name: .CommunityCommentDidUpdate,
+            object: nil
+        )
 
         segmentedControl.setTitle("Events", forSegmentAt: 0)
         segmentedControl.setTitle("Feed", forSegmentAt: 1)
@@ -140,7 +142,6 @@ class CommunityViewController: UIViewController,
         // Initial visibility check for the plus button
         segmentChanged(segmentedControl)
         
-        setupKeyboardDismissal()
         setupPopupConstraints()
     }
     
@@ -370,21 +371,11 @@ class CommunityViewController: UIViewController,
         }
     }
 
-    private func setupKeyboardDismissal() {
-        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        tap.cancelsTouchesInView = false
-        view.addGestureRecognizer(tap)
-    }
-
     private func setupPopupConstraints() {
         // Add a "Top Cap" constraint to prevent popups from sliding under/over the navigation tabs.
         // This constraint ensures the top of the popup stays at least 140 points from the safe area top.
         newPostContainerView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 140).isActive = true
         commentPopupView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 140).isActive = true
-    }
-
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
     }
 
     // MARK: - NEW POST POPUP
@@ -426,6 +417,12 @@ class CommunityViewController: UIViewController,
 
     @IBAction func segmentChanged(_ sender: Any) {
         AppHaptics.selection()
+        
+        // Ensure all popups are dismissed when switching tabs
+        hideComposer()
+        hideCommentPopup()
+        hideSharePopup()
+        
         tableView.reloadData()
         
         // Hide "New Post" button (plus) when in Events tab (index 0)
@@ -596,11 +593,12 @@ class CommunityViewController: UIViewController,
             if let newCount = try? await CommunityRepository.shared.insertComment(postID: postID, text: text) {
                 await MainActor.run {
                     self.view.endEditing(true)
-                    // Update the cell count from the backend truth
-                    if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                        self.feedPosts[i].remoteCommentCount = newCount
-                        self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
-                    }
+                    // Update locally + Notify globally
+                    NotificationCenter.default.post(
+                        name: .CommunityCommentDidUpdate,
+                        object: nil,
+                        userInfo: ["postID": postID, "newCount": newCount]
+                    )
                 }
             }
 
@@ -659,14 +657,8 @@ class CommunityViewController: UIViewController,
         guard let cell = getCell(from: sender),
               let index = tableView.indexPath(for: cell)?.row else { return }
         
-        let post = feedPosts[index]
-        let textToShare = "Check out this post from \(post.name): \(post.message)"
-        
-        showSystemShareSheet(items: [textToShare])
-        
-        // Track share count
-        feedPosts[index].shareCount += 1
-        tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+        currentPostIndex = index
+        showSharePopup()
     }
     
     @IBAction func EventShareButtonTapped(_ sender: Any) {
@@ -674,14 +666,8 @@ class CommunityViewController: UIViewController,
         guard let button = sender as? UIView,
               let indexPath = getCellIndexPath(sender: button) else { return }
         
-        let event = eventPosts[indexPath.row]
-        let textToShare = "Join me at \(event.title) on \(event.startsAt)! 🚗"
-        
-        showSystemShareSheet(items: [textToShare])
-        
-        // Track share count
-        eventPosts[indexPath.row].shareCount += 1
-        tableView.reloadRows(at: [IndexPath(row: indexPath.row, section: 0)], with: .none)
+        currentPostIndex = indexPath.row
+        showSharePopup()
     }
     
     @IBAction func shareEventTapped(_ sender: UIButton) {
@@ -697,7 +683,14 @@ class CommunityViewController: UIViewController,
         hideSharePopup()
         
         // Get the partial message or link to share
-        let textToShare = "Check out this post on UniRide!"
+        let textToShare: String
+        if segmentedControl.selectedSegmentIndex == 1 {
+            let post = feedPosts[currentPostIndex]
+            textToShare = "Check out this post from \(post.name) on UniRide!"
+        } else {
+            let event = eventPosts[currentPostIndex]
+            textToShare = "Join me at \(event.title) on UniRide! 🚗"
+        }
         
         switch sender.tag {
         case 1: // WhatsApp
@@ -706,47 +699,42 @@ class CommunityViewController: UIViewController,
                 if UIApplication.shared.canOpenURL(url) {
                     UIApplication.shared.open(url, options: [:], completionHandler: nil)
                 } else {
-                    // Fallback to share sheet
                     showSystemShareSheet(items: [textToShare])
                 }
             }
-            
         case 2: // Instagram
-            // Instagram doesn't support simple text sharing via URL scheme easily, usually requires UIDocumentInteractionController for images.
-            // For now, we'll try opening the app, or fallback to system share which handles it better.
-            let urlString = "instagram://app"
-            if let url = URL(string: urlString) {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                } else {
-                    showSystemShareSheet(items: [textToShare])
-                }
-            }
-            
+            showSystemShareSheet(items: [textToShare])
         case 3: // Facebook
-            let urlString = "fb://"
-            if let url = URL(string: urlString) {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                } else {
-                    showSystemShareSheet(items: [textToShare])
-                }
-            }
-            
+            showSystemShareSheet(items: [textToShare])
         case 4: // More
             showSystemShareSheet(items: [textToShare])
-            
         default: break
         }
 
-        // Increase share count for whichever post is currently selected
-        if segmentedControl.selectedSegmentIndex == 1 {
-            feedPosts[currentPostIndex].shareCount += 1
-        } else {
-            eventPosts[currentPostIndex].shareCount += 1
+        // Backend Sync
+        Task {
+            if segmentedControl.selectedSegmentIndex == 1 {
+                let post = feedPosts[currentPostIndex]
+                guard let postID = post.remoteID else { return }
+                
+                if let newCount = try? await CommunityRepository.shared.recordShare(postID: postID) {
+                    await MainActor.run {
+                        self.feedPosts[self.currentPostIndex].shareCount = newCount
+                        self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
+                    }
+                }
+            } else {
+                let event = eventPosts[currentPostIndex]
+                let eventID = event.id
+                
+                if let newCount = try? await EventsAPI.shared.incrementShareCount(eventID: eventID, currentCount: event.shareCount) {
+                    await MainActor.run {
+                        self.eventPosts[self.currentPostIndex].shareCount = newCount
+                        self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
+                    }
+                }
+            }
         }
-
-        tableView.reloadRows(at: [IndexPath(row: currentPostIndex, section: 0)], with: .none)
     }
     
     func showSystemShareSheet(items: [Any]) {
@@ -858,46 +846,53 @@ class CommunityViewController: UIViewController,
                     authorProfile: effectiveProfile,
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount,
-                    remoteCommentCount: rp.commentCount
+                    commentCount: rp.commentCount
                 )
             }
             guard !mapped.isEmpty else { return }
 
-            // Show posts immediately with placeholder names.
-            // Preserve hasLiked + likeCount from the current session so that
-            // a refresh (timer/comment) never resets the user's own like.
+            // Merge local session state (likes, counts) into the freshly fetched posts 
+            // so we don't flicker or lose optimistic updates.
             await MainActor.run {
                 for i in mapped.indices {
                     guard let remoteID = mapped[i].remoteID else { continue }
                     
-                    // If we are currently liking/unlinking this post, DON'T let the server 
-                    // overwrite our local optimistic state yet.
-                    if self.pendingLikeOperations.contains(remoteID) {
-                        if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }) {
-                            mapped[i].hasLiked = existing.hasLiked
+                    if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }) {
+                        // Preserve hasLiked/hasShared if already true in current session.
+                        if existing.hasLiked  { mapped[i].hasLiked = true }
+                        if existing.hasShared { mapped[i].hasShared = true }
+
+                        // Take the higher count (server vs local) to avoid flickering
+                        // if the server hasn't finished its internal trigger updates.
+                        mapped[i].likeCount    = max(mapped[i].likeCount, existing.likeCount)
+                        mapped[i].shareCount   = max(mapped[i].shareCount, existing.shareCount)
+                        mapped[i].commentCount = max(mapped[i].commentCount, existing.commentCount)
+                        
+                        // If we are currently in middle of an optimistic like operation,
+                        // definitely keep the local state.
+                        if self.pendingLikeOperations.contains(remoteID) {
+                            mapped[i].hasLiked  = existing.hasLiked
                             mapped[i].likeCount = existing.likeCount
                         }
-                        continue
-                    }
-
-                    if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }),
-                       existing.hasLiked {
-                        mapped[i].hasLiked  = true
-                        mapped[i].likeCount = max(mapped[i].likeCount, existing.likeCount)
                     }
                 }
-                self.feedPosts = mapped
-                self.tableView.reloadData()
-            }
-
-            // UI is already updated with placeholder names (or real names if authorProfile was present).
-            // The refresh spinner is hidden below.
-
-            await MainActor.run {
+                
                 self.feedPosts = mapped
                 self.tableView.reloadData()
                 self.refreshControl.endRefreshing()
             }
+        }
+    }
+
+
+    @objc private func handleGlobalCommentUpdate(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let postID = userInfo["postID"] as? UUID,
+              let newCount = userInfo["newCount"] as? Int else { return }
+
+        if let index = feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+            feedPosts[index].commentCount = newCount
+            tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
         }
     }
 
@@ -1111,7 +1106,7 @@ class CommunityViewController: UIViewController,
                         await MainActor.run {
                             // Update the post's comment count in the main feed
                             if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                                self.feedPosts[i].remoteCommentCount = newCount
+                                self.feedPosts[i].commentCount = newCount
                                 self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
                             }
                         }
@@ -1123,7 +1118,7 @@ class CommunityViewController: UIViewController,
                 }
             }
             deleteAction.image = UIImage(systemName: "trash.fill")
-            deleteAction.backgroundColor = .systemRed
+            deleteAction.backgroundColor = UIColor.systemRed
             return UISwipeActionsConfiguration(actions: [deleteAction])
         }
 
@@ -1158,7 +1153,7 @@ class CommunityViewController: UIViewController,
         }
 
         deleteAction.image           = UIImage(systemName: "trash.fill")
-        deleteAction.backgroundColor = .systemRed
+        deleteAction.backgroundColor = UIColor.systemRed
         return UISwipeActionsConfiguration(actions: [deleteAction])
     }
 

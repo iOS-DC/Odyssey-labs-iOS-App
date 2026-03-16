@@ -82,10 +82,15 @@ class HomeViewController: UIViewController {
         let headerView = UIView()
         headerView.addSubview(buttonStack)
         
+        if let stack = buttonStack as? UIStackView {
+            stack.distribution = .fillEqually
+            stack.spacing = 16
+        }
+        
         NSLayoutConstraint.activate([
             buttonStack.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 4),
-            buttonStack.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
-            buttonStack.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
+            buttonStack.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 12),
+            buttonStack.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -12),
             buttonStack.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16)
         ])
         
