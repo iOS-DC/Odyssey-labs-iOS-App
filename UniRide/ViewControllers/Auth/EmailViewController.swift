@@ -25,13 +25,19 @@ class EmailViewController: UIViewController {
         continueButton.setPrimaryCTAEnabled(false)
         emailTextField.addTarget(self, action: #selector(emailChanged), for: .editingChanged)
         configureAccessibility()
+        setupLogo()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        animateOnboardingEntrance([containerCard, emailTextField, continueButton])
+        animateOnboardingEntrance([logoImageView, containerCard, emailTextField, continueButton])
     }
     @IBOutlet weak var containerCard: UIView!
+    private var logoImageView: UIImageView!
+
+    private func setupLogo() {
+        logoImageView = addOnboardingLogo(above: containerCard)
+    }
 
     private func configureAccessibility() {
         emailTextField.accessibilityLabel = "University email"

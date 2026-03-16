@@ -113,4 +113,22 @@ extension UIViewController {
             }
         }
     }
+
+    /// Primary logo for onboarding/auth screens.
+    @discardableResult
+    func addOnboardingLogo(above container: UIView, offset: CGFloat = AppDesign.Spacing.xl) -> UIImageView {
+        let logoImageView = UIImageView()
+        logoImageView.image = UIImage(named: "Logo")
+        logoImageView.contentMode = .scaleAspectFit
+        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(logoImageView)
+        
+        NSLayoutConstraint.activate([
+            logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            logoImageView.bottomAnchor.constraint(equalTo: container.topAnchor, constant: -offset),
+            logoImageView.widthAnchor.constraint(equalToConstant: 160),
+            logoImageView.heightAnchor.constraint(equalToConstant: 160)
+        ])
+        return logoImageView
+    }
 }
