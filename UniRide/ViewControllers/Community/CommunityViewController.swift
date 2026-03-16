@@ -953,11 +953,36 @@ class CommunityViewController: UIViewController,
                 )
             }
 
-            if let imgView = cell.viewWithTag(100) as? UIImageView {
-                imgView.layer.cornerRadius = 20
-                imgView.clipsToBounds = true
-                imgView.loadAndFallback(from: post.authorProfile?.photoURL, name: post.name)
+            // Avatar: hide the storyboard placeholder and use a programmatic imageview
+            // so we always know the bounds (40×40) when calling loadAndFallback.
+            if let storyboardAvatar = cell.viewWithTag(100) as? UIImageView {
+                storyboardAvatar.isHidden = true
             }
+
+            let avatarTag = 201
+            let avatarSize: CGFloat = 40
+            let avatarIV: UIImageView
+            if let existing = cell.contentView.viewWithTag(avatarTag) as? UIImageView {
+                avatarIV = existing
+            } else {
+                let iv = UIImageView()
+                iv.tag = avatarTag
+                iv.contentMode = .scaleAspectFill
+                iv.clipsToBounds = true
+                iv.layer.cornerRadius = avatarSize / 2
+                iv.backgroundColor = AppDesign.Color.fieldBackground
+                iv.translatesAutoresizingMaskIntoConstraints = false
+                cell.contentView.addSubview(iv)
+                // Position it where the storyboard avatar sits (leading 16, top 12)
+                NSLayoutConstraint.activate([
+                    iv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 16),
+                    iv.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 12),
+                    iv.widthAnchor.constraint(equalToConstant: avatarSize),
+                    iv.heightAnchor.constraint(equalToConstant: avatarSize)
+                ])
+                avatarIV = iv
+            }
+            avatarIV.loadAndFallback(from: post.authorProfile?.photoURL, name: post.name.isEmpty ? "?" : post.name)
 
             if let label = cell.viewWithTag(1) as? UILabel {
                 label.text = post.name
