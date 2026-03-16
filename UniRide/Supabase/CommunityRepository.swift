@@ -1,60 +1,7 @@
 import Foundation
 
-// MARK: - Remote DTOs
-
-private struct RemotePost: Codable {
-    let id: String
-    let authorUserId: String
-    let text: String
-    let imageUrl: String?
-    let likeCount: Int
-    let shareCount: Int
-    let commentCount: Int
-    let createdAt: String
-    let profiles: [String: AnyCodable]?
-
-    enum CodingKeys: String, CodingKey {
-        case id, text, profiles
-        case authorUserId  = "author_user_id"
-        case imageUrl      = "image_url"
-        case likeCount     = "like_count"
-        case shareCount    = "share_count"
-        case commentCount  = "comment_count"
-        case createdAt     = "created_at"
-    }
-}
-
-private struct AnyCodable: Codable {
-    let value: Any
-    init(_ value: Any) { self.value = value }
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let x = try? container.decode(Bool.self) { value = x }
-        else if let x = try? container.decode(Int.self) { value = x }
-        else if let x = try? container.decode(Double.self) { value = x }
-        else if let x = try? container.decode(String.self) { value = x }
-        else if let x = try? container.decode([String: AnyCodable].self) { value = x.mapValues { $0.value } }
-        else if let x = try? container.decode([AnyCodable].self) { value = x.map { $0.value } }
-        else { throw DecodingError.dataCorruptedError(in: container, debugDescription: "Wrong type") }
-    }
-    func encode(to encoder: Encoder) throws { /* Not needed for read-only */ }
-}
-
-private struct RemoteComment: Codable {
-    let id: String
-    let postId: String
-    let authorUserId: String
-    let text: String
-    let createdAt: String
-    let profiles: [String: AnyCodable]?
-
-    enum CodingKeys: String, CodingKey {
-        case id, text, profiles
-        case postId        = "post_id"
-        case authorUserId  = "author_user_id"
-        case createdAt     = "created_at"
-    }
-}
+// No longer using RemotePost/RemoteComment/AnyCodable with JSONDecoder
+// Shifting to JSONSerialization for robust Supabase join handling.
 
 // MARK: - Public model
 
@@ -96,8 +43,8 @@ final class CommunityRepository {
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
-        let remote = try JSONDecoder().decode([RemotePost].self, from: data)
-        return remote.compactMap(postFromRemote)
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        return rows.compactMap(postFromRow)
     }
 
     /// Inserts a new post for the current user.
@@ -123,8 +70,8 @@ final class CommunityRepository {
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
 
-        let inserted = try JSONDecoder().decode([RemotePost].self, from: data)
-        guard let first = inserted.first, let id = UUID(uuidString: first.id) else {
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        guard let first = rows.first, let idStr = first["id"] as? String, let id = UUID(uuidString: idStr) else {
             throw CommunityError.decodingFailed
         }
         return id
@@ -216,27 +163,15 @@ final class CommunityRepository {
     func fetchComments(postID: UUID) async throws -> [CommunityComment] {
         try await SessionManager.shared.validateSession()
         let url = mgr.restURL(table: "community_comments",
-                              query: "post_id=eq.\(postID.uuidString)&select=*,profiles!author_user_id(*)&order=created_at.asc")
+                               query: "post_id=eq.\(postID.uuidString)&select=*,profiles!author_user_id(*)&order=created_at.asc")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
-        let remote = (try? JSONDecoder().decode([RemoteComment].self, from: data)) ?? []
-        let iso = ISO8601DateFormatter()
-        return remote.compactMap { r -> CommunityComment? in
-            guard let id   = UUID(uuidString: r.id),
-                  let auth = UUID(uuidString: r.authorUserId) else { return nil }
-            var comment = CommunityComment(
-                id: id,
-                postID: postID,
-                authorUserID: auth,
-                text: r.text,
-                createdAt: iso.date(from: r.createdAt) ?? Date()
-            )
-            if let prof = r.profiles?.mapValues({ $0.value }), let userProf = UserProfile(row: prof) {
-                comment.authorProfile = userProf
-            }
-            return comment
+        
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        return rows.compactMap { row in
+            commentFromRow(row, postID: postID)
         }
     }
 
@@ -395,21 +330,57 @@ final class CommunityRepository {
         return (likes, comments)
     }
 
-    private func postFromRemote(_ r: RemotePost) -> CommunityPost? {
-        guard let id   = UUID(uuidString: r.id),
-              let auth = UUID(uuidString: r.authorUserId) else { return nil }
+    private func postFromRow(_ row: [String: Any]) -> CommunityPost? {
+        guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr),
+              let authStr = row["author_user_id"] as? String, let auth = UUID(uuidString: authStr) else { return nil }
+        
+        let text = row["text"] as? String ?? ""
+        let imgUrl = row["image_url"] as? String
+        let likes = row["like_count"] as? Int ?? 0
+        let shares = row["share_count"] as? Int ?? 0
+        let comments = row["comment_count"] as? Int ?? 0
+        
+        let createdStr = row["created_at"] as? String ?? ""
         let iso = ISO8601DateFormatter()
-        let created = iso.date(from: r.createdAt) ?? Date()
+        let created = iso.date(from: createdStr) ?? Date()
+        
         var post = CommunityPost(
-            id: id, authorUserID: auth, text: r.text,
-            imageURL: r.imageUrl.flatMap(URL.init(string:)),
-            likeCount: r.likeCount, shareCount: r.shareCount,
-            commentCount: r.commentCount, createdAt: created
+            id: id, authorUserID: auth, text: text,
+            imageURL: imgUrl.flatMap(URL.init(string:)),
+            likeCount: likes, shareCount: shares,
+            commentCount: comments, createdAt: created
         )
-        if let prof = r.profiles?.mapValues({ $0.value }), let userProf = UserProfile(row: prof) {
-            post.authorProfile = userProf
+        
+        // Robust Profile Join Handling:
+        if let profArray = row["profiles"] as? [[String: Any]], let firstProf = profArray.first {
+            post.authorProfile = UserProfile(row: firstProf)
+        } else if let profObj = row["profiles"] as? [String: Any] {
+            post.authorProfile = UserProfile(row: profObj)
         }
+        
         return post
+    }
+
+    private func commentFromRow(_ row: [String: Any], postID: UUID) -> CommunityComment? {
+        guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr),
+              let authStr = row["author_user_id"] as? String, let auth = UUID(uuidString: authStr) else { return nil }
+        
+        let text = row["text"] as? String ?? ""
+        let createdStr = row["created_at"] as? String ?? ""
+        let iso = ISO8601DateFormatter()
+        
+        var comment = CommunityComment(
+            id: id, postID: postID, authorUserID: auth, text: text,
+            createdAt: iso.date(from: createdStr) ?? Date()
+        )
+        
+        if let profArray = row["profiles"] as? [[String: Any]], let firstProf = profArray.first {
+            comment.authorProfile = UserProfile(row: firstProf)
+        } else if let profObj = row["profiles"] as? [String: Any] {
+            comment.authorProfile = UserProfile(row: profObj)
+        }
+        
+        return comment
     }
 
     private func checkHTTP(_ response: URLResponse, data: Data) throws {
