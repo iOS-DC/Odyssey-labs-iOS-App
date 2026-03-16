@@ -147,20 +147,9 @@ class CommunityViewController: UIViewController,
         super.viewWillAppear(animated)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
-        // Refresh events from Supabase so the Events tab shows real data
-        Task {
-            if let remote = try? await EventsAPI.shared.fetchTopEvents(limit: 30), !remote.isEmpty {
-                await MainActor.run {
-                    self.eventPosts = remote
-                    if self.segmentedControl.selectedSegmentIndex == 0 {
-                        self.tableView.reloadData()
-                    }
-                    self.refreshControl.endRefreshing()
-                }
-            } else {
-                await MainActor.run { self.refreshControl.endRefreshing() }
-            }
-        }
+        // Mock events as requested for better visual demonstration
+        self.eventPosts = EventDataModel.mockEvents()
+        
         // Start polling so other users' likes / comments appear automatically
         startFeedRefreshTimer()
     }
@@ -835,14 +824,17 @@ class CommunityViewController: UIViewController,
                 if when.contains("in ") || when.contains("0 sec") {
                     when = "Just now"
                 }
+                let isMe = rp.authorUserID == UserDataModel.shared.getCurrentUser()?.id
+                let effectiveProfile = isMe ? UserDataModel.shared.getCurrentUser() : rp.authorProfile
+                
                 return Post(
-                    name: rp.authorProfile?.fullName ?? "UniRide User",
-                    subtitle: (rp.authorProfile?.role == .faculty ? "Faculty" : "Student"),
+                    name: effectiveProfile?.fullName ?? "UniRide User",
+                    subtitle: (effectiveProfile?.role == .faculty ? "Faculty" : "Student"),
                     message: rp.text,
                     timestamp: when,
                     remoteID: rp.id,
                     authorUserID: rp.authorUserID,
-                    authorProfile: rp.authorProfile,
+                    authorProfile: effectiveProfile,
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount,
                     remoteCommentCount: rp.commentCount
