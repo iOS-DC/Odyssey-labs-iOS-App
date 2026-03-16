@@ -26,30 +26,11 @@ class EmailViewController: UIViewController {
         emailTextField.addTarget(self, action: #selector(emailChanged), for: .editingChanged)
         configureAccessibility()
         setupLogo()
-        setupGuestButton()
-    }
-
-    private var guestButton: UIButton!
-    
-    private func setupGuestButton() {
-        guestButton = UIButton(type: .system)
-        guestButton.setTitle("Continue as Guest", for: .normal)
-        guestButton.titleLabel?.font = AppDesign.Typography.subheadline
-        guestButton.setTitleColor(.secondaryLabel, for: .normal)
-        guestButton.addTarget(self, action: #selector(guestTapped), for: .touchUpInside)
-        guestButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(guestButton)
-        
-        NSLayoutConstraint.activate([
-            guestButton.topAnchor.constraint(equalTo: containerCard.bottomAnchor, constant: 16),
-            guestButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            guestButton.heightAnchor.constraint(equalToConstant: 44) // Generous touch target
-        ])
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        animateOnboardingEntrance([logoImageView, containerCard, emailTextField, continueButton, guestButton])
+        animateOnboardingEntrance([logoImageView, containerCard, emailTextField, continueButton])
     }
     @IBOutlet weak var containerCard: UIView!
     private var logoImageView: UIImageView!
@@ -101,19 +82,6 @@ class EmailViewController: UIViewController {
         }
     }
     
-    @objc private func guestTapped() {
-        AppHaptics.selection()
-        SessionManager.shared.setGuestMode(true)
-        
-        // Match the behavior of completing OTP or SceneDelegate restore
-        let mainSB = UIStoryboard(name: "Main", bundle: nil)
-        let tabBar = mainSB.instantiateViewController(withIdentifier: "MainTabBarController")
-        
-        if let window = view.window {
-            window.rootViewController = tabBar
-            UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil)
-        }
-    }
 }
 
 // UITextField padding helper at file scope

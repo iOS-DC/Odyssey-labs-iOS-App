@@ -233,11 +233,9 @@ class HomeViewController: UIViewController {
     }
 
     @IBAction func offerRideTapped(_ sender: UIButton) {
-        ensureAuthenticated(action: "offer a ride") { [weak self] in
-            let sb = UIStoryboard(name: "OfferRide", bundle: nil)
-            let vc = sb.instantiateViewController(withIdentifier: "OfferRideViewController") as! OfferRideViewController
-            self?.navigationController?.pushViewController(vc, animated: true)
-        }
+        let sb = UIStoryboard(name: "OfferRide", bundle: nil)
+        let vc = sb.instantiateViewController(withIdentifier: "OfferRideViewController") as! OfferRideViewController
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     @IBAction func joinRide(_ sender: UIButton) {

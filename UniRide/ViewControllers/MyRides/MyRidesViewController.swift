@@ -68,29 +68,6 @@ final class MyRidesViewController: UIViewController {
         return v
     }()
 
-    private lazy var guestEmptyState: EmptyStateView = {
-        let v = EmptyStateView(
-            systemImage: "person.crop.circle.badge.exclamationmark",
-            title: "Login Required",
-            body: "You must be logged in to view your rides.",
-            actionTitle: "Log In",
-            tintColor: AppDesign.Color.primary
-        )
-        v.onAction = { [weak self] in
-            SessionManager.shared.clear()
-            let mainSB = UIStoryboard(name: "Main", bundle: nil)
-            let emailVC = mainSB.instantiateViewController(withIdentifier: "EmailViewController")
-            let nav = UINavigationController(rootViewController: emailVC)
-            nav.modalPresentationStyle = .fullScreen
-            
-            if let window = self?.view.window {
-                window.rootViewController = nav
-                UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil)
-            }
-        }
-        return v
-    }()
-
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -356,17 +333,6 @@ final class MyRidesViewController: UIViewController {
     // MARK: - Empty State
 
     private func refreshEmptyState() {
-        if SessionManager.shared.isGuest {
-            tableView.backgroundView = guestEmptyState
-            tableView.isScrollEnabled = false
-            segmentedControl.isEnabled = false
-            filterButton?.isEnabled = false
-            return
-        }
-
-        segmentedControl.isEnabled = true
-        filterButton?.isEnabled = true
-
         let isEmpty = segmentedControl.selectedSegmentIndex == 0
             ? currentTrips.isEmpty
             : pastSections.isEmpty

@@ -344,20 +344,16 @@ class CommunityViewController: UIViewController,
 
     // MARK: - NEW POST POPUP
     func showComposer() {
-        ensureAuthenticated(action: "create a new post") { [weak self] in
-            guard let self else { return }
-            AppHaptics.impact(.light)
-            hideCommentPopup()
-            hideSharePopup()
+        AppHaptics.impact(.light)
+        hideCommentPopup()
 
-            newPostContainerView.isHidden = false
-            newPostContainerView.alpha = 0
-            newPostContainerView.transform = CGAffineTransform(translationX: 0, y: 16)
-            newPostBottomConstraint.constant = 0
-            animateSheetShow(newPostContainerView)
+        newPostContainerView.isHidden = false
+        newPostContainerView.alpha = 0
+        newPostContainerView.transform = CGAffineTransform(translationX: 0, y: 16)
+        newPostBottomConstraint.constant = 0
+        animateSheetShow(newPostContainerView)
 
-            newPostTextView.becomeFirstResponder()
-        }
+        newPostTextView.becomeFirstResponder()
     }
 
     func hideComposer() {
@@ -369,21 +365,6 @@ class CommunityViewController: UIViewController,
         }
     }
 
-    // MARK: - SHARE POPUP
-    func showSharePopup() {
-        ensureAuthenticated(action: "share posts") { [weak self] in
-            guard let self else { return }
-            AppHaptics.impact(.light)
-            hideComposer()
-            hideCommentPopup()
-
-            sharePopView.isHidden = false
-            sharePopView.alpha = 0
-            sharePopView.transform = CGAffineTransform(translationX: 0, y: 16)
-            sharePopUpBottomConstraint.constant = 0
-            animateSheetShow(sharePopView)
-        }
-    }
 
     @IBAction func segmentChanged(_ sender: Any) {
         AppHaptics.selection()
@@ -511,26 +492,23 @@ class CommunityViewController: UIViewController,
 
     // MARK: - COMMENTS
     @IBAction func commentButtonTapped(_ sender: UIButton) {
-        ensureAuthenticated(action: "read and write comments") { [weak self] in
-            guard let self else { return }
-            guard let cell = getCell(from: sender),
-                  let index = tableView.indexPath(for: cell)?.row else { return }
+        guard let cell = getCell(from: sender),
+              let index = tableView.indexPath(for: cell)?.row else { return }
 
-            currentPostIndex = index
-            selectedPostIndex = index
+        currentPostIndex = index
+        selectedPostIndex = index
 
-            // Clear stale data and show popup immediately
-            liveCommunityComments = []
-            liveCommentAuthorNames = [:]
-            commentTextField.text = ""
-            commentTableView.reloadData()
-            showCommentPopup()
+        // Clear stale data and show popup immediately
+        liveCommunityComments = []
+        liveCommentAuthorNames = [:]
+        commentTextField.text = ""
+        commentTableView.reloadData()
+        showCommentPopup()
 
-            // Fetch real comments from Supabase in background
-            guard let postID = feedPosts[index].remoteID else { return }
-            Task {
-                await self.loadLiveComments(for: postID)
-            }
+        // Fetch real comments from Supabase in background
+        guard let postID = feedPosts[index].remoteID else { return }
+        Task {
+            await loadLiveComments(for: postID)
         }
     }
 
@@ -578,38 +556,35 @@ class CommunityViewController: UIViewController,
 
     // MARK: - LIKE / SHARE
     @IBAction func likeButtonTapped(_ sender: UIButton) {
-        ensureAuthenticated(action: "like posts") { [weak self] in
-            guard let self else { return }
-            guard let cell = getCell(from: sender),
-                  let index = tableView.indexPath(for: cell)?.row else { return }
+        guard let cell = getCell(from: sender),
+              let index = tableView.indexPath(for: cell)?.row else { return }
 
-            // Optimistic local toggle so the button feels instant
-            let currentlyLiked = feedPosts[index].hasLiked
-            feedPosts[index].hasLiked = !currentlyLiked
-            feedPosts[index].likeCount += (currentlyLiked ? -1 : 1)
-            tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
-    
-            guard let postID = feedPosts[index].remoteID else { return }
-            
-            // Track as pending so auto-refresh doesn't overwrite our optimistic state
-            pendingLikeOperations.insert(postID)
-            
-            Task {
-                defer {
-                    Task { @MainActor in
-                        self.pendingLikeOperations.remove(postID)
-                    }
+        // Optimistic local toggle so the button feels instant
+        let currentlyLiked = feedPosts[index].hasLiked
+        feedPosts[index].hasLiked = !currentlyLiked
+        feedPosts[index].likeCount += (currentlyLiked ? -1 : 1)
+        tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+
+        guard let postID = feedPosts[index].remoteID else { return }
+        
+        // Track as pending so auto-refresh doesn't overwrite our optimistic state
+        pendingLikeOperations.insert(postID)
+        
+        Task {
+            defer {
+                Task { @MainActor in
+                    self.pendingLikeOperations.remove(postID)
                 }
-                
-                // Write to Supabase and get the final truth (isLiked, newTotalCount)
-                if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
-                    await MainActor.run {
-                        if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                            // Sync with backend truth
-                            self.feedPosts[i].hasLiked = result.isLiked
-                            self.feedPosts[i].likeCount = result.count
-                            self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
-                        }
+            }
+            
+            // Write to Supabase and get the final truth (isLiked, newTotalCount)
+            if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
+                await MainActor.run {
+                    if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                        // Sync with backend truth
+                        self.feedPosts[i].hasLiked = result.isLiked
+                        self.feedPosts[i].likeCount = result.count
+                        self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
                     }
                 }
             }

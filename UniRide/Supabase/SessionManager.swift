@@ -21,9 +21,6 @@ final class SessionManager {
     /// When the user first logged in — used to enforce 3-day session limit.
     private(set) var loginDate: Date?
 
-    /// Indicates the user chose to explore the app without logging in.
-    private(set) var isGuest: Bool = false
-
     /// True only when a token exists AND the 3-day session window hasn't expired.
     var isLoggedIn: Bool {
         guard accessToken != nil, userID != nil else { return false }
@@ -51,8 +48,6 @@ final class SessionManager {
         self.userID       = userID
         self.userEmail    = email
         self.accessTokenExpiresAt = expiresAt
-        self.isGuest      = false // Clear guest state if we successfully save a real session
-        
         // Keep original loginDate on token refresh; set now on first login.
         if !preserveLoginDate || self.loginDate == nil {
             self.loginDate = Date()
@@ -70,19 +65,10 @@ final class SessionManager {
         userEmail            = nil
         accessTokenExpiresAt = nil
         loginDate            = nil
-        isGuest              = false
         UserDefaults.standard.removeObject(forKey: "sb_session")
-        UserDefaults.standard.removeObject(forKey: "is_guest_session")
         
         // Notify the app that user logged out
         NotificationCenter.default.post(name: Notification.Name("UserLoggedOut"), object: nil)
-    }
-
-    // MARK: - Guest State
-
-    func setGuestMode(_ active: Bool) {
-        isGuest = active
-        UserDefaults.standard.setValue(active, forKey: "is_guest_session")
     }
 
     // MARK: - Session Validation
@@ -164,11 +150,6 @@ final class SessionManager {
             if !self.isLoggedIn {
                 self.clear()
             }
-        }
-        
-        // Load guest state separately since it might exist without a valid persistent session
-        if UserDefaults.standard.bool(forKey: "is_guest_session") {
-            self.isGuest = true
         }
     }
 }
