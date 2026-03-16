@@ -110,6 +110,15 @@ private final class NotifCell: UITableViewCell {
         case .requestDenied:
             iconView.image     = UIImage(systemName: "xmark.circle.fill")
             iconView.tintColor = AppDesign.Color.destructive
+        case .newRequest:
+            iconView.image     = UIImage(systemName: "person.badge.plus.fill")
+            iconView.tintColor = AppDesign.Color.primary
+        case .rideCancelled, .bookingCancelledByHost:
+            iconView.image     = UIImage(systemName: "exclamationmark.octagon.fill")
+            iconView.tintColor = AppDesign.Color.destructive
+        case .ridePublished:
+            iconView.image     = UIImage(systemName: "checkmark.circle.fill")
+            iconView.tintColor = AppDesign.Color.success
         }
 
         titleLbl.text = notif.title

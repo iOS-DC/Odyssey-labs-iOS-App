@@ -761,13 +761,27 @@ extension MyRidesViewController {
         bellBadge.isHidden = true
         bellBadge.translatesAutoresizingMaskIntoConstraints = false
         bellBtn.addSubview(bellBadge)
+        
         NSLayoutConstraint.activate([
             bellBadge.topAnchor.constraint(equalTo: bellBtn.topAnchor, constant: -2),
             bellBadge.trailingAnchor.constraint(equalTo: bellBtn.trailingAnchor, constant: 2),
             bellBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 14),
             bellBadge.heightAnchor.constraint(equalToConstant: 14),
         ])
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: bellBtn)
+
+        // Add to view hierarchy manually since we don't use a standard navigation bar here
+        view.addSubview(bellBtn)
+        view.bringSubviewToFront(bellBtn)
+        bellBtn.translatesAutoresizingMaskIntoConstraints = false
+        bellBtn.tintColor = AppDesign.Color.primary // Use primary color to make it more visible
+        
+        NSLayoutConstraint.activate([
+            bellBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
+            bellBtn.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            bellBtn.widthAnchor.constraint(equalToConstant: 44),
+            bellBtn.heightAnchor.constraint(equalToConstant: 44)
+        ])
+        
         refreshBellBadge()
     }
 

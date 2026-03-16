@@ -16,6 +16,10 @@ struct AppNotification: Codable, Identifiable {
         case passengerJoined     // passenger request approved (legacy, kept for compat)
         case requestApproved     // driver approved passenger's join request → passenger sees it
         case requestDenied       // driver denied passenger's join request → passenger sees it
+        case newRequest          // passenger requested to join → driver sees it
+        case rideCancelled       // driver cancelled the entire ride → all passengers see it
+        case bookingCancelledByHost // driver cancelled a specific booking → passenger sees it
+        case ridePublished       // driver successfully offered a ride → driver sees it
     }
 }
 
