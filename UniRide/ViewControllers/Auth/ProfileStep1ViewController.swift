@@ -6,7 +6,7 @@ let departmentOptions = [
     "Arts", "BCA", "BBA", "MBA", "MCA"
 ]
 
-final class ProfileStep1ViewController: UIViewController {
+final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
     // MARK: - IBOutlets
     @IBOutlet weak var containerCard: UIView!
     @IBOutlet weak var stackView: UIStackView!
@@ -50,6 +50,14 @@ final class ProfileStep1ViewController: UIViewController {
         updateFormForRole()
         preloadSavedState()
         validateContinueAvailability()
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -84,6 +92,8 @@ final class ProfileStep1ViewController: UIViewController {
 
         continueButton.setPrimaryCTAEnabled(false)
 
+        fullNameTextField.delegate = self
+        phoneTextField.delegate = self
         fullNameTextField.addTarget(self, action: #selector(formDidChange), for: .editingChanged)
         phoneTextField.addTarget(self, action: #selector(formDidChange), for: .editingChanged)
 
@@ -115,6 +125,16 @@ final class ProfileStep1ViewController: UIViewController {
 
     @objc private func formDidChange() {
         validateContinueAvailability()
+    }
+
+    // MARK: - UITextFieldDelegate
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField == fullNameTextField {
+            phoneTextField.becomeFirstResponder()
+        } else {
+            textField.resignFirstResponder()
+        }
+        return true
     }
 
     // MARK: - Department Dropdown

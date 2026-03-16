@@ -8,7 +8,7 @@
 import UIKit
 import MapKit
 
-class ProfileStep2ViewController: UIViewController {
+class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var yesVehicleButton: UIButton!
     @IBOutlet weak var noVehicleButton: UIButton!
 
@@ -61,11 +61,20 @@ class ProfileStep2ViewController: UIViewController {
         plateTextField.applyRoundedField()
         seatsButton.applyOutlineButton()
         seatsButton.setTitle("Seats", for: .normal)
+        modelTextField.delegate = self
+        plateTextField.delegate = self
         modelTextField.addTarget(self, action: #selector(vehicleDetailChanged), for: .editingChanged)
         plateTextField.addTarget(self, action: #selector(vehicleDetailChanged), for: .editingChanged)
         setupVehicleDetailFields()
         configureAccessibility()
 
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        view.addGestureRecognizer(tap)
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -430,6 +439,16 @@ class ProfileStep2ViewController: UIViewController {
 
     @objc private func vehicleDetailChanged() {
         validateContinueButton()
+    }
+
+    // MARK: - UITextFieldDelegate
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField == modelTextField {
+            plateTextField.becomeFirstResponder()
+        } else {
+            textField.resignFirstResponder()
+        }
+        return true
     }
 
     private func showSimpleAlert(title: String, message: String) {
