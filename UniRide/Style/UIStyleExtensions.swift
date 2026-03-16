@@ -460,8 +460,22 @@ extension UIImage {
 }
 
 extension UIImageView {
+    private struct Associated {
+        static var currentURL = "uniride.currentURL"
+    }
+
+    private static let imageCache = NSCache<NSURL, UIImage>()
+
     func loadAndFallback(from url: URL?, name: String) {
-        // Clear current image to avoid flicker
+        let prevURL = objc_getAssociatedObject(self, &Associated.currentURL) as? URL
+        
+        // If it's the same URL already loaded, don't clear or reload
+        if let url = url, url == prevURL { return }
+        
+        // Update the tracked URL
+        objc_setAssociatedObject(self, &Associated.currentURL, url, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        
+        // Clear current image to avoid flicker of OLD post content on a reused cell
         self.image = nil
         
         guard let url = url else {
@@ -469,15 +483,30 @@ extension UIImageView {
             return
         }
         
+        // Check Cache
+        if let cached = UIImageView.imageCache.object(forKey: url as NSURL) {
+            self.image = cached
+            return
+        }
+        
         // Use a background task to load data
-        DispatchQueue.global(qos: .userInitiated).async {
+        let currentID = url // capture for verification
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                UIImageView.imageCache.setObject(image, forKey: url as NSURL)
                 DispatchQueue.main.async {
-                    self.image = image
+                    // Only apply if the URL hasn't changed on this reused cell
+                    let latestURL = objc_getAssociatedObject(self as Any, &Associated.currentURL) as? URL
+                    if latestURL == currentID {
+                        self?.image = image
+                    }
                 }
             } else {
                 DispatchQueue.main.async {
-                    self.image = UIImage.generatedAvatar(for: name, size: self.bounds.size.width > 0 ? self.bounds.size : CGSize(width: 40, height: 40))
+                    let latestURL = objc_getAssociatedObject(self as Any, &Associated.currentURL) as? URL
+                    if latestURL == currentID {
+                        self?.image = UIImage.generatedAvatar(for: name, size: self?.bounds.size.width ?? 0 > 0 ? self?.bounds.size ?? .zero : CGSize(width: 40, height: 40))
+                    }
                 }
             }
         }

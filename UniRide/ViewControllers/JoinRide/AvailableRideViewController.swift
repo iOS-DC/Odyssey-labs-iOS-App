@@ -363,8 +363,10 @@ extension AvailableRideViewController {
     }
 
     private func openDetail(ride: Ride, driver: UserProfile?) {
-        let vc = RideDetailViewController()
-        vc.ride = ride; vc.driver = driver
-        navigationController?.pushViewController(vc, animated: true)
+        ensureNonGuest { [weak self] in
+            let vc = RideDetailViewController()
+            vc.ride = ride; vc.driver = driver
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
     }
 }

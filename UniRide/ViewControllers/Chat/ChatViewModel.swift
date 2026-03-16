@@ -130,11 +130,13 @@ final class ChatViewModel: ObservableObject {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
+        let cleanedText = ProfanityFilter.shared.clean(trimmed)
+
         let msg = ChatMessage(
             id: UUID(),
             senderID: currentUserID,
             senderName: currentUserName,
-            text: trimmed,
+            text: cleanedText,
             timestamp: Date()
         )
         // Append locally for instant UI feedback
@@ -149,7 +151,7 @@ final class ChatViewModel: ObservableObject {
                     rideID: rideUUID,
                     senderID: UUID(uuidString: currentUserID) ?? UUID(),
                     senderName: currentUserName,
-                    text: trimmed
+                    text: cleanedText
                 )
             }
         }

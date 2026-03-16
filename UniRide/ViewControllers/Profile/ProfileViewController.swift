@@ -98,6 +98,9 @@ class ProfileViewController: UIViewController {
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
+        // Add Sign In button for guest mode (hidden by default)
+        setupGuestSignInButton()
+
         contentStack.axis    = .vertical
         contentStack.spacing = AppDesign.Spacing.md
         contentStack.translatesAutoresizingMaskIntoConstraints = false
@@ -137,6 +140,30 @@ class ProfileViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             self?.refreshControl.endRefreshing()
         }
+    }
+
+    // MARK: - Guest Mode
+    private let guestSignInButton = UIButton(type: .system)
+
+    private func setupGuestSignInButton() {
+        guestSignInButton.translatesAutoresizingMaskIntoConstraints = false
+        guestSignInButton.applyPrimaryButton(color: AppDesign.Color.primary)
+        guestSignInButton.setTitle("Sign In to UniRide", for: .normal)
+        guestSignInButton.isHidden = true
+        guestSignInButton.addTarget(self, action: #selector(guestSignInTapped), for: .touchUpInside)
+        
+        view.addSubview(guestSignInButton)
+        NSLayoutConstraint.activate([
+            guestSignInButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.xl),
+            guestSignInButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.xl),
+            guestSignInButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.lg),
+            guestSignInButton.heightAnchor.constraint(equalToConstant: 56)
+        ])
+    }
+
+    @objc private func guestSignInTapped() {
+        AppHaptics.impact(.medium)
+        SceneDelegate.setRootToAuth()
     }
 
     // MARK: - Hero Card
@@ -410,6 +437,7 @@ class ProfileViewController: UIViewController {
         //    This ensures freshly-registered accounts with an empty local cache (or any
         //    profile updated on another device) are reflected immediately.
         guard SessionManager.shared.isLoggedIn else {
+            applyGuestState()
             hideSkeleton()
             return
         }
@@ -432,7 +460,37 @@ class ProfileViewController: UIViewController {
         }
     }
 
+    private func applyGuestState() {
+        avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
+        avatarImageView.tintColor = .systemGray4
+        nameLabel.text = "Guest User"
+        subtitleLabel.text = "Sign in to join the community"
+        memberLabel.text = "You are browsing as a guest"
+        ratingLabel.text = "—"
+        ridesLabel.text = "0"
+        
+        emailValueLabel.text = "guest@uniride.com"
+        phoneValueLabel.text = "Login Required"
+        homeValueLabel.text  = "Sign in to set home"
+        
+        vehicleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        let emptyLabel = UILabel()
+        emptyLabel.text = "Sign in to add vehicles"
+        emptyLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
+        emptyLabel.textAlignment = .center
+        vehicleStack.addArrangedSubview(emptyLabel)
+        
+        guestSignInButton.isHidden = false
+        tabBarItem.badgeValue = nil
+        completionBanner?.removeFromSuperview()
+        
+        // Hide edit buttons
+        navigationItem.rightBarButtonItem?.isEnabled = false
+    }
+
     private func applyProfile(_ profile: UserProfile) {
+        guestSignInButton.isHidden = true
+        navigationItem.rightBarButtonItem?.isEnabled = true
 
         // Avatar — force a known size so loadAndFallback generates correct initials image
         // (view may not be laid out yet on first viewWillAppear call)

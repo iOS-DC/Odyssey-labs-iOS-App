@@ -419,6 +419,19 @@ class CommunityViewController: UIViewController,
             navigationItem.rightBarButtonItem = newPostBarButton
         }
     }
+
+    func showSharePopup() {
+        AppHaptics.impact(.light)
+        hideComposer()
+        hideCommentPopup()
+
+        sharePopView.isHidden = false
+        sharePopView.alpha = 0
+        sharePopView.transform = CGAffineTransform(translationX: 0, y: 16)
+        sharePopUpBottomConstraint.constant = 0
+        animateSheetShow(sharePopView)
+    }
+
     func hideSharePopup() {
         sharePopUpBottomConstraint.constant = sheetHiddenOffset
         animateSheetHide(sharePopView) { [weak self] in
@@ -488,7 +501,9 @@ class CommunityViewController: UIViewController,
 
     // MARK: - BUTTON ACTIONS
     @IBAction func addNewPostButtonTapped(_ sender: Any) {
-        showComposer()
+        ensureNonGuest { [weak self] in
+            self?.showComposer()
+        }
     }
 
     @IBAction func closeNewPostTapped(_ sender: UIButton) {
@@ -504,9 +519,11 @@ class CommunityViewController: UIViewController,
         let role    = user?.role == .faculty ? "Faculty" :
                       (user?.courseName.flatMap { c in user?.year.map { y in "\(c) · Year \(y)" } } ?? "Student")
 
+        let cleanedText = ProfanityFilter.shared.clean(typedText)
+
         var newPost = Post(name: name,
                            subtitle: role,
-                           message: typedText,
+                           message: cleanedText,
                            timestamp: "Just now",
                            likeCount: 0,
                            shareCount: 0)
@@ -518,7 +535,8 @@ class CommunityViewController: UIViewController,
 
         // BUG FIX: Persist the new post to Supabase and sync the remoteID immediately
         Task {
-            if let newID = try? await CommunityRepository.shared.insertPost(text: typedText) {
+            let cleanedText = ProfanityFilter.shared.clean(typedText)
+            if let newID = try? await CommunityRepository.shared.insertPost(text: cleanedText) {
                 await MainActor.run {
                     // Update the local post with its real Supabase ID
                     // Since it was just inserted at 0, it should be there.
@@ -537,23 +555,26 @@ class CommunityViewController: UIViewController,
 
     // MARK: - COMMENTS
     @IBAction func commentButtonTapped(_ sender: UIButton) {
-        guard let cell = getCell(from: sender),
-              let index = tableView.indexPath(for: cell)?.row else { return }
+        ensureNonGuest { [weak self] in
+            guard let self = self,
+                  let cell = self.getCell(from: sender),
+                  let index = self.tableView.indexPath(for: cell)?.row else { return }
 
-        currentPostIndex = index
-        selectedPostIndex = index
+            self.currentPostIndex = index
+            self.selectedPostIndex = index
 
-        // Clear stale data and show popup immediately
-        liveCommunityComments = []
-        liveCommentAuthorNames = [:]
-        commentTextField.text = ""
-        commentTableView.reloadData()
-        showCommentPopup()
+            // Clear stale data and show popup immediately
+            self.liveCommunityComments = []
+            self.liveCommentAuthorNames = [:]
+            self.commentTextField.text = ""
+            self.commentTableView.reloadData()
+            self.showCommentPopup()
 
-        // Fetch real comments from Supabase in background
-        guard let postID = feedPosts[index].remoteID else { return }
-        Task {
-            await loadLiveComments(for: postID)
+            // Fetch real comments from Supabase in background
+            guard let postID = self.feedPosts[index].remoteID else { return }
+            Task {
+                await self.loadLiveComments(for: postID)
+            }
         }
     }
 
@@ -576,8 +597,9 @@ class CommunityViewController: UIViewController,
         guard let index = selectedPostIndex, let postID = feedPosts[index].remoteID else { return }
 
         Task {
+            let cleanedText = ProfanityFilter.shared.clean(text)
             // 1. Write to Supabase and get the new definitive total count
-            if let newCount = try? await CommunityRepository.shared.insertComment(postID: postID, text: text) {
+            if let newCount = try? await CommunityRepository.shared.insertComment(postID: postID, text: cleanedText) {
                 await MainActor.run {
                     self.view.endEditing(true)
                     // Update locally + Notify globally
@@ -601,35 +623,38 @@ class CommunityViewController: UIViewController,
 
     // MARK: - LIKE / SHARE
     @IBAction func likeButtonTapped(_ sender: UIButton) {
-        guard let cell = getCell(from: sender),
-              let index = tableView.indexPath(for: cell)?.row else { return }
+        ensureNonGuest { [weak self] in
+            guard let self = self,
+                  let cell = self.getCell(from: sender),
+                  let index = self.tableView.indexPath(for: cell)?.row else { return }
 
-        // Optimistic local toggle so the button feels instant
-        let currentlyLiked = feedPosts[index].hasLiked
-        feedPosts[index].hasLiked = !currentlyLiked
-        feedPosts[index].likeCount += (currentlyLiked ? -1 : 1)
-        tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+            // Optimistic local toggle so the button feels instant
+            let currentlyLiked = self.feedPosts[index].hasLiked
+            self.feedPosts[index].hasLiked = !currentlyLiked
+            self.feedPosts[index].likeCount += (currentlyLiked ? -1 : 1)
+            self.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
 
-        guard let postID = feedPosts[index].remoteID else { return }
-        
-        // Track as pending so auto-refresh doesn't overwrite our optimistic state
-        pendingLikeOperations.insert(postID)
-        
-        Task {
-            defer {
-                Task { @MainActor in
-                    self.pendingLikeOperations.remove(postID)
-                }
-            }
+            guard let postID = self.feedPosts[index].remoteID else { return }
             
-            // Write to Supabase and get the final truth (isLiked, newTotalCount)
-            if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
-                await MainActor.run {
-                    if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                        // Sync with backend truth
-                        self.feedPosts[i].hasLiked = result.isLiked
-                        self.feedPosts[i].likeCount = result.count
-                        self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+            // Track as pending so auto-refresh doesn't overwrite our optimistic state
+            self.pendingLikeOperations.insert(postID)
+            
+            Task {
+                defer {
+                    Task { @MainActor in
+                        self.pendingLikeOperations.remove(postID)
+                    }
+                }
+                
+                // Write to Supabase and get the final truth (isLiked, newTotalCount)
+                if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
+                    await MainActor.run {
+                        if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                            // Sync with backend truth
+                            self.feedPosts[i].hasLiked = result.isLiked
+                            self.feedPosts[i].likeCount = result.count
+                            self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+                        }
                     }
                 }
             }
@@ -641,11 +666,14 @@ class CommunityViewController: UIViewController,
     }
     
     @IBAction func shareButtonTapped(_ sender: UIButton) {
-        guard let cell = getCell(from: sender),
-              let index = tableView.indexPath(for: cell)?.row else { return }
-        
-        currentPostIndex = index
-        showSharePopup()
+        ensureNonGuest { [weak self] in
+            guard let self = self,
+                  let cell = self.getCell(from: sender),
+                  let index = self.tableView.indexPath(for: cell)?.row else { return }
+            
+            self.currentPostIndex = index
+            self.showSharePopup()
+        }
     }
     
     @IBAction func EventShareButtonTapped(_ sender: Any) {
@@ -955,14 +983,18 @@ class CommunityViewController: UIViewController,
 
             // Avatar: hide the storyboard placeholder and use a programmatic imageview
             // so we always know the bounds (40×40) when calling loadAndFallback.
-            if let storyboardAvatar = cell.viewWithTag(100) as? UIImageView {
+            if let storyboardAvatar = cell.viewWithTag(5) as? UIImageView {
                 storyboardAvatar.isHidden = true
             }
 
             let avatarTag = 201
-            let avatarSize: CGFloat = 40
+            let avatarSize: CGFloat = 42 // Match storyboard size
             let avatarIV: UIImageView
-            if let existing = cell.contentView.viewWithTag(avatarTag) as? UIImageView {
+            
+            // Reference the card container to add the avatar inside it
+            let cardContainer = cell.contentView.subviews.first
+            
+            if let existing = cell.viewWithTag(avatarTag) as? UIImageView {
                 avatarIV = existing
             } else {
                 let iv = UIImageView()
@@ -972,11 +1004,15 @@ class CommunityViewController: UIViewController,
                 iv.layer.cornerRadius = avatarSize / 2
                 iv.backgroundColor = AppDesign.Color.fieldBackground
                 iv.translatesAutoresizingMaskIntoConstraints = false
-                cell.contentView.addSubview(iv)
-                // Position it where the storyboard avatar sits (leading 16, top 12)
+                
+                // Add to the card container if it exists, otherwise contentView
+                let container = cardContainer ?? cell.contentView
+                container.addSubview(iv)
+                
+                // Position it exactly where the storyboard avatar sits (16, 16 inside card)
                 NSLayoutConstraint.activate([
-                    iv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 16),
-                    iv.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 12),
+                    iv.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+                    iv.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
                     iv.widthAnchor.constraint(equalToConstant: avatarSize),
                     iv.heightAnchor.constraint(equalToConstant: avatarSize)
                 ])
