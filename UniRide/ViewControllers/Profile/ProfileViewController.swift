@@ -400,6 +400,12 @@ class ProfileViewController: UIViewController {
 
     // MARK: - Load Profile
     private func loadProfile() {
+        if SessionManager.shared.isGuest {
+            applyGuestProfile()
+            hideSkeleton()
+            return
+        }
+
         // 1. Show whatever we have locally right now (fast path)
         if let profile = UserDataModel.shared.getCurrentUser() {
             applyProfile(profile)
@@ -430,6 +436,32 @@ class ProfileViewController: UIViewController {
         } completion: { _ in
             self.skeletonOverlay.isHidden = true
         }
+    }
+
+    private func applyGuestProfile() {
+        avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
+        avatarImageView.tintColor = AppDesign.Color.primary.withAlphaComponent(0.3)
+        nameLabel.text = "Guest User"
+        subtitleLabel.text = "Exploring UniRide"
+        memberLabel.text = "Not logged in"
+        ratingLabel.text = "—"
+        ridesLabel.text = "0"
+        
+        emailValueLabel.text = "Login Required"
+        phoneValueLabel.text = "Login Required"
+        homeValueLabel.text = "Login Required"
+        
+        tabBarItem.badgeValue = nil
+        
+        vehicleStack.arrangedSubviews.dropFirst().forEach { $0.removeFromSuperview() }
+        let emptyLabel = UILabel()
+        emptyLabel.text = "Login to add vehicles."
+        emptyLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+        emptyLabel.textAlignment = .center
+        vehicleStack.addArrangedSubview(emptyLabel)
+        
+        completionBanner?.removeFromSuperview()
+        completionBanner = nil
     }
 
     private func applyProfile(_ profile: UserProfile) {
@@ -549,12 +581,16 @@ class ProfileViewController: UIViewController {
 
     // MARK: - Actions
     @objc private func editButtonTapped() {
-        openEditProfile()
+        ensureAuthenticated(action: "edit your profile") { [weak self] in
+            self?.openEditProfile()
+        }
     }
 
     @objc private func settingsTapped() {
-        let vc = SettingsViewController()
-        navigationController?.pushViewController(vc, animated: true)
+        ensureAuthenticated(action: "view settings") { [weak self] in
+            let vc = SettingsViewController()
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
     }
 
     @objc private func editHomeLocationTapped() {
