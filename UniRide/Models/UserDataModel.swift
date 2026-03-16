@@ -159,6 +159,13 @@ final class UserDataModel {
         user.savedHomeLocation = trimmed.first
         users[index] = user
         saveUsers()
+
+        // Push to Supabase so it persists across sessions
+        Task {
+            do { try await pushProfileToSupabase(user) } catch {
+                print("Home location sync failed:", error.localizedDescription)
+            }
+        }
     }
 
     func preferredHomeLocation() -> LocationPoint? {
@@ -592,6 +599,10 @@ final class UserDataModel {
         } else {
             homes = []
         }
+
+        // Delete all old locations first to avoid duplicate lat/lon unique constraint issues
+        try await ProfileRepository.shared.deleteHomeLocations(userID: user.id)
+
         for (index, loc) in homes.enumerated() {
             try await ProfileRepository.shared.upsertHomeLocation(
                 userID: user.id,
