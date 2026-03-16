@@ -211,7 +211,15 @@ final class PostDetailViewController: UIViewController {
                 self.sendButton.isHidden = false
             }
             do {
-                try await CommunityRepository.shared.insertComment(postID: post.id, text: text)
+                let newCount = try await CommunityRepository.shared.insertComment(postID: post.id, text: text)
+                
+                // NOTIFY GLOBALLY: So feed can update its local count immediately
+                NotificationCenter.default.post(
+                    name: .CommunityCommentDidUpdate,
+                    object: nil,
+                    userInfo: ["postID": post.id, "newCount": newCount]
+                )
+
                 self.comments = try await CommunityRepository.shared.fetchComments(postID: post.id)
                 await self.fetchRealAuthorNames()
                 let lastRow = IndexPath(row: self.comments.count - 1, section: 1)
