@@ -241,8 +241,21 @@ final class RideRepository {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "ride_requests",
-                              query: "passenger_user_id=eq.\(passengerID.uuidString)&order=created_at.desc&select=*,profiles!passenger_user_id(*)")
+                               query: "passenger_user_id=eq.\(passengerID.uuidString)&order=created_at.desc&select=*,profiles!passenger_user_id(*)")
         var req = URLRequest(url: url); req.allHTTPHeaderFields = headers
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkHTTP(response, data: data)
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        return rows.compactMap { requestFromRow($0) }
+    }
+
+    func fetchRequestsForDriver(driverID: UUID) async throws -> [RideRequest] {
+        try await SessionManager.shared.validateSession()
+        // We join with the 'rides' table to find only requests for rides owned by this driver
+        let url = mgr.restURL(table: "ride_requests", 
+                               query: "rides.driver_user_id=eq.\(driverID.uuidString)&select=*,rides!inner(driver_user_id),profiles!passenger_user_id(*)")
+        var req = URLRequest(url: url)
+        req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
         let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
@@ -304,6 +317,18 @@ final class RideRepository {
         return rows.compactMap { bookingFromRow($0) }
     }
 
+    func fetchBookingsForDriver(driverID: UUID) async throws -> [Booking] {
+        try await SessionManager.shared.validateSession()
+        let url = mgr.restURL(table: "ride_bookings", 
+                               query: "rides.driver_user_id=eq.\(driverID.uuidString)&select=*,rides!inner(driver_user_id),profiles!passenger_user_id(*)")
+        var req = URLRequest(url: url)
+        req.allHTTPHeaderFields = mgr.userHeaders
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkHTTP(response, data: data)
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        return rows.compactMap { bookingFromRow($0) }
+    }
+
     func insertBooking(_ booking: Booking) async throws {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
@@ -340,11 +365,19 @@ final class RideRepository {
     func fetchMyFullHistory(userID: UUID) async throws -> (rides: [Ride], requests: [RideRequest], bookings: [Booking]) {
         try await SessionManager.shared.validateSession()
         
-        async let fetchHosted   = fetchRides(driverID: userID)
-        async let fetchReqs     = fetchMyRequests(passengerID: userID)
-        async let fetchBks      = fetchMyBookings(passengerID: userID)
+        async let fetchHosted    = fetchRides(driverID: userID)
+        async let fetchMyReqs    = fetchMyRequests(passengerID: userID)
+        async let fetchMyBks     = fetchMyBookings(passengerID: userID)
+        async let fetchIncReqs   = fetchRequestsForDriver(driverID: userID)
+        async let fetchIncBks    = fetchBookingsForDriver(driverID: userID)
         
-        let (hostedRides, myRequests, myBookings) = try await (fetchHosted, fetchReqs, fetchBks)
+        let (hostedRides, myRequests, myBookings, incomingReqs, incomingBookings) = try await (fetchHosted, fetchMyReqs, fetchMyBks, fetchIncReqs, fetchIncBks)
+        
+        var allReqs = myRequests
+        allReqs.append(contentsOf: incomingReqs)
+        
+        var allBks = myBookings
+        allBks.append(contentsOf: incomingBookings)
         
         var passengerRideIDs = Set<UUID>()
         myRequests.forEach { passengerRideIDs.insert($0.rideID) }
@@ -367,7 +400,7 @@ final class RideRepository {
         var allRides = hostedRides
         allRides.append(contentsOf: passengerRides)
         
-        return (allRides, myRequests, myBookings)
+        return (allRides, allReqs, allBks)
     }
 
     // MARK: - Error

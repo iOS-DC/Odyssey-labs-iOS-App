@@ -58,6 +58,9 @@ class CommunityViewController: UIViewController,
 
         /// The real Supabase UUID of the author — stored so we never look up by name.
         var authorUserID: UUID?
+        
+        /// The author's profile data, bundled from Supabase.
+        var authorProfile: UserProfile?
 
         var likeCount: Int
         var shareCount: Int
@@ -597,32 +600,8 @@ class CommunityViewController: UIViewController,
     private func loadLiveComments(for postID: UUID) async {
         guard let comments = try? await CommunityRepository.shared.fetchComments(postID: postID) else { return }
 
-        // Fetch author names in parallel
-        var names: [UUID: String] = [:]
-        let uniqueIDs = Set(comments.map { $0.authorUserID })
-        await withTaskGroup(of: (UUID, String)?.self) { group in
-            for id in uniqueIDs {
-                group.addTask {
-                    // Fast path: local cache
-                    if let cached = UserDataModel.shared.getUser(by: id), !cached.fullName.isEmpty {
-                        return (id, cached.fullName)
-                    }
-                    // Slow path: Supabase profiles
-                    guard let row = try? await ProfileRepository.shared.fetchProfile(userID: id),
-                          let name = row["full_name"] as? String,
-                          !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    else { return nil }
-                    return (id, name)
-                }
-            }
-            for await result in group {
-                if let (id, name) = result { names[id] = name }
-            }
-        }
-
         await MainActor.run {
             self.liveCommunityComments = comments
-            self.liveCommentAuthorNames = names
             self.commentTableView.reloadData()
         }
     }
@@ -890,15 +869,16 @@ class CommunityViewController: UIViewController,
                     when = "Just now"
                 }
                 return Post(
-                    name: "UniRide User",          // placeholder — replaced below
-                    subtitle: "Community Member",  // placeholder
+                    name: rp.authorProfile?.fullName ?? "UniRide User",
+                    subtitle: (rp.authorProfile?.role == .faculty ? "Faculty" : "Student"),
                     message: rp.text,
                     timestamp: when,
                     remoteID: rp.id,
-                    authorUserID: rp.authorUserID, // ← store real UUID directly
+                    authorUserID: rp.authorUserID,
+                    authorProfile: rp.authorProfile,
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount,
-                    remoteCommentCount: rp.commentCount // ← real count from DB
+                    remoteCommentCount: rp.commentCount
                 )
             }
             guard !mapped.isEmpty else { return }
@@ -930,40 +910,8 @@ class CommunityViewController: UIViewController,
                 self.tableView.reloadData()
             }
 
-            // Fetch real names from Supabase profiles in parallel
-            let uniqueAuthorIDs = Set(remotePosts.map { $0.authorUserID })
-            await withTaskGroup(of: (UUID, String, String)?.self) { group in
-                for authorID in uniqueAuthorIDs {
-                    group.addTask {
-                        // Try local cache first (fast), then Supabase
-                        if let cached = UserDataModel.shared.getUser(by: authorID),
-                           !cached.fullName.isEmpty {
-                            let role = cached.role == .faculty ? "Faculty" : "Student"
-                            return (authorID, cached.fullName, role)
-                        }
-                        guard let row = try? await ProfileRepository.shared.fetchProfile(userID: authorID),
-                              let name = row["full_name"] as? String,
-                              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        else { return nil }
-                        let role = (row["role"] as? String) == "faculty" ? "Faculty" : "Student"
-                        return (authorID, name, role)
-                    }
-                }
-                for await result in group {
-                    guard let (authorID, name, role) = result else { continue }
-                    // Update all posts by this author
-                    for i in mapped.indices where mapped[i].authorUserID == authorID {
-                        mapped[i].name = name
-                        mapped[i] = Post(
-                            name: name, subtitle: role,
-                            message: mapped[i].message, timestamp: mapped[i].timestamp,
-                            remoteID: mapped[i].remoteID, authorUserID: mapped[i].authorUserID,
-                            likeCount: mapped[i].likeCount, shareCount: mapped[i].shareCount,
-                            remoteCommentCount: mapped[i].remoteCommentCount
-                        )
-                    }
-                }
-            }
+            // UI is already updated with placeholder names (or real names if authorProfile was present).
+            // The refresh spinner is hidden below.
 
             await MainActor.run {
                 self.feedPosts = mapped
@@ -1025,8 +973,11 @@ class CommunityViewController: UIViewController,
                 return UITableViewCell()
             }
             let comment = liveCommunityComments[indexPath.row]
-            let authorName = liveCommentAuthorNames[comment.authorUserID] ?? "UniRide User"
+            let authorName = comment.authorProfile?.fullName ?? "UniRide User"
             cell.configure(text: comment.text, authorName: authorName)
+            if let profile = comment.authorProfile {
+                cell.updateAvatar(name: profile.fullName)
+            }
             return cell
         }
 
@@ -1343,5 +1294,9 @@ class CommentTableViewCell: UITableViewCell {
     func configure(text: String, authorName: String = "") {
         nameLabel.text = authorName.isEmpty ? UserDataModel.shared.getCurrentUser()?.fullName ?? "" : authorName
         commentLabel.text = text
+    }
+    
+    func updateAvatar(name: String) {
+        avatarImageView.image = UIImage.generatedAvatar(for: name, size: CGSize(width: 32, height: 32))
     }
 }

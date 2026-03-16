@@ -11,9 +11,10 @@ private struct RemotePost: Codable {
     let shareCount: Int
     let commentCount: Int
     let createdAt: String
+    let profiles: [String: AnyCodable]?
 
     enum CodingKeys: String, CodingKey {
-        case id, text
+        case id, text, profiles
         case authorUserId  = "author_user_id"
         case imageUrl      = "image_url"
         case likeCount     = "like_count"
@@ -23,15 +24,32 @@ private struct RemotePost: Codable {
     }
 }
 
+private struct AnyCodable: Codable {
+    let value: Any
+    init(_ value: Any) { self.value = value }
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let x = try? container.decode(Bool.self) { value = x }
+        else if let x = try? container.decode(Int.self) { value = x }
+        else if let x = try? container.decode(Double.self) { value = x }
+        else if let x = try? container.decode(String.self) { value = x }
+        else if let x = try? container.decode([String: AnyCodable].self) { value = x.mapValues { $0.value } }
+        else if let x = try? container.decode([AnyCodable].self) { value = x.map { $0.value } }
+        else { throw DecodingError.dataCorruptedError(in: container, debugDescription: "Wrong type") }
+    }
+    func encode(to encoder: Encoder) throws { /* Not needed for read-only */ }
+}
+
 private struct RemoteComment: Codable {
     let id: String
     let postId: String
     let authorUserId: String
     let text: String
     let createdAt: String
+    let profiles: [String: AnyCodable]?
 
     enum CodingKeys: String, CodingKey {
-        case id, text
+        case id, text, profiles
         case postId        = "post_id"
         case authorUserId  = "author_user_id"
         case createdAt     = "created_at"
@@ -49,6 +67,7 @@ struct CommunityPost {
     var shareCount: Int
     var commentCount: Int
     let createdAt: Date
+    var authorProfile: UserProfile?
 }
 
 // MARK: - Repository
@@ -72,7 +91,7 @@ final class CommunityRepository {
     func fetchPosts(limit: Int = 50) async throws -> [CommunityPost] {
         try await SessionManager.shared.validateSession()
         let url = mgr.restURL(table: "community_posts",
-                              query: "order=created_at.desc&limit=\(limit)")
+                              query: "select=*,profiles!author_user_id(*)&order=created_at.desc&limit=\(limit)")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
@@ -197,7 +216,7 @@ final class CommunityRepository {
     func fetchComments(postID: UUID) async throws -> [CommunityComment] {
         try await SessionManager.shared.validateSession()
         let url = mgr.restURL(table: "community_comments",
-                              query: "post_id=eq.\(postID.uuidString)&order=created_at.asc")
+                              query: "post_id=eq.\(postID.uuidString)&select=*,profiles!author_user_id(*)&order=created_at.asc")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
@@ -207,13 +226,17 @@ final class CommunityRepository {
         return remote.compactMap { r -> CommunityComment? in
             guard let id   = UUID(uuidString: r.id),
                   let auth = UUID(uuidString: r.authorUserId) else { return nil }
-            return CommunityComment(
+            var comment = CommunityComment(
                 id: id,
                 postID: postID,
                 authorUserID: auth,
                 text: r.text,
                 createdAt: iso.date(from: r.createdAt) ?? Date()
             )
+            if let prof = r.profiles?.mapValues({ $0.value }), let userProf = UserProfile(row: prof) {
+                comment.authorProfile = userProf
+            }
+            return comment
         }
     }
 
@@ -377,12 +400,16 @@ final class CommunityRepository {
               let auth = UUID(uuidString: r.authorUserId) else { return nil }
         let iso = ISO8601DateFormatter()
         let created = iso.date(from: r.createdAt) ?? Date()
-        return CommunityPost(
+        var post = CommunityPost(
             id: id, authorUserID: auth, text: r.text,
             imageURL: r.imageUrl.flatMap(URL.init(string:)),
             likeCount: r.likeCount, shareCount: r.shareCount,
             commentCount: r.commentCount, createdAt: created
         )
+        if let prof = r.profiles?.mapValues({ $0.value }), let userProf = UserProfile(row: prof) {
+            post.authorProfile = userProf
+        }
+        return post
     }
 
     private func checkHTTP(_ response: URLResponse, data: Data) throws {
