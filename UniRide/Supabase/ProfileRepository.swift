@@ -101,6 +101,17 @@ final class ProfileRepository {
 
     // MARK: - Home locations (home_locations table)
 
+    func deleteHomeLocations(userID: UUID) async throws {
+        try await SessionManager.shared.validateSession()
+        let headers = mgr.userHeaders
+        let url = mgr.restURL(table: "home_locations", query: "user_id=eq.\(userID.uuidString)")
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        req.allHTTPHeaderFields = headers
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkHTTP(response, data: data)
+    }
+
     func upsertHomeLocation(userID: UUID, location: LocationPoint, isPrimary: Bool = true) async throws {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
