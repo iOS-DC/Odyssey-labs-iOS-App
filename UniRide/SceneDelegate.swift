@@ -36,6 +36,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // 3. Kick off async restoration (token refresh, user hydration)
         Task { await restoreSessionOrShowAuth() }
+        
+        // 4. Global Keyboard Dismissal
+        setupGlobalKeyboardDismissal()
+    }
+
+    private func setupGlobalKeyboardDismissal() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleGlobalTap))
+        tap.cancelsTouchesInView = false
+        window?.addGestureRecognizer(tap)
+    }
+
+    @objc private func handleGlobalTap() {
+        window?.endEditing(true)
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {

@@ -67,4 +67,17 @@ final class EventsAPI {
             )
         }
     }
+
+    func incrementShareCount(eventID: UUID, currentCount: Int) async throws -> Int {
+        let newCount = currentCount + 1
+        let endpoint = APIEndpoint(
+            path: "/rest/v1/events?id=eq.\(eventID.uuidString)",
+            method: "PATCH",
+            body: try JSONSerialization.data(withJSONObject: ["share_count": newCount])
+        )
+        
+        // Supabase PATCH returns 204 No Content by default unless Prefer: return=representation is set.
+        let _: EmptyResponse = try await client.send(endpoint, as: EmptyResponse.self)
+        return newCount
+    }
 }

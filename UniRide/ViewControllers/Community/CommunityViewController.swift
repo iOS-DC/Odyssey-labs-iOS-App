@@ -151,7 +151,6 @@ class CommunityViewController: UIViewController,
         // Initial visibility check for the plus button
         segmentChanged(segmentedControl)
         
-        setupKeyboardDismissal()
         setupPopupConstraints()
     }
     
@@ -392,21 +391,11 @@ class CommunityViewController: UIViewController,
         }
     }
 
-    private func setupKeyboardDismissal() {
-        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        tap.cancelsTouchesInView = false
-        view.addGestureRecognizer(tap)
-    }
-
     private func setupPopupConstraints() {
         // Add a "Top Cap" constraint to prevent popups from sliding under/over the navigation tabs.
         // This constraint ensures the top of the popup stays at least 140 points from the safe area top.
         newPostContainerView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 140).isActive = true
         commentPopupView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 140).isActive = true
-    }
-
-    @objc private func dismissKeyboard() {
-        view.endEditing(true)
     }
 
     // MARK: - NEW POST POPUP
@@ -703,14 +692,8 @@ class CommunityViewController: UIViewController,
         guard let cell = getCell(from: sender),
               let index = tableView.indexPath(for: cell)?.row else { return }
         
-        let post = feedPosts[index]
-        let textToShare = "Check out this post from \(post.name): \(post.message)"
-        
-        showSystemShareSheet(items: [textToShare])
-        
-        // Track share count
-        feedPosts[index].shareCount += 1
-        tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+        currentPostIndex = index
+        showSharePopup()
     }
     
     @IBAction func EventShareButtonTapped(_ sender: Any) {
@@ -718,14 +701,8 @@ class CommunityViewController: UIViewController,
         guard let button = sender as? UIView,
               let indexPath = getCellIndexPath(sender: button) else { return }
         
-        let event = eventPosts[indexPath.row]
-        let textToShare = "Join me at \(event.title) on \(event.startsAt)! 🚗"
-        
-        showSystemShareSheet(items: [textToShare])
-        
-        // Track share count
-        eventPosts[indexPath.row].shareCount += 1
-        tableView.reloadRows(at: [IndexPath(row: indexPath.row, section: 0)], with: .none)
+        currentPostIndex = indexPath.row
+        showSharePopup()
     }
     
     @IBAction func shareEventTapped(_ sender: UIButton) {
@@ -741,7 +718,14 @@ class CommunityViewController: UIViewController,
         hideSharePopup()
         
         // Get the partial message or link to share
-        let textToShare = "Check out this post on UniRide!"
+        let textToShare: String
+        if segmentedControl.selectedSegmentIndex == 1 {
+            let post = feedPosts[currentPostIndex]
+            textToShare = "Check out this post from \(post.name) on UniRide!"
+        } else {
+            let event = eventPosts[currentPostIndex]
+            textToShare = "Join me at \(event.title) on UniRide! 🚗"
+        }
         
         switch sender.tag {
         case 1: // WhatsApp
@@ -750,47 +734,42 @@ class CommunityViewController: UIViewController,
                 if UIApplication.shared.canOpenURL(url) {
                     UIApplication.shared.open(url, options: [:], completionHandler: nil)
                 } else {
-                    // Fallback to share sheet
                     showSystemShareSheet(items: [textToShare])
                 }
             }
-            
         case 2: // Instagram
-            // Instagram doesn't support simple text sharing via URL scheme easily, usually requires UIDocumentInteractionController for images.
-            // For now, we'll try opening the app, or fallback to system share which handles it better.
-            let urlString = "instagram://app"
-            if let url = URL(string: urlString) {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                } else {
-                    showSystemShareSheet(items: [textToShare])
-                }
-            }
-            
+            showSystemShareSheet(items: [textToShare])
         case 3: // Facebook
-            let urlString = "fb://"
-            if let url = URL(string: urlString) {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                } else {
-                    showSystemShareSheet(items: [textToShare])
-                }
-            }
-            
+            showSystemShareSheet(items: [textToShare])
         case 4: // More
             showSystemShareSheet(items: [textToShare])
-            
         default: break
         }
 
-        // Increase share count for whichever post is currently selected
-        if segmentedControl.selectedSegmentIndex == 1 {
-            feedPosts[currentPostIndex].shareCount += 1
-        } else {
-            eventPosts[currentPostIndex].shareCount += 1
+        // Backend Sync
+        Task {
+            if segmentedControl.selectedSegmentIndex == 1 {
+                let post = feedPosts[currentPostIndex]
+                guard let postID = post.remoteID else { return }
+                
+                if let newCount = try? await CommunityRepository.shared.recordShare(postID: postID) {
+                    await MainActor.run {
+                        self.feedPosts[self.currentPostIndex].shareCount = newCount
+                        self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
+                    }
+                }
+            } else {
+                let event = eventPosts[currentPostIndex]
+                let eventID = event.id
+                
+                if let newCount = try? await EventsAPI.shared.incrementShareCount(eventID: eventID, currentCount: event.shareCount) {
+                    await MainActor.run {
+                        self.eventPosts[self.currentPostIndex].shareCount = newCount
+                        self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
+                    }
+                }
+            }
         }
-
-        tableView.reloadRows(at: [IndexPath(row: currentPostIndex, section: 0)], with: .none)
     }
     
     func showSystemShareSheet(items: [Any]) {
