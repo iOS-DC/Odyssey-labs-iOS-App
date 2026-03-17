@@ -5,6 +5,7 @@ import Foundation
 struct AppNotification: Codable, Identifiable {
     let id: UUID
     let recipientUserID: UUID
+    let rideID: UUID?
     let title: String
     let body: String
     let timestamp: Date
@@ -108,9 +109,11 @@ final class AppNotificationModel {
         }
 
         let isRead = raw["is_read"] as? Bool ?? false
+        let rideID = (raw["ride_id"] as? String).flatMap(UUID.init(uuidString:))
         return AppNotification(
             id: id,
             recipientUserID: userID,
+            rideID: rideID,
             title: title,
             body: body,
             timestamp: timestamp,
@@ -120,10 +123,11 @@ final class AppNotificationModel {
     }
 
     // MARK: - Write
-    func send(to recipientID: UUID, title: String, body: String, type: AppNotification.NotifType) {
+    func send(to recipientID: UUID, rideID: UUID? = nil, title: String, body: String, type: AppNotification.NotifType) {
         let notif = AppNotification(
             id: UUID(),
             recipientUserID: recipientID,
+            rideID: rideID,
             title: title,
             body: body,
             timestamp: Date(),
@@ -138,6 +142,7 @@ final class AppNotificationModel {
             try? await NotificationAndReviewRepository.shared.insertNotification(
                 id: notif.id,
                 userID: recipientID,
+                rideID: rideID,
                 title: title,
                 body: body,
                 type: type.rawValue,

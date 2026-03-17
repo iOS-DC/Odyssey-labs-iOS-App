@@ -26,6 +26,7 @@ final class NotificationAndReviewRepository {
     func insertNotification(
         id: UUID = UUID(),
         userID: UUID,
+        rideID: UUID? = nil,
         title: String,
         body: String,
         type: String,
@@ -40,6 +41,7 @@ final class NotificationAndReviewRepository {
         let payload: [String: Any] = [
             "id":         id.uuidString,
             "user_id":    userID.uuidString,
+            "ride_id":    rideID?.uuidString as Any,
             "title":      title,
             "body":       body,
             "notif_type": type,          // schema column is notif_type
