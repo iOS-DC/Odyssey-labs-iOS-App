@@ -3,7 +3,7 @@
 //
 // This function is called by the iOS app whenever a push notification should
 // be sent to another user. It looks up that user's registered APNs device
-// tokens from the `device_tokens` table and delivers the notification via
+// tokens from the `push_tokens` table and delivers the notification via
 // Apple's HTTP/2 APNs API using JWT authentication.
 //
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17,20 +17,20 @@
 //    APNS_ENDPOINT      → https://api.push.apple.com  (production)
 //                      OR https://api.sandbox.push.apple.com  (development/TestFlight)
 //
-// 2. Create the `device_tokens` table (SQL — run once in Supabase SQL Editor):
+// 2. Create the `push_tokens` table (SQL — run once in Supabase SQL Editor):
 //
-//    create table public.device_tokens (
+//    create table public.push_tokens (
 //      id           uuid primary key default gen_random_uuid(),
 //      user_id      uuid not null references public.profiles(id) on delete cascade,
 //      token        text not null,
 //      platform     text not null default 'ios',
-//      updated_at   timestamptz not null default now(),
-//      unique (user_id, token)
+//      created_at   timestamptz not null default now(),
+//      unique (token)
 //    );
 //    -- Allow users to manage only their own tokens
-//    alter table public.device_tokens enable row level security;
+//    alter table public.push_tokens enable row level security;
 //    create policy "user owns tokens"
-//      on public.device_tokens for all
+//      on public.push_tokens for all
 //      using (auth.uid() = user_id)
 //      with check (auth.uid() = user_id);
 //
@@ -155,7 +155,7 @@ serve(async (req) => {
 
         // Fetch all device tokens for this user
         const { data: tokens, error } = await supabase
-            .from("device_tokens")
+            .from("push_tokens")
             .select("token")
             .eq("user_id", recipient_user_id)
             .eq("platform", "ios");
