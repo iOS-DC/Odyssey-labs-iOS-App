@@ -785,7 +785,8 @@ class CommunityViewController: UIViewController,
                     commentCount: rp.commentCount
                 )
             }
-            guard !mapped.isEmpty else { return }
+            // If mapped is empty (e.g. all posts moderated), we still proceed
+            // to update feedPosts and the table so the UI reflects the emptiness.
 
             // Merge local session state (likes, counts) into the freshly fetched posts 
             // so we don't flicker or lose optimistic updates.
@@ -1181,6 +1182,7 @@ extension CommunityViewController: EventCardCellDelegate {
                             self.commentTableView.deleteRows(at: [IndexPath(row: i, section: 0)], with: .fade)
                         }
                     }
+
                 }
             }
         }
@@ -1212,6 +1214,7 @@ extension CommunityViewController: EventCardCellDelegate {
                             self.feedPosts.remove(at: i)
                             self.tableView.deleteRows(at: [IndexPath(row: i, section: 0)], with: .fade)
                         }
+
                     }
                 }
             }

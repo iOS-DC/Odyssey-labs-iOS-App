@@ -214,6 +214,11 @@ final class CommunityRepository {
 
     func fetchComments(postID: UUID) async throws -> [CommunityComment] {
         try await SessionManager.shared.validateSession()
+        
+        // 1. Get moderated IDs
+        let hiddenIDs = await fetchModeratedContentIDs()
+        
+        // 2. Fetch comments
         let url = mgr.restURL(table: "community_comments",
                                query: "post_id=eq.\(postID.uuidString)&select=*,profiles!author_user_id(*)&order=created_at.asc")
         var req = URLRequest(url: url)
@@ -222,9 +227,11 @@ final class CommunityRepository {
         try checkHTTP(response, data: data)
         
         let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        
+        // 3. Filter out moderated content
         return rows.compactMap { row in
             commentFromRow(row, postID: postID)
-        }
+        }.filter { !hiddenIDs.contains($0.id) }
     }
 
     /// Inserts a new comment for a post.
