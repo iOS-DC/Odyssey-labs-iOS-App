@@ -497,17 +497,13 @@ final class RideDataModel {
             let passengerName = UserDataModel.shared.getUser(by: req.passengerUserID)?.fullName ?? "A passenger"
             let route = "\(ride.source.address ?? "Origin") → \(ride.destination.address ?? "Destination")"
             let body = "\(passengerName) sent a booking request for \(route)."
-            AppNotificationModel.shared.send(
+            dispatchRideNotification(
                 to: ride.driverUserID,
                 title: "New Ride Request",
                 body: body,
-                type: .newRequest
-            )
-            PushNotificationService.shared.send(
-                to: ride.driverUserID,
-                title: "New Ride Request",
-                body: body,
-                data: ["action": "new_request", "ride_id": ride.id.uuidString]
+                type: .newRequest,
+                rideID: ride.id,
+                action: "new_request"
             )
         }
         return req
@@ -574,18 +570,13 @@ final class RideDataModel {
 
         // In-app notification → passenger
         let route = "\(ride.source.address ?? "Origin") → \(ride.destination.address ?? "Destination")"
-        AppNotificationModel.shared.send(
+        dispatchRideNotification(
             to: rq.passengerUserID,
             title: "Booking Approved ✅",
             body: "Your request for \(route) has been approved. You're all set!",
-            type: .requestApproved
-        )
-        // Push notification → passenger's device(s)
-        PushNotificationService.shared.send(
-            to: rq.passengerUserID,
-            title: "Booking Approved ✅",
-            body: "Your request for \(route) has been approved. You're all set!",
-            data: ["action": "request_approved", "ride_id": ride.id.uuidString]
+            type: .requestApproved,
+            rideID: ride.id,
+            action: "request_approved"
         )
     }
 
@@ -636,18 +627,13 @@ final class RideDataModel {
 
         // In-app notification → passenger
         let route = "\(ride.source.address ?? "Origin") → \(ride.destination.address ?? "Destination")"
-        AppNotificationModel.shared.send(
+        dispatchRideNotification(
             to: rq.passengerUserID,
             title: "Booking Request Declined",
             body: "Your request for \(route) was not approved by the driver. Try another ride!",
-            type: .requestDenied
-        )
-        // Push notification → passenger's device(s)
-        PushNotificationService.shared.send(
-            to: rq.passengerUserID,
-            title: "Booking Request Declined",
-            body: "Your request for \(route) was not approved by the driver. Try another ride!",
-            data: ["action": "request_denied", "ride_id": ride.id.uuidString]
+            type: .requestDenied,
+            rideID: ride.id,
+            action: "request_denied"
         )
     }
 
@@ -700,18 +686,13 @@ final class RideDataModel {
             let passengerName = UserDataModel.shared.getUser(by: bk.passengerUserID)?.fullName ?? "A passenger"
             let from = ride.source.address ?? "Origin"
             let to   = ride.destination.address ?? "Destination"
-            AppNotificationModel.shared.send(
+            dispatchRideNotification(
                 to: ride.driverUserID,
                 title: "Booking Cancelled",
                 body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
-                type: .passengerCancelled
-            )
-            // Push notification → driver's device(s)
-            PushNotificationService.shared.send(
-                to: ride.driverUserID,
-                title: "Booking Cancelled",
-                body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
-                data: ["action": "passenger_cancelled", "ride_id": ride.id.uuidString]
+                type: .passengerCancelled,
+                rideID: ride.id,
+                action: "passenger_cancelled"
             )
         }
 
@@ -874,6 +855,38 @@ final class RideDataModel {
     func listBookings(for rideID: UUID) -> [Booking] { bookings.filter { $0.rideID == rideID } }
     func listMyBookings(userID: UUID) -> [Booking] { bookings.filter { $0.passengerUserID == userID } }
 
+    private func dispatchRideNotification(
+        to recipientID: UUID,
+        title: String,
+        body: String,
+        type: AppNotification.NotifType,
+        rideID: UUID,
+        action: String
+    ) {
+        let notificationID = UUID()
+
+        Task {
+            try? await NotificationAndReviewRepository.shared.insertNotification(
+                id: notificationID,
+                userID: recipientID,
+                title: title,
+                body: body,
+                type: type.rawValue,
+                isRead: false,
+                createdAt: Date()
+            )
+        }
+
+        PushNotificationService.shared.send(
+            to: recipientID,
+            title: title,
+            body: body,
+            notificationType: type,
+            notificationID: notificationID,
+            data: ["action": action, "ride_id": rideID.uuidString]
+        )
+    }
+
     private func notifyConfirmedPassengers(
         for ride: Ride,
         title: String,
@@ -888,17 +901,13 @@ final class RideDataModel {
         )
 
         for passengerID in passengerIDs {
-            AppNotificationModel.shared.send(
+            dispatchRideNotification(
                 to: passengerID,
                 title: title,
                 body: body,
-                type: type
-            )
-            PushNotificationService.shared.send(
-                to: passengerID,
-                title: title,
-                body: body,
-                data: ["action": action, "ride_id": ride.id.uuidString]
+                type: type,
+                rideID: ride.id,
+                action: action
             )
         }
     }

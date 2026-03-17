@@ -289,6 +289,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
         // Request APNs permission right after login so iOS shows the
         // "Allow Notifications?" prompt in a natural, logged-in context.
         PushNotificationService.shared.requestPermission()
+        LiveNotificationService.shared.startIfPossible()
 
         let tabBar = storyboard?.instantiateViewController(identifier: "MainTabBarController") as! UITabBarController
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,

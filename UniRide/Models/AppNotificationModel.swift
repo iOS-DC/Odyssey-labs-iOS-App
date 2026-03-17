@@ -85,7 +85,7 @@ final class AppNotificationModel {
         NotificationCenter.default.post(name: .appNotificationsUpdated, object: nil)
     }
 
-    private func parseBackendNotification(_ raw: [String: Any]) -> AppNotification? {
+    func notification(from raw: [String: Any]) -> AppNotification? {
         guard
             let idString = raw["id"] as? String,
             let id = UUID(uuidString: idString),
@@ -132,6 +132,8 @@ final class AppNotificationModel {
         )
         insertLocal(notif)
 
+        guard SessionManager.shared.userID == recipientID else { return }
+
         Task {
             try? await NotificationAndReviewRepository.shared.insertNotification(
                 id: notif.id,
@@ -149,13 +151,18 @@ final class AppNotificationModel {
         guard SessionManager.shared.isLoggedIn else { return }
         do {
             let rows = try await NotificationAndReviewRepository.shared.fetchNotifications(userID: userID)
-            let parsed = rows.compactMap(parseBackendNotification)
+            let parsed = rows.compactMap(notification(from:))
             DispatchQueue.main.async { [weak self] in
                 self?.mergeRemote(parsed)
             }
         } catch {
             print("[AppNotificationModel] Failed to fetch notifications:", error.localizedDescription)
         }
+    }
+
+    func receiveRealtime(_ raw: [String: Any]) {
+        guard let notif = notification(from: raw) else { return }
+        insertLocal(notif)
     }
 
     // MARK: - Read

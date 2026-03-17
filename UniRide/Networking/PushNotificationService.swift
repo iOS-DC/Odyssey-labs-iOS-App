@@ -8,7 +8,7 @@ import UserNotifications
 //
 // Responsibilities
 //   1. Request notification permission at the right moment.
-//   2. Capture the APNs device token and store it in Supabase `device_tokens`.
+//   2. Capture the APNs device token and store it in Supabase `push_tokens`.
 //   3. Expose a `send(to:title:body:data:)` method that calls the
 //      Supabase Edge Function `notify-user` to push a notification to a
 //      specific user across all their registered devices.
@@ -59,7 +59,7 @@ final class PushNotificationService: NSObject {
     private func upsertDeviceToken(_ token: String) async throws {
         guard let userID = SessionManager.shared.userID else { return }
         let mgr = SupabaseManager.shared
-        let url = mgr.restURL(table: "device_tokens")
+        let url = mgr.restURL(table: "push_tokens", query: "on_conflict=token")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.allHTTPHeaderFields = mgr.userHeaders
@@ -69,7 +69,7 @@ final class PushNotificationService: NSObject {
             "user_id":    userID.uuidString,
             "token":      token,
             "platform":   "ios",
-            "updated_at": ISO8601DateFormatter().string(from: Date())
+            "created_at": ISO8601DateFormatter().string(from: Date())
         ]
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (_, _) = try await URLSession.shared.data(for: req)
@@ -78,12 +78,14 @@ final class PushNotificationService: NSObject {
     // MARK: - Send Push via Supabase Edge Function
 
     /// Sends a push notification to every registered device of `recipientUserID`.
-    /// The Edge Function fetches the device tokens from `device_tokens` table
+    /// The Edge Function fetches the device tokens from `push_tokens` table
     /// and calls APNs on the server side.
     func send(
         to recipientUserID: UUID,
         title: String,
         body: String,
+        notificationType: AppNotification.NotifType? = nil,
+        notificationID: UUID? = nil,
         data: [String: String] = [:]
     ) {
         Task {
@@ -91,6 +93,8 @@ final class PushNotificationService: NSObject {
                 to: recipientUserID,
                 title: title,
                 body: body,
+                notificationType: notificationType,
+                notificationID: notificationID,
                 data: data
             )
         }
@@ -121,8 +125,11 @@ final class PushNotificationService: NSObject {
         to recipientUserID: UUID,
         title: String,
         body: String,
+        notificationType: AppNotification.NotifType?,
+        notificationID: UUID?,
         data: [String: String]
     ) async throws {
+        try await SessionManager.shared.validateSession()
         guard let token = SessionManager.shared.accessToken else { return }
         var req = URLRequest(url: edgeFunctionURL)
         req.httpMethod = "POST"
@@ -133,9 +140,21 @@ final class PushNotificationService: NSObject {
             "title":             title,
             "body":              body
         ]
+        if let notificationType {
+            payload["notif_type"] = notificationType.rawValue
+        }
+        if let notificationID {
+            payload["notification_id"] = notificationID.uuidString
+        }
         if !data.isEmpty { payload["data"] = data }
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        let (_, _) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            let bodyText = String(data: data, encoding: .utf8) ?? "HTTP \(http.statusCode)"
+            throw NSError(domain: "PushNotificationService", code: http.statusCode, userInfo: [
+                NSLocalizedDescriptionKey: bodyText
+            ])
+        }
     }
 }
 
