@@ -1,8 +1,13 @@
 import UIKit
 
+protocol CommentTableViewCellDelegate: AnyObject {
+    func commentCellDidTapReport(_ cell: CommentTableViewCell)
+}
+
 class CommentTableViewCell: UITableViewCell {
     
     static let identifier = "CommentTableViewCell"
+    weak var delegate: CommentTableViewCellDelegate?
     
     private let avatarImageView: UIImageView = {
         let iv = UIImageView()
@@ -40,6 +45,15 @@ class CommentTableViewCell: UITableViewCell {
         l.textColor = .label
         return l
     }()
+
+    private lazy var reportButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setImage(UIImage(systemName: "ellipsis"), for: .normal)
+        btn.tintColor = .secondaryLabel
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.addTarget(self, action: #selector(reportTapped), for: .touchUpInside)
+        return btn
+    }()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -56,6 +70,7 @@ class CommentTableViewCell: UITableViewCell {
         
         contentView.addSubview(avatarImageView)
         contentView.addSubview(bubbleView)
+        contentView.addSubview(reportButton)
         bubbleView.addSubview(nameLabel)
         bubbleView.addSubview(commentLabel)
         
@@ -67,9 +82,14 @@ class CommentTableViewCell: UITableViewCell {
             
             bubbleView.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 10),
             bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            bubbleView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -32),
+            bubbleView.trailingAnchor.constraint(lessThanOrEqualTo: reportButton.leadingAnchor, constant: -8),
             bubbleView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
             
+            reportButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
+            reportButton.centerYAnchor.constraint(equalTo: bubbleView.centerYAnchor),
+            reportButton.widthAnchor.constraint(equalToConstant: 24),
+            reportButton.heightAnchor.constraint(equalToConstant: 24),
+
             nameLabel.topAnchor.constraint(equalTo: bubbleView.topAnchor, constant: 8),
             nameLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
             nameLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
@@ -79,6 +99,10 @@ class CommentTableViewCell: UITableViewCell {
             commentLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
             commentLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -10)
         ])
+    }
+
+    @objc private func reportTapped() {
+        delegate?.commentCellDidTapReport(self)
     }
     
     func configure(with comment: CommunityComment, authorName: String? = nil) {

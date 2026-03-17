@@ -22,7 +22,6 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     @IBOutlet weak var requestStatusLabel: UILabel!
     @IBOutlet weak var hostImageView: UIImageView!
     @IBOutlet weak var messageButton: UIButton!
-    @IBOutlet weak var callButton: UIButton!
     @IBOutlet weak var cancelRequestButton: UIButton!
 
     // MARK: - Programmatic map & button (inserted into XIB layout)
@@ -221,7 +220,6 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         // Button styles
         messageButton.applyTintActionStyle(title: "Chat", imageSystemName: "message.fill")
         applyUnreadBadge(to: messageButton, rideID: ride.id.uuidString)
-        callButton.applyTintActionStyle(title: "Call", imageSystemName: "phone.fill")
         showMapButton.applyTintActionStyle(title: isMapExpanded ? "Hide" : "Map",
                                           imageSystemName: isMapExpanded ? "map.fill" : "map")
         cancelRequestButton.applyTintActionStyle(title: cancelTitle, color: AppDesign.Color.destructive)
@@ -294,17 +292,13 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
 
     private func configureHostInfo(driverID: UUID) {
         let host = currentTrip?.ride.driverProfile ?? UserDataModel.shared.getUser(by: driverID)
-        guard let host = host else {
-            hostNameLabel.text = "Driver"
-            hostImageView.loadAndFallback(from: nil, name: "Driver")
-            return
-        }
-        let name    = host.fullName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let display = name.isEmpty ? host.email : name
+        let name = host?.fullName.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let display = name.isEmpty ? (host?.email ?? "Driver") : name
+
         hostNameLabel.text      = display
         hostNameLabel.font      = AppDesign.Typography.subheadline
         hostNameLabel.textColor = .label
-        hostImageView.loadAndFallback(from: host.photoURL, name: display)
+        hostImageView.loadAndFallback(from: host?.photoURL, name: display)
     }
 
     @objc private func driverRowTapped() {

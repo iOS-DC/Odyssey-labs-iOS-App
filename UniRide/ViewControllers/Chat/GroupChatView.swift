@@ -168,6 +168,15 @@ private struct MessageBubble: View {
                     .padding(.vertical, 10)
                     .background(message.isCurrentUser ? Color.blue : Color(.systemGray6))
                     .clipShape(BubbleShape(isCurrentUser: message.isCurrentUser))
+                    .contextMenu {
+                        if !message.isCurrentUser {
+                            Button(role: .destructive) {
+                                reportMessage()
+                            } label: {
+                                Label("Report Message", systemImage: "flag")
+                            }
+                        }
+                    }
 
                 // Timestamp
                 Text(timeFormatter.string(from: message.timestamp))
@@ -178,6 +187,18 @@ private struct MessageBubble: View {
 
             if !message.isCurrentUser { Spacer(minLength: 60) }
         }
+    }
+
+    private func reportMessage() {
+        guard let topVC = UIApplication.shared.topViewController() else { return }
+        guard let senderUUID = UUID(uuidString: message.senderID) else { return }
+        
+        SafetyHelper.shared.showReportUI(
+            from: topVC,
+            reportedUserID: senderUUID,
+            contentType: .chatMessage,
+            contentID: message.id
+        )
     }
 }
 

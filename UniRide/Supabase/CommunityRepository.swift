@@ -367,6 +367,7 @@ final class CommunityRepository {
         
         let createdStr = row["created_at"] as? String ?? ""
         let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let created = iso.date(from: createdStr) ?? Date()
         
         var post = CommunityPost(
@@ -393,6 +394,7 @@ final class CommunityRepository {
         let text = row["text"] as? String ?? ""
         let createdStr = row["created_at"] as? String ?? ""
         let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         
         var comment = CommunityComment(
             id: id, postID: postID, authorUserID: auth, text: text,

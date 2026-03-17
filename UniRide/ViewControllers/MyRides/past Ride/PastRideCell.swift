@@ -37,13 +37,17 @@ final class PastRideCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        // Clear people rows
-        peopleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        // Robust clearing of stack view
+        peopleStack.arrangedSubviews.forEach {
+            peopleStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        // Remove rate button if exists
         rateBtn?.removeFromSuperview()
         rateBtn = nil
         onRateTapped = nil
         currentTrip = nil
-        // Restore the card's bottom anchor so the cell sizes correctly on reuse
+        // Restore the card's bottom anchor
         priceLabelBottomConstraint?.isActive = true
     }
 
@@ -288,7 +292,10 @@ final class PastRideCell: UITableViewCell {
     // MARK: - People Rows
 
     private func populatePeople(trip: RideDataModel.MyTrip, ride: Ride, isHost: Bool) {
-        peopleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        peopleStack.arrangedSubviews.forEach {
+            peopleStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
 
         var profiles: [UserProfile?]
         if isHost {
