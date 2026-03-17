@@ -318,6 +318,20 @@ final class RideDataModel {
         _ = createRide(outboundRide)
         if outboundRide.status != .published { _ = publishRide(id: outboundRide.id) }
 
+        let route = "\(outboundRide.source.address ?? "Origin") → \(outboundRide.destination.address ?? "Destination")"
+        AppNotificationModel.shared.send(
+            to: outboundRide.driverUserID,
+            title: "Ride Created",
+            body: "Your ride for \(route) is now live in My Rides.",
+            type: .rideCreated
+        )
+        PushNotificationService.shared.scheduleLocal(
+            title: "Ride Created",
+            body: "Your ride for \(route) is now live in My Rides.",
+            data: ["action": "ride_created", "ride_id": outboundRide.id.uuidString],
+            identifier: "ride_created_\(outboundRide.id.uuidString)"
+        )
+
         // MARK: Recurring — batch-create one ride per matching weekday for the next 4 weeks
         if outboundRide.isRecurring, !outboundRide.recurringDays.isEmpty {
             let cal = Calendar(identifier: .gregorian)
@@ -388,7 +402,18 @@ final class RideDataModel {
         // idempotent: if already cancelled, treat as success
         guard r.status != .cancelled else { return true }
         r.status = .cancelled
-        return updateRide(r)
+        let updated = updateRide(r)
+        guard updated else { return false }
+
+        let route = "\(r.source.address ?? "Origin") → \(r.destination.address ?? "Destination")"
+        notifyConfirmedPassengers(
+            for: r,
+            title: "Ride Cancelled",
+            body: "Your ride for \(route) has been cancelled by the driver.",
+            type: .rideCancelled,
+            action: "ride_cancelled"
+        )
+        return true
     }
 
     @discardableResult
@@ -403,7 +428,18 @@ final class RideDataModel {
         guard var r = getRide(id) else { return false }
         guard r.status == .published else { return false }
         r.status = .ongoing
-        return updateRide(r)
+        let updated = updateRide(r)
+        guard updated else { return false }
+
+        let route = "\(r.source.address ?? "Origin") → \(r.destination.address ?? "Destination")"
+        notifyConfirmedPassengers(
+            for: r,
+            title: "Ride Started",
+            body: "Your ride for \(route) has started.",
+            type: .rideStarted,
+            action: "ride_started"
+        )
+        return true
     }
 
     @discardableResult
@@ -418,7 +454,18 @@ final class RideDataModel {
         guard var r = getRide(id) else { return false }
         guard r.status == .ongoing else { return false }
         r.status = .completed
-        return updateRide(r)
+        let updated = updateRide(r)
+        guard updated else { return false }
+
+        let route = "\(r.source.address ?? "Origin") → \(r.destination.address ?? "Destination")"
+        notifyConfirmedPassengers(
+            for: r,
+            title: "Ride Completed",
+            body: "Your ride for \(route) has been marked completed.",
+            type: .rideCompleted,
+            action: "ride_completed"
+        )
+        return true
     }
 
     @discardableResult
@@ -445,6 +492,24 @@ final class RideDataModel {
         // Notify both requests and rides so UI that watches rides or requests will update.
         NotificationCenter.default.post(name: .rideRequestsUpdated, object: nil)
         NotificationCenter.default.post(name: .ridesUpdated, object: nil)
+
+        if let ride = getRide(req.rideID), ride.driverUserID != req.passengerUserID {
+            let passengerName = UserDataModel.shared.getUser(by: req.passengerUserID)?.fullName ?? "A passenger"
+            let route = "\(ride.source.address ?? "Origin") → \(ride.destination.address ?? "Destination")"
+            let body = "\(passengerName) sent a booking request for \(route)."
+            AppNotificationModel.shared.send(
+                to: ride.driverUserID,
+                title: "New Ride Request",
+                body: body,
+                type: .newRequest
+            )
+            PushNotificationService.shared.send(
+                to: ride.driverUserID,
+                title: "New Ride Request",
+                body: body,
+                data: ["action": "new_request", "ride_id": ride.id.uuidString]
+            )
+        }
         return req
     }
 
@@ -808,6 +873,35 @@ final class RideDataModel {
     func listRequests(for rideID: UUID) -> [RideRequest] { requests.filter { $0.rideID == rideID } }
     func listBookings(for rideID: UUID) -> [Booking] { bookings.filter { $0.rideID == rideID } }
     func listMyBookings(userID: UUID) -> [Booking] { bookings.filter { $0.passengerUserID == userID } }
+
+    private func notifyConfirmedPassengers(
+        for ride: Ride,
+        title: String,
+        body: String,
+        type: AppNotification.NotifType,
+        action: String
+    ) {
+        let passengerIDs = Set(
+            bookings
+                .filter { $0.rideID == ride.id && $0.status == .confirmed }
+                .map(\.passengerUserID)
+        )
+
+        for passengerID in passengerIDs {
+            AppNotificationModel.shared.send(
+                to: passengerID,
+                title: title,
+                body: body,
+                type: type
+            )
+            PushNotificationService.shared.send(
+                to: passengerID,
+                title: title,
+                body: body,
+                data: ["action": action, "ride_id": ride.id.uuidString]
+            )
+        }
+    }
 
     /// Merges backend rides into local cache without deleting local drafts/request state.
     func mergeRemoteRides(_ incoming: [Ride]) {
