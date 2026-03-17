@@ -40,6 +40,7 @@ final class MyRidesViewController: UIViewController {
     // Notification bell
     private let bellBtn   = UIButton(type: .system)
     private let bellBadge = UILabel()
+    private var bellTopConstraint: NSLayoutConstraint?
 
     // Empty states
     private lazy var upcomingEmptyState: EmptyStateView = {
@@ -751,6 +752,7 @@ extension MyRidesViewController {
     // MARK: - Notification Bell
 
     private func setupBellButton() {
+        bellBtn.translatesAutoresizingMaskIntoConstraints = false
         bellBtn.setImage(UIImage(systemName: "bell"), for: .normal)
         bellBtn.tintColor = .label
         bellBtn.addTarget(self, action: #selector(bellTapped), for: .touchUpInside)
@@ -770,7 +772,19 @@ extension MyRidesViewController {
             bellBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 14),
             bellBadge.heightAnchor.constraint(equalToConstant: 14),
         ])
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: bellBtn)
+
+        if navigationController != nil {
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: bellBtn)
+        } else {
+            view.addSubview(bellBtn)
+            bellTopConstraint = bellBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10)
+            NSLayoutConstraint.activate([
+                bellTopConstraint!,
+                bellBtn.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+                bellBtn.widthAnchor.constraint(equalToConstant: 32),
+                bellBtn.heightAnchor.constraint(equalToConstant: 32),
+            ])
+        }
         refreshBellBadge()
     }
 
