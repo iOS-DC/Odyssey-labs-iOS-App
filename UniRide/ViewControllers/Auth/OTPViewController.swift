@@ -62,17 +62,12 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
 
         startResendTimer()
         otpField1.becomeFirstResponder()
-        setupLogo()
     }
 
-    private var logoImageView: UIImageView!
-    private func setupLogo() {
-        logoImageView = addOnboardingLogo(above: containerCard)
-    }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        animateOnboardingEntrance([logoImageView, containerCard, titleLabel, verifyButton, resendLabel])
+        animateOnboardingEntrance([containerCard, titleLabel, verifyButton, resendLabel])
     }
 
     deinit {
