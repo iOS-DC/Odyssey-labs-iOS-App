@@ -62,7 +62,7 @@
                                                             <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
-                                                        <stackView opaque="NO" contentMode="scaleToFill" distribution="equalSpacing" alignment="center" spacing="20" translatesAutoresizingMaskIntoConstraints="NO" id="L6B-BL-MWQ">
+                                                        <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" alignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="L6B-BL-MWQ">
                                                             <rect key="frame" x="16" y="103" width="329" height="36.666666666666657"/>
                                                             <subviews>
                                                                 <button opaque="NO" tag="10" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="YLr-hg-SKg">
@@ -93,11 +93,7 @@
                                                                     </connections>
                                                                 </button>
                                                             </subviews>
-                                                            <constraints>
-                                                                <constraint firstItem="YLr-hg-SKg" firstAttribute="baseline" secondItem="QUx-eZ-eHp" secondAttribute="baseline" id="MQK-5O-DLw"/>
-                                                                <constraint firstItem="YLr-hg-SKg" firstAttribute="top" secondItem="L6B-BL-MWQ" secondAttribute="top" constant="0.6666666666666714" id="eKf-RD-cVH"/>
-                                                                <constraint firstItem="QUx-eZ-eHp" firstAttribute="centerX" secondItem="L6B-BL-MWQ" secondAttribute="centerX" id="oMr-cY-zXp"/>
-                                                            </constraints>
+                                                            <constraints/>
                                                         </stackView>
                                                     </subviews>
                                                     <color key="backgroundColor" systemColor="systemBackgroundColor"/>
@@ -107,13 +103,13 @@
                                                         <constraint firstItem="sCD-TG-bBH" firstAttribute="leading" secondItem="m1R-u5-0iH" secondAttribute="leading" id="6zJ-jY-Cge"/>
                                                         <constraint firstItem="nlU-Hw-XmR" firstAttribute="top" secondItem="O13-ZS-Ew7" secondAttribute="top" constant="16" id="Gbm-9f-heL"/>
                                                         <constraint firstItem="D7z-vJ-ehb" firstAttribute="trailing" secondItem="O13-ZS-Ew7" secondAttribute="trailing" constant="-16" id="JTw-fE-mY0"/>
-                                                        <constraint firstItem="D7z-vJ-ehb" firstAttribute="leading" secondItem="nlU-Hw-XmR" secondAttribute="leading" id="RcO-k6-Gi7"/>
+                                                        <constraint firstItem="D7z-vJ-ehb" firstAttribute="leading" secondItem="m1R-u5-0iH" secondAttribute="leading" id="RcO-k6-Gi7"/>
                                                         <constraint firstItem="nlU-Hw-XmR" firstAttribute="leading" secondItem="O13-ZS-Ew7" secondAttribute="leading" constant="16" id="VgO-A7-2Dz"/>
                                                         <constraint firstItem="D7z-vJ-ehb" firstAttribute="top" secondItem="sCD-TG-bBH" secondAttribute="bottom" constant="12" id="WGC-Fo-u6k"/>
                                                         <constraint firstItem="mXk-WE-kpr" firstAttribute="trailing" secondItem="O13-ZS-Ew7" secondAttribute="trailing" constant="-16" id="Yxy-dt-45f"/>
                                                         <constraint firstItem="L6B-BL-MWQ" firstAttribute="trailing" secondItem="O13-ZS-Ew7" secondAttribute="trailing" constant="-16" id="aWs-MF-pS8"/>
                                                         <constraint firstItem="m1R-u5-0iH" firstAttribute="top" secondItem="nlU-Hw-XmR" secondAttribute="top" id="dtR-hm-jRF"/>
-                                                        <constraint firstItem="L6B-BL-MWQ" firstAttribute="leading" secondItem="D7z-vJ-ehb" secondAttribute="leading" id="eO2-JL-Djy"/>
+                                                        <constraint firstItem="L6B-BL-MWQ" firstAttribute="leading" secondItem="nlU-Hw-XmR" secondAttribute="leading" id="eO2-JL-Djy"/>
                                                         <constraint firstItem="sCD-TG-bBH" firstAttribute="top" secondItem="m1R-u5-0iH" secondAttribute="bottom" constant="2" id="nP7-q0-M7F"/>
                                                         <constraint firstItem="L6B-BL-MWQ" firstAttribute="top" secondItem="D7z-vJ-ehb" secondAttribute="bottom" constant="12" id="qco-pR-wQO"/>
                                                         <constraint firstItem="L6B-BL-MWQ" firstAttribute="bottom" secondItem="O13-ZS-Ew7" secondAttribute="bottom" constant="-12" id="vjJ-qW-9MH"/>

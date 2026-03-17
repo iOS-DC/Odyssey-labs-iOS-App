@@ -37,6 +37,11 @@ final class CommunityRepository {
     /// Fetches the most recent `limit` posts, ordered newest first.
     func fetchPosts(limit: Int = 50) async throws -> [CommunityPost] {
         try await SessionManager.shared.validateSession()
+        
+        // 1. Get content IDs with 2+ reports to auto-hide
+        let hiddenIDs = await fetchModeratedContentIDs()
+        
+        // 2. Fetch posts
         let url = mgr.restURL(table: "community_posts",
                               query: "select=*,profiles!author_user_id(*)&order=created_at.desc&limit=\(limit)")
         var req = URLRequest(url: url)
@@ -44,7 +49,10 @@ final class CommunityRepository {
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
         let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        
+        // 3. Filter out moderated content
         return rows.compactMap(postFromRow)
+                   .filter { !hiddenIDs.contains($0.id) }
     }
 
     /// Inserts a new post for the current user.
@@ -88,6 +96,32 @@ final class CommunityRepository {
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
+    }
+    
+    /// Fetches IDs of posts and comments that have reached the report threshold (2+ reports).
+    func fetchModeratedContentIDs() async -> Set<UUID> {
+        do {
+            // We use the count logic from Supabase REST. 
+            // Better: use a dedicated moderation system, but for now we aggregate reports.
+            let url = mgr.restURL(table: "reports", query: "select=content_id")
+            var req = URLRequest(url: url)
+            req.allHTTPHeaderFields = mgr.userHeaders
+            let (data, _) = try await URLSession.shared.data(for: req)
+            let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+            
+            var counts: [UUID: Int] = [:]
+            for row in rows {
+                if let idStr = row["content_id"] as? String, let id = UUID(uuidString: idStr) {
+                    counts[id, default: 0] += 1
+                }
+            }
+            
+            // Filter Content with 2 or more reports
+            let moderated = counts.filter { $0.value >= 2 }.map { $0.key }
+            return Set(moderated)
+        } catch {
+            return []
+        }
     }
 
     // MARK: - Likes
@@ -156,6 +190,24 @@ final class CommunityRepository {
         try checkHTTP(patchResp, data: Data())
 
         return (isNowLiked, newCount)
+    }
+
+    /// Fetches all post IDs liked by the current user.
+    func fetchUserLikedPostIDs() async -> Set<UUID> {
+        guard let uid = SessionManager.shared.userID else { return [] }
+        do {
+            try await SessionManager.shared.validateSession()
+            let url = mgr.restURL(table: "community_likes", query: "user_id=eq.\(uid.uuidString)&select=post_id")
+            var req = URLRequest(url: url)
+            req.allHTTPHeaderFields = mgr.userHeaders
+            let (data, _) = try await URLSession.shared.data(for: req)
+            let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+            
+            let ids = rows.compactMap { $0["post_id"] as? String }.compactMap { UUID(uuidString: $0) }
+            return Set(ids)
+        } catch {
+            return []
+        }
     }
 
     // MARK: - Comments
