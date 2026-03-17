@@ -869,6 +869,7 @@ final class RideDataModel {
             try? await NotificationAndReviewRepository.shared.insertNotification(
                 id: notificationID,
                 userID: recipientID,
+                rideID: rideID,
                 title: title,
                 body: body,
                 type: type.rawValue,

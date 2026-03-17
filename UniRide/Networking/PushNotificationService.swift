@@ -140,6 +140,9 @@ final class PushNotificationService: NSObject {
             "title":             title,
             "body":              body
         ]
+        if let rideID = data["ride_id"] {
+            payload["ride_id"] = rideID
+        }
         if let notificationType {
             payload["notif_type"] = notificationType.rawValue
         }
