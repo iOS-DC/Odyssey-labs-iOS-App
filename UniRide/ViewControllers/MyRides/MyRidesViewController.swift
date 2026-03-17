@@ -191,15 +191,21 @@ final class MyRidesViewController: UIViewController {
 
     @objc private func handleRefresh() {
         AppHaptics.selection()
+        syncFromBackend {
+            self.refreshControl.endRefreshing()
+        }
+    }
+
+    func syncFromBackend(completion: (() -> Void)? = nil) {
         guard let user = UserDataModel.shared.getCurrentUser() else {
-            refreshControl.endRefreshing()
+            completion?()
             return
         }
         Task {
             await RideDataModel.shared.syncMyFullHistoryAsync(userID: user.id)
             await MainActor.run {
                 self.reloadTrips()
-                self.refreshControl.endRefreshing()
+                completion?()
             }
         }
     }
