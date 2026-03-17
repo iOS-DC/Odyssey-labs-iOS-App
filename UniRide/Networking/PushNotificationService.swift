@@ -84,6 +84,7 @@ final class PushNotificationService: NSObject {
         to recipientUserID: UUID,
         title: String,
         body: String,
+        notificationType: AppNotification.NotifType? = nil,
         data: [String: String] = [:]
     ) {
         Task {
@@ -91,6 +92,7 @@ final class PushNotificationService: NSObject {
                 to: recipientUserID,
                 title: title,
                 body: body,
+                notificationType: notificationType,
                 data: data
             )
         }
@@ -121,6 +123,7 @@ final class PushNotificationService: NSObject {
         to recipientUserID: UUID,
         title: String,
         body: String,
+        notificationType: AppNotification.NotifType?,
         data: [String: String]
     ) async throws {
         guard let token = SessionManager.shared.accessToken else { return }
@@ -133,6 +136,9 @@ final class PushNotificationService: NSObject {
             "title":             title,
             "body":              body
         ]
+        if let notificationType {
+            payload["notif_type"] = notificationType.rawValue
+        }
         if !data.isEmpty { payload["data"] = data }
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (_, _) = try await URLSession.shared.data(for: req)

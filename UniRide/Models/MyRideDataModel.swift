@@ -503,12 +503,13 @@ final class RideDataModel {
                 body: body,
                 type: .newRequest
             )
-            PushNotificationService.shared.send(
-                to: ride.driverUserID,
-                title: "New Ride Request",
-                body: body,
-                data: ["action": "new_request", "ride_id": ride.id.uuidString]
-            )
+        PushNotificationService.shared.send(
+            to: ride.driverUserID,
+            title: "New Ride Request",
+            body: body,
+            notificationType: .newRequest,
+            data: ["action": "new_request", "ride_id": ride.id.uuidString]
+        )
         }
         return req
     }
@@ -585,6 +586,7 @@ final class RideDataModel {
             to: rq.passengerUserID,
             title: "Booking Approved ✅",
             body: "Your request for \(route) has been approved. You're all set!",
+            notificationType: .requestApproved,
             data: ["action": "request_approved", "ride_id": ride.id.uuidString]
         )
     }
@@ -647,6 +649,7 @@ final class RideDataModel {
             to: rq.passengerUserID,
             title: "Booking Request Declined",
             body: "Your request for \(route) was not approved by the driver. Try another ride!",
+            notificationType: .requestDenied,
             data: ["action": "request_denied", "ride_id": ride.id.uuidString]
         )
     }
@@ -711,6 +714,7 @@ final class RideDataModel {
                 to: ride.driverUserID,
                 title: "Booking Cancelled",
                 body: "\(passengerName) cancelled their booking on your ride \(from) → \(to). A seat has been freed.",
+                notificationType: .passengerCancelled,
                 data: ["action": "passenger_cancelled", "ride_id": ride.id.uuidString]
             )
         }
@@ -898,6 +902,7 @@ final class RideDataModel {
                 to: passengerID,
                 title: title,
                 body: body,
+                notificationType: type,
                 data: ["action": action, "ride_id": ride.id.uuidString]
             )
         }

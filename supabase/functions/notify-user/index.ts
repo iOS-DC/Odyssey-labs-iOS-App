@@ -125,15 +125,32 @@ serve(async (req) => {
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
         );
 
-        const { recipient_user_id, title, body, data } = await req.json() as {
+        const { recipient_user_id, title, body, notif_type, data } = await req.json() as {
             recipient_user_id: string;
             title: string;
             body: string;
+            notif_type?: string;
             data?: Record<string, string>;
         };
 
         if (!recipient_user_id || !title || !body) {
             return new Response("Bad Request", { status: 400 });
+        }
+
+        if (notif_type) {
+            const { error: insertError } = await supabase
+                .from("app_notifications")
+                .insert({
+                    user_id: recipient_user_id,
+                    title,
+                    body,
+                    notif_type,
+                    is_read: false,
+                    created_at: new Date().toISOString(),
+                });
+            if (insertError) {
+                console.error("app_notifications insert error:", insertError);
+            }
         }
 
         // Fetch all device tokens for this user

@@ -132,6 +132,8 @@ final class AppNotificationModel {
         )
         insertLocal(notif)
 
+        guard SessionManager.shared.userID == recipientID else { return }
+
         Task {
             try? await NotificationAndReviewRepository.shared.insertNotification(
                 id: notif.id,
