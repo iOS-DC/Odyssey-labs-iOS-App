@@ -1182,8 +1182,7 @@ extension CommunityViewController: EventCardCellDelegate {
                             self.commentTableView.deleteRows(at: [IndexPath(row: i, section: 0)], with: .fade)
                         }
                     }
-                    // Global sync: Refresh the main feed too just in case report affects posts
-                    self.fetchPostsFromSupabase()
+
                 }
             }
         }
@@ -1215,9 +1214,7 @@ extension CommunityViewController: EventCardCellDelegate {
                             self.feedPosts.remove(at: i)
                             self.tableView.deleteRows(at: [IndexPath(row: i, section: 0)], with: .fade)
                         }
-                    } else {
-                        // Even if not moderated yet, refresh counts/state
-                        self.fetchPostsFromSupabase()
+
                     }
                 }
             }
