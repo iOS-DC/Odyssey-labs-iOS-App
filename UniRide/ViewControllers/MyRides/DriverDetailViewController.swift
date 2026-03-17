@@ -92,14 +92,18 @@ final class DriverDetailViewController: UIViewController {
             ("Contact",   driver.phone             ?? "—"),
         ]
 
-        if let model = ride.vehicleModel, let plate = ride.registrationPlate {
+        // Vehicle info: Prefer ride-specific data, fallback to driver's first vehicle
+        if let model = ride.vehicleModel, !model.isEmpty {
+            let plate = ride.registrationPlate ?? "—"
             rows.append(("Vehicle", model))
             rows.append(("Plate",   plate))
         } else if let v = driver.vehicles?.first {
             let typeStr = (v.type == .car) ? "Car" : "Bike"
             rows.append(("Vehicle",    "\(typeStr) · \(v.model)"))
             rows.append(("Plate",      v.registrationNumber))
-            rows.append(("Seats",      "\(v.seats)"))
+            if v.seats > 0 {
+                rows.append(("Seats",  "\(v.seats)"))
+            }
         }
 
         for (key, value) in rows {
@@ -114,6 +118,29 @@ final class DriverDetailViewController: UIViewController {
         )
         msgBtn.addTarget(self, action: #selector(messageTapped), for: .touchUpInside)
         view.addSubview(msgBtn)
+
+        // Report & Block buttons
+        let safetyStack = UIStackView()
+        safetyStack.axis = .horizontal
+        safetyStack.spacing = 20
+        safetyStack.distribution = .fillEqually
+        safetyStack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(safetyStack)
+
+        let reportBtn = UIButton(type: .system)
+        reportBtn.setTitle("Report User", for: .normal)
+        reportBtn.setTitleColor(.systemRed, for: .normal)
+        reportBtn.titleLabel?.font = AppDesign.Typography.subheadline
+        reportBtn.addTarget(self, action: #selector(reportTapped), for: .touchUpInside)
+
+        let blockBtn = UIButton(type: .system)
+        blockBtn.setTitle("Block User", for: .normal)
+        blockBtn.setTitleColor(.systemRed, for: .normal)
+        blockBtn.titleLabel?.font = AppDesign.Typography.subheadline
+        blockBtn.addTarget(self, action: #selector(blockTapped), for: .touchUpInside)
+
+        safetyStack.addArrangedSubview(reportBtn)
+        safetyStack.addArrangedSubview(blockBtn)
 
         // Layout
         NSLayoutConstraint.activate([
@@ -145,6 +172,11 @@ final class DriverDetailViewController: UIViewController {
             msgBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
             msgBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
             msgBtn.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight),
+
+            safetyStack.topAnchor.constraint(equalTo: msgBtn.bottomAnchor, constant: 16),
+            safetyStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
+            safetyStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
+            safetyStack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
 
@@ -182,4 +214,14 @@ final class DriverDetailViewController: UIViewController {
     // MARK: - Actions
     @objc private func closeTapped() { dismiss(animated: true) }
     @objc private func messageTapped() { dismiss(animated: true) }
+
+    @objc private func reportTapped() {
+        SafetyHelper.shared.showReportUI(from: self, reportedUserID: driver.id, contentType: .user)
+    }
+
+    @objc private func blockTapped() {
+        SafetyHelper.shared.showBlockUI(from: self, blockedUserID: driver.id, userName: driver.fullName) { [weak self] success in
+            if success { self?.dismiss(animated: true) }
+        }
+    }
 }

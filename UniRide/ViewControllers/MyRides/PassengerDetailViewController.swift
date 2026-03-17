@@ -128,6 +128,29 @@ final class PassengerDetailViewController: UIViewController {
         removeBtn.addTarget(self, action: #selector(removeTapped), for: .touchUpInside)
         view.addSubview(removeBtn)
 
+        // Safety Buttons (Report / Block)
+        let safetyStack = UIStackView()
+        safetyStack.axis = .horizontal
+        safetyStack.spacing = 24
+        safetyStack.distribution = .fillEqually
+        safetyStack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(safetyStack)
+
+        let reportBtn = UIButton(type: .system)
+        reportBtn.setTitle("Report User", for: .normal)
+        reportBtn.setTitleColor(.systemRed, for: .normal)
+        reportBtn.titleLabel?.font = AppDesign.Typography.subheadline
+        reportBtn.addTarget(self, action: #selector(reportTapped), for: .touchUpInside)
+
+        let blockBtn = UIButton(type: .system)
+        blockBtn.setTitle("Block User", for: .normal)
+        blockBtn.setTitleColor(.systemRed, for: .normal)
+        blockBtn.titleLabel?.font = AppDesign.Typography.subheadline
+        blockBtn.addTarget(self, action: #selector(blockTapped), for: .touchUpInside)
+
+        safetyStack.addArrangedSubview(reportBtn)
+        safetyStack.addArrangedSubview(blockBtn)
+
         // ── Layout ───────────────────────────────────────────────────
         NSLayoutConstraint.activate([
             closeBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
@@ -161,8 +184,12 @@ final class PassengerDetailViewController: UIViewController {
 
             removeBtn.topAnchor.constraint(equalTo: msgBtn.bottomAnchor, constant: 12),
             removeBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-            removeBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
             removeBtn.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight),
+
+            safetyStack.topAnchor.constraint(equalTo: removeBtn.bottomAnchor, constant: 16),
+            safetyStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
+            safetyStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
+            safetyStack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
         ])
     }
 
@@ -190,6 +217,16 @@ final class PassengerDetailViewController: UIViewController {
     @objc private func messageTapped() {
         dismiss(animated: true)
         // Future: open messaging screen
+    }
+
+    @objc private func reportTapped() {
+        SafetyHelper.shared.showReportUI(from: self, reportedUserID: passenger.id, contentType: .user)
+    }
+
+    @objc private func blockTapped() {
+        SafetyHelper.shared.showBlockUI(from: self, blockedUserID: passenger.id, userName: passenger.fullName) { [weak self] success in
+            if success { self?.dismiss(animated: true) }
+        }
     }
 
     @objc private func removeTapped() {

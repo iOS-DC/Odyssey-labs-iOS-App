@@ -14,6 +14,7 @@ final class ChatViewModel: ObservableObject {
     private let currentUserID: String
     private let currentUserName: String
 
+    private var blockedIDs: Set<UUID> = []
     private var cancellable: AnyCancellable?
 
     // MARK: - Realtime
@@ -45,7 +46,10 @@ final class ChatViewModel: ObservableObject {
         messages = ChatDataModel.shared.messages(for: rideID)
         ChatDataModel.shared.markAsRead(rideID: rideID)
         // Also fetch from Supabase to catch messages sent while offline
-        Task { await fetchFromSupabase() }
+        Task { 
+            self.blockedIDs = await SafetyService.shared.fetchBlockedUserIDs()
+            await fetchFromSupabase() 
+        }
     }
 
     /// Fetches historical messages from Supabase and merges into the local cache.
@@ -58,7 +62,11 @@ final class ChatViewModel: ObservableObject {
         ChatDataModel.shared.appendContents(of: remote, to: rideID)
         
         // Reload locally to reflect merged state
-        self.messages = ChatDataModel.shared.messages(for: rideID)
+        let localMessages = ChatDataModel.shared.messages(for: rideID)
+        self.messages = localMessages.filter { msg in
+            guard let senderUUID = UUID(uuidString: msg.senderID) else { return true }
+            return !blockedIDs.contains(senderUUID)
+        }
         ChatDataModel.shared.markAsRead(rideID: rideID)
     }
 
@@ -75,7 +83,11 @@ final class ChatViewModel: ObservableObject {
         guard let updated = note.object as? String, updated == rideID else { return }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.messages = ChatDataModel.shared.messages(for: self.rideID)
+            let localMessages = ChatDataModel.shared.messages(for: self.rideID)
+            self.messages = localMessages.filter { msg in
+                guard let senderUUID = UUID(uuidString: msg.senderID) else { return true }
+                return !self.blockedIDs.contains(senderUUID)
+            }
             ChatDataModel.shared.markAsRead(rideID: self.rideID)
         }
     }
@@ -109,6 +121,11 @@ final class ChatViewModel: ObservableObject {
 
         // Ignore our own messages — we already append them locally on send
         guard senderID != currentUserID else { return }
+        
+        // FILTER: Ignore messages from blocked users
+        if let senderUUID = UUID(uuidString: senderID), blockedIDs.contains(senderUUID) {
+            return
+        }
 
         // Deduplicate: if this message is already in the cache (e.g. from the
         // REST fetch on open) don't add it again

@@ -23,6 +23,7 @@ final class AvailableRideViewController: UIViewController,
     private var activeFilter = RideFilter()
     private var searchQuery  = ""
     private var didAnimateListOnFirstShow = false
+    private var blockedUserIDs: Set<UUID> = []
 
     // MARK: - UI
     private let searchController  = UISearchController(searchResultsController: nil)
@@ -226,6 +227,8 @@ final class AvailableRideViewController: UIViewController,
                 RideDataModel.shared.mergeRemoteRides(remote)
             }
 
+            self.blockedUserIDs = await SafetyService.shared.fetchBlockedUserIDs()
+
             spinner.removeFromSuperview()
 
             // Event-filtered rides (shown from EventDetails screen)
@@ -251,6 +254,9 @@ final class AvailableRideViewController: UIViewController,
 
     private func applyFilters() {
         var result = activeFilter.apply(to: rides)
+        
+        // FILTER: Exclude rides from blocked users
+        result = result.filter { !blockedUserIDs.contains($0.driverUserID) }
 
         // Apply text search on top of filter
         let q = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()

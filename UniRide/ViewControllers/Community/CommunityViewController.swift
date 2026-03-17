@@ -1,9 +1,10 @@
 import UIKit
 
-class CommunityViewController: UIViewController,
-                               UITableViewDelegate,
-                               UITableViewDataSource,
-                               UITextViewDelegate {
+class CommunityViewController: UIViewController, 
+                                 UITableViewDelegate, 
+                                 UITableViewDataSource, 
+                                 UITextViewDelegate,
+                                 CommentTableViewCellDelegate {
     private let sheetHiddenOffset: CGFloat = 400
     private let sheetShowDuration: TimeInterval = 0.34
     private let sheetHideDuration: TimeInterval = 0.24
@@ -12,9 +13,6 @@ class CommunityViewController: UIViewController,
     @IBOutlet weak var segmentedControl: UISegmentedControl!
     @IBOutlet weak var tableView: UITableView!
 
-    // SHARE POPUP
-    @IBOutlet weak var sharePopView: UIView!
-    @IBOutlet weak var sharePopUpBottomConstraint: NSLayoutConstraint!
 
     // NEW POST POPUP
     @IBOutlet weak var newPostContainerView: UIView!
@@ -119,11 +117,9 @@ class CommunityViewController: UIViewController,
 
         newPostContainerView.isHidden = true
         commentPopupView.isHidden = true
-        sharePopView.isHidden = true
 
         newPostBottomConstraint.constant = 300
         commentPopupBottomConstraint.constant = sheetHiddenOffset
-        sharePopUpBottomConstraint.constant = sheetHiddenOffset
         
         // Register Custom Cells
         commentTableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
@@ -134,7 +130,6 @@ class CommunityViewController: UIViewController,
         
         setupPopupUI()
         setupNewPostUI()
-        setupShareUI()
         
         // Save reference to button
         newPostBarButton = navigationItem.rightBarButtonItem
@@ -311,65 +306,6 @@ class CommunityViewController: UIViewController,
         commentTextField.rightViewMode = .always
     }
 
-    func setupShareUI() {
-        // Container
-        sharePopView.backgroundColor = .systemBackground
-        sharePopView.layer.cornerRadius = AppDesign.Radius.lg
-        sharePopView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        sharePopView.layer.shadowColor = UIColor.black.cgColor
-        sharePopView.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
-        sharePopView.layer.shadowOffset = CGSize(width: 0, height: -AppDesign.Spacing.xs)
-        sharePopView.layer.shadowRadius = AppDesign.Shadow.cardRadius
-        
-        // Title (Tag 201)
-        if let titleLabel = sharePopView.viewWithTag(201) as? UILabel {
-            titleLabel.text = "Share Post"
-            titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
-        }
-        
-        // Style Buttons (Tags 1, 2, 3, 4)
-        let socialColors: [Int: UIColor] = [
-            1: AppDesign.Color.success, // WhatsApp
-            2: AppDesign.Color.primary, // Instagram
-            3: AppDesign.Color.primary, // Facebook
-            4: AppDesign.Color.textPrimary.withAlphaComponent(0.7) // More
-        ]
-        
-        for i in 1...4 {
-            if let btn = sharePopView.viewWithTag(i) as? UIButton {
-                btn.layer.cornerRadius = AppDesign.Radius.sm
-                btn.backgroundColor = .secondarySystemBackground
-                btn.tintColor = socialColors[i] ?? .label
-                btn.titleLabel?.font = AppDesign.Typography.subheadline
-                
-                // Add icons programmatically if needed, or rely on text
-                switch i {
-                case 1: btn.setImage(UIImage(systemName: "message.fill"), for: .normal)
-                case 2: btn.setImage(UIImage(systemName: "camera.fill"), for: .normal)
-                case 3: btn.setImage(UIImage(systemName: "safari.fill"), for: .normal) // Facebook-ish
-                case 4: btn.setImage(UIImage(systemName: "ellipsis.circle.fill"), for: .normal)
-                default: break
-                }
-                
-                // Padding for icon
-                btn.configuration = .borderedTinted()
-                btn.configuration?.imagePadding = 8
-                btn.configuration?.baseBackgroundColor = socialColors[i]?.withAlphaComponent(0.1)
-                btn.configuration?.baseForegroundColor = socialColors[i]
-            }
-        }
-        
-        // Cancel Button (Tag 202)
-        if let cancelBtn = sharePopView.viewWithTag(202) as? UIButton {
-            cancelBtn.layer.cornerRadius = AppDesign.Radius.md
-            cancelBtn.backgroundColor = AppDesign.Color.fieldBackground
-            cancelBtn.setTitleColor(.label, for: .normal)
-            cancelBtn.titleLabel?.font = AppDesign.Typography.button
-            // Remove defaultFilled if it conflicts
-            cancelBtn.configuration = .plain()
-            cancelBtn.setTitle("Cancel", for: .normal)
-        }
-    }
 
     private func setupPopupConstraints() {
         // Add a "Top Cap" constraint to prevent popups from sliding under/over the navigation tabs.
@@ -408,7 +344,6 @@ class CommunityViewController: UIViewController,
         // Ensure all popups are dismissed when switching tabs
         hideComposer()
         hideCommentPopup()
-        hideSharePopup()
         
         tableView.reloadData()
         
@@ -420,31 +355,11 @@ class CommunityViewController: UIViewController,
         }
     }
 
-    func showSharePopup() {
-        AppHaptics.impact(.light)
-        hideComposer()
-        hideCommentPopup()
-
-        sharePopView.isHidden = false
-        sharePopView.alpha = 0
-        sharePopView.transform = CGAffineTransform(translationX: 0, y: 16)
-        sharePopUpBottomConstraint.constant = 0
-        animateSheetShow(sharePopView)
-    }
-
-    func hideSharePopup() {
-        sharePopUpBottomConstraint.constant = sheetHiddenOffset
-        animateSheetHide(sharePopView) { [weak self] in
-            guard let self else { return }
-            self.sharePopView.isHidden = true
-        }
-    }
 
     // MARK: - COMMENT POPUP
     func showCommentPopup() {
         AppHaptics.impact(.light)
         hideComposer()
-        hideSharePopup()
 
         commentPopupView.isHidden = false
         commentPopupView.alpha = 0
@@ -580,10 +495,12 @@ class CommunityViewController: UIViewController,
 
     /// Fetches all comments for a post from Supabase and resolves author names.
     private func loadLiveComments(for postID: UUID) async {
-        guard let comments = try? await CommunityRepository.shared.fetchComments(postID: postID) else { return }
+        guard let remoteComments = try? await CommunityRepository.shared.fetchComments(postID: postID) else { return }
+        let blockedIDs = await SafetyService.shared.fetchBlockedUserIDs()
+        let filtered = remoteComments.filter { !blockedIDs.contains($0.authorUserID) }
 
         await MainActor.run {
-            self.liveCommunityComments = comments
+            self.liveCommunityComments = filtered
             self.commentTableView.reloadData()
         }
     }
@@ -661,9 +578,6 @@ class CommunityViewController: UIViewController,
         }
     }
 
-    @IBAction func shareCancelButtonTapped(_ sender: Any) {
-       hideSharePopup()
-    }
     
     @IBAction func shareButtonTapped(_ sender: UIButton) {
         ensureNonGuest { [weak self] in
@@ -672,7 +586,23 @@ class CommunityViewController: UIViewController,
                   let index = self.tableView.indexPath(for: cell)?.row else { return }
             
             self.currentPostIndex = index
-            self.showSharePopup()
+            let post = self.feedPosts[index]
+            let textToShare = "Check out this post from \(post.name) on UniRide!"
+            
+            self.showSystemShareSheet(items: [textToShare])
+            
+            // Backend Sync
+            Task {
+                guard let postID = post.remoteID else { return }
+                if let newCount = try? await CommunityRepository.shared.recordShare(postID: postID) {
+                    await MainActor.run {
+                        if self.currentPostIndex < self.feedPosts.count {
+                            self.feedPosts[self.currentPostIndex].shareCount = newCount
+                            self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -682,7 +612,23 @@ class CommunityViewController: UIViewController,
               let indexPath = getCellIndexPath(sender: button) else { return }
         
         currentPostIndex = indexPath.row
-        showSharePopup()
+        let event = eventPosts[currentPostIndex]
+        let textToShare = "Join me at \(event.title) on UniRide! 🚗"
+        
+        showSystemShareSheet(items: [textToShare])
+        
+        // Backend Sync
+        Task {
+            let eventID = event.id
+            if let newCount = try? await EventsAPI.shared.incrementShareCount(eventID: eventID, currentCount: event.shareCount) {
+                await MainActor.run {
+                    if self.currentPostIndex < self.eventPosts.count {
+                        self.eventPosts[self.currentPostIndex].shareCount = newCount
+                        self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
+                    }
+                }
+            }
+        }
     }
     
     @IBAction func shareEventTapped(_ sender: UIButton) {
@@ -694,63 +640,6 @@ class CommunityViewController: UIViewController,
     }
 
     
-    @IBAction func shareOptionTapped(_ sender: UIButton) {
-        hideSharePopup()
-        
-        // Get the partial message or link to share
-        let textToShare: String
-        if segmentedControl.selectedSegmentIndex == 1 {
-            let post = feedPosts[currentPostIndex]
-            textToShare = "Check out this post from \(post.name) on UniRide!"
-        } else {
-            let event = eventPosts[currentPostIndex]
-            textToShare = "Join me at \(event.title) on UniRide! 🚗"
-        }
-        
-        switch sender.tag {
-        case 1: // WhatsApp
-            let urlString = "whatsapp://send?text=\(textToShare.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-            if let url = URL(string: urlString) {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                } else {
-                    showSystemShareSheet(items: [textToShare])
-                }
-            }
-        case 2: // Instagram
-            showSystemShareSheet(items: [textToShare])
-        case 3: // Facebook
-            showSystemShareSheet(items: [textToShare])
-        case 4: // More
-            showSystemShareSheet(items: [textToShare])
-        default: break
-        }
-
-        // Backend Sync
-        Task {
-            if segmentedControl.selectedSegmentIndex == 1 {
-                let post = feedPosts[currentPostIndex]
-                guard let postID = post.remoteID else { return }
-                
-                if let newCount = try? await CommunityRepository.shared.recordShare(postID: postID) {
-                    await MainActor.run {
-                        self.feedPosts[self.currentPostIndex].shareCount = newCount
-                        self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
-                    }
-                }
-            } else {
-                let event = eventPosts[currentPostIndex]
-                let eventID = event.id
-                
-                if let newCount = try? await EventsAPI.shared.incrementShareCount(eventID: eventID, currentCount: event.shareCount) {
-                    await MainActor.run {
-                        self.eventPosts[self.currentPostIndex].shareCount = newCount
-                        self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
-                    }
-                }
-            }
-        }
-    }
     
     func showSystemShareSheet(items: [Any]) {
         let ac = UIActivityViewController(activityItems: items, applicationActivities: nil)
@@ -839,13 +728,23 @@ class CommunityViewController: UIViewController,
                 return 
             }
 
+            let blockedIDs = await SafetyService.shared.fetchBlockedUserIDs()
+            
             // Build initial posts with placeholder names and real counts
-            var mapped: [Post] = remotePosts.map { rp in
+            var mapped: [Post] = remotePosts.compactMap { rp in
+                // FILTER: Exclude posts from blocked users
+                if blockedIDs.contains(rp.authorUserID) { return nil }
+
                 let df = RelativeDateTimeFormatter()
                 df.unitsStyle = .short
                 var when = df.localizedString(for: rp.createdAt, relativeTo: Date())
-                // Handle future dates (clock sync issues) and very recent posts
-                if when.contains("in ") || when.contains("0 sec") {
+                
+                // Better relative time: Only "Just now" for < 30 seconds
+                let diff = Date().timeIntervalSince(rp.createdAt)
+                if diff < 30 {
+                    when = "Just now"
+                } else if diff < 0 {
+                    // Safety for future dates (clock sync)
                     when = "Just now"
                 }
                 let isMe = rp.authorUserID == UserDataModel.shared.getCurrentUser()?.id
@@ -964,6 +863,7 @@ class CommunityViewController: UIViewController,
             }
             let comment = liveCommunityComments[indexPath.row]
             cell.configure(with: comment)
+            cell.delegate = self
             return cell
         }
 
@@ -1061,42 +961,71 @@ class CommunityViewController: UIViewController,
 
             if let likeButton = cell.viewWithTag(10) as? UIButton {
                 var config = UIButton.Configuration.plain()
-                config.title = "❤️ \(post.likeCount)"
-                config.baseForegroundColor = .label
-                config.titleLineBreakMode = .byTruncatingTail
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
+                let iconName = post.hasLiked ? "heart.fill" : "heart"
+                
+                let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+                config.image = UIImage(systemName: iconName, withConfiguration: symbolConfig)
+                
+                config.title = " \(post.likeCount)"
+                config.baseForegroundColor = post.hasLiked ? .systemRed : .label
+                config.imagePadding = 4
+                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming
-                    outgoing.font = AppDesign.Typography.subheadline
-                    return outgoing
+                    var outgoing = incoming; outgoing.font = AppDesign.Typography.subheadline; return outgoing
                 }
                 likeButton.configuration = config
             }
+
             if let commentButton = cell.viewWithTag(11) as? UIButton {
                 var config = UIButton.Configuration.plain()
-                config.title = "💬 \(post.commentCount)"
+                let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+                config.image = UIImage(systemName: "bubble.right", withConfiguration: symbolConfig)
+                
+                config.title = " \(post.commentCount)"
                 config.baseForegroundColor = .label
-                config.titleLineBreakMode = .byTruncatingTail
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
+                config.imagePadding = 4
+                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming
-                    outgoing.font = AppDesign.Typography.subheadline
-                    return outgoing
+                    var outgoing = incoming; outgoing.font = AppDesign.Typography.subheadline; return outgoing
                 }
                 commentButton.configuration = config
             }
+
             if let shareButton = cell.viewWithTag(12) as? UIButton {
                 var config = UIButton.Configuration.plain()
-                config.title = "↪️ \(post.shareCount)"
+                let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+                config.image = UIImage(systemName: "square.and.arrow.up", withConfiguration: symbolConfig)
+                
+                config.title = " \(post.shareCount)"
                 config.baseForegroundColor = .label
-                config.titleLineBreakMode = .byTruncatingTail
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
+                config.imagePadding = 4
+                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming
-                    outgoing.font = AppDesign.Typography.subheadline
-                    return outgoing
+                    var outgoing = incoming; outgoing.font = AppDesign.Typography.subheadline; return outgoing
                 }
                 shareButton.configuration = config
+            }
+
+            // Report Button (programmatic)
+            if let stackView = cell.viewWithTag(12)?.superview as? UIStackView {
+                stackView.spacing = 20
+                stackView.distribution = .fillProportionally
+                
+                let reportTag = 13
+                if stackView.viewWithTag(reportTag) == nil {
+                    let reportBtn = UIButton(type: .system)
+                    reportBtn.tag = reportTag
+                    
+                    var config = UIButton.Configuration.plain()
+                    let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+                    config.image = UIImage(systemName: "flag.fill", withConfiguration: symbolConfig)
+                    config.baseForegroundColor = .secondaryLabel
+                    config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
+                    reportBtn.configuration = config
+                    
+                    reportBtn.addTarget(self, action: #selector(reportFeedPostTapped(_:)), for: .touchUpInside)
+                    stackView.addArrangedSubview(reportBtn)
+                }
             }
 
             // Hide the redundant comments label to fix the card layout (excessive whitespace)
@@ -1224,5 +1153,36 @@ extension CommunityViewController: EventCardCellDelegate {
         guard let indexPath = tableView.indexPath(for: cell),
               indexPath.row < eventPosts.count else { return }
         openEventDetailsScreen(event: eventPosts[indexPath.row])
+    }
+
+    // MARK: - Safety Delegates
+    
+    func commentCellDidTapReport(_ cell: CommentTableViewCell) {
+        guard let indexPath = commentTableView.indexPath(for: cell) else { return }
+        let comment = liveCommunityComments[indexPath.row]
+        
+        SafetyHelper.shared.showReportUI(
+            from: self,
+            reportedUserID: comment.authorUserID,
+            contentType: .comment,
+            contentID: comment.id
+        )
+    }
+    
+
+    @objc private func reportFeedPostTapped(_ sender: UIButton) {
+        guard let cell = getCell(from: sender),
+              let indexPath = tableView.indexPath(for: cell),
+              indexPath.row < feedPosts.count else { return }
+        
+        let post = feedPosts[indexPath.row]
+        guard let postID = post.remoteID else { return }
+        
+        SafetyHelper.shared.showReportUI(
+            from: self,
+            reportedUserID: post.authorUserID ?? UUID(),
+            contentType: .post,
+            contentID: postID
+        )
     }
 }
