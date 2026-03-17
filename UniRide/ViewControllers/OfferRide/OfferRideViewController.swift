@@ -737,6 +737,12 @@ class OfferRideViewController: UIViewController,
     private func updateNextButtonState() {
         let hasFrom    = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasTo      = !(toTextField.text   ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        
+        if !SessionManager.shared.isLoggedIn {
+            nextButton.setPrimaryCTAEnabled(hasFrom && hasTo)
+            return
+        }
+
         let hasVehicle = selectedVehicle != nil
         let hasSeats   = seatCount > 0
         let hasFare    = (Double(fareField.text ?? "") ?? 0) > 0
@@ -746,58 +752,61 @@ class OfferRideViewController: UIViewController,
     // MARK: - Next button → ReviewRideViewController
 
     @IBAction func nextTapped(_ sender: Any) {
-        let fromText = fromTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let toText   = toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        ensureNonGuest { [weak self] in
+            guard let self = self else { return }
+            let fromText = self.fromTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let toText   = self.toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
-        guard !fromText.isEmpty, !toText.isEmpty else {
-            showAlert("Missing Location", message: "Please enter both a pickup and drop-off location.")
-            return
-        }
-        guard let from = fromCoord else {
-            showAlert("Select from suggestions", message: "Please pick your pickup location from the list.")
-            return
-        }
-        guard let to = toCoord else {
-            showAlert("Select from suggestions", message: "Please pick your drop-off location from the list.")
-            return
-        }
-        guard fromText.lowercased() != toText.lowercased() else {
-            showAlert("Same Location", message: "Pickup and drop-off can't be the same.")
-            return
-        }
-        guard let vehicle = selectedVehicle else {
-            showAlert("No Vehicle Selected", message: "Please select a vehicle or add a new one.")
-            return
-        }
-        guard seatCount > 0 else {
-            showAlert("No Seats", message: "Please set how many seats you are offering.")
-            return
-        }
-        let fareValue = Double(fareField.text ?? "") ?? 0
-        guard fareValue > 0 else {
-            showAlert("No Fare", message: "Please enter the fare per seat.")
-            return
-        }
+            guard !fromText.isEmpty, !toText.isEmpty else {
+                self.showAlert("Missing Location", message: "Please enter both a pickup and drop-off location.")
+                return
+            }
+            guard let from = self.fromCoord else {
+                self.showAlert("Select from suggestions", message: "Please pick your pickup location from the list.")
+                return
+            }
+            guard let to = self.toCoord else {
+                self.showAlert("Select from suggestions", message: "Please pick your drop-off location from the list.")
+                return
+            }
+            guard fromText.lowercased() != toText.lowercased() else {
+                self.showAlert("Same Location", message: "Pickup and drop-off can't be the same.")
+                return
+            }
+            guard let vehicle = self.selectedVehicle else {
+                self.showAlert("No Vehicle Selected", message: "Please select a vehicle or add a new one.")
+                return
+            }
+            guard self.seatCount > 0 else {
+                self.showAlert("No Seats", message: "Please set how many seats you are offering.")
+                return
+            }
+            let fareValue = Double(self.fareField.text ?? "") ?? 0
+            guard fareValue > 0 else {
+                self.showAlert("No Fare", message: "Please enter the fare per seat.")
+                return
+            }
 
-        view.endEditing(true)
+            self.view.endEditing(true)
 
-        let summary = RideSummary(
-            from: LocationPoint(lat: from.latitude, lon: from.longitude, address: fromTextField.text),
-            to:   LocationPoint(lat: to.latitude,   lon: to.longitude,   address: toTextField.text),
-            date: datePicker.date,
-            time: timePicker.date,
-            route: selectedRoute.map { MapKitManager.shared.convert($0) },
-            vehicleType: vehicle.type == .bike ? "Bike" : "Car",
-            seats: seatCount,
-            farePerSeat: fareValue,
-            registrationPlate: vehicle.registrationNumber,
-            vehicleModel: vehicle.model
-        )
+            let summary = RideSummary(
+                from: LocationPoint(lat: from.latitude, lon: from.longitude, address: self.fromTextField.text),
+                to:   LocationPoint(lat: to.latitude,   lon: to.longitude,   address: self.toTextField.text),
+                date: self.datePicker.date,
+                time: self.timePicker.date,
+                route: self.selectedRoute.map { MapKitManager.shared.convert($0) },
+                vehicleType: vehicle.type == .bike ? "Bike" : "Car",
+                seats: self.seatCount,
+                farePerSeat: fareValue,
+                registrationPlate: vehicle.registrationNumber,
+                vehicleModel: vehicle.model
+            )
 
-        let sb = UIStoryboard(name: "OfferRide", bundle: nil)
-        let vc = sb.instantiateViewController(withIdentifier: "ReviewRideViewController") as! ReviewRideViewController
-        vc.summary = summary
-        navigationController?.pushViewController(vc, animated: true)
+            let sb = UIStoryboard(name: "OfferRide", bundle: nil)
+            let vc = sb.instantiateViewController(withIdentifier: "ReviewRideViewController") as! ReviewRideViewController
+            vc.summary = summary
+            self.navigationController?.pushViewController(vc, animated: true)
+        }
     }
 
     private func showAlert(_ title: String, message: String) {

@@ -283,35 +283,38 @@ class JoinRideViewController: UIViewController,
 
     // MARK: - Find Ride
     @IBAction func didTapFindRide(_ sender: Any) {
-        let fromText = fromTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let toText   = toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        ensureNonGuest { [weak self] in
+            guard let self = self else { return }
+            let fromText = self.fromTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let toText   = self.toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
-        guard !fromText.isEmpty, !toText.isEmpty else {
-            showAlert("Missing Location", message: "Please select both a pickup and a drop-off location.")
-            return
-        }
-        guard let fromCoord = fromCoordinate else {
-            showAlert("Select from suggestions", message: "Please pick your pickup location from the list.")
-            return
-        }
-        guard let toCoord = toCoordinate else {
-            showAlert("Select from suggestions", message: "Please pick your drop-off location from the list.")
-            return
-        }
-        guard fromText.lowercased() != toText.lowercased() else {
-            showAlert("Same Location", message: "Pickup and drop-off can't be the same.")
-            return
-        }
+            guard !fromText.isEmpty, !toText.isEmpty else {
+                self.showAlert("Missing Location", message: "Please select both a pickup and a drop-off location.")
+                return
+            }
+            guard let fromCoord = self.fromCoordinate else {
+                self.showAlert("Select from suggestions", message: "Please pick your pickup location from the list.")
+                return
+            }
+            guard let toCoord = self.toCoordinate else {
+                self.showAlert("Select from suggestions", message: "Please pick your drop-off location from the list.")
+                return
+            }
+            guard fromText.lowercased() != toText.lowercased() else {
+                self.showAlert("Same Location", message: "Pickup and drop-off can't be the same.")
+                return
+            }
 
-        view.endEditing(true)
+            self.view.endEditing(true)
 
-        guard let vc = storyboard?.instantiateViewController(identifier: "AvailableRideViewController")
-                as? AvailableRideViewController else { return }
-        vc.fromCoordinate = fromCoord
-        vc.toCoordinate   = toCoord
-        vc.date = datePicker.date
-        vc.time = timePicker.date
-        navigationController?.pushViewController(vc, animated: true)
+            guard let vc = self.storyboard?.instantiateViewController(identifier: "AvailableRideViewController")
+                    as? AvailableRideViewController else { return }
+            vc.fromCoordinate = fromCoord
+            vc.toCoordinate   = toCoord
+            vc.date = self.datePicker.date
+            vc.time = self.timePicker.date
+            self.navigationController?.pushViewController(vc, animated: true)
+        }
     }
 
     private func showAlert(_ title: String, message: String) {
