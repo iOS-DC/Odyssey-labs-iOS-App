@@ -440,10 +440,46 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
             withIdentifier: PastRideCell.reuseIdentifier, for: indexPath
         ) as! PastRideCell
         cell.configure(with: trip)
+        cell.delegate = self
         cell.onRateTapped = { [weak self] tripToRate in
             self?.presentRatingSheet(for: tripToRate)
         }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let trip: RideDataModel.MyTrip
+        if segmentedControl.selectedSegmentIndex == 0 {
+            guard indexPath.row < currentTrips.count else { return }
+            trip = currentTrips[indexPath.row]
+        } else {
+            guard indexPath.section < pastSections.count,
+                  indexPath.row < pastSections[indexPath.section].trips.count else { return }
+            trip = pastSections[indexPath.section].trips[indexPath.row]
+        }
+
+        if trip.role == .hosting {
+            let vc = RideDetailViewController()
+            vc.ride = trip.ride
+            vc.driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)
+            if let sheet = vc.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 24
+            }
+            present(vc, animated: true)
+        } else {
+            // Passenger: show driver details by default on card tap
+            if let driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID) {
+                let vc = DriverDetailViewController(driver: driver, ride: trip.ride)
+                if let sheet = vc.sheetPresentationController {
+                    sheet.detents = [.medium(), .large()]
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 24
+                }
+                present(vc, animated: true)
+            }
+        }
     }
 
 
@@ -669,6 +705,39 @@ extension MyRidesViewController: UpcomingPassengerCellDelegate {
             sheet.preferredCornerRadius = 24
         }
         present(vc, animated: true)
+    }
+}
+
+// MARK: - PastRideCellDelegate
+extension MyRidesViewController: PastRideCellDelegate {
+    func pastRideCellDidTapPerson(_ cell: PastRideCell, user: UserProfile) {
+        guard let indexPath = tableView.indexPath(for: cell) else { return }
+        let trip: RideDataModel.MyTrip
+        if segmentedControl.selectedSegmentIndex == 0 {
+            trip = currentTrips[indexPath.row]
+        } else {
+            trip = pastSections[indexPath.section].trips[indexPath.row]
+        }
+
+        if trip.role == .hosting {
+            // Tapped a passenger
+            let vc = PassengerDetailViewController(passenger: user, ride: trip.ride)
+            if let sheet = vc.sheetPresentationController {
+                sheet.detents = [.medium(), .large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 24
+            }
+            present(vc, animated: true)
+        } else {
+            // Tapped the driver
+            let vc = DriverDetailViewController(driver: user, ride: trip.ride)
+            if let sheet = vc.sheetPresentationController {
+                sheet.detents = [.medium(), .large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 24
+            }
+            present(vc, animated: true)
+        }
     }
 }
 
