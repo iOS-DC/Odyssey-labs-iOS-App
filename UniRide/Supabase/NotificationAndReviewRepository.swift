@@ -23,19 +23,28 @@ final class NotificationAndReviewRepository {
         return (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
     }
 
-    func insertNotification(userID: UUID, title: String, body: String, type: String) async throws {
+    func insertNotification(
+        id: UUID = UUID(),
+        userID: UUID,
+        title: String,
+        body: String,
+        type: String,
+        isRead: Bool = false,
+        createdAt: Date = Date()
+    ) async throws {
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "app_notifications")
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.allHTTPHeaderFields = headers
         let payload: [String: Any] = [
+            "id":         id.uuidString,
             "user_id":    userID.uuidString,
             "title":      title,
             "body":       body,
             "notif_type": type,          // schema column is notif_type
-            "is_read":    false,
-            "created_at": ISO8601DateFormatter().string(from: Date())
+            "is_read":    isRead,
+            "created_at": ISO8601DateFormatter().string(from: createdAt)
         ]
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (data, response) = try await URLSession.shared.data(for: req)
