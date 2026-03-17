@@ -251,16 +251,8 @@ final class LiveNotificationService {
 
     private func handleNotificationTap(type: AppNotification.NotifType?, rideID: UUID?) {
         guard let type else { return }
-        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
-              let root = scene.windows.first?.rootViewController else { return }
-
-        let tabBar: UITabBarController?
-        if let tb = root as? UITabBarController { tabBar = tb }
-        else if let nav = root as? UINavigationController,
-                let tb = nav.viewControllers.first as? UITabBarController { tabBar = tb }
-        else { tabBar = nil }
-
-        tabBar?.selectedIndex = 1
+        guard let tabBar = resolveMainTabBarController() else { return }
+        tabBar.selectedIndex = 1
 
         guard let me = UserDataModel.shared.getCurrentUser() else { return }
 
@@ -284,7 +276,8 @@ final class LiveNotificationService {
             }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                UIApplication.shared.topViewController()?.present(nav, animated: true)
+                guard let myRidesVC = self.resolveMyRidesViewController(from: tabBar) else { return }
+                myRidesVC.present(nav, animated: true)
             }
         case .requestApproved, .requestDenied, .passengerCancelled, .rideCreated, .rideCancelled, .rideStarted, .rideCompleted, .passengerJoined:
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
@@ -293,11 +286,41 @@ final class LiveNotificationService {
                     ?? RideDataModel.shared.myPast(userID: me.id).first { $0.ride.id == targetRideID }
                 guard matchingTrip != nil else { return }
 
-                if let myRidesVC = UIApplication.shared.topViewController() as? MyRidesViewController {
+                if let myRidesVC = self.resolveMyRidesViewController(from: tabBar) {
                     myRidesVC.reloadInputViews()
                 }
             }
         }
+    }
+
+    private func resolveMainTabBarController() -> UITabBarController? {
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
+              let root = scene.windows.first?.rootViewController else { return nil }
+
+        if let tb = root as? UITabBarController { return tb }
+        if let nav = root as? UINavigationController {
+            if let tb = nav.viewControllers.first as? UITabBarController { return tb }
+            if let tb = nav.topViewController as? UITabBarController { return tb }
+        }
+        return nil
+    }
+
+    private func resolveMyRidesViewController(from tabBar: UITabBarController) -> MyRidesViewController? {
+        guard tabBar.viewControllers?.indices.contains(1) == true else { return nil }
+        let vc = tabBar.viewControllers?[1]
+
+        if let myRidesVC = vc as? MyRidesViewController {
+            myRidesVC.loadViewIfNeeded()
+            return myRidesVC
+        }
+
+        if let nav = vc as? UINavigationController {
+            let myRidesVC = (nav.topViewController ?? nav.viewControllers.first) as? MyRidesViewController
+            myRidesVC?.loadViewIfNeeded()
+            return myRidesVC
+        }
+
+        return nil
     }
 }
 
