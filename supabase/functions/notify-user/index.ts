@@ -125,11 +125,12 @@ serve(async (req) => {
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
         );
 
-        const { recipient_user_id, title, body, notif_type, data } = await req.json() as {
+        const { recipient_user_id, title, body, notif_type, notification_id, data } = await req.json() as {
             recipient_user_id: string;
             title: string;
             body: string;
             notif_type?: string;
+            notification_id?: string;
             data?: Record<string, string>;
         };
 
@@ -138,16 +139,19 @@ serve(async (req) => {
         }
 
         if (notif_type) {
+            const row: Record<string, string | boolean> = {
+                user_id: recipient_user_id,
+                title,
+                body,
+                notif_type,
+                is_read: false,
+                created_at: new Date().toISOString(),
+            };
+            if (notification_id) row.id = notification_id;
+
             const { error: insertError } = await supabase
                 .from("app_notifications")
-                .insert({
-                    user_id: recipient_user_id,
-                    title,
-                    body,
-                    notif_type,
-                    is_read: false,
-                    created_at: new Date().toISOString(),
-                });
+                .upsert(row, { onConflict: "id" });
             if (insertError) {
                 console.error("app_notifications insert error:", insertError);
             }

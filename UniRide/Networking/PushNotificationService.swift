@@ -85,6 +85,7 @@ final class PushNotificationService: NSObject {
         title: String,
         body: String,
         notificationType: AppNotification.NotifType? = nil,
+        notificationID: UUID? = nil,
         data: [String: String] = [:]
     ) {
         Task {
@@ -93,6 +94,7 @@ final class PushNotificationService: NSObject {
                 title: title,
                 body: body,
                 notificationType: notificationType,
+                notificationID: notificationID,
                 data: data
             )
         }
@@ -124,8 +126,10 @@ final class PushNotificationService: NSObject {
         title: String,
         body: String,
         notificationType: AppNotification.NotifType?,
+        notificationID: UUID?,
         data: [String: String]
     ) async throws {
+        try await SessionManager.shared.validateSession()
         guard let token = SessionManager.shared.accessToken else { return }
         var req = URLRequest(url: edgeFunctionURL)
         req.httpMethod = "POST"
@@ -139,9 +143,18 @@ final class PushNotificationService: NSObject {
         if let notificationType {
             payload["notif_type"] = notificationType.rawValue
         }
+        if let notificationID {
+            payload["notification_id"] = notificationID.uuidString
+        }
         if !data.isEmpty { payload["data"] = data }
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        let (_, _) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await URLSession.shared.data(for: req)
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            let bodyText = String(data: data, encoding: .utf8) ?? "HTTP \(http.statusCode)"
+            throw NSError(domain: "PushNotificationService", code: http.statusCode, userInfo: [
+                NSLocalizedDescriptionKey: bodyText
+            ])
+        }
     }
 }
 

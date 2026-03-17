@@ -8,6 +8,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+        _ = LiveNotificationService.shared
 
         // ── Push Notifications ──────────────────────────────────────────────
         // Set PushNotificationService as the UNUserNotificationCenter delegate
