@@ -324,7 +324,7 @@ final class LiveNotificationService {
     }
 }
 
-private final class NotificationBannerView: UIControl {
+private final class NotificationBannerView: UIView {
     var onTap: (() -> Void)?
     var onClose: (() -> Void)?
 
@@ -341,6 +341,7 @@ private final class NotificationBannerView: UIControl {
         layer.shadowOpacity = 0.12
         layer.shadowRadius = 16
         layer.shadowOffset = CGSize(width: 0, height: 8)
+        isUserInteractionEnabled = true
 
         titleLabel.text = title
         titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
@@ -380,7 +381,8 @@ private final class NotificationBannerView: UIControl {
             closeButton.heightAnchor.constraint(equalToConstant: 28),
         ])
 
-        addTarget(self, action: #selector(tapped), for: .touchUpInside)
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(tapped))
+        addGestureRecognizer(tapGesture)
     }
 
     required init?(coder: NSCoder) { fatalError() }
