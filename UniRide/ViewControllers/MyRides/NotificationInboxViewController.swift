@@ -98,6 +98,9 @@ private final class NotifCell: UITableViewCell {
 
     func configure(with notif: AppNotification) {
         switch notif.type {
+        case .newRequest:
+            iconView.image     = UIImage(systemName: "bell.badge.fill")
+            iconView.tintColor = AppDesign.Color.primary
         case .passengerCancelled:
             iconView.image     = UIImage(systemName: "person.badge.minus")
             iconView.tintColor = .systemOrange
@@ -110,6 +113,18 @@ private final class NotifCell: UITableViewCell {
         case .requestDenied:
             iconView.image     = UIImage(systemName: "xmark.circle.fill")
             iconView.tintColor = AppDesign.Color.destructive
+        case .rideCreated:
+            iconView.image     = UIImage(systemName: "car.fill")
+            iconView.tintColor = AppDesign.Color.primary
+        case .rideCancelled:
+            iconView.image     = UIImage(systemName: "xmark.octagon.fill")
+            iconView.tintColor = AppDesign.Color.destructive
+        case .rideStarted:
+            iconView.image     = UIImage(systemName: "figure.wave.circle.fill")
+            iconView.tintColor = AppDesign.Color.primary
+        case .rideCompleted:
+            iconView.image     = UIImage(systemName: "checkmark.seal.fill")
+            iconView.tintColor = .systemGreen
         }
 
         titleLbl.text = notif.title
@@ -124,9 +139,9 @@ private final class NotifCell: UITableViewCell {
             backgroundColor = .clear
         } else {
             switch notif.type {
-            case .requestApproved, .passengerJoined:
+            case .newRequest, .requestApproved, .passengerJoined, .rideCreated, .rideStarted, .rideCompleted:
                 backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.08)
-            case .requestDenied:
+            case .requestDenied, .rideCancelled:
                 backgroundColor = AppDesign.Color.destructive.withAlphaComponent(0.05)
             default:
                 backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.06)

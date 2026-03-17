@@ -40,6 +40,7 @@ final class MyRidesViewController: UIViewController {
     // Notification bell
     private let bellBtn   = UIButton(type: .system)
     private let bellBadge = UILabel()
+    private var bellTopConstraint: NSLayoutConstraint?
 
     // Empty states
     private lazy var upcomingEmptyState: EmptyStateView = {
@@ -102,6 +103,9 @@ final class MyRidesViewController: UIViewController {
         super.viewWillAppear(animated)
         reloadTrips()
         refreshBellBadge()
+        if let me = UserDataModel.shared.getCurrentUser() {
+            Task { await AppNotificationModel.shared.refreshFromBackend(for: me.id) }
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -748,6 +752,7 @@ extension MyRidesViewController {
     // MARK: - Notification Bell
 
     private func setupBellButton() {
+        bellBtn.translatesAutoresizingMaskIntoConstraints = false
         bellBtn.setImage(UIImage(systemName: "bell"), for: .normal)
         bellBtn.tintColor = .label
         bellBtn.addTarget(self, action: #selector(bellTapped), for: .touchUpInside)
@@ -767,7 +772,19 @@ extension MyRidesViewController {
             bellBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 14),
             bellBadge.heightAnchor.constraint(equalToConstant: 14),
         ])
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: bellBtn)
+
+        if navigationController != nil {
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: bellBtn)
+        } else {
+            view.addSubview(bellBtn)
+            bellTopConstraint = bellBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10)
+            NSLayoutConstraint.activate([
+                bellTopConstraint!,
+                bellBtn.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+                bellBtn.widthAnchor.constraint(equalToConstant: 32),
+                bellBtn.heightAnchor.constraint(equalToConstant: 32),
+            ])
+        }
         refreshBellBadge()
     }
 
@@ -786,29 +803,33 @@ extension MyRidesViewController {
 
     @objc private func bellTapped() {
         guard let me = UserDataModel.shared.getCurrentUser() else { return }
-        let notifs = AppNotificationModel.shared.notifications
-            .filter { $0.recipientUserID == me.id }
+        Task { [weak self] in
+            await AppNotificationModel.shared.refreshFromBackend(for: me.id)
+            await MainActor.run {
+                guard let self else { return }
+                let notifs = AppNotificationModel.shared.all(for: me.id)
+                AppNotificationModel.shared.markAllRead(for: me.id)
+                self.refreshBellBadge()
 
-        AppNotificationModel.shared.markAllRead(for: me.id)
-        refreshBellBadge()
+                if notifs.isEmpty {
+                    let a = UIAlertController(title: "No Notifications",
+                                              message: "You're all caught up! ✅",
+                                              preferredStyle: .alert)
+                    a.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(a, animated: true)
+                    return
+                }
 
-        if notifs.isEmpty {
-            let a = UIAlertController(title: "No Notifications",
-                                      message: "You're all caught up! ✅",
-                                      preferredStyle: .alert)
-            a.addAction(UIAlertAction(title: "OK", style: .default))
-            present(a, animated: true)
-            return
+                let vc = NotificationInboxViewController(notifications: notifs)
+                vc.modalPresentationStyle = .pageSheet
+                if let sheet = vc.sheetPresentationController {
+                    sheet.detents = [.medium(), .large()]
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 24
+                }
+                self.present(vc, animated: true)
+            }
         }
-
-        let vc = NotificationInboxViewController(notifications: notifs)
-        vc.modalPresentationStyle = .pageSheet
-        if let sheet = vc.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 24
-        }
-        present(vc, animated: true)
     }
 }
 

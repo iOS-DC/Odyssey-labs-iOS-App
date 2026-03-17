@@ -25,22 +25,16 @@ class EmailViewController: UIViewController {
         continueButton.setPrimaryCTAEnabled(false)
         emailTextField.addTarget(self, action: #selector(emailChanged), for: .editingChanged)
         configureAccessibility()
-        setupLogo()
+        setupGuestButton()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        animateOnboardingEntrance([logoImageView, containerCard, emailTextField, continueButton, guestButton])
+        animateOnboardingEntrance([containerCard, emailTextField, continueButton, guestButton])
     }
 
     @IBOutlet weak var containerCard: UIView!
-    private var logoImageView: UIImageView!
     private let guestButton = UIButton(type: .system)
-
-    private func setupLogo() {
-        logoImageView = addOnboardingLogo(above: containerCard)
-        setupGuestButton()
-    }
 
     private func setupGuestButton() {
         guestButton.translatesAutoresizingMaskIntoConstraints = false

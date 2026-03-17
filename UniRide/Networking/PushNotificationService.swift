@@ -96,6 +96,27 @@ final class PushNotificationService: NSObject {
         }
     }
 
+    func scheduleLocal(
+        title: String,
+        body: String,
+        data: [String: String] = [:],
+        identifier: String = UUID().uuidString
+    ) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        content.badge = 1
+        content.userInfo = data
+
+        let request = UNNotificationRequest(
+            identifier: identifier,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
     private func sendAsync(
         to recipientUserID: UUID,
         title: String,
@@ -158,7 +179,8 @@ extension PushNotificationService: UNUserNotificationCenterDelegate {
             else { tabBar = nil }
 
             switch action {
-            case "request_approved", "request_denied", "passenger_joined", "passenger_cancelled":
+            case "new_request", "request_approved", "request_denied", "passenger_joined", "passenger_cancelled",
+                 "ride_created", "ride_cancelled", "ride_started", "ride_completed":
                 tabBar?.selectedIndex = 1   // My Rides tab
             case "new_message":
                 tabBar?.selectedIndex = 1   // also My Rides (chat lives there)
