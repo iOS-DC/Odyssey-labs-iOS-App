@@ -37,6 +37,23 @@ final class SafetyService {
             throw NSError(domain: "SafetyService", code: 401, userInfo: [NSLocalizedDescriptionKey: "User not logged in"])
         }
         
+        // 1. Check for existing report by this user on this content
+        var query = "reporter_id=eq.\(currentUserID.uuidString)&content_type=eq.\(contentType.rawValue)"
+        if let cid = contentID {
+            query += "&content_id=eq.\(cid.uuidString)"
+        }
+        
+        let checkURL = mgr.restURL(table: "reports", query: query + "&select=id")
+        var checkReq = URLRequest(url: checkURL)
+        checkReq.allHTTPHeaderFields = mgr.userHeaders
+        let (checkData, _) = try await URLSession.shared.data(for: checkReq)
+        let existing = (try? JSONSerialization.jsonObject(with: checkData) as? [[String: Any]]) ?? []
+        
+        if !existing.isEmpty {
+            throw NSError(domain: "SafetyService", code: 409, userInfo: [NSLocalizedDescriptionKey: "You have already reported this content."])
+        }
+        
+        // 2. Insert new report
         var payload: [String: Any] = [
             "reporter_id": currentUserID.uuidString,
             "reported_user_id": reportedUserID.uuidString,

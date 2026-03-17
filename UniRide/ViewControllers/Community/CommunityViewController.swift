@@ -545,11 +545,28 @@ class CommunityViewController: UIViewController,
                   let cell = self.getCell(from: sender),
                   let index = self.tableView.indexPath(for: cell)?.row else { return }
 
+            guard let postID = self.feedPosts[index].remoteID else { return }
+            
+            // Prevention: If we are already syncing this post, ignore additional taps to prevent race conditions.
+            if self.pendingLikeOperations.contains(postID) { return }
+            
             // Optimistic local toggle so the button feels instant
             let currentlyLiked = self.feedPosts[index].hasLiked
-            self.feedPosts[index].hasLiked = !currentlyLiked
-            self.feedPosts[index].likeCount += (currentlyLiked ? -1 : 1)
-            self.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+            let newLiked = !currentlyLiked
+            let newCount = self.feedPosts[index].likeCount + (currentlyLiked ? -1 : 1)
+            
+            self.feedPosts[index].hasLiked = newLiked
+            self.feedPosts[index].likeCount = newCount
+            
+            // Direct UI update instead of reloadRows to prevent flickering
+            if var config = sender.configuration {
+                let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+                let iconName = newLiked ? "heart.fill" : "heart"
+                config.image = UIImage(systemName: iconName, withConfiguration: symbolConfig)
+                config.title = "\(newCount)"
+                config.baseForegroundColor = newLiked ? .systemRed : .label
+                sender.configuration = config
+            }
 
             guard let postID = self.feedPosts[index].remoteID else { return }
             
@@ -567,10 +584,13 @@ class CommunityViewController: UIViewController,
                 if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
                     await MainActor.run {
                         if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                            // Sync with backend truth
-                            self.feedPosts[i].hasLiked = result.isLiked
-                            self.feedPosts[i].likeCount = result.count
-                            self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+                            // Sync with backend truth if it differs from our optimistic guess
+                            if self.feedPosts[i].hasLiked != result.isLiked || self.feedPosts[i].likeCount != result.count {
+                                self.feedPosts[i].hasLiked = result.isLiked
+                                self.feedPosts[i].likeCount = result.count
+                                // Only reload if there was a correction to minimize visual noise
+                                self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+                            }
                         }
                     }
                 }
@@ -678,9 +698,9 @@ class CommunityViewController: UIViewController,
 
     // MARK: - Feed auto-refresh
     private func startFeedRefreshTimer() {
-        // Fire immediately then every 5 seconds
+        // Fire every 15 seconds for a good balance of "live" feeling without constant reloading
         refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             guard let self, self.segmentedControl.selectedSegmentIndex == 1 else { return }
             self.fetchPostsFromSupabase()
         }
@@ -729,6 +749,7 @@ class CommunityViewController: UIViewController,
             }
 
             let blockedIDs = await SafetyService.shared.fetchBlockedUserIDs()
+            let likedIDs   = await CommunityRepository.shared.fetchUserLikedPostIDs()
             
             // Build initial posts with placeholder names and real counts
             var mapped: [Post] = remotePosts.compactMap { rp in
@@ -760,6 +781,7 @@ class CommunityViewController: UIViewController,
                     authorProfile: effectiveProfile,
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount,
+                    hasLiked: likedIDs.contains(rp.id),
                     commentCount: rp.commentCount
                 )
             }
@@ -772,21 +794,17 @@ class CommunityViewController: UIViewController,
                     guard let remoteID = mapped[i].remoteID else { continue }
                     
                     if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }) {
-                        // Preserve hasLiked/hasShared if already true in current session.
-                        if existing.hasLiked  { mapped[i].hasLiked = true }
-                        if existing.hasShared { mapped[i].hasShared = true }
-
-                        // Take the higher count (server vs local) to avoid flickering
-                        // if the server hasn't finished its internal trigger updates.
-                        mapped[i].likeCount    = max(mapped[i].likeCount, existing.likeCount)
-                        mapped[i].shareCount   = max(mapped[i].shareCount, existing.shareCount)
-                        mapped[i].commentCount = max(mapped[i].commentCount, existing.commentCount)
-                        
-                        // If we are currently in middle of an optimistic like operation,
-                        // definitely keep the local state.
+                        // TRUTH MERGE: Trust the server count by default.
+                        // We ONLY overwrite if we have a currently pending operation.
                         if self.pendingLikeOperations.contains(remoteID) {
                             mapped[i].hasLiked  = existing.hasLiked
                             mapped[i].likeCount = existing.likeCount
+                        }
+                        
+                        // Small aesthetic fix: if existing post was already rendered, 
+                        // try to keep its profile if our new one is nil for some reason.
+                        if mapped[i].authorProfile == nil {
+                            mapped[i].authorProfile = existing.authorProfile
                         }
                     }
                 }
@@ -930,27 +948,14 @@ class CommunityViewController: UIViewController,
             }
             if let label = cell.viewWithTag(3) as? UILabel {
                 label.text = post.timestamp
-                label.applyTextStyle(AppDesign.Typography.body, color: .secondaryLabel)
+                label.font = .systemFont(ofSize: 11, weight: .regular)
+                label.textColor = .secondaryLabel
             }
             // Verified badge logic: Use attributed string with attachment instead of subviews to prevent layout churn
+            // Name label: Simple text, no verified badge attachment
             if let nameLabel = cell.viewWithTag(1) as? UILabel {
-                let name = post.name
-                let isVerified = UserDataModel.shared.allUsers().first(where: { $0.fullName == name })?.isEmailVerified == true
-
-                if isVerified {
-                    let imageAttachment = NSTextAttachment()
-                    imageAttachment.image = UIImage(systemName: "checkmark.seal.fill")?.withTintColor(AppDesign.Color.primary)
-                    // Adjust vertical alignment
-                    let font = nameLabel.font ?? AppDesign.Typography.bodyStrong
-                    let mid = font.descender + font.capHeight
-                    imageAttachment.bounds = CGRect(x: 0, y: font.descender + (mid - 13) / 2, width: 13, height: 13)
-
-                    let fullString = NSMutableAttributedString(string: name + " ")
-                    fullString.append(NSAttributedString(attachment: imageAttachment))
-                    nameLabel.attributedText = fullString
-                } else {
-                    nameLabel.text = name
-                }
+                nameLabel.text = post.name
+                nameLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
             }
 
             if let label = cell.viewWithTag(4) as? UILabel {
@@ -959,68 +964,66 @@ class CommunityViewController: UIViewController,
                 label.lineBreakMode = .byTruncatingTail
             }
 
+            // ACTION BUTTONS (Like, Comment, Share, Report)
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+            
             if let likeButton = cell.viewWithTag(10) as? UIButton {
                 var config = UIButton.Configuration.plain()
                 let iconName = post.hasLiked ? "heart.fill" : "heart"
-                
-                let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
                 config.image = UIImage(systemName: iconName, withConfiguration: symbolConfig)
-                
-                config.title = " \(post.likeCount)"
+                config.title = "\(post.likeCount)"
                 config.baseForegroundColor = post.hasLiked ? .systemRed : .label
-                config.imagePadding = 4
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
+                config.imagePadding = 2
+                config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming; outgoing.font = AppDesign.Typography.subheadline; return outgoing
+                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
                 }
                 likeButton.configuration = config
             }
 
             if let commentButton = cell.viewWithTag(11) as? UIButton {
                 var config = UIButton.Configuration.plain()
-                let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
                 config.image = UIImage(systemName: "bubble.right", withConfiguration: symbolConfig)
-                
-                config.title = " \(post.commentCount)"
+                config.title = "\(post.commentCount)"
                 config.baseForegroundColor = .label
-                config.imagePadding = 4
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
+                config.imagePadding = 2
+                config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming; outgoing.font = AppDesign.Typography.subheadline; return outgoing
+                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
                 }
                 commentButton.configuration = config
             }
 
             if let shareButton = cell.viewWithTag(12) as? UIButton {
                 var config = UIButton.Configuration.plain()
-                let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
                 config.image = UIImage(systemName: "square.and.arrow.up", withConfiguration: symbolConfig)
-                
-                config.title = " \(post.shareCount)"
+                config.title = "\(post.shareCount)"
                 config.baseForegroundColor = .label
-                config.imagePadding = 4
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
+                config.imagePadding = 2
+                config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming; outgoing.font = AppDesign.Typography.subheadline; return outgoing
+                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
                 }
                 shareButton.configuration = config
             }
 
-            // Report Button (programmatic)
+            // Report Button & Stack Layout
             if let stackView = cell.viewWithTag(12)?.superview as? UIStackView {
-                stackView.spacing = 20
-                stackView.distribution = .fillProportionally
+                stackView.distribution = .fillEqually
+                stackView.alignment = .center
+                stackView.spacing = 0
+                stackView.isLayoutMarginsRelativeArrangement = true
+                stackView.layoutMargins = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
                 
-                let reportTag = 13
+                let reportTag = 25
                 if stackView.viewWithTag(reportTag) == nil {
                     let reportBtn = UIButton(type: .system)
                     reportBtn.tag = reportTag
                     
                     var config = UIButton.Configuration.plain()
-                    let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
                     config.image = UIImage(systemName: "flag.fill", withConfiguration: symbolConfig)
                     config.baseForegroundColor = .secondaryLabel
-                    config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4)
+                    config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                     reportBtn.configuration = config
                     
                     reportBtn.addTarget(self, action: #selector(reportFeedPostTapped(_:)), for: .touchUpInside)
@@ -1166,7 +1169,21 @@ extension CommunityViewController: EventCardCellDelegate {
             reportedUserID: comment.authorUserID,
             contentType: .comment,
             contentID: comment.id
-        )
+        ) { [weak self] success in
+            guard success, let self = self else { return }
+            Task {
+                let hiddenIDs = await CommunityRepository.shared.fetchModeratedContentIDs()
+                await MainActor.run {
+                    if hiddenIDs.contains(comment.id) {
+                        // Optimistically hide locally
+                        if let i = self.liveCommunityComments.firstIndex(where: { $0.id == comment.id }) {
+                            self.liveCommunityComments.remove(at: i)
+                            self.commentTableView.deleteRows(at: [IndexPath(row: i, section: 0)], with: .fade)
+                        }
+                    }
+                }
+            }
+        }
     }
     
 
@@ -1183,6 +1200,21 @@ extension CommunityViewController: EventCardCellDelegate {
             reportedUserID: post.authorUserID ?? UUID(),
             contentType: .post,
             contentID: postID
-        )
+        ) { [weak self] success in
+            guard success, let self = self else { return }
+            // Re-fetch to check if it should be moderated/hidden now
+            Task {
+                let hiddenIDs = await CommunityRepository.shared.fetchModeratedContentIDs()
+                await MainActor.run {
+                    if hiddenIDs.contains(postID) {
+                        // Optimistically hide locally
+                        if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                            self.feedPosts.remove(at: i)
+                            self.tableView.deleteRows(at: [IndexPath(row: i, section: 0)], with: .fade)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
