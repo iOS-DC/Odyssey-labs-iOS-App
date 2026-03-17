@@ -30,6 +30,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     private var mapHeightConstraint: NSLayoutConstraint!
     private var cancelTopConstraint: NSLayoutConstraint!     // replaces XIB's constraint
     private var isMapExpanded = false
+    private var driverHitArea: UIView?
 
     weak var delegate: UpcomingPassengerCellDelegate?
     private var currentTrip: RideDataModel.MyTrip?
@@ -130,6 +131,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             hitArea.trailingAnchor.constraint(equalTo: hostNameLabel.trailingAnchor, constant: 4),
         ])
         hitArea.addGestureRecognizer(tap)
+        self.driverHitArea = hitArea
     }
 
     // MARK: – Configure
@@ -226,6 +228,9 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
 
         // Draw route on map
         drawRouteIfNeeded(for: ride)
+
+        // Ensure hit area is above labels/images
+        if let ha = driverHitArea { cardView.bringSubviewToFront(ha) }
     }
 
     // MARK: – Map
@@ -302,9 +307,10 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     }
 
     @objc private func driverRowTapped() {
-        guard let trip = currentTrip,
-              let driver = UserDataModel.shared.getUser(by: trip.ride.driverUserID) else { return }
-        delegate?.passengerCellDidTapDriver(self, driver: driver, ride: trip.ride)
+        guard let trip = currentTrip else { return }
+        let driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)
+        guard let validDriver = driver else { return }
+        delegate?.passengerCellDidTapDriver(self, driver: validDriver, ride: trip.ride)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {

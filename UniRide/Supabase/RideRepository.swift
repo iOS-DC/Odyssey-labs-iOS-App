@@ -387,7 +387,7 @@ final class RideRepository {
         var passengerRides: [Ride] = []
         if !passengerRideIDs.isEmpty {
             let idsStr = passengerRideIDs.map { $0.uuidString }.joined(separator: ",")
-            let url = mgr.restURL(table: "rides", query: "id=in.(\(idsStr))")
+            let url = mgr.restURL(table: "rides", query: "id=in.(\(idsStr))&select=*,profiles!driver_user_id(*)")
             var req = URLRequest(url: url)
             req.allHTTPHeaderFields = mgr.userHeaders
             let (data, response) = try await URLSession.shared.data(for: req)
