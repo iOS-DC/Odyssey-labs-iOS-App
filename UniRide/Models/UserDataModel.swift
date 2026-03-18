@@ -1,25 +1,21 @@
 import Foundation
 
-// Vehicle Types
 enum VehicleType: String, Codable {
     case bike, car, other
 }
 
-// Vehicle Struct
 struct Vehicle: Codable, Equatable {
-    var alias: String? // e.g. "My Swift"
+    var alias: String?
     var type: VehicleType
     var model: String
     var registrationNumber: String
     var seats: Int
 }
 
-// User Role
 enum UserRole: String, Codable {
     case student, faculty
 }
 
-// User Profile Structure
 struct UserProfile: Equatable, Codable {
     let id: UUID
     var email: String
@@ -27,7 +23,7 @@ struct UserProfile: Equatable, Codable {
     var phone: String?
     var fullName: String
     var role: UserRole?
-    var courseName: String? // This will be used as "Department"
+    var courseName: String?
     var year: Int?
     var employeeID: String?
     var photoURL: URL?
@@ -135,7 +131,6 @@ struct UserProfile: Equatable, Codable {
     }
 }
 
-// Singleton Data Manager
 final class UserDataModel {
 
     static let shared = UserDataModel()
@@ -155,7 +150,6 @@ final class UserDataModel {
     private init() {
         archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")
         loadUsers()
-        seedMockUsersIfNeeded()
     }
     func updateUserLocation(_ location: LocationPoint) {
         guard let id = currentUserID,
@@ -483,7 +477,6 @@ final class UserDataModel {
         }
     }
     
-    // TEMP - debug only
     func allUsersForDebugging() -> [(id: String, name: String, email: String?)] {
         return users.map { (id: $0.id.uuidString, name: $0.fullName, email: (Mirror(reflecting: $0).children.first(where: { $0.label == "email" })?.value as? String)) }
     }
@@ -500,29 +493,7 @@ final class UserDataModel {
         }
     }
 
-    // MARK: - Ensure driver profiles exist for ride owners
-    // MARK: - Ensure driver profiles exist (Legacy - now handled by Supabase joins)
     func ensureDriverProfiles(for driverIDs: [UUID]) {
-        // No-op: We now rely on Supabase joins to bundle real profiles with rides/requests.
-        // Generating random mock names here causes identity inconsistency across devices.
-    }
-
-    // MARK: - Mock Users
-    private static let mockUsersSeedKey = "mock_users_seeded"
-
-    private func seedMockUsersIfNeeded() {
-        let seeded = UserDefaults.standard.bool(forKey: UserDataModel.mockUsersSeedKey)
-        let mockIDs = Set(MockData.driverProfiles.map { $0.id })
-        let hasAnyMock = users.contains { mockIDs.contains($0.id) }
-        if seeded && hasAnyMock { return }
-
-        for profile in MockData.driverProfiles {
-            if users.contains(where: { $0.id == profile.id }) { continue }
-            users.append(profile)
-        }
-
-        saveUsers()
-        UserDefaults.standard.set(true, forKey: UserDataModel.mockUsersSeedKey)
     }
 
     private func mapRemoteUserToProfile(_ remote: AuthRemoteUser, fallbackEmail: String) -> UserProfile {
@@ -584,8 +555,6 @@ final class UserDataModel {
         if let v = user.employeeID   { fields["employee_id"] = v }
         if let v = user.photoURL     { fields["photo_url"]   = v.absoluteString }
 
-        // BUG FIX: Sync last-known location to Supabase profiles table.
-        // Previously these columns (last_known_lat/lon/address) were always NULL in Supabase.
         if let loc = user.lastKnownLocation {
             fields["last_known_lat"]     = loc.lat
             fields["last_known_lon"]     = loc.lon
@@ -602,9 +571,6 @@ final class UserDataModel {
             }
         }
 
-        // BUG FIX: Sync ALL saved home locations, not just the primary one.
-        // Previously only user.savedHomeLocation (the first entry) was written, silently
-        // dropping any additional locations the user had saved.
         let homes: [LocationPoint]
         if let all = user.savedHomeLocations, !all.isEmpty {
             homes = all

@@ -5,20 +5,17 @@
 //
 extension Notification.Name {
     static let rideRequestsUpdated = Notification.Name("rideRequestsUpdated")
-    static let ridesUpdated = Notification.Name("ridesUpdated")   // new
-
+    static let ridesUpdated = Notification.Name("ridesUpdated")
 }
 
 
 
 import Foundation
 
-// MARK: - Enums used for ride status and ride request and booking status
 enum RideStatus: String, Codable { case draft, published, ongoing, completed, cancelled }
 enum RideRequestStatus: String, Codable { case pending, approved, denied, cancelled }
 enum BookingStatus: String, Codable { case confirmed, cancelled }
 
-// location point variable
 struct LocationPoint: Codable, Equatable {
     var lat: Double
     var lon: Double
@@ -26,7 +23,7 @@ struct LocationPoint: Codable, Equatable {
 }
 
 struct RideRoute: Codable, Equatable {
-    var coordinates: [LocationPoint]   // ordered coordinates along the polyline
+    var coordinates: [LocationPoint]
     var distanceMeters: Double
     var expectedTravelTime: Double
 }
@@ -38,7 +35,6 @@ struct Ride: Codable, Equatable {
     var destination: LocationPoint
     var waypoints: [LocationPoint]
 
-    // NEW: store chosen route (optional)
     var selectedRoute: RideRoute?
 
     var departureTime: Date
@@ -49,7 +45,6 @@ struct Ride: Codable, Equatable {
     var notes: String?
     let createdAt: Date
  
-    // New: Link to specific vehicle used for this ride
     var vehicleModel: String?
     var registrationPlate: String?
 
@@ -59,7 +54,6 @@ struct Ride: Codable, Equatable {
     /// ISO weekday numbers the ride repeats on (1 = Monday, 7 = Sunday).
     var recurringDays: [Int] = []
 
-    // Bundled profile (added for multi-device consistency)
     var driverProfile: UserProfile?
 
     init(driverUserID: UUID,
@@ -258,16 +252,10 @@ final class RideDataModel {
         requestsURL = documentsDirectory.appendingPathComponent("ride_requests").appendingPathExtension("json")
         bookingsURL = documentsDirectory.appendingPathComponent("ride_bookings").appendingPathExtension("json")
         loadAll()
-        // Only seed mock data when no Supabase session exists (dev/demo mode)
-        if SessionManager.shared.isLoggedIn {
-            removeSeededMockRides()
-        } else {
-            seedMockRidesIfNeeded()
-        }
     }
 
     
-    @discardableResult  //prevents unnecessary warnings like function is unused
+    @discardableResult
   
     func getAllRides() -> [Ride] {
         return rides
@@ -581,10 +569,6 @@ final class RideDataModel {
     }
 
     func approveRequestAsync(requestID: UUID, hostUserID: UUID) async throws {
-        // BUG FIX: Reordered for safer failure handling.
-        // 1. Insert booking first — if this fails, request stays 'pending' (safe to retry)
-        // 2. Update seat count
-        // 3. Mark request 'approved' last — treat this as the commit step
         guard let req = requests.first(where: { $0.id == requestID }),
               let ride = rides.first(where: { $0.id == req.rideID }) else {
             throw NSError(domain: "Rides", code: 404,
@@ -602,10 +586,8 @@ final class RideDataModel {
         let newSeats = max(0, ride.seatsAvailable - req.seats)
         try await RideRepository.shared.updateSeatsAvailable(rideID: ride.id, seats: newSeats)
 
-        // Commit: mark the request approved only after booking + seats are persisted
         try await RideRepository.shared.updateRequestStatus(id: requestID, status: .approved)
  
-        // Mirror the changes in the local cache using the SAME booking object
         approveRequest(requestID: requestID, hostUserID: hostUserID, booking: booking)
     }
 
@@ -916,9 +898,6 @@ final class RideDataModel {
     /// Merges backend rides into local cache without deleting local drafts/request state.
     func mergeRemoteRides(_ incoming: [Ride]) {
         guard !incoming.isEmpty else { return }
-        // BUG FIX: Always replace existing rides with the remote version so updated
-        // seat counts and statuses from Supabase are never ignored by a stale local copy.
-        // Local drafts are preserved because they won't appear in the remote list.
         let localDrafts = rides.filter { $0.status == .draft }
         let remoteIDs = Set(incoming.map { $0.id })
         // Keep only local drafts that haven't been published to Supabase yet
@@ -1053,9 +1032,7 @@ final class RideDataModel {
             saveRides()
             NotificationCenter.default.post(name: .ridesUpdated, object: nil)
 
-            // BUG FIX: Sync the reconciled statuses back to Supabase so other users
-            // always see the correct ride state (previously these changes were local-only).
-            guard !statusChanges.isEmpty else { return }
+        guard !statusChanges.isEmpty else { return }
             Task {
                 for change in statusChanges {
                     try? await RideRepository.shared.updateRideStatus(id: change.id, status: change.status)
@@ -1063,50 +1040,4 @@ final class RideDataModel {
             }
         }
     }
-
-    
-    
-
-// Seed Mock Rides Once
-    private static let mockDataSeedKey = "mock_rides_seeded_v2"
-
-    func seedMockRidesIfNeeded() {
-        // Do not seed mock rides if user is logged into Supabase
-        guard !SessionManager.shared.isLoggedIn else { return }
-        let mockIDs = Set(MockData.driverProfiles.map { $0.id })
-
-        // Re-seed if there are no active (published/ongoing) mock rides left.
-        // This ensures Rides Available never goes empty after a day passes.
-        let hasActiveMockRides = rides.contains {
-            mockIDs.contains($0.driverUserID) &&
-            ($0.status == .published || $0.status == .ongoing)
-        }
-        if hasActiveMockRides { return }
-
-        // Purge all stale mock rides (completed/cancelled from previous seed)
-        rides.removeAll { mockIDs.contains($0.driverUserID) }
-        saveRides()
-
-        print("🌱 Re-seeding mock rides with fresh departure times...")
-
-        for ride in MockData.sampleRides {
-            let created = createRide(ride)
-            publishRide(id: created.id)
-        }
-
-        UserDefaults.standard.set(true, forKey: RideDataModel.mockDataSeedKey)
-        print("✅ Mock rides seeded — \(MockData.sampleRides.count) rides added.")
-    }
-
-    private func removeSeededMockRides() {
-        let mockIDs = Set(MockData.driverProfiles.map { $0.id })
-        let before = rides.count
-        rides.removeAll { mockIDs.contains($0.driverUserID) }
-        if rides.count != before {
-            saveRides()
-            NotificationCenter.default.post(name: .ridesUpdated, object: nil)
-        }
-    }
-
-
 }
