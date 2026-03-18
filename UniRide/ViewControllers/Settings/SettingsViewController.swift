@@ -322,6 +322,9 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
         config.image = UIImage(systemName: item.icon)
         config.imageProperties.tintColor = item.tintColor
         cell.contentConfiguration = config
+        cell.accessoryView = nil
+        cell.accessoryType = .none
+        cell.selectionStyle = .default
 
         if item.toggle != nil {
             let sw = UISwitch()

@@ -14,17 +14,11 @@ final class RoleSelectionViewController: UIViewController {
         applyOnboardingChrome(step: 3, total: 7)
         setupUI()
         updateSelectionUI()
-        setupLogo()
-    }
-
-    private var logoImageView: UIImageView!
-    private func setupLogo() {
-        logoImageView = addOnboardingLogo(above: containerCard)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        animateOnboardingEntrance([logoImageView, containerCard, studentButton, facultyButton, continueButton])
+        animateOnboardingEntrance([containerCard, studentButton, facultyButton, continueButton])
     }
 
     private func setupUI() {

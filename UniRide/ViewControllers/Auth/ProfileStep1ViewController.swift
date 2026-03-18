@@ -43,6 +43,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         super.viewDidLoad()
         title = "Tell us about yourself"
         applyOnboardingChrome(step: 4, total: 7)
+        removeOnboardingLogoIfPresent()
 
         setupUI()
         setupDepartmentDropDownMenu()
@@ -124,6 +125,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
     }
 
     @objc private func formDidChange() {
+        phoneTextField.text = String((phoneTextField.text ?? "").filter(\.isNumber).prefix(10))
         validateContinueAvailability()
     }
 
@@ -135,6 +137,16 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
             textField.resignFirstResponder()
         }
         return true
+    }
+
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        guard textField == phoneTextField else { return true }
+        let allowed = CharacterSet.decimalDigits
+        if string.rangeOfCharacter(from: allowed.inverted) != nil { return false }
+        let current = textField.text ?? ""
+        guard let textRange = Range(range, in: current) else { return false }
+        let updated = current.replacingCharacters(in: textRange, with: string)
+        return updated.filter(\.isNumber).count <= 10
     }
 
     // MARK: - Department Dropdown
@@ -179,7 +191,13 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
 
     // MARK: - Continue
     @IBAction func continuePressed(_ sender: UIButton) {
-        let phone = (phoneTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let phone = (phoneTextField.text ?? "").filter(\.isNumber)
+
+        guard phone.count == 10 else {
+            showOTPStatus("Phone number must be exactly 10 digits", color: AppDesign.Color.destructive)
+            phoneTextField.becomeFirstResponder()
+            return
+        }
 
         let role = activeRole
         let yearText = yearDropDownButton.title(for: .normal)
@@ -191,10 +209,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
             RegistrationBuilder.shared.courseName = dropDownButton.title(for: .normal)
             RegistrationBuilder.shared.year = year
         }
-        // Save phone if provided — verification no longer required
-        if !phone.isEmpty {
-            RegistrationBuilder.shared.phone = phone
-        }
+        RegistrationBuilder.shared.phone = phone
 
         let vc = storyboard?.instantiateViewController(withIdentifier: "ProfileStep2ViewController")
         if let vc { navigationController?.pushViewController(vc, animated: true) }
@@ -211,15 +226,16 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         let name = (fullNameTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let dept = dropDownButton.title(for: .normal) ?? ""
         let hasDepartment = dept != "Select Department" && dept != "Select Course"
+        let hasValidPhone = (phoneTextField.text ?? "").filter(\.isNumber).count == 10
 
         if activeRole == .student {
             let hasYear = Int(yearDropDownButton.title(for: .normal) ?? "") != nil
-            let enabled = !name.isEmpty && hasDepartment && hasYear
+            let enabled = !name.isEmpty && hasDepartment && hasYear && hasValidPhone
             continueButton.setPrimaryCTAEnabled(enabled)
             return
         }
 
-        let enabled = !name.isEmpty && hasDepartment
+        let enabled = !name.isEmpty && hasDepartment && hasValidPhone
         continueButton.setPrimaryCTAEnabled(enabled)
     }
 
@@ -273,7 +289,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         yearDropDownButton.accessibilityLabel = "Year"
         yearDropDownButton.accessibilityHint = "Select your academic year"
         phoneTextField.accessibilityLabel = "Phone number"
-        phoneTextField.accessibilityHint = "Enter your mobile number (optional)"
+        phoneTextField.accessibilityHint = "Enter your 10 digit mobile number"
         continueButton.accessibilityLabel = "Continue"
         continueButton.accessibilityHint = "Proceed to the next step"
     }
