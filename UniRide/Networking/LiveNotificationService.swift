@@ -258,37 +258,31 @@ final class LiveNotificationService {
 
         switch type {
         case .newRequest:
-            let pendingTrip = RideDataModel.shared.myUpcoming(userID: me.id).first {
-                $0.role == .hosting &&
-                $0.ride.id == rideID
-            } ?? RideDataModel.shared.myUpcoming(userID: me.id).first {
-                $0.role == .hosting &&
-                RideDataModel.shared.listRequests(for: $0.ride.id).contains(where: { $0.status == .pending })
-            }
-            guard let pendingTrip else { return }
-
-            let vc = DriverRequestsViewController(trip: pendingTrip)
-            let nav = UINavigationController(rootViewController: vc)
-            if let sheet = nav.sheetPresentationController {
-                sheet.detents = [.medium(), .large()]
-                sheet.prefersGrabberVisible = true
-                sheet.preferredCornerRadius = 24
-            }
-
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 guard let myRidesVC = self.resolveMyRidesViewController(from: tabBar) else { return }
-                myRidesVC.present(nav, animated: true)
+                myRidesVC.syncFromBackend {
+                    let pendingTrip = RideDataModel.shared.myUpcoming(userID: me.id).first {
+                        $0.role == .hosting &&
+                        $0.ride.id == rideID
+                    } ?? RideDataModel.shared.myUpcoming(userID: me.id).first {
+                        $0.role == .hosting &&
+                        RideDataModel.shared.listRequests(for: $0.ride.id).contains(where: { $0.status == .pending })
+                    }
+                    guard let pendingTrip else { return }
+
+                    let vc = DriverRequestsViewController(trip: pendingTrip)
+                    let nav = UINavigationController(rootViewController: vc)
+                    if let sheet = nav.sheetPresentationController {
+                        sheet.detents = [.medium(), .large()]
+                        sheet.prefersGrabberVisible = true
+                        sheet.preferredCornerRadius = 24
+                    }
+                    myRidesVC.present(nav, animated: true)
+                }
             }
         case .requestApproved, .requestDenied, .passengerCancelled, .rideCreated, .rideCancelled, .rideStarted, .rideCompleted, .passengerJoined:
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                guard let targetRideID = rideID else { return }
-                let matchingTrip = RideDataModel.shared.myUpcoming(userID: me.id).first { $0.ride.id == targetRideID }
-                    ?? RideDataModel.shared.myPast(userID: me.id).first { $0.ride.id == targetRideID }
-                guard matchingTrip != nil else { return }
-
-                if let myRidesVC = self.resolveMyRidesViewController(from: tabBar) {
-                    myRidesVC.reloadInputViews()
-                }
+                self.resolveMyRidesViewController(from: tabBar)?.syncFromBackend()
             }
         }
     }
