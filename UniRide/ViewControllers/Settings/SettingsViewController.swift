@@ -87,7 +87,7 @@ final class SettingsViewController: UIViewController {
                             subtitle: nil,
                             tintColor: AppDesign.Color.primary,
                             action: { [weak self] in
-                                self?.openURL("https://uniride.app/privacy")
+                                self?.openURL("http://uni-ride-website-3rti66289-krishbahukhandi35-gmailcoms-projects.vercel.app/support.html")
                             }),
 
                 SettingItem(icon: "doc.text.fill",
@@ -103,6 +103,14 @@ final class SettingsViewController: UIViewController {
                             subtitle: "Download a copy of your account data",
                             tintColor: AppDesign.Color.primary,
                             action: { [weak self] in self?.exportData() }),
+
+                SettingItem(icon: "questionmark.circle.fill",
+                            title: "Support",
+                            subtitle: "Help center and contact information",
+                            tintColor: AppDesign.Color.primary,
+                            action: { [weak self] in
+                                self?.openURL("http://uni-ride-website-3rti66289-krishbahukhandi35-gmailcoms-projects.vercel.app/support.html")
+                            }),
 
                 SettingItem(icon: "trash.fill",
                             title: "Clear Local Cache",

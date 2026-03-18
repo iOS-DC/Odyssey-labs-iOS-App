@@ -134,6 +134,9 @@ struct UserProfile: Equatable, Codable {
 final class UserDataModel {
 
     static let shared = UserDataModel()
+    private static let testerEmail = "testuser@chitkara.edu.in"
+    private static let testerOTP = "111111"
+    private static let testerPassword = "UniRideTester@111"
 
     private let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     private let archiveURL: URL
@@ -238,29 +241,38 @@ final class UserDataModel {
         return sqrt(dx * dx + dy * dy)
     }
 
-    // FUNCTION CALLING IN THE EMAILVIEW CONTROLLER for storing the email and printing the otp
+    private func normalizedEmail(_ raw: String) -> String {
+        raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private func isTesterEmail(_ email: String) -> Bool {
+        email == UserDataModel.testerEmail
+    }
+
     func startEmailVerification(email raw: String) throws {
-        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let email = normalizedEmail(raw)
         guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-        let otp = String(Int.random(in: 100000...999999))
+        let otp = isTesterEmail(email) ? UserDataModel.testerOTP : String(Int.random(in: 100000...999999))
         emailOTPs[email] = otp
         print("DEBUG Email OTP for \(email): \(otp)")
     }
 
     func startEmailVerificationAsync(email raw: String) async throws {
-        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let email = normalizedEmail(raw)
         guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-        // Always use Supabase Auth OTP
+        if isTesterEmail(email) {
+            emailOTPs[email] = UserDataModel.testerOTP
+            return
+        }
         try await AuthService.shared.sendEmailOTP(email: email)
     }
 
-    // Function Verifying The otp. Called in the otp view controller
     func verifyEmailOTP(email: String, code: String) throws -> UserProfile? {
         guard let sent = emailOTPs[email.lowercased()] else {
             throw NSError(domain: "Login", code: 404,
@@ -285,31 +297,34 @@ final class UserDataModel {
     }
 
     func verifyEmailOTPAsync(email rawEmail: String, code: String) async throws -> UserProfile? {
-        let email = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let email = normalizedEmail(rawEmail)
 
-        // Always verify via Supabase Auth
-        try await AuthService.shared.verifyEmailOTP(email: email, token: code)
+        if isTesterEmail(email) {
+            guard code == UserDataModel.testerOTP else {
+                throw NSError(domain: "Login", code: 403,
+                              userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
+            }
+            try await AuthService.shared.signInWithPassword(
+                email: email,
+                password: UserDataModel.testerPassword
+            )
+        } else {
+            try await AuthService.shared.verifyEmailOTP(email: email, token: code)
+        }
 
-        // Session is now stored. Try to fetch existing profile from Supabase.
         guard let uid = SessionManager.shared.userID else { return nil }
 
-        // fetchProfile returns [String:Any]? — try? makes it [String:Any]??
-        // Flatten both Optional layers: nil outer = network error, nil inner = no row
         let fetchedRow = try? await ProfileRepository.shared.fetchProfile(userID: uid)
         guard let row = fetchedRow ?? nil, !row.isEmpty else {
-            // No profile row yet — brand new user, continue onboarding
             return nil
         }
 
-        // Build local profile from the Supabase row
         var profile = profileFromRow(row, fallbackEmail: email, uid: uid)
 
-        // Hydrate vehicles from user_vehicles table
         if let vehicles = try? await ProfileRepository.shared.fetchVehicles(userID: uid) {
             profile.vehicles = vehicles
         }
 
-        // Hydrate home locations from home_locations table
         let homes = (try? await ProfileRepository.shared.fetchHomeLocations(userID: uid)) ?? []
         if !homes.isEmpty {
             profile.savedHomeLocations = homes

@@ -61,6 +61,40 @@ final class AuthService {
                      expiresAt: expiresAt, preserveLoginDate: false)
     }
 
+    func signInWithPassword(email: String, password: String) async throws {
+        var components = URLComponents(url: mgr.authURL(path: "token"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "grant_type", value: "password")]
+        let url = components.url!
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.allHTTPHeaderFields = mgr.anonHeaders
+        req.httpBody = try JSONSerialization.data(withJSONObject: [
+            "email": email,
+            "password": password
+        ])
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkHTTP(response, data: data)
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let at = json["access_token"] as? String,
+              let rt = json["refresh_token"] as? String,
+              let userObj = json["user"] as? [String: Any],
+              let idStr = userObj["id"] as? String,
+              let uid = UUID(uuidString: idStr) else {
+            throw AuthError.invalidResponse
+        }
+
+        let resolvedEmail = (userObj["email"] as? String) ?? email
+        var expiresAt: Date? = nil
+        if let exp = json["expires_at"] as? TimeInterval {
+            expiresAt = Date(timeIntervalSince1970: exp)
+        }
+
+        session.save(accessToken: at, refreshToken: rt, userID: uid, email: resolvedEmail,
+                     expiresAt: expiresAt, preserveLoginDate: false)
+    }
+
     // MARK: - Sign out
 
     func signOut() async throws {
