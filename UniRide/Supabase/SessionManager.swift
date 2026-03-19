@@ -92,7 +92,9 @@ final class SessionManager {
     /// Refreshes the access token only if it is expired (or close to expiry).
     func refreshIfNeeded() async {
         guard isLoggedIn, isAccessTokenExpired, let rt = refreshToken else { return }
-        let url = SupabaseManager.shared.authURL(path: "token?grant_type=refresh_token")
+        var components = URLComponents(url: SupabaseManager.shared.authURL(path: "token"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "grant_type", value: "refresh_token")]
+        let url = components.url!
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.allHTTPHeaderFields = SupabaseManager.shared.anonHeaders

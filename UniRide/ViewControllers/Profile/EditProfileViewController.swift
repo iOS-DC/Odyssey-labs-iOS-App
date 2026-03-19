@@ -2,7 +2,8 @@ import UIKit
 
 class EditProfileViewController: UIViewController,
                                   UIImagePickerControllerDelegate,
-                                  UINavigationControllerDelegate {
+                                  UINavigationControllerDelegate,
+                                  UITextFieldDelegate {
 
     // MARK: - State
     private var newPhotoURL: URL? = nil
@@ -415,6 +416,7 @@ class EditProfileViewController: UIViewController,
         field.applyRoundedField()
         field.font            = AppDesign.Typography.subheadline
         field.keyboardType    = keyboardType
+        field.delegate        = self
         field.autocorrectionType = .no
         field.autocapitalizationType = keyboardType == .default ? .words : .none
         field.attributedPlaceholder = NSAttributedString(string: placeholder,
@@ -433,6 +435,13 @@ class EditProfileViewController: UIViewController,
         let rightPad          = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 52))
         field.rightView       = rightPad
         field.rightViewMode   = .always
+        if field == phoneField {
+            field.addTarget(self, action: #selector(phoneFieldDidChange), for: .editingChanged)
+        }
+    }
+
+    @objc private func phoneFieldDidChange() {
+        phoneField.text = String((phoneField.text ?? "").filter(\.isNumber).prefix(10))
     }
 
     private func centeredView(_ child: UIView) -> UIView {
@@ -494,6 +503,11 @@ class EditProfileViewController: UIViewController,
 
         guard !newName.isEmpty else {
             showAlert(title: "Name Required", message: "Please enter your full name.")
+            return
+        }
+
+        guard newPhone.count == 10, CharacterSet.decimalDigits.isSuperset(of: CharacterSet(charactersIn: newPhone)) else {
+            showAlert(title: "Invalid Phone Number", message: "Phone number must be exactly 10 digits.")
             return
         }
 
@@ -597,5 +611,15 @@ class EditProfileViewController: UIViewController,
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
+    }
+
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        guard textField == phoneField else { return true }
+        let allowed = CharacterSet.decimalDigits
+        if string.rangeOfCharacter(from: allowed.inverted) != nil { return false }
+        let current = textField.text ?? ""
+        guard let textRange = Range(range, in: current) else { return false }
+        let updated = current.replacingCharacters(in: textRange, with: string)
+        return updated.count <= 10
     }
 }

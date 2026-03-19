@@ -2,26 +2,11 @@ import Foundation
 import UIKit
 import UserNotifications
 
-// MARK: - PushNotificationService
-// ─────────────────────────────────────────────────────────────────────────────
-// Full APNs lifecycle manager for UniRide.
-//
-// Responsibilities
-//   1. Request notification permission at the right moment.
-//   2. Capture the APNs device token and store it in Supabase `push_tokens`.
-//   3. Expose a `send(to:title:body:data:)` method that calls the
-//      Supabase Edge Function `notify-user` to push a notification to a
-//      specific user across all their registered devices.
-//   4. Create a `UNMutableNotificationContent` helper for local fallback
-//      (shown when the triggering user's own device receives the push).
-// ─────────────────────────────────────────────────────────────────────────────
-
 final class PushNotificationService: NSObject {
 
     static let shared = PushNotificationService()
     private override init() { super.init() }
 
-    // Edge Function endpoint — adjust if your project slug differs
     private var edgeFunctionURL: URL {
         let base = BackendConfig.baseURL?.absoluteString
             ?? "https://jobxehwerpvedlfkbfoi.supabase.co"
@@ -47,7 +32,6 @@ final class PushNotificationService: NSObject {
     func didRegister(deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
         UserDefaults.standard.set(token, forKey: "apns_device_token")
-        // Upload to Supabase asynchronously
         Task { try? await self.upsertDeviceToken(token) }
     }
 
@@ -185,7 +169,6 @@ extension PushNotificationService: UNUserNotificationCenterDelegate {
         let action   = userInfo["action"] as? String ?? ""
 
         DispatchQueue.main.async {
-            // Deep-link to the relevant tab based on the notification payload
             guard let scene = UIApplication.shared.connectedScenes
                     .compactMap({ $0 as? UIWindowScene }).first,
                   let root  = scene.windows.first?.rootViewController else {
@@ -193,7 +176,6 @@ extension PushNotificationService: UNUserNotificationCenterDelegate {
                 return
             }
 
-            // Resolve the tab bar (may be embedded in a nav controller)
             let tabBar: UITabBarController?
             if let tb  = root as? UITabBarController { tabBar = tb }
             else if let nav = root as? UINavigationController,
@@ -203,11 +185,11 @@ extension PushNotificationService: UNUserNotificationCenterDelegate {
             switch action {
             case "new_request", "request_approved", "request_denied", "passenger_joined", "passenger_cancelled",
                  "ride_created", "ride_cancelled", "ride_started", "ride_completed":
-                tabBar?.selectedIndex = 1   // My Rides tab
+                tabBar?.selectedIndex = 1
             case "new_message":
-                tabBar?.selectedIndex = 1   // also My Rides (chat lives there)
+                tabBar?.selectedIndex = 1
             default:
-                tabBar?.selectedIndex = 0   // Home
+                tabBar?.selectedIndex = 0
             }
         }
 

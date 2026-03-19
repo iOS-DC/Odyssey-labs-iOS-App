@@ -1,25 +1,21 @@
 import Foundation
 
-// Vehicle Types
 enum VehicleType: String, Codable {
     case bike, car, other
 }
 
-// Vehicle Struct
 struct Vehicle: Codable, Equatable {
-    var alias: String? // e.g. "My Swift"
+    var alias: String?
     var type: VehicleType
     var model: String
     var registrationNumber: String
     var seats: Int
 }
 
-// User Role
 enum UserRole: String, Codable {
     case student, faculty
 }
 
-// User Profile Structure
 struct UserProfile: Equatable, Codable {
     let id: UUID
     var email: String
@@ -27,7 +23,7 @@ struct UserProfile: Equatable, Codable {
     var phone: String?
     var fullName: String
     var role: UserRole?
-    var courseName: String? // This will be used as "Department"
+    var courseName: String?
     var year: Int?
     var employeeID: String?
     var photoURL: URL?
@@ -135,10 +131,12 @@ struct UserProfile: Equatable, Codable {
     }
 }
 
-// Singleton Data Manager
 final class UserDataModel {
 
     static let shared = UserDataModel()
+    private static let testerEmail = "testuser@chitkara.edu.in"
+    private static let testerOTP = "111111"
+    private static let testerPassword = "UniRideTester@111"
 
     private let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     private let archiveURL: URL
@@ -155,7 +153,6 @@ final class UserDataModel {
     private init() {
         archiveURL = documentsDirectory.appendingPathComponent("users").appendingPathExtension("json")
         loadUsers()
-        seedMockUsersIfNeeded()
     }
     func updateUserLocation(_ location: LocationPoint) {
         guard let id = currentUserID,
@@ -244,29 +241,38 @@ final class UserDataModel {
         return sqrt(dx * dx + dy * dy)
     }
 
-    // FUNCTION CALLING IN THE EMAILVIEW CONTROLLER for storing the email and printing the otp
+    private func normalizedEmail(_ raw: String) -> String {
+        raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private func isTesterEmail(_ email: String) -> Bool {
+        email == UserDataModel.testerEmail
+    }
+
     func startEmailVerification(email raw: String) throws {
-        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let email = normalizedEmail(raw)
         guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-        let otp = String(Int.random(in: 100000...999999))
+        let otp = isTesterEmail(email) ? UserDataModel.testerOTP : String(Int.random(in: 100000...999999))
         emailOTPs[email] = otp
         print("DEBUG Email OTP for \(email): \(otp)")
     }
 
     func startEmailVerificationAsync(email raw: String) async throws {
-        let email = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let email = normalizedEmail(raw)
         guard email.hasSuffix("@chitkara.edu.in") || email.hasSuffix("@chitkarauniversity.edu.in") else {
             throw NSError(domain: "Login", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "Please use your Chitkara email only"])
         }
-        // Always use Supabase Auth OTP
+        if isTesterEmail(email) {
+            emailOTPs[email] = UserDataModel.testerOTP
+            return
+        }
         try await AuthService.shared.sendEmailOTP(email: email)
     }
 
-    // Function Verifying The otp. Called in the otp view controller
     func verifyEmailOTP(email: String, code: String) throws -> UserProfile? {
         guard let sent = emailOTPs[email.lowercased()] else {
             throw NSError(domain: "Login", code: 404,
@@ -291,31 +297,34 @@ final class UserDataModel {
     }
 
     func verifyEmailOTPAsync(email rawEmail: String, code: String) async throws -> UserProfile? {
-        let email = rawEmail.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let email = normalizedEmail(rawEmail)
 
-        // Always verify via Supabase Auth
-        try await AuthService.shared.verifyEmailOTP(email: email, token: code)
+        if isTesterEmail(email) {
+            guard code == UserDataModel.testerOTP else {
+                throw NSError(domain: "Login", code: 403,
+                              userInfo: [NSLocalizedDescriptionKey: "Incorrect OTP"])
+            }
+            try await AuthService.shared.signInWithPassword(
+                email: email,
+                password: UserDataModel.testerPassword
+            )
+        } else {
+            try await AuthService.shared.verifyEmailOTP(email: email, token: code)
+        }
 
-        // Session is now stored. Try to fetch existing profile from Supabase.
         guard let uid = SessionManager.shared.userID else { return nil }
 
-        // fetchProfile returns [String:Any]? — try? makes it [String:Any]??
-        // Flatten both Optional layers: nil outer = network error, nil inner = no row
         let fetchedRow = try? await ProfileRepository.shared.fetchProfile(userID: uid)
         guard let row = fetchedRow ?? nil, !row.isEmpty else {
-            // No profile row yet — brand new user, continue onboarding
             return nil
         }
 
-        // Build local profile from the Supabase row
         var profile = profileFromRow(row, fallbackEmail: email, uid: uid)
 
-        // Hydrate vehicles from user_vehicles table
         if let vehicles = try? await ProfileRepository.shared.fetchVehicles(userID: uid) {
             profile.vehicles = vehicles
         }
 
-        // Hydrate home locations from home_locations table
         let homes = (try? await ProfileRepository.shared.fetchHomeLocations(userID: uid)) ?? []
         if !homes.isEmpty {
             profile.savedHomeLocations = homes
@@ -483,7 +492,6 @@ final class UserDataModel {
         }
     }
     
-    // TEMP - debug only
     func allUsersForDebugging() -> [(id: String, name: String, email: String?)] {
         return users.map { (id: $0.id.uuidString, name: $0.fullName, email: (Mirror(reflecting: $0).children.first(where: { $0.label == "email" })?.value as? String)) }
     }
@@ -500,29 +508,7 @@ final class UserDataModel {
         }
     }
 
-    // MARK: - Ensure driver profiles exist for ride owners
-    // MARK: - Ensure driver profiles exist (Legacy - now handled by Supabase joins)
     func ensureDriverProfiles(for driverIDs: [UUID]) {
-        // No-op: We now rely on Supabase joins to bundle real profiles with rides/requests.
-        // Generating random mock names here causes identity inconsistency across devices.
-    }
-
-    // MARK: - Mock Users
-    private static let mockUsersSeedKey = "mock_users_seeded"
-
-    private func seedMockUsersIfNeeded() {
-        let seeded = UserDefaults.standard.bool(forKey: UserDataModel.mockUsersSeedKey)
-        let mockIDs = Set(MockData.driverProfiles.map { $0.id })
-        let hasAnyMock = users.contains { mockIDs.contains($0.id) }
-        if seeded && hasAnyMock { return }
-
-        for profile in MockData.driverProfiles {
-            if users.contains(where: { $0.id == profile.id }) { continue }
-            users.append(profile)
-        }
-
-        saveUsers()
-        UserDefaults.standard.set(true, forKey: UserDataModel.mockUsersSeedKey)
     }
 
     private func mapRemoteUserToProfile(_ remote: AuthRemoteUser, fallbackEmail: String) -> UserProfile {
@@ -584,8 +570,6 @@ final class UserDataModel {
         if let v = user.employeeID   { fields["employee_id"] = v }
         if let v = user.photoURL     { fields["photo_url"]   = v.absoluteString }
 
-        // BUG FIX: Sync last-known location to Supabase profiles table.
-        // Previously these columns (last_known_lat/lon/address) were always NULL in Supabase.
         if let loc = user.lastKnownLocation {
             fields["last_known_lat"]     = loc.lat
             fields["last_known_lon"]     = loc.lon
@@ -602,9 +586,6 @@ final class UserDataModel {
             }
         }
 
-        // BUG FIX: Sync ALL saved home locations, not just the primary one.
-        // Previously only user.savedHomeLocation (the first entry) was written, silently
-        // dropping any additional locations the user had saved.
         let homes: [LocationPoint]
         if let all = user.savedHomeLocations, !all.isEmpty {
             homes = all

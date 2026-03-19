@@ -118,6 +118,7 @@ extension UIViewController {
     @discardableResult
     func addOnboardingLogo(above container: UIView, offset: CGFloat = AppDesign.Spacing.xl) -> UIImageView {
         let logoImageView = UIImageView()
+        logoImageView.accessibilityIdentifier = "OnboardingLogo"
         logoImageView.image = UIImage(named: "Logo")
         logoImageView.contentMode = .scaleAspectFit
         logoImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -130,5 +131,12 @@ extension UIViewController {
             logoImageView.heightAnchor.constraint(equalToConstant: 160)
         ])
         return logoImageView
+    }
+
+    func removeOnboardingLogoIfPresent() {
+        view.subviews
+            .compactMap { $0 as? UIImageView }
+            .filter { $0.accessibilityIdentifier == "OnboardingLogo" }
+            .forEach { $0.removeFromSuperview() }
     }
 }
