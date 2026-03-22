@@ -42,7 +42,7 @@ class ProfileViewController: UIViewController {
     // MARK: - Loading skeleton
     private lazy var skeletonOverlay: UIView = {
         let v = UIView()
-        v.backgroundColor = .systemGroupedBackground
+        v.backgroundColor = AppDesign.Color.groupedBackground
         v.translatesAutoresizingMaskIntoConstraints = false
         let spinner = UIActivityIndicatorView(style: .medium)
         spinner.translatesAutoresizingMaskIntoConstraints = false
@@ -86,7 +86,7 @@ class ProfileViewController: UIViewController {
 
     // MARK: - Build scroll layout
     private func buildScrollLayout() {
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = AppDesign.Color.groupedBackground
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.alwaysBounceVertical = true

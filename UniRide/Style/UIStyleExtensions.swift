@@ -45,6 +45,13 @@ enum AppDesign {
     enum Color {
         static let primary = UIColor.systemBlue
         static let surface = UIColor.systemBackground
+        static let elevatedSurface = UIColor.secondarySystemBackground
+        static let groupedBackground = UIColor { trait in
+            if trait.userInterfaceStyle == .dark {
+                return UIColor(red: 0.07, green: 0.09, blue: 0.12, alpha: 1.0)
+            }
+            return UIColor(named: "Color") ?? UIColor.systemGroupedBackground
+        }
         static let border = UIColor.systemGray4
         static let fieldBackground = UIColor.secondarySystemBackground
         static let progressTrack = UIColor.systemGray5
@@ -52,6 +59,11 @@ enum AppDesign {
         static let success = UIColor.systemGreen
         static let destructive = UIColor.systemRed
         static let warning = UIColor.systemOrange
+        static let shadow = UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor.black.withAlphaComponent(0.35)
+                : UIColor.black.withAlphaComponent(0.12)
+        }
     }
 
     enum Typography {
@@ -143,7 +155,7 @@ extension UIView {
         layer.cornerRadius = corner
         layer.masksToBounds = false
 
-        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowColor = AppDesign.Color.shadow.cgColor
         layer.shadowOpacity = shadowOpacity
         layer.shadowRadius = shadowRadius
         layer.shadowOffset = shadowOffset
@@ -155,11 +167,42 @@ extension UIView {
         layer.cornerRadius = corner
         layer.masksToBounds = false
 
-        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowColor = AppDesign.Color.shadow.cgColor
         layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
         layer.shadowRadius = AppDesign.Shadow.smallCardRadius
         layer.shadowOffset = AppDesign.Shadow.smallCardOffset
-        backgroundColor = AppDesign.Color.surface
+        backgroundColor = AppDesign.Color.elevatedSurface
+    }
+}
+
+enum AppTheme {
+    static func applyGlobalAppearance() {
+        let navigationAppearance = UINavigationBarAppearance()
+        navigationAppearance.configureWithOpaqueBackground()
+        navigationAppearance.backgroundColor = AppDesign.Color.surface
+        navigationAppearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+        navigationAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+        navigationAppearance.shadowColor = .clear
+
+        UINavigationBar.appearance().standardAppearance = navigationAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navigationAppearance
+        UINavigationBar.appearance().compactAppearance = navigationAppearance
+        UINavigationBar.appearance().tintColor = AppDesign.Color.primary
+
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithOpaqueBackground()
+        tabAppearance.backgroundColor = AppDesign.Color.surface
+        tabAppearance.shadowColor = .clear
+
+        UITabBar.appearance().standardAppearance = tabAppearance
+        if #available(iOS 15.0, *) {
+            UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+        }
+        UITabBar.appearance().tintColor = AppDesign.Color.primary
+
+        UISegmentedControl.appearance().selectedSegmentTintColor = AppDesign.Color.primary
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.label], for: .normal)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
     }
 }
 
@@ -512,4 +555,3 @@ extension UIImageView {
         }
     }
 }
-

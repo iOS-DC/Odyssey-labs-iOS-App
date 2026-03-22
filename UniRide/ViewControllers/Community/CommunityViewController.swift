@@ -80,6 +80,7 @@ class CommunityViewController: UIViewController,
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = AppDesign.Color.groupedBackground
         // Feed is now entirely driven by Supabase. 
         // fetchPostsFromSupabase() is called below.
         tableView.reloadData()
@@ -102,7 +103,7 @@ class CommunityViewController: UIViewController,
         tableView.delegate = self
         tableView.dataSource = self
         tableView.separatorStyle = .none
-        tableView.backgroundColor = .systemGroupedBackground
+        tableView.backgroundColor = AppDesign.Color.groupedBackground
         tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
         tableView.showsVerticalScrollIndicator = false
         

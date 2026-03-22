@@ -28,7 +28,7 @@ class JoinRideViewController: UIViewController,
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Find Ride"
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = AppDesign.Color.groupedBackground
 
         // Hide the storyboard card — we build our own layout
         contentView?.isHidden = true
@@ -123,7 +123,6 @@ class JoinRideViewController: UIViewController,
 
     private func makeCard(title: String, content: UIView) -> UIView {
         let card = UIView()
-        card.backgroundColor = .systemBackground
         card.applyCardStyle(corner: AppDesign.Radius.md,
                             shadowOpacity: AppDesign.Shadow.smallCardOpacity,
                             shadowRadius: AppDesign.Shadow.smallCardRadius)

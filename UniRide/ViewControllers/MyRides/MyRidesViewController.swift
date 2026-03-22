@@ -73,6 +73,8 @@ final class MyRidesViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = AppDesign.Color.groupedBackground
+        tableView.backgroundColor = AppDesign.Color.groupedBackground
         setupTableView()
         setupRefreshControl()
         setupFilterButton()
