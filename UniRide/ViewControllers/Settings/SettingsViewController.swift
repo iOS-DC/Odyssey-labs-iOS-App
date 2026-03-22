@@ -33,7 +33,7 @@ final class SettingsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Settings"
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = AppDesign.Color.groupedBackground
         navigationItem.largeTitleDisplayMode = .never
         buildSections()
         setupTableView()
@@ -160,7 +160,7 @@ final class SettingsViewController: UIViewController {
         tableView.delegate   = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "SettingCell")
-        tableView.backgroundColor = .systemGroupedBackground
+        tableView.backgroundColor = AppDesign.Color.groupedBackground
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),

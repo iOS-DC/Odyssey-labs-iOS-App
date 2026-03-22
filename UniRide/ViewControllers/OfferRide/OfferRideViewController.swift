@@ -67,7 +67,7 @@ class OfferRideViewController: UIViewController,
         super.viewDidLoad()
         title = "Step 1"
         setDefaultDateAndTime()
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = AppDesign.Color.groupedBackground
         setupAutocomplete()
         setupPickers()
         rebuildLayout()

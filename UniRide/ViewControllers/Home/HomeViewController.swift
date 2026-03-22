@@ -27,7 +27,8 @@ class HomeViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        homeTableView.backgroundColor = UIColor(named: "Color")
+        view.backgroundColor = AppDesign.Color.groupedBackground
+        homeTableView.backgroundColor = AppDesign.Color.groupedBackground
         configureQuickActions()
         configureScrollingHeader()
         setupTable()
