@@ -42,6 +42,8 @@ class CommunityViewController: UIViewController,
     private let refreshControl = UIRefreshControl()
     /// Tracks posts currently being liked/unliked to prevent auto-refresh flickers
     private var pendingLikeOperations: Set<UUID> = []
+    private var pendingCommentOperations: Set<UUID> = []
+    private var pendingShareOperations: Set<UUID> = []
 
     // MARK: - Models
     struct Post {
@@ -513,7 +515,11 @@ class CommunityViewController: UIViewController,
 
         guard let index = selectedPostIndex, let postID = feedPosts[index].remoteID else { return }
 
+        self.pendingCommentOperations.insert(postID)
         Task {
+            defer {
+                Task { @MainActor in self.pendingCommentOperations.remove(postID) }
+            }
             let cleanedText = ProfanityFilter.shared.clean(text)
             // 1. Write to Supabase and get the new definitive total count
             if let newCount = try? await CommunityRepository.shared.insertComment(postID: postID, text: cleanedText) {
@@ -611,14 +617,24 @@ class CommunityViewController: UIViewController,
             
             self.showSystemShareSheet(items: [textToShare])
             
+            guard let postID = post.remoteID else { return }
+
+            // Optimistic UI for shares
+            self.feedPosts[index].shareCount += 1
+            self.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+            self.pendingShareOperations.insert(postID)
+
             // Backend Sync
             Task {
-                guard let postID = post.remoteID else { return }
+                defer {
+                    Task { @MainActor in self.pendingShareOperations.remove(postID) }
+                }
                 if let newCount = try? await CommunityRepository.shared.recordShare(postID: postID) {
                     await MainActor.run {
-                        if self.currentPostIndex < self.feedPosts.count {
-                            self.feedPosts[self.currentPostIndex].shareCount = newCount
-                            self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
+                        // Resync with backend truth
+                        if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                            self.feedPosts[i].shareCount = newCount
+                            self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
                         }
                     }
                 }
@@ -795,11 +811,15 @@ class CommunityViewController: UIViewController,
                     guard let remoteID = mapped[i].remoteID else { continue }
                     
                     if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }) {
-                        // TRUTH MERGE: Trust the server count by default.
-                        // We ONLY overwrite if we have a currently pending operation.
                         if self.pendingLikeOperations.contains(remoteID) {
                             mapped[i].hasLiked  = existing.hasLiked
                             mapped[i].likeCount = existing.likeCount
+                        }
+                        if self.pendingCommentOperations.contains(remoteID) {
+                            mapped[i].commentCount = existing.commentCount
+                        }
+                        if self.pendingShareOperations.contains(remoteID) {
+                            mapped[i].shareCount = existing.shareCount
                         }
                         
                         // Small aesthetic fix: if existing post was already rendered, 
@@ -1080,8 +1100,12 @@ class CommunityViewController: UIViewController,
                 self.liveCommunityComments.remove(at: indexPath.row)
                 tableView.deleteRows(at: [indexPath], with: .fade)
 
+                self.pendingCommentOperations.insert(postID)
                 // 2. Delete from Supabase and update global count
                 Task {
+                    defer {
+                        Task { @MainActor in self.pendingCommentOperations.remove(postID) }
+                    }
                     do {
                         let newCount = try await CommunityRepository.shared.deleteComment(commentID: comment.id, postID: postID)
                         await MainActor.run {
@@ -1094,7 +1118,6 @@ class CommunityViewController: UIViewController,
                         completion(true)
                     } catch {
                         completion(false)
-                        // If delete failed, you could optionally re-fetch comments here
                     }
                 }
             }
