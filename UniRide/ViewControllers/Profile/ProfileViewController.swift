@@ -7,6 +7,11 @@ class ProfileViewController: UIViewController {
     private let scrollView   = UIScrollView()
     private let contentStack = UIStackView()
 
+    // MARK: - Custom Header
+    private let customHeaderView  = UIView()
+    private let headerTitleLabel  = UILabel()
+    private let headerGearButton  = UIButton(type: .system)
+
     // Pull-to-refresh
     private let refreshControl = UIRefreshControl()
 
@@ -58,26 +63,69 @@ class ProfileViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavBar()
+        setupCustomHeader()
         buildScrollLayout()
         setupRefreshControl()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationController?.setNavigationBarHidden(true, animated: animated)
         loadProfile()
     }
 
-    // MARK: - Nav Bar
-    private func setupNavBar() {
-        title = "Profile"
-        navigationItem.largeTitleDisplayMode = .always
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "gearshape.fill"),
-            style: .plain, target: self, action: #selector(settingsTapped)
-        )
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        // Restore default nav bar appearance
+        let defaultAppearance = UINavigationBarAppearance()
+        defaultAppearance.configureWithDefaultBackground()
+        navigationController?.navigationBar.standardAppearance = defaultAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = defaultAppearance
+        navigationController?.navigationBar.compactAppearance = nil
+    }
+
+    // MARK: - Custom Header (title + gear button on same line)
+    private func setupCustomHeader() {
+        navigationItem.title = nil          // clear so the nav bar shows no title
+        navigationItem.largeTitleDisplayMode = .never
+
+        customHeaderView.translatesAutoresizingMaskIntoConstraints = false
+        customHeaderView.backgroundColor = .clear
+        view.addSubview(customHeaderView)
+
+        // "Profile" title label
+        headerTitleLabel.text = "Profile"
+        headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
+        headerTitleLabel.textColor = .label
+        headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // Gear (settings) button
+        var cfg = UIButton.Configuration.plain()
+        cfg.image = UIImage(systemName: "gearshape.fill",
+                            withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .medium))
+        cfg.baseForegroundColor = AppDesign.Color.primary
+        headerGearButton.configuration = cfg
+        headerGearButton.translatesAutoresizingMaskIntoConstraints = false
+        headerGearButton.addTarget(self, action: #selector(settingsTapped), for: .touchUpInside)
+
+        customHeaderView.addSubview(headerTitleLabel)
+        customHeaderView.addSubview(headerGearButton)
+
+        NSLayoutConstraint.activate([
+            customHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            customHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            customHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            customHeaderView.heightAnchor.constraint(equalToConstant: 44),
+
+            headerTitleLabel.leadingAnchor.constraint(equalTo: customHeaderView.leadingAnchor),
+            headerTitleLabel.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+
+            headerGearButton.trailingAnchor.constraint(equalTo: customHeaderView.trailingAnchor),
+            headerGearButton.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+            headerGearButton.widthAnchor.constraint(equalToConstant: 36),
+            headerGearButton.heightAnchor.constraint(equalToConstant: 36),
+        ])
     }
 
     // MARK: - Build scroll layout
@@ -88,7 +136,7 @@ class ProfileViewController: UIViewController {
         scrollView.alwaysBounceVertical = true
         view.addSubview(scrollView)
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: customHeaderView.bottomAnchor, constant: 4),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -480,13 +528,13 @@ class ProfileViewController: UIViewController {
         tabBarItem.badgeValue = nil
         completionBanner?.removeFromSuperview()
         
-        // Hide edit buttons
-        navigationItem.rightBarButtonItem?.isEnabled = false
+        // Hide settings button
+        headerGearButton.isEnabled = false
     }
 
     private func applyProfile(_ profile: UserProfile) {
         guestSignInButton.isHidden = true
-        navigationItem.rightBarButtonItem?.isEnabled = true
+        headerGearButton.isEnabled = true
 
         // Avatar — force a known size so loadAndFallback generates correct initials image
         // (view may not be laid out yet on first viewWillAppear call)

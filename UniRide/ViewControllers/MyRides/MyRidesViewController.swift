@@ -73,8 +73,8 @@ final class MyRidesViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "My Rides"
-        navigationItem.largeTitleDisplayMode = .always
+        navigationItem.title = nil
+        navigationItem.largeTitleDisplayMode = .never
         view.backgroundColor = AppDesign.Color.groupedBackground
         tableView.backgroundColor = AppDesign.Color.groupedBackground
         setupTableView()
@@ -106,12 +106,30 @@ final class MyRidesViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationController?.navigationBar.prefersLargeTitles = false
+        // Make nav bar blend with the view background
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = AppDesign.Color.groupedBackground
+        appearance.shadowColor = .clear
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.compactAppearance = appearance
         reloadTrips()
         refreshBellBadge()
         if let me = UserDataModel.shared.getCurrentUser() {
             Task { await AppNotificationModel.shared.refreshFromBackend(for: me.id) }
         }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Restore default nav bar appearance
+        let defaultAppearance = UINavigationBarAppearance()
+        defaultAppearance.configureWithDefaultBackground()
+        navigationController?.navigationBar.standardAppearance = defaultAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = defaultAppearance
+        navigationController?.navigationBar.compactAppearance = nil
     }
 
     override func viewDidAppear(_ animated: Bool) {

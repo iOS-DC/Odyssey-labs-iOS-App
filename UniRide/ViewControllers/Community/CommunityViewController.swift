@@ -37,6 +37,10 @@ class CommunityViewController: UIViewController,
     private var liveCommentAuthorNames: [UUID: String] = [:]
     
     private var newPostBarButton: UIBarButtonItem?
+    /// Custom header view holding the "Community" title + plus button.
+    private let customHeaderView = UIView()
+    private let headerTitleLabel = UILabel()
+    private let headerPlusButton = UIButton(type: .system)
     /// Polls Supabase every 30 s so likes/comments from other users appear automatically.
     private var refreshTimer: Timer?
     private let refreshControl = UIRefreshControl()
@@ -80,8 +84,10 @@ class CommunityViewController: UIViewController,
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Community"
-        navigationItem.largeTitleDisplayMode = .always
+        // Use .inline so the navbar stays compact — heading lives in our custom header row
+        navigationItem.title = nil          // clear so the nav bar shows no text
+        navigationItem.largeTitleDisplayMode = .never
+        setupCustomHeader()
         view.backgroundColor = AppDesign.Color.groupedBackground
         // Feed is now entirely driven by Supabase. 
         // fetchPostsFromSupabase() is called below.
@@ -136,8 +142,9 @@ class CommunityViewController: UIViewController,
         setupPopupUI()
         setupNewPostUI()
         
-        // Save reference to button
-        newPostBarButton = navigationItem.rightBarButtonItem
+        // Plus button is now in customHeaderView; remove any storyboard bar button
+        navigationItem.rightBarButtonItem = nil
+        newPostBarButton = nil
         
         // Initial visibility check for the plus button
         segmentChanged(segmentedControl)
@@ -147,8 +154,7 @@ class CommunityViewController: UIViewController,
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationController?.setNavigationBarHidden(true, animated: animated)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
         // Mock events as requested for better visual demonstration
@@ -160,6 +166,7 @@ class CommunityViewController: UIViewController,
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
         NotificationCenter.default.removeObserver(self)
         stopFeedRefreshTimer()
     }
@@ -209,6 +216,60 @@ class CommunityViewController: UIViewController,
         }
     }
     
+    // MARK: - Custom Header (title + plus button on same line)
+    func setupCustomHeader() {
+        customHeaderView.translatesAutoresizingMaskIntoConstraints = false
+        customHeaderView.backgroundColor = .clear
+        view.addSubview(customHeaderView)
+
+        // "Community" title label – large, bold, left-aligned
+        headerTitleLabel.text = "Community"
+        headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
+        headerTitleLabel.textColor = .label
+        headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // Plus button – circular, primary colour
+        var cfg = UIButton.Configuration.filled()
+        cfg.image = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold))
+        cfg.baseForegroundColor = .white
+        cfg.baseBackgroundColor = AppDesign.Color.primary
+        cfg.cornerStyle = .capsule
+        headerPlusButton.configuration = cfg
+        headerPlusButton.translatesAutoresizingMaskIntoConstraints = false
+        headerPlusButton.addTarget(self, action: #selector(addNewPostButtonTapped(_:)), for: .touchUpInside)
+
+        customHeaderView.addSubview(headerTitleLabel)
+        customHeaderView.addSubview(headerPlusButton)
+
+        NSLayoutConstraint.activate([
+            // Header view pinned just below the safe-area top
+            customHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            customHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            customHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            customHeaderView.heightAnchor.constraint(equalToConstant: 44),
+
+            // Title on the left, vertically centred
+            headerTitleLabel.leadingAnchor.constraint(equalTo: customHeaderView.leadingAnchor),
+            headerTitleLabel.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+
+            // Plus button on the right, vertically centred, fixed size
+            headerPlusButton.trailingAnchor.constraint(equalTo: customHeaderView.trailingAnchor),
+            headerPlusButton.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+            headerPlusButton.widthAnchor.constraint(equalToConstant: 36),
+            headerPlusButton.heightAnchor.constraint(equalToConstant: 36),
+        ])
+
+        // Move segmented control below the custom header
+        // Remove existing top constraint on segmentedControl to safeArea and add a new one
+        if let existingTop = view.constraints.first(where: {
+            ($0.firstItem as? UISegmentedControl == segmentedControl || $0.secondItem as? UISegmentedControl == segmentedControl)
+            && ($0.firstAttribute == .top || $0.secondAttribute == .top)
+        }) {
+            existingTop.isActive = false
+        }
+        segmentedControl.topAnchor.constraint(equalTo: customHeaderView.bottomAnchor, constant: 12).isActive = true
+    }
+
     func setupNewPostUI() {
         // New Post Popup Styling
         newPostContainerView.backgroundColor = .systemBackground
@@ -354,11 +415,10 @@ class CommunityViewController: UIViewController,
         
         tableView.reloadData()
         
-        // Hide "New Post" button (plus) when in Events tab (index 0)
-        if segmentedControl.selectedSegmentIndex == 0 {
-            navigationItem.rightBarButtonItem = nil
-        } else {
-            navigationItem.rightBarButtonItem = newPostBarButton
+        // Hide the custom plus button when on Events tab (index 0)
+        UIView.animate(withDuration: 0.2) {
+            self.headerPlusButton.alpha = self.segmentedControl.selectedSegmentIndex == 0 ? 0 : 1
+            self.headerPlusButton.isUserInteractionEnabled = self.segmentedControl.selectedSegmentIndex != 0
         }
     }
 

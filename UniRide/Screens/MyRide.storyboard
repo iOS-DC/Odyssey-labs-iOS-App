@@ -33,9 +33,9 @@
                                 <color key="backgroundColor" red="0.96470588235294119" green="0.98039215686274506" blue="0.98431372549019602" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </tableView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="My Rides" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3Tk-n0-Qgb">
-                                <rect key="frame" x="145.66666666666666" y="69" width="102" height="28.666666666666671"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
-                                <color key="textColor" red="0.12156862745098039" green="0.16078431372549021" blue="0.21568627450980393" alpha="1" colorSpace="calibratedRGB"/>
+                                <rect key="frame" x="16" y="10" width="200" height="44"/>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="34"/>
+                                <color key="textColor" systemColor="labelColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                              <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="flt-btn-001" userLabel="Filter Button">
@@ -54,15 +54,16 @@
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" red="0.96470588235294119" green="0.98039215686274506" blue="0.98431372549019602" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="ozt-5i-FBz" firstAttribute="top" secondItem="3Tk-n0-Qgb" secondAttribute="bottom" constant="30" id="2np-vC-3K6"/>
-                            <constraint firstItem="3Tk-n0-Qgb" firstAttribute="centerX" secondItem="5EZ-qb-Rvc" secondAttribute="centerX" id="7Kz-zu-UAP"/>
+                            <constraint firstItem="ozt-5i-FBz" firstAttribute="top" secondItem="3Tk-n0-Qgb" secondAttribute="bottom" constant="12" id="2np-vC-3K6"/>
+                            <constraint firstItem="3Tk-n0-Qgb" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="16" id="7Kz-zu-UAP"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="hl7-Ac-weu" secondAttribute="bottom" id="7fU-sd-olT"/>
                             <constraint firstItem="ozt-5i-FBz" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="16" id="Lvq-nr-GfR"/>
                             <constraint firstItem="hl7-Ac-weu" firstAttribute="trailing" secondItem="vDu-zF-Fre" secondAttribute="trailing" id="Yuo-MB-v1E"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="ozt-5i-FBz" secondAttribute="trailing" constant="16" id="a8a-ap-XWW"/>
-                            <constraint firstItem="hl7-Ac-weu" firstAttribute="top" secondItem="ozt-5i-FBz" secondAttribute="bottom" constant="40" id="bBJ-t6-dIB"/>
+                            <constraint firstItem="hl7-Ac-weu" firstAttribute="top" secondItem="ozt-5i-FBz" secondAttribute="bottom" constant="8" id="bBJ-t6-dIB"/>
                             <constraint firstItem="hl7-Ac-weu" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" id="bOI-ak-6VM"/>
-                            <constraint firstItem="3Tk-n0-Qgb" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="10" id="oqY-iS-yYu"/>
+                            <constraint firstItem="3Tk-n0-Qgb" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="8" id="oqY-iS-yYu"/>
+                            <constraint firstItem="3Tk-n0-Qgb" firstAttribute="height" constant="44" id="lbl-h-001"/>
                             <constraint firstItem="flt-btn-001" firstAttribute="top" secondItem="ozt-5i-FBz" secondAttribute="bottom" constant="8" id="flt-top-001"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="flt-btn-001" secondAttribute="trailing" constant="16" id="flt-trail-001"/>
                         </constraints>
