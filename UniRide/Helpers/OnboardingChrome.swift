@@ -9,6 +9,8 @@ extension UIViewController {
     func applyOnboardingChrome(step: Int, total: Int) {
         guard total > 0 else { return }
         navigationItem.backButtonTitle = ""
+        view.backgroundColor = AppDesign.Color.groupedBackground
+        navigationController?.view.backgroundColor = AppDesign.Color.groupedBackground
 
         let progress = max(0, min(CGFloat(step) / CGFloat(total), 1))
         let track: UIView

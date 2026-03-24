@@ -80,6 +80,8 @@ class CommunityViewController: UIViewController,
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Community"
+        navigationItem.largeTitleDisplayMode = .always
         view.backgroundColor = AppDesign.Color.groupedBackground
         // Feed is now entirely driven by Supabase. 
         // fetchPostsFromSupabase() is called below.
@@ -145,6 +147,8 @@ class CommunityViewController: UIViewController,
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        navigationController?.navigationBar.prefersLargeTitles = true
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
         // Mock events as requested for better visual demonstration
