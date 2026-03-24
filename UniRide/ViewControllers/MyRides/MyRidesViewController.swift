@@ -73,6 +73,8 @@ final class MyRidesViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "My Rides"
+        navigationItem.largeTitleDisplayMode = .always
         view.backgroundColor = AppDesign.Color.groupedBackground
         tableView.backgroundColor = AppDesign.Color.groupedBackground
         setupTableView()
@@ -103,6 +105,8 @@ final class MyRidesViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        navigationController?.navigationBar.prefersLargeTitles = true
         reloadTrips()
         refreshBellBadge()
         if let me = UserDataModel.shared.getCurrentUser() {

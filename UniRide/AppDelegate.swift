@@ -6,9 +6,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(
         _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        .portrait
+    }
+
+    func application(
+        _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         AppTheme.applyGlobalAppearance()
+        AppTheme.installRuntimeTheming()
         _ = LiveNotificationService.shared
 
         // ── Push Notifications ──────────────────────────────────────────────

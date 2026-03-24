@@ -65,22 +65,18 @@ class ProfileViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        navigationController?.navigationBar.prefersLargeTitles = true
         loadProfile()
     }
 
     // MARK: - Nav Bar
     private func setupNavBar() {
         title = "Profile"
-
-        // Settings gear button (left) → pushes SettingsViewController
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
+        navigationItem.largeTitleDisplayMode = .always
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "gearshape.fill"),
             style: .plain, target: self, action: #selector(settingsTapped)
-        )
-
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "pencil"),
-            style: .plain, target: self, action: #selector(editButtonTapped)
         )
     }
 
@@ -606,10 +602,6 @@ class ProfileViewController: UIViewController {
     }
 
     // MARK: - Actions
-    @objc private func editButtonTapped() {
-        openEditProfile()
-    }
-
     @objc private func settingsTapped() {
         let vc = SettingsViewController()
         navigationController?.pushViewController(vc, animated: true)
