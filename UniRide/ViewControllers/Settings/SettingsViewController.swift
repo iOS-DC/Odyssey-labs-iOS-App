@@ -213,8 +213,7 @@ final class SettingsViewController: UIViewController {
         try? json.write(to: tmp, atomically: true, encoding: .utf8)
 
         let sheet = UIActivityViewController(activityItems: [tmp], applicationActivities: nil)
-        sheet.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
-        present(sheet, animated: true)
+        presentPopoverCentered(sheet)
     }
 
     private func deleteAccount() {

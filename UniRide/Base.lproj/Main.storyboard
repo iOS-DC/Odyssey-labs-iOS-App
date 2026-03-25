@@ -467,6 +467,7 @@
                         <outlet property="vehicleSectionStack" destination="M7z-rW-3vO" id="6yy-el-5nA"/>
                         <outlet property="vehicleTypeDropdown" destination="j6b-ax-qr1" id="ksB-kp-0lQ"/>
                         <outlet property="vehicleTypeLabel" destination="OBw-5h-yT9" id="7qK-5M-pej"/>
+                        <outlet property="yesNoStack" destination="dp7-YH-c4s" id="yNS-1g-A3q"/>
                         <outlet property="yesVehicleButton" destination="hVN-2g-tjr" id="KkM-uc-6Z4"/>
                     </connections>
                 </viewController>
