@@ -265,7 +265,7 @@ final class OnboardingViewController: UIViewController {
         // Skip button top right
         skipLabel.setTitle("Skip", for: .normal)
         skipLabel.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        skipLabel.setTitleColor(.tertiaryLabel, for: .normal)
+        skipLabel.setTitleColor(.white, for: .normal)
         skipLabel.translatesAutoresizingMaskIntoConstraints = false
         skipLabel.addTarget(self, action: #selector(skipTapped), for: .touchUpInside)
         view.addSubview(skipLabel)
