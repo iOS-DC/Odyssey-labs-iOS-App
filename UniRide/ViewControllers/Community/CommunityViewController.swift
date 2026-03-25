@@ -744,7 +744,7 @@ class CommunityViewController: UIViewController,
     
     func showSystemShareSheet(items: [Any]) {
         let ac = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        present(ac, animated: true)
+        presentPopoverCentered(ac)
     }
 
     // MARK: - CHAR COUNT & DELEGATE

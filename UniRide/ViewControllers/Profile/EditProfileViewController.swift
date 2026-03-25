@@ -315,7 +315,7 @@ class EditProfileViewController: UIViewController,
         picker.delegate    = self
         picker.sourceType  = .photoLibrary
         picker.allowsEditing = true
-        present(picker, animated: true)
+        presentPopover(picker, from: avatarImageView)
     }
 
     @objc private func dismissKeyboard() { view.endEditing(true) }

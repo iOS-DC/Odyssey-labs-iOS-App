@@ -18,6 +18,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
     
     @IBOutlet weak var continueButton: UIButton!
     @IBOutlet weak var vehicleSectionStack: UIStackView!  // contains label + dropdown
+    @IBOutlet weak var yesNoStack: UIStackView!            // contains yes/no buttons
 
     private var selectedHasVehicle: Bool?
     private var selectedVehicleType: String?
@@ -67,6 +68,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
         plateTextField.addTarget(self, action: #selector(vehicleDetailChanged), for: .editingChanged)
         setupVehicleDetailFields()
         configureAccessibility()
+        fixLayoutForAllScreenSizes()
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
@@ -75,6 +77,36 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
 
     @objc private func dismissKeyboard() {
         view.endEditing(true)
+    }
+
+    /// Removes the hardcoded fixed-width storyboard constraints on the Yes/No
+    /// button stack, vehicle-type section, and Continue button, then pins each
+    /// to the card's leading/trailing edges so they grow on iPad.
+    private func fixLayoutForAllScreenSizes() {
+        let inset: CGFloat = 24
+
+        // Remove every width constraint baked in from the storyboard on these views.
+        let constrainedViews: [UIView?] = [yesNoStack, vehicleSectionStack, continueButton]
+        for v in constrainedViews.compactMap({ $0 }) {
+            v.constraints
+                .filter { $0.firstAttribute == .width && $0.relation == .equal }
+                .forEach { $0.isActive = false }
+        }
+
+        // Pin Yes/No stack and vehicle section stack to the card edges.
+        let stretchedViews: [UIView] = [yesNoStack, vehicleSectionStack].compactMap { $0 }
+        for v in stretchedViews {
+            NSLayoutConstraint.activate([
+                v.leadingAnchor.constraint(equalTo: containerCard.leadingAnchor, constant: inset),
+                v.trailingAnchor.constraint(equalTo: containerCard.trailingAnchor, constant: -inset)
+            ])
+        }
+
+        // Continue button: full-width with same padding.
+        NSLayoutConstraint.activate([
+            continueButton.leadingAnchor.constraint(equalTo: containerCard.leadingAnchor, constant: inset),
+            continueButton.trailingAnchor.constraint(equalTo: containerCard.trailingAnchor, constant: -inset)
+        ])
     }
 
     override func viewDidAppear(_ animated: Bool) {
