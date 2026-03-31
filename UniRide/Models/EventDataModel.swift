@@ -156,8 +156,12 @@ final class EventDataModel {
     // MARK: - Mock Events (UI feed)
     static func mockEvents() -> [EventItem] {
         let user = UUID()
-        let tomorrow = Date().addingTimeInterval(86400)
-        let nextWeek = Date().addingTimeInterval(86400 * 7)
+        let calendar = Calendar.current
+        let baseDate = calendar.startOfDay(for: Date())
+        let rangrezDate = calendar.date(byAdding: .day, value: 5, to: baseDate) ?? baseDate
+        let technoFestDate = calendar.date(byAdding: .day, value: 12, to: baseDate) ?? baseDate
+        let sportsMeetDate = calendar.date(byAdding: .day, value: 19, to: baseDate) ?? baseDate
+        let hackathonDate = calendar.date(byAdding: .day, value: 26, to: baseDate) ?? baseDate
 
         return [
             EventItem(
@@ -177,7 +181,7 @@ final class EventDataModel {
                 This is more than just an event; it's a celebration of creativity and spirit. See you there!
                 """,
                 location: EventLocation(name: "Chitkara University"),
-                startsAt: Date(),
+                startsAt: calendar.date(bySettingHour: 16, minute: 0, second: 0, of: rangrezDate) ?? rangrezDate,
                 imageName: "eventImage"
             ),
 
@@ -199,7 +203,7 @@ final class EventDataModel {
                 Whether you are a tech geek or just curious, there is something for everyone. Network with industry leaders and win exciting prizes in our hackathons.
                 """,
                 location: EventLocation(name: "Chitkara University"),
-                startsAt: tomorrow,
+                startsAt: calendar.date(bySettingHour: 10, minute: 0, second: 0, of: technoFestDate) ?? technoFestDate,
                 imageName: "eventImage2"
             ),
             
@@ -214,7 +218,7 @@ final class EventDataModel {
                 Registration is open now at the Sports Complex.
                 """,
                 location: EventLocation(name: "Sports Complex"),
-                startsAt: nextWeek,
+                startsAt: calendar.date(bySettingHour: 9, minute: 0, second: 0, of: sportsMeetDate) ?? sportsMeetDate,
                 imageName: "eventImage3"
             ),
             
@@ -229,7 +233,7 @@ final class EventDataModel {
                 Prizes worth ₹50,000 to be won!
                 """,
                 location: EventLocation(name: "Engineering Block"),
-                startsAt: nextWeek.addingTimeInterval(86400 * 2),
+                startsAt: calendar.date(bySettingHour: 11, minute: 0, second: 0, of: hackathonDate) ?? hackathonDate,
                 imageName: "eventImage4"
             )
         ]
