@@ -48,6 +48,7 @@ class CommunityViewController: UIViewController,
     private var pendingLikeOperations: Set<UUID> = []
     private var pendingCommentOperations: Set<UUID> = []
     private var pendingShareOperations: Set<UUID> = []
+    private var expandedPostKeys: Set<String> = []
 
     // MARK: - Models
     struct Post {
@@ -963,6 +964,13 @@ class CommunityViewController: UIViewController,
         return tableView.indexPathForRow(at: point)
     }
 
+    private func postExpansionKey(for post: Post, at indexPath: IndexPath) -> String {
+        if let remoteID = post.remoteID {
+            return remoteID.uuidString
+        }
+        return "\(indexPath.row)-\(post.timestamp)-\(post.message.prefix(24))"
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         // COMMENT LIST — real comments from Supabase
@@ -980,6 +988,8 @@ class CommunityViewController: UIViewController,
         if segmentedControl.selectedSegmentIndex == 1 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
             let post = feedPosts[indexPath.row]
+            let expansionKey = postExpansionKey(for: post, at: indexPath)
+            let isExpanded = expandedPostKeys.contains(expansionKey)
 
             if let feedCard = cell.contentView.subviews.first {
                 feedCard.applyCardStyle(
@@ -1051,8 +1061,47 @@ class CommunityViewController: UIViewController,
 
             if let label = cell.viewWithTag(4) as? UILabel {
                 label.text = post.message
-                label.applyTextStyle(AppDesign.Typography.body, lines: 2)
-                label.lineBreakMode = .byTruncatingTail
+                label.applyTextStyle(AppDesign.Typography.body, lines: isExpanded ? 0 : 2)
+                label.lineBreakMode = isExpanded ? .byWordWrapping : .byTruncatingTail
+            }
+
+            if let cardContainer, let messageLabel = cell.viewWithTag(4) as? UILabel, let stackView = cell.viewWithTag(12)?.superview as? UIStackView {
+                let readMoreTag = 202
+                let needsReadMore = post.message.count > 90
+                let readMoreButton: UIButton
+
+                if let existing = cardContainer.viewWithTag(readMoreTag) as? UIButton {
+                    readMoreButton = existing
+                } else {
+                    let button = UIButton(type: .system)
+                    button.tag = readMoreTag
+                    button.translatesAutoresizingMaskIntoConstraints = false
+                    button.contentHorizontalAlignment = .leading
+                    button.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+                    button.addTarget(self, action: #selector(readMoreButtonTapped(_:)), for: .touchUpInside)
+                    cardContainer.addSubview(button)
+
+                    cardContainer.constraints.forEach { constraint in
+                        if constraint.firstItem as? UIView == stackView,
+                           constraint.firstAttribute == .top,
+                           constraint.secondItem as? UIView == messageLabel,
+                           constraint.secondAttribute == .bottom {
+                            constraint.isActive = false
+                        }
+                    }
+
+                    NSLayoutConstraint.activate([
+                        button.leadingAnchor.constraint(equalTo: messageLabel.leadingAnchor),
+                        button.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 4),
+                        stackView.topAnchor.constraint(equalTo: button.bottomAnchor, constant: 6)
+                    ])
+                    readMoreButton = button
+                }
+
+                readMoreButton.isHidden = !needsReadMore
+                readMoreButton.setTitle(isExpanded ? "Read less" : "Read more", for: .normal)
+                readMoreButton.tintColor = AppDesign.Color.primary
+                readMoreButton.accessibilityIdentifier = expansionKey
             }
 
             // ACTION BUTTONS (Like, Comment, Share, Report)
@@ -1255,6 +1304,26 @@ class CommunityViewController: UIViewController,
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         guard tableView != commentTableView else { return 80 }
         return segmentedControl.selectedSegmentIndex == 0 ? 270 : 160
+    }
+}
+
+extension CommunityViewController {
+    @objc private func readMoreButtonTapped(_ sender: UIButton) {
+        guard let cell = getCell(from: sender),
+              let indexPath = tableView.indexPath(for: cell),
+              indexPath.row < feedPosts.count else { return }
+
+        let post = feedPosts[indexPath.row]
+        let key = postExpansionKey(for: post, at: indexPath)
+        if expandedPostKeys.contains(key) {
+            expandedPostKeys.remove(key)
+        } else {
+            expandedPostKeys.insert(key)
+        }
+
+        tableView.beginUpdates()
+        tableView.reloadRows(at: [indexPath], with: .none)
+        tableView.endUpdates()
     }
 }
 
