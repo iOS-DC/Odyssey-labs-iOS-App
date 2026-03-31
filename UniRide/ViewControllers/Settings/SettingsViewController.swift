@@ -87,7 +87,7 @@ final class SettingsViewController: UIViewController {
                             subtitle: nil,
                             tintColor: AppDesign.Color.primary,
                             action: { [weak self] in
-                                self?.openURL("http://uni-ride-website-3rti66289-krishbahukhandi35-gmailcoms-projects.vercel.app/support.html")
+                                self?.openURL("https://krishbahukhandi.github.io/UniRide_Website/index.html#privacy")
                             }),
 
                 SettingItem(icon: "doc.text.fill",
@@ -95,28 +95,16 @@ final class SettingsViewController: UIViewController {
                             subtitle: nil,
                             tintColor: AppDesign.Color.primary,
                             action: { [weak self] in
-                                self?.openURL("https://uniride.app/terms")
+                                self?.openURL("https://krishbahukhandi.github.io/UniRide_Website/terms.html")
                             }),
-
-                SettingItem(icon: "square.and.arrow.up.fill",
-                            title: "Export My Data",
-                            subtitle: "Download a copy of your account data",
-                            tintColor: AppDesign.Color.primary,
-                            action: { [weak self] in self?.exportData() }),
 
                 SettingItem(icon: "questionmark.circle.fill",
                             title: "Support",
                             subtitle: "Help center and contact information",
                             tintColor: AppDesign.Color.primary,
                             action: { [weak self] in
-                                self?.openURL("http://uni-ride-website-3rti66289-krishbahukhandi35-gmailcoms-projects.vercel.app/support.html")
-                            }),
-
-                SettingItem(icon: "trash.fill",
-                            title: "Clear Local Cache",
-                            subtitle: "Removes offline ride and chat data",
-                            tintColor: AppDesign.Color.destructive,
-                            action: { [weak self] in self?.clearCache() })
+                                self?.openURL("https://krishbahukhandi.github.io/UniRide_Website/support.html")
+                            })
             ]),
 
             // ABOUT
@@ -132,7 +120,7 @@ final class SettingsViewController: UIViewController {
                             subtitle: "If you're enjoying the app",
                             tintColor: .systemYellow,
                             action: { [weak self] in
-                                self?.openURL("https://apps.apple.com/app/uniride")
+                                self?.openURL("https://apps.apple.com/us/app/uniride/id6760745418")
                             })
             ]),
 
