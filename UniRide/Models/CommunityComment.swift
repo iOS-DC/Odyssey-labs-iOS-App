@@ -11,4 +11,5 @@ struct CommunityComment {
     let text: String
     let createdAt: Date
     var authorProfile: UserProfile?
+    var reportCount: Int = 0
 }

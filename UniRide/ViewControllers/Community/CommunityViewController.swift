@@ -73,6 +73,7 @@ class CommunityViewController: UIViewController,
 
         /// Real comment count from the DB — always accurate.
         var commentCount: Int = 0
+        var reportCount: Int = 0
     }
 
 
@@ -863,7 +864,8 @@ class CommunityViewController: UIViewController,
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount,
                     hasLiked: likedIDs.contains(rp.id),
-                    commentCount: rp.commentCount
+                    commentCount: rp.commentCount,
+                    reportCount: rp.reportCount
                 )
             }
             // If mapped is empty (e.g. all posts moderated), we still proceed
@@ -885,6 +887,9 @@ class CommunityViewController: UIViewController,
                         }
                         if self.pendingShareOperations.contains(remoteID) {
                             mapped[i].shareCount = existing.shareCount
+                        }
+                        if existing.reportCount > mapped[i].reportCount {
+                            mapped[i].reportCount = existing.reportCount
                         }
                         
                         // Small aesthetic fix: if existing post was already rendered, 
@@ -1115,6 +1120,20 @@ class CommunityViewController: UIViewController,
                     reportBtn.addTarget(self, action: #selector(reportFeedPostTapped(_:)), for: .touchUpInside)
                     stackView.addArrangedSubview(reportBtn)
                 }
+                if let reportBtn = stackView.viewWithTag(reportTag) as? UIButton {
+                    var config = reportBtn.configuration ?? UIButton.Configuration.plain()
+                    config.image = UIImage(systemName: "flag.fill", withConfiguration: symbolConfig)
+                    config.title = "\(post.reportCount)"
+                    config.baseForegroundColor = .secondaryLabel
+                    config.imagePadding = 2
+                    config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
+                    config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                        var outgoing = incoming
+                        outgoing.font = .systemFont(ofSize: 12, weight: .medium)
+                        return outgoing
+                    }
+                    reportBtn.configuration = config
+                }
             }
 
             // Hide the redundant comments label to fix the card layout (excessive whitespace)
@@ -1260,6 +1279,10 @@ extension CommunityViewController: EventCardCellDelegate {
             contentID: comment.id
         ) { [weak self] success in
             guard success, let self = self else { return }
+            if let liveIndex = self.liveCommunityComments.firstIndex(where: { $0.id == comment.id }) {
+                self.liveCommunityComments[liveIndex].reportCount += 1
+                self.commentTableView.reloadRows(at: [IndexPath(row: liveIndex, section: 0)], with: .none)
+            }
             Task {
                 let hiddenIDs = await CommunityRepository.shared.fetchModeratedContentIDs()
                 await MainActor.run {
@@ -1292,6 +1315,10 @@ extension CommunityViewController: EventCardCellDelegate {
             contentID: postID
         ) { [weak self] success in
             guard success, let self = self else { return }
+            if let liveIndex = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                self.feedPosts[liveIndex].reportCount += 1
+                self.tableView.reloadRows(at: [IndexPath(row: liveIndex, section: 0)], with: .none)
+            }
             // Re-fetch to check if it should be moderated/hidden now
             Task {
                 let hiddenIDs = await CommunityRepository.shared.fetchModeratedContentIDs()

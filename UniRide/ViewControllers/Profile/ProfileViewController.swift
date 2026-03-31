@@ -429,6 +429,7 @@ class ProfileViewController: UIViewController {
         icon.contentMode = .scaleAspectFit
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.widthAnchor.constraint(equalToConstant: 24).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 24).isActive = true
         
         let nameLbl = UILabel()
         nameLbl.text = vehicle.alias ?? vehicle.model
@@ -441,12 +442,23 @@ class ProfileViewController: UIViewController {
         let textStack = UIStackView(arrangedSubviews: [nameLbl, regLbl])
         textStack.axis = .vertical
         textStack.spacing = 2
+        textStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         
         let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
         chevron.tintColor = .tertiaryLabel
         chevron.contentMode = .scaleAspectFit
+        chevron.translatesAutoresizingMaskIntoConstraints = false
+        chevron.widthAnchor.constraint(equalToConstant: 10).isActive = true
+        chevron.heightAnchor.constraint(equalToConstant: 18).isActive = true
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+        chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         
-        let row = UIStackView(arrangedSubviews: [icon, textStack, chevron])
+        let row = UIStackView(arrangedSubviews: [icon, textStack, spacer, chevron])
         row.axis = .horizontal
         row.spacing = 12
         row.alignment = .center

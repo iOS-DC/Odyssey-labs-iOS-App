@@ -13,6 +13,7 @@ struct CommunityPost {
     var likeCount: Int
     var shareCount: Int
     var commentCount: Int
+    var reportCount: Int
     let createdAt: Date
     var authorProfile: UserProfile?
 }
@@ -50,9 +51,21 @@ final class CommunityRepository {
         try checkHTTP(response, data: data)
         let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
         
-        // 3. Filter out moderated content
-        return rows.compactMap(postFromRow)
-                   .filter { !hiddenIDs.contains($0.id) }
+        // 3. Filter out moderated content and apply live counts
+        let posts = rows.compactMap(postFromRow)
+                       .filter { !hiddenIDs.contains($0.id) }
+        let postIDs = posts.map(\.id)
+        let likeCounts = await fetchCountMap(table: "community_likes", idColumn: "post_id", ids: postIDs)
+        let commentCounts = await fetchCountMap(table: "community_comments", idColumn: "post_id", ids: postIDs)
+        let reportCounts = await fetchReportCounts(contentIDs: postIDs, contentType: .post)
+
+        return posts.map { post in
+            var updated = post
+            updated.likeCount = likeCounts[post.id] ?? 0
+            updated.commentCount = commentCounts[post.id] ?? 0
+            updated.reportCount = reportCounts[post.id] ?? 0
+            return updated
+        }
     }
 
     /// Inserts a new post for the current user.
@@ -229,9 +242,16 @@ final class CommunityRepository {
         let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
         
         // 3. Filter out moderated content
-        return rows.compactMap { row in
+        var comments = rows.compactMap { row in
             commentFromRow(row, postID: postID)
         }.filter { !hiddenIDs.contains($0.id) }
+
+        let commentIDs = comments.map(\.id)
+        let reportCounts = await fetchReportCounts(contentIDs: commentIDs, contentType: .comment)
+        for index in comments.indices {
+            comments[index].reportCount = reportCounts[comments[index].id] ?? 0
+        }
+        return comments
     }
 
     /// Inserts a new comment for a post.
@@ -401,16 +421,8 @@ final class CommunityRepository {
     /// Use this after a toggle-like or insert-comment to get the trigger-updated values.
     func fetchPostCounts(postID: UUID) async throws -> (likeCount: Int, commentCount: Int) {
         try await SessionManager.shared.validateSession()
-        let url = mgr.restURL(table: "community_posts",
-                              query: "id=eq.\(postID.uuidString)&select=like_count,comment_count&limit=1")
-        var req = URLRequest(url: url)
-        req.allHTTPHeaderFields = mgr.userHeaders
-        let (data, response) = try await URLSession.shared.data(for: req)
-        try checkHTTP(response, data: data)
-        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
-        let row = rows.first ?? [:]
-        let likes    = row["like_count"]    as? Int ?? 0
-        let comments = row["comment_count"] as? Int ?? 0
+        let likes = await fetchCountMap(table: "community_likes", idColumn: "post_id", ids: [postID])[postID] ?? 0
+        let comments = await fetchCountMap(table: "community_comments", idColumn: "post_id", ids: [postID])[postID] ?? 0
         return (likes, comments)
     }
 
@@ -433,7 +445,7 @@ final class CommunityRepository {
             id: id, authorUserID: auth, text: text,
             imageURL: imgUrl.flatMap(URL.init(string:)),
             likeCount: likes, shareCount: shares,
-            commentCount: comments, createdAt: created
+            commentCount: comments, reportCount: 0, createdAt: created
         )
         
         // Robust Profile Join Handling:
@@ -467,6 +479,52 @@ final class CommunityRepository {
         }
         
         return comment
+    }
+
+    private func fetchCountMap(table: String, idColumn: String, ids: [UUID]) async -> [UUID: Int] {
+        guard !ids.isEmpty else { return [:] }
+        do {
+            let joinedIDs = ids.map(\.uuidString).joined(separator: ",")
+            let query = "\(idColumn)=in.(\(joinedIDs))&select=\(idColumn)"
+            let url = mgr.restURL(table: table, query: query)
+            var req = URLRequest(url: url)
+            req.allHTTPHeaderFields = mgr.userHeaders
+            let (data, response) = try await URLSession.shared.data(for: req)
+            try checkHTTP(response, data: data)
+            let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+            var counts: [UUID: Int] = [:]
+            for row in rows {
+                if let idStr = row[idColumn] as? String, let id = UUID(uuidString: idStr) {
+                    counts[id, default: 0] += 1
+                }
+            }
+            return counts
+        } catch {
+            return [:]
+        }
+    }
+
+    func fetchReportCounts(contentIDs: [UUID], contentType: SafetyService.ContentType) async -> [UUID: Int] {
+        guard !contentIDs.isEmpty else { return [:] }
+        do {
+            let joinedIDs = contentIDs.map(\.uuidString).joined(separator: ",")
+            let query = "content_type=eq.\(contentType.rawValue)&content_id=in.(\(joinedIDs))&select=content_id"
+            let url = mgr.restURL(table: "reports", query: query)
+            var req = URLRequest(url: url)
+            req.allHTTPHeaderFields = mgr.userHeaders
+            let (data, response) = try await URLSession.shared.data(for: req)
+            try checkHTTP(response, data: data)
+            let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+            var counts: [UUID: Int] = [:]
+            for row in rows {
+                if let idStr = row["content_id"] as? String, let id = UUID(uuidString: idStr) {
+                    counts[id, default: 0] += 1
+                }
+            }
+            return counts
+        } catch {
+            return [:]
+        }
     }
 
     private func checkHTTP(_ response: URLResponse, data: Data) throws {
