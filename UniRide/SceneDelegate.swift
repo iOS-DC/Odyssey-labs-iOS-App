@@ -36,6 +36,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // 3. Kick off async restoration (token refresh, user hydration)
         Task { await restoreSessionOrShowAuth() }
+        
+        // 4. Global Keyboard Dismissal
+        setupGlobalKeyboardDismissal()
+    }
+
+    private func setupGlobalKeyboardDismissal() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleGlobalTap))
+        tap.cancelsTouchesInView = false
+        window?.addGestureRecognizer(tap)
+    }
+
+    @objc private func handleGlobalTap() {
+        window?.endEditing(true)
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
@@ -85,6 +98,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             window.rootViewController = nav
         }
         window.makeKeyAndVisible()
+    }
+
+    static func setRootToAuth() {
+        guard let scene = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
+              let window = scene.window else { return }
+        
+        let mainSB = UIStoryboard(name: "Main", bundle: nil)
+        let emailVC = mainSB.instantiateViewController(withIdentifier: "EmailViewController")
+        let nav = UINavigationController(rootViewController: emailVC)
+        
+        window.rootViewController = nav
+        UIView.transition(with: window, duration: 0.45, options: .transitionCrossDissolve, animations: nil)
     }
 
     // MARK: - Unused lifecycle stubs

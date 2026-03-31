@@ -45,6 +45,13 @@ enum AppDesign {
     enum Color {
         static let primary = UIColor.systemBlue
         static let surface = UIColor.systemBackground
+        static let elevatedSurface = UIColor.secondarySystemBackground
+        static let groupedBackground = UIColor { trait in
+            if trait.userInterfaceStyle == .dark {
+                return UIColor(red: 0.07, green: 0.09, blue: 0.12, alpha: 1.0)
+            }
+            return UIColor(named: "Color") ?? UIColor.systemGroupedBackground
+        }
         static let border = UIColor.systemGray4
         static let fieldBackground = UIColor.secondarySystemBackground
         static let progressTrack = UIColor.systemGray5
@@ -52,6 +59,11 @@ enum AppDesign {
         static let success = UIColor.systemGreen
         static let destructive = UIColor.systemRed
         static let warning = UIColor.systemOrange
+        static let shadow = UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor.black.withAlphaComponent(0.35)
+                : UIColor.black.withAlphaComponent(0.12)
+        }
     }
 
     enum Typography {
@@ -143,7 +155,7 @@ extension UIView {
         layer.cornerRadius = corner
         layer.masksToBounds = false
 
-        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowColor = AppDesign.Color.shadow.cgColor
         layer.shadowOpacity = shadowOpacity
         layer.shadowRadius = shadowRadius
         layer.shadowOffset = shadowOffset
@@ -155,11 +167,183 @@ extension UIView {
         layer.cornerRadius = corner
         layer.masksToBounds = false
 
-        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowColor = AppDesign.Color.shadow.cgColor
         layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
         layer.shadowRadius = AppDesign.Shadow.smallCardRadius
         layer.shadowOffset = AppDesign.Shadow.smallCardOffset
-        backgroundColor = AppDesign.Color.surface
+        backgroundColor = AppDesign.Color.elevatedSurface
+    }
+}
+
+enum AppTheme {
+    static func applyGlobalAppearance() {
+        let navigationAppearance = UINavigationBarAppearance()
+        navigationAppearance.configureWithOpaqueBackground()
+        navigationAppearance.backgroundColor = AppDesign.Color.surface
+        navigationAppearance.titleTextAttributes = [.foregroundColor: UIColor.label]
+        navigationAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.label]
+        navigationAppearance.shadowColor = .clear
+
+        UINavigationBar.appearance().standardAppearance = navigationAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navigationAppearance
+        UINavigationBar.appearance().compactAppearance = navigationAppearance
+        UINavigationBar.appearance().tintColor = AppDesign.Color.primary
+
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithOpaqueBackground()
+        tabAppearance.backgroundColor = AppDesign.Color.surface
+        tabAppearance.shadowColor = .clear
+
+        UITabBar.appearance().standardAppearance = tabAppearance
+        if #available(iOS 15.0, *) {
+            UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+        }
+        UITabBar.appearance().tintColor = AppDesign.Color.primary
+
+        UISegmentedControl.appearance().selectedSegmentTintColor = AppDesign.Color.primary
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.label], for: .normal)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+    }
+
+    static func installRuntimeTheming() {
+        UIViewController.installAppThemeHooks()
+    }
+}
+
+private enum LegacyThemePalette {
+    static let pageBlue = UIColor(red: 0.937254902, green: 0.97254902, blue: 1.0, alpha: 1.0)
+    static let softGray = UIColor(white: 0.866666667, alpha: 1.0)
+    static let lightGray = UIColor(red: 0.97254902, green: 0.97254902, blue: 0.97254902, alpha: 1.0)
+    static let cardText = UIColor(red: 0.1215686275, green: 0.1607843137, blue: 0.2156862745, alpha: 1.0)
+}
+
+private extension UIColor {
+    func isClose(to other: UIColor, in traitCollection: UITraitCollection, tolerance: CGFloat = 0.03) -> Bool {
+        let lhs = resolvedColor(with: traitCollection)
+        let rhs = other.resolvedColor(with: traitCollection)
+
+        var lr: CGFloat = 0, lg: CGFloat = 0, lb: CGFloat = 0, la: CGFloat = 0
+        var rr: CGFloat = 0, rg: CGFloat = 0, rb: CGFloat = 0, ra: CGFloat = 0
+
+        if lhs.getRed(&lr, green: &lg, blue: &lb, alpha: &la),
+           rhs.getRed(&rr, green: &rg, blue: &rb, alpha: &ra) {
+            return abs(lr - rr) <= tolerance
+                && abs(lg - rg) <= tolerance
+                && abs(lb - rb) <= tolerance
+                && abs(la - ra) <= tolerance
+        }
+
+        var lw: CGFloat = 0
+        var rw: CGFloat = 0
+        if lhs.getWhite(&lw, alpha: &la), rhs.getWhite(&rw, alpha: &ra) {
+            return abs(lw - rw) <= tolerance && abs(la - ra) <= tolerance
+        }
+
+        return false
+    }
+}
+
+private extension UIView {
+    func applyLegacyDarkModeFixesIfNeeded() {
+        guard traitCollection.userInterfaceStyle == .dark else { return }
+        applyLegacyDarkModeFixesRecursively(isRootView: true)
+    }
+
+    func applyLegacyDarkModeFixesRecursively(isRootView: Bool) {
+        if let currentBackgroundColor = backgroundColor {
+            if currentBackgroundColor.isClose(to: LegacyThemePalette.pageBlue, in: traitCollection) {
+                backgroundColor = AppDesign.Color.groupedBackground
+            } else if currentBackgroundColor.isClose(to: LegacyThemePalette.softGray, in: traitCollection) {
+                backgroundColor = AppDesign.Color.fieldBackground
+            } else if currentBackgroundColor.isClose(to: LegacyThemePalette.lightGray, in: traitCollection) {
+                backgroundColor = isRootView ? AppDesign.Color.groupedBackground : AppDesign.Color.elevatedSurface
+            } else if currentBackgroundColor.isClose(to: .white, in: traitCollection) {
+                backgroundColor = isRootView ? AppDesign.Color.groupedBackground : AppDesign.Color.surface
+            }
+        }
+
+        if let label = self as? UILabel,
+           let currentTextColor = label.textColor,
+           currentTextColor.isClose(to: LegacyThemePalette.cardText, in: traitCollection) {
+            label.textColor = .label
+        }
+
+        if let textField = self as? UITextField,
+           let currentBackgroundColor = textField.backgroundColor,
+           (currentBackgroundColor.isClose(to: LegacyThemePalette.softGray, in: traitCollection)
+            || currentBackgroundColor.isClose(to: LegacyThemePalette.lightGray, in: traitCollection)) {
+            textField.backgroundColor = AppDesign.Color.fieldBackground
+            textField.textColor = .label
+        }
+
+        if let textView = self as? UITextView,
+           let currentBackgroundColor = textView.backgroundColor,
+           currentBackgroundColor.isClose(to: LegacyThemePalette.lightGray, in: traitCollection) {
+            textView.backgroundColor = AppDesign.Color.fieldBackground
+            textView.textColor = .label
+        }
+
+        if let tableView = self as? UITableView,
+           let currentBackgroundColor = tableView.backgroundColor,
+           (currentBackgroundColor.isClose(to: .white, in: traitCollection)
+            || currentBackgroundColor.isClose(to: LegacyThemePalette.pageBlue, in: traitCollection)
+            || currentBackgroundColor.isClose(to: LegacyThemePalette.lightGray, in: traitCollection)) {
+            tableView.backgroundColor = AppDesign.Color.groupedBackground
+        }
+
+        if let collectionView = self as? UICollectionView,
+           let currentBackgroundColor = collectionView.backgroundColor,
+           (currentBackgroundColor.isClose(to: .white, in: traitCollection)
+            || currentBackgroundColor.isClose(to: LegacyThemePalette.pageBlue, in: traitCollection)) {
+            collectionView.backgroundColor = AppDesign.Color.groupedBackground
+        }
+
+        for subview in subviews {
+            subview.applyLegacyDarkModeFixesRecursively(isRootView: false)
+        }
+    }
+}
+
+private extension UIViewController {
+    static let appThemeHooksInstalled: Void = {
+        let originalViewDidLoad = class_getInstanceMethod(UIViewController.self, #selector(viewDidLoad))
+        let themedViewDidLoad = class_getInstanceMethod(UIViewController.self, #selector(uniride_viewDidLoad))
+        if let originalViewDidLoad, let themedViewDidLoad {
+            method_exchangeImplementations(originalViewDidLoad, themedViewDidLoad)
+        }
+
+        let originalTraitCollectionDidChange = class_getInstanceMethod(
+            UIViewController.self,
+            #selector(traitCollectionDidChange(_:))
+        )
+        let themedTraitCollectionDidChange = class_getInstanceMethod(
+            UIViewController.self,
+            #selector(uniride_traitCollectionDidChange(_:))
+        )
+        if let originalTraitCollectionDidChange, let themedTraitCollectionDidChange {
+            method_exchangeImplementations(originalTraitCollectionDidChange, themedTraitCollectionDidChange)
+        }
+    }()
+
+    static func installAppThemeHooks() {
+        _ = appThemeHooksInstalled
+    }
+
+    @objc func uniride_viewDidLoad() {
+        uniride_viewDidLoad()
+        applyRuntimeThemeIfNeeded()
+    }
+
+    @objc func uniride_traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        uniride_traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.hasDifferentColorAppearance(comparedTo: traitCollection) == true else { return }
+        applyRuntimeThemeIfNeeded()
+    }
+
+    func applyRuntimeThemeIfNeeded() {
+        guard isViewLoaded else { return }
+        guard Bundle(for: type(of: self)) == .main else { return }
+        view.applyLegacyDarkModeFixesIfNeeded()
     }
 }
 
@@ -460,8 +644,22 @@ extension UIImage {
 }
 
 extension UIImageView {
+    private struct Associated {
+        static var currentURL = "uniride.currentURL"
+    }
+
+    private static let imageCache = NSCache<NSURL, UIImage>()
+
     func loadAndFallback(from url: URL?, name: String) {
-        // Clear current image to avoid flicker
+        let prevURL = objc_getAssociatedObject(self, &Associated.currentURL) as? URL
+        
+        // If it's the same URL already loaded, don't clear or reload
+        if let url = url, url == prevURL { return }
+        
+        // Update the tracked URL
+        objc_setAssociatedObject(self, &Associated.currentURL, url, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        
+        // Clear current image to avoid flicker of OLD post content on a reused cell
         self.image = nil
         
         guard let url = url else {
@@ -469,15 +667,30 @@ extension UIImageView {
             return
         }
         
+        // Check Cache
+        if let cached = UIImageView.imageCache.object(forKey: url as NSURL) {
+            self.image = cached
+            return
+        }
+        
         // Use a background task to load data
-        DispatchQueue.global(qos: .userInitiated).async {
+        let currentID = url // capture for verification
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                UIImageView.imageCache.setObject(image, forKey: url as NSURL)
                 DispatchQueue.main.async {
-                    self.image = image
+                    // Only apply if the URL hasn't changed on this reused cell
+                    let latestURL = objc_getAssociatedObject(self as Any, &Associated.currentURL) as? URL
+                    if latestURL == currentID {
+                        self?.image = image
+                    }
                 }
             } else {
                 DispatchQueue.main.async {
-                    self.image = UIImage.generatedAvatar(for: name, size: self.bounds.size.width > 0 ? self.bounds.size : CGSize(width: 40, height: 40))
+                    let latestURL = objc_getAssociatedObject(self as Any, &Associated.currentURL) as? URL
+                    if latestURL == currentID {
+                        self?.image = UIImage.generatedAvatar(for: name, size: self?.bounds.size.width ?? 0 > 0 ? self?.bounds.size ?? .zero : CGSize(width: 40, height: 40))
+                    }
                 }
             }
         }

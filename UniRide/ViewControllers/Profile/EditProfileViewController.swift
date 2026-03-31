@@ -2,7 +2,8 @@ import UIKit
 
 class EditProfileViewController: UIViewController,
                                   UIImagePickerControllerDelegate,
-                                  UINavigationControllerDelegate {
+                                  UINavigationControllerDelegate,
+                                  UITextFieldDelegate {
 
     // MARK: - State
     private var newPhotoURL: URL? = nil
@@ -14,7 +15,6 @@ class EditProfileViewController: UIViewController,
 
     private let avatarImageView  = UIImageView()
     private let cameraBadge      = UIView()
-    private let changePhotoBtn   = UIButton(type: .system)
 
     private let nameField        = UITextField()
     private let yearField        = UITextField()
@@ -53,7 +53,6 @@ class EditProfileViewController: UIViewController,
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshVehicleCard()
     }
 
     deinit {
@@ -106,7 +105,6 @@ class EditProfileViewController: UIViewController,
         ])
 
         contentStack.addArrangedSubview(buildProfileCard())
-        contentStack.addArrangedSubview(buildVehicleCard())
     }
 
     // MARK: - Profile Card
@@ -180,14 +178,6 @@ class EditProfileViewController: UIViewController,
             avatarContainer.bottomAnchor.constraint(equalTo: avatarWrapper.bottomAnchor),
         ])
 
-        // ── Change Photo button ───────────────────────────────────────────────
-        var photoCfg = UIButton.Configuration.plain()
-        photoCfg.title = "Change Photo"
-        photoCfg.baseForegroundColor = AppDesign.Color.primary
-        changePhotoBtn.configuration = photoCfg
-        changePhotoBtn.titleLabel?.font = AppDesign.Typography.subheadline
-        changePhotoBtn.addTarget(self, action: #selector(selectImageTapped), for: .touchUpInside)
-
         // ── Fields ────────────────────────────────────────────────────────────
         setupField(nameField,  placeholder: "Full Name",     icon: "person.fill",   keyboardType: .default)
         setupField(yearField,  placeholder: "Year (e.g. 2)", icon: "calendar",      keyboardType: .numberPad)
@@ -215,18 +205,16 @@ class EditProfileViewController: UIViewController,
         // Keep a weak reference so loading state can be toggled from beginSaving/endSaving
         self.saveButton = saveButton
 
-        // ── Inner stack: avatar → Change Photo → separator → fields → save ───
+        // ── Inner stack: avatar → separator → fields → save ───
         let inner = UIStackView(arrangedSubviews: [
             avatarWrapper,
-            changePhotoBtn,
             makeSeparator(),
             nameField, yearField, emailField, phoneField,
             saveButton,
         ])
         inner.axis    = .vertical
         inner.spacing = 14
-        inner.setCustomSpacing(8, after: avatarWrapper)     // small gap avatar → button
-        inner.setCustomSpacing(20, after: changePhotoBtn)   // more breathing room after button
+        inner.setCustomSpacing(20, after: avatarWrapper)     // more breathing room after avatar
 
         inner.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(inner)
@@ -239,168 +227,6 @@ class EditProfileViewController: UIViewController,
         return card
     }
 
-
-    // MARK: - Vehicle Card
-    private var vehicleDetailsStack = UIStackView()
-    private var vehicleCTABtn       = UIButton(type: .system)
-
-    private func buildVehicleCard() -> UIView {
-        let card = makeCard()
-
-        // Header
-        let iconBg = UIView()
-        iconBg.backgroundColor    = AppDesign.Color.primary.withAlphaComponent(0.1)
-        iconBg.layer.cornerRadius = AppDesign.Radius.sm
-        iconBg.translatesAutoresizingMaskIntoConstraints = false
-        iconBg.widthAnchor.constraint(equalToConstant: 36).isActive  = true
-        iconBg.heightAnchor.constraint(equalToConstant: 36).isActive = true
-
-        let carIcon = UIImageView(image: UIImage(systemName: "car.fill"))
-        carIcon.tintColor    = AppDesign.Color.primary
-        carIcon.contentMode  = .scaleAspectFit
-        carIcon.translatesAutoresizingMaskIntoConstraints = false
-        iconBg.addSubview(carIcon)
-        NSLayoutConstraint.activate([
-            carIcon.centerXAnchor.constraint(equalTo: iconBg.centerXAnchor),
-            carIcon.centerYAnchor.constraint(equalTo: iconBg.centerYAnchor),
-            carIcon.widthAnchor.constraint(equalToConstant: 20),
-            carIcon.heightAnchor.constraint(equalToConstant: 20),
-        ])
-
-        let titleLbl    = UILabel()
-        titleLbl.text   = "Vehicle Information"
-        titleLbl.applyTextStyle(AppDesign.Typography.bodyStrong)
-
-        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
-        chevron.tintColor   = AppDesign.Color.primary
-        chevron.contentMode = .scaleAspectFit
-        chevron.setContentHuggingPriority(.required, for: .horizontal)
-        chevron.translatesAutoresizingMaskIntoConstraints = false
-        chevron.widthAnchor.constraint(equalToConstant: 12).isActive = true
-
-        let headerStack = UIStackView(arrangedSubviews: [iconBg, titleLbl, chevron])
-        headerStack.axis = .horizontal; headerStack.spacing = 10; headerStack.alignment = .center
-
-        // Details
-        vehicleDetailsStack.axis    = .vertical
-        vehicleDetailsStack.spacing = 12
-
-        // CTA
-        vehicleCTABtn.applyTextActionStyle()
-        vehicleCTABtn.contentHorizontalAlignment = .leading
-        vehicleCTABtn.addTarget(self, action: #selector(openVehicleDetails), for: .touchUpInside)
-
-        let mainStack = UIStackView(arrangedSubviews: [
-            headerStack, makeSeparator(), vehicleDetailsStack, vehicleCTABtn
-        ])
-        mainStack.axis = .vertical; mainStack.spacing = AppDesign.Spacing.sm + AppDesign.Spacing.xxs / 2
-        mainStack.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(mainStack)
-        NSLayoutConstraint.activate([
-            mainStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            mainStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-            mainStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            mainStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
-        ])
-
-        let tap = UITapGestureRecognizer(target: self, action: #selector(openVehicleDetails))
-        card.addGestureRecognizer(tap)
-        return card
-    }
-
-    private func refreshVehicleCard() {
-        vehicleDetailsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
- 
-        if let vehicles = UserDataModel.shared.getCurrentUser()?.vehicles, !vehicles.isEmpty {
-            for v in vehicles {
-                let name = v.alias ?? v.model
-                let vehicleRow = buildVehicleRowForList(vehicle: v)
-                vehicleDetailsStack.addArrangedSubview(vehicleRow)
-                
-                // Add a separator between vehicles if not the last one
-                if v != vehicles.last {
-                    vehicleDetailsStack.addArrangedSubview(makeSeparator())
-                }
-            }
-            vehicleCTABtn.setTitle("Add Another Vehicle", for: .normal)
-        } else {
-            let empty = UILabel()
-            empty.text      = "No vehicles added yet."
-            empty.applyTextStyle(AppDesign.Typography.subheadline, color: .tertiaryLabel)
-            vehicleDetailsStack.addArrangedSubview(empty)
-            vehicleCTABtn.setTitle("Add Vehicle", for: .normal)
-        }
-    }
- 
-    private func buildVehicleRowForList(vehicle: Vehicle) -> UIView {
-        let nameLbl = UILabel()
-        nameLbl.text = vehicle.alias ?? vehicle.model
-        nameLbl.applyTextStyle(AppDesign.Typography.bodyStrong)
-        
-        let subLbl = UILabel()
-        subLbl.text = "\(vehicle.model) • \(vehicle.registrationNumber)"
-        subLbl.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
-        
-        let textStack = UIStackView(arrangedSubviews: [nameLbl, subLbl])
-        textStack.axis = .vertical
-        textStack.spacing = 2
-        
-        let icon = UIImageView(image: UIImage(systemName: vehicle.type == .car ? "car.fill" : "bicycle"))
-        icon.tintColor = AppDesign.Color.primary
-        icon.contentMode = .scaleAspectFit
-        icon.translatesAutoresizingMaskIntoConstraints = false
-        icon.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        
-        let editIcon = UIImageView(image: UIImage(systemName: "pencil"))
-        editIcon.tintColor = .tertiaryLabel
-        editIcon.contentMode = .scaleAspectFit
-        
-        let row = UIStackView(arrangedSubviews: [icon, textStack, editIcon])
-        row.axis = .horizontal
-        row.spacing = 12
-        row.alignment = .center
-        
-        let tap = UIAction { [weak self] _ in
-            let vc = VehicleRegistrationViewController()
-            vc.vehicleToEdit = vehicle
-            self?.navigationController?.pushViewController(vc, animated: true)
-        }
-        let btn = UIButton(type: .system, primaryAction: tap)
-        btn.translatesAutoresizingMaskIntoConstraints = false
-        row.addSubview(btn)
-        NSLayoutConstraint.activate([
-            btn.topAnchor.constraint(equalTo: row.topAnchor),
-            btn.leadingAnchor.constraint(equalTo: row.leadingAnchor),
-            btn.trailingAnchor.constraint(equalTo: row.trailingAnchor),
-            btn.bottomAnchor.constraint(equalTo: row.bottomAnchor),
-        ])
-        
-        return row
-    }
-
-    private func vehicleRow(icon: String, label: String, value: String) -> UIView {
-        let icn = UIImageView(image: UIImage(systemName: icon))
-        icn.tintColor    = AppDesign.Color.primary
-        icn.contentMode  = .scaleAspectFit
-        icn.translatesAutoresizingMaskIntoConstraints = false
-        icn.widthAnchor.constraint(equalToConstant: 18).isActive  = true
-        icn.heightAnchor.constraint(equalToConstant: 18).isActive = true
-
-        let keyLbl = UILabel()
-        keyLbl.text = label
-        keyLbl.font = AppDesign.Typography.caption
-        keyLbl.textColor = .secondaryLabel
-        keyLbl.widthAnchor.constraint(equalToConstant: 56).isActive = true
-
-        let valLbl = UILabel()
-        valLbl.text = value
-        valLbl.font = AppDesign.Typography.subheadline
-        valLbl.textColor = .label
-
-        let row = UIStackView(arrangedSubviews: [icn, keyLbl, valLbl])
-        row.axis = .horizontal; row.spacing = 8; row.alignment = .center
-        return row
-    }
 
     // MARK: - Helpers
     private func makeCard() -> UIView {
@@ -415,6 +241,7 @@ class EditProfileViewController: UIViewController,
         field.applyRoundedField()
         field.font            = AppDesign.Typography.subheadline
         field.keyboardType    = keyboardType
+        field.delegate        = self
         field.autocorrectionType = .no
         field.autocapitalizationType = keyboardType == .default ? .words : .none
         field.attributedPlaceholder = NSAttributedString(string: placeholder,
@@ -433,6 +260,19 @@ class EditProfileViewController: UIViewController,
         let rightPad          = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 52))
         field.rightView       = rightPad
         field.rightViewMode   = .always
+        if field == emailField {
+            field.isEnabled = false
+            field.textColor = .secondaryLabel
+            iconView.tintColor = .secondaryLabel
+        }
+
+        if field == phoneField {
+            field.addTarget(self, action: #selector(phoneFieldDidChange), for: .editingChanged)
+        }
+    }
+
+    @objc private func phoneFieldDidChange() {
+        phoneField.text = String((phoneField.text ?? "").filter(\.isNumber).prefix(10))
     }
 
     private func centeredView(_ child: UIView) -> UIView {
@@ -470,14 +310,12 @@ class EditProfileViewController: UIViewController,
     }
 
     // MARK: - Actions
-    @IBAction func changePhotoTapped(_ sender: Any) { selectImageTapped() }
-
     @objc private func selectImageTapped() {
         let picker = UIImagePickerController()
         picker.delegate    = self
         picker.sourceType  = .photoLibrary
         picker.allowsEditing = true
-        present(picker, animated: true)
+        presentPopover(picker, from: avatarImageView)
     }
 
     @objc private func dismissKeyboard() { view.endEditing(true) }
@@ -494,6 +332,11 @@ class EditProfileViewController: UIViewController,
 
         guard !newName.isEmpty else {
             showAlert(title: "Name Required", message: "Please enter your full name.")
+            return
+        }
+
+        guard newPhone.count == 10, CharacterSet.decimalDigits.isSuperset(of: CharacterSet(charactersIn: newPhone)) else {
+            showAlert(title: "Invalid Phone Number", message: "Phone number must be exactly 10 digits.")
             return
         }
 
@@ -546,11 +389,6 @@ class EditProfileViewController: UIViewController,
         }
     }
 
-    @objc private func openVehicleDetails() {
-        let vc = VehicleRegistrationViewController()
-        navigationController?.pushViewController(vc, animated: true)
-    }
-
     // MARK: - Image Picker
     func imagePickerController(_ picker: UIImagePickerController,
                                didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
@@ -597,5 +435,15 @@ class EditProfileViewController: UIViewController,
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
+    }
+
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        guard textField == phoneField else { return true }
+        let allowed = CharacterSet.decimalDigits
+        if string.rangeOfCharacter(from: allowed.inverted) != nil { return false }
+        let current = textField.text ?? ""
+        guard let textRange = Range(range, in: current) else { return false }
+        let updated = current.replacingCharacters(in: textRange, with: string)
+        return updated.count <= 10
     }
 }

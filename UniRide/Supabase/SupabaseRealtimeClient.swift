@@ -30,12 +30,20 @@ typealias RealtimePayloadHandler = ([String: Any]) -> Void
 final class RealtimeChannel {
     let topic: String
     var onInsert: RealtimePayloadHandler?
+    let schema: String
+    let table: String
+    let filter: String?
 
     // Phoenix ref counter shared with the client
     fileprivate var ref: Int = 0
     fileprivate weak var client: SupabaseRealtimeClient?
 
-    init(topic: String) { self.topic = topic }
+    init(topic: String, schema: String, table: String, filter: String?) {
+        self.topic = topic
+        self.schema = schema
+        self.table = table
+        self.filter = filter
+    }
 
     /// Register a handler for INSERT events on this channel.
     @discardableResult
@@ -108,7 +116,11 @@ final class SupabaseRealtimeClient: NSObject {
     // MARK: - Channel factory
 
     func channel(_ topic: String) -> RealtimeChannel {
-        let ch = RealtimeChannel(topic: "realtime:\(topic)")
+        let parts = topic.split(separator: ":", omittingEmptySubsequences: false).map(String.init)
+        let schema = parts.indices.contains(0) ? parts[0] : "public"
+        let table = parts.indices.contains(1) ? parts[1] : "messages"
+        let filter = parts.indices.contains(2) ? parts[2] : nil
+        let ch = RealtimeChannel(topic: "realtime:\(topic)", schema: schema, table: table, filter: filter)
         ch.client = self
         channels[ch.topic] = ch
         return ch
@@ -124,16 +136,21 @@ final class SupabaseRealtimeClient: NSObject {
         refCounter += 1
         channel.ref = refCounter
 
+        var postgresChange: [String: Any] = [
+            "event": "INSERT",
+            "schema": channel.schema,
+            "table": channel.table
+        ]
+        if let filter = channel.filter, !filter.isEmpty {
+            postgresChange["filter"] = filter
+        }
+
         let joinPayload: [String: Any] = [
             "topic":   channel.topic,
             "event":   "phx_join",
             "payload": ["config": ["broadcast": ["self": false],
                                    "presence":  ["key": ""],
-                                   "postgres_changes": [
-                                       ["event": "INSERT",
-                                        "schema": "public",
-                                        "table":  "messages"]
-                                   ]]],
+                                   "postgres_changes": [postgresChange]]],
             "ref":     "\(channel.ref)"
         ]
         send(joinPayload)

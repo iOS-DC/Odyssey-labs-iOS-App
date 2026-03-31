@@ -35,7 +35,7 @@ final class ChatRepository {
 
     // MARK: - Send message
 
-    func sendMessage(rideID: UUID, senderID: UUID, senderName: String, text: String) async throws {
+    func sendMessage(id: UUID? = nil, rideID: UUID, senderID: UUID, senderName: String, text: String) async throws {
         try await SessionManager.shared.validateSession()
         let headers = mgr.userHeaders
         let url = mgr.restURL(table: "messages")
@@ -43,12 +43,16 @@ final class ChatRepository {
         req.httpMethod = "POST"
         req.allHTTPHeaderFields = headers
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "ride_id":     rideID.uuidString,
             "sender_id":   senderID.uuidString,
             "sender_name": senderName,
             "body":        text
         ]
+        if let explicitID = id {
+            payload["id"] = explicitID.uuidString
+        }
+        
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)

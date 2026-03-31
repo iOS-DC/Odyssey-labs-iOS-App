@@ -33,7 +33,7 @@ final class SettingsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Settings"
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = AppDesign.Color.groupedBackground
         navigationItem.largeTitleDisplayMode = .never
         buildSections()
         setupTableView()
@@ -87,7 +87,7 @@ final class SettingsViewController: UIViewController {
                             subtitle: nil,
                             tintColor: AppDesign.Color.primary,
                             action: { [weak self] in
-                                self?.openURL("https://uniride.app/privacy")
+                                self?.openURL("http://uni-ride-website-3rti66289-krishbahukhandi35-gmailcoms-projects.vercel.app/support.html")
                             }),
 
                 SettingItem(icon: "doc.text.fill",
@@ -103,6 +103,14 @@ final class SettingsViewController: UIViewController {
                             subtitle: "Download a copy of your account data",
                             tintColor: AppDesign.Color.primary,
                             action: { [weak self] in self?.exportData() }),
+
+                SettingItem(icon: "questionmark.circle.fill",
+                            title: "Support",
+                            subtitle: "Help center and contact information",
+                            tintColor: AppDesign.Color.primary,
+                            action: { [weak self] in
+                                self?.openURL("http://uni-ride-website-3rti66289-krishbahukhandi35-gmailcoms-projects.vercel.app/support.html")
+                            }),
 
                 SettingItem(icon: "trash.fill",
                             title: "Clear Local Cache",
@@ -152,7 +160,7 @@ final class SettingsViewController: UIViewController {
         tableView.delegate   = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "SettingCell")
-        tableView.backgroundColor = .systemGroupedBackground
+        tableView.backgroundColor = AppDesign.Color.groupedBackground
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -205,8 +213,7 @@ final class SettingsViewController: UIViewController {
         try? json.write(to: tmp, atomically: true, encoding: .utf8)
 
         let sheet = UIActivityViewController(activityItems: [tmp], applicationActivities: nil)
-        sheet.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
-        present(sheet, animated: true)
+        presentPopoverCentered(sheet)
     }
 
     private func deleteAccount() {
@@ -314,6 +321,9 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
         config.image = UIImage(systemName: item.icon)
         config.imageProperties.tintColor = item.tintColor
         cell.contentConfiguration = config
+        cell.accessoryView = nil
+        cell.accessoryType = .none
+        cell.selectionStyle = .default
 
         if item.toggle != nil {
             let sw = UISwitch()

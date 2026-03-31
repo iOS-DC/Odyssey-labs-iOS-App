@@ -5,6 +5,7 @@ import Foundation
 struct AppNotification: Codable, Identifiable {
     let id: UUID
     let recipientUserID: UUID
+    let rideID: UUID?
     let title: String
     let body: String
     let timestamp: Date
@@ -12,10 +13,15 @@ struct AppNotification: Codable, Identifiable {
     let type: NotifType
 
     enum NotifType: String, Codable {
+        case newRequest          // a new passenger request arrived for the driver
         case passengerCancelled  // passenger cancelled a confirmed booking → driver sees it
         case passengerJoined     // passenger request approved (legacy, kept for compat)
         case requestApproved     // driver approved passenger's join request → passenger sees it
         case requestDenied       // driver denied passenger's join request → passenger sees it
+        case rideCreated         // driver created/published a ride
+        case rideCancelled       // host cancelled the ride
+        case rideStarted         // host started the ride
+        case rideCompleted       // host completed the ride
     }
 }
 
@@ -52,25 +58,125 @@ final class AppNotificationModel {
         }
     }
 
+    private func insertLocal(_ notif: AppNotification) {
+        guard !notifications.contains(where: { $0.id == notif.id }) else { return }
+        notifications.insert(notif, at: 0)
+        notifications.sort { $0.timestamp > $1.timestamp }
+        save()
+        NotificationCenter.default.post(name: .appNotificationsUpdated, object: nil)
+    }
+
+    private func mergeRemote(_ incoming: [AppNotification]) {
+        guard !incoming.isEmpty else { return }
+        var changed = false
+        for notif in incoming {
+            if let idx = notifications.firstIndex(where: { $0.id == notif.id }) {
+                if notifications[idx].isRead != notif.isRead {
+                    notifications[idx] = notif
+                    changed = true
+                }
+            } else {
+                notifications.append(notif)
+                changed = true
+            }
+        }
+        guard changed else { return }
+        notifications.sort { $0.timestamp > $1.timestamp }
+        save()
+        NotificationCenter.default.post(name: .appNotificationsUpdated, object: nil)
+    }
+
+    func notification(from raw: [String: Any]) -> AppNotification? {
+        guard
+            let idString = raw["id"] as? String,
+            let id = UUID(uuidString: idString),
+            let userIDString = raw["user_id"] as? String,
+            let userID = UUID(uuidString: userIDString),
+            let title = raw["title"] as? String,
+            let body = raw["body"] as? String,
+            let typeString = raw["notif_type"] as? String,
+            let type = AppNotification.NotifType(rawValue: typeString)
+        else {
+            return nil
+        }
+
+        let timestamp: Date
+        if let createdAt = raw["created_at"] as? String,
+           let parsed = ISO8601DateFormatter().date(from: createdAt) {
+            timestamp = parsed
+        } else {
+            timestamp = Date()
+        }
+
+        let isRead = raw["is_read"] as? Bool ?? false
+        let rideID = (raw["ride_id"] as? String).flatMap(UUID.init(uuidString:))
+        return AppNotification(
+            id: id,
+            recipientUserID: userID,
+            rideID: rideID,
+            title: title,
+            body: body,
+            timestamp: timestamp,
+            isRead: isRead,
+            type: type
+        )
+    }
+
     // MARK: - Write
-    func send(to recipientID: UUID, title: String, body: String, type: AppNotification.NotifType) {
+    func send(to recipientID: UUID, rideID: UUID? = nil, title: String, body: String, type: AppNotification.NotifType) {
         let notif = AppNotification(
             id: UUID(),
             recipientUserID: recipientID,
+            rideID: rideID,
             title: title,
             body: body,
             timestamp: Date(),
             isRead: false,
             type: type
         )
-        notifications.insert(notif, at: 0)   // newest first
-        save()
-        NotificationCenter.default.post(name: .appNotificationsUpdated, object: nil)
+        insertLocal(notif)
+
+        guard SessionManager.shared.userID == recipientID else { return }
+
+        Task {
+            try? await NotificationAndReviewRepository.shared.insertNotification(
+                id: notif.id,
+                userID: recipientID,
+                rideID: rideID,
+                title: title,
+                body: body,
+                type: type.rawValue,
+                isRead: false,
+                createdAt: notif.timestamp
+            )
+        }
+    }
+
+    func refreshFromBackend(for userID: UUID) async {
+        guard SessionManager.shared.isLoggedIn else { return }
+        do {
+            let rows = try await NotificationAndReviewRepository.shared.fetchNotifications(userID: userID)
+            let parsed = rows.compactMap(notification(from:))
+            DispatchQueue.main.async { [weak self] in
+                self?.mergeRemote(parsed)
+            }
+        } catch {
+            print("[AppNotificationModel] Failed to fetch notifications:", error.localizedDescription)
+        }
+    }
+
+    func receiveRealtime(_ raw: [String: Any]) {
+        guard let notif = notification(from: raw) else { return }
+        insertLocal(notif)
     }
 
     // MARK: - Read
+    func all(for userID: UUID) -> [AppNotification] {
+        notifications.filter { $0.recipientUserID == userID }
+    }
+
     func unread(for userID: UUID) -> [AppNotification] {
-        notifications.filter { $0.recipientUserID == userID && !$0.isRead }
+        all(for: userID).filter { !$0.isRead }
     }
 
     func unreadCount(for userID: UUID) -> Int {
@@ -78,11 +184,21 @@ final class AppNotificationModel {
     }
 
     func markAllRead(for userID: UUID) {
+        let unreadIDs = notifications
+            .filter { $0.recipientUserID == userID && !$0.isRead }
+            .map(\.id)
         for i in notifications.indices where
             notifications[i].recipientUserID == userID && !notifications[i].isRead {
             notifications[i].isRead = true
         }
         save()
         NotificationCenter.default.post(name: .appNotificationsUpdated, object: nil)
+
+        guard SessionManager.shared.isLoggedIn, !unreadIDs.isEmpty else { return }
+        Task {
+            for id in unreadIDs {
+                try? await NotificationAndReviewRepository.shared.markNotificationRead(id: id)
+            }
+        }
     }
 }

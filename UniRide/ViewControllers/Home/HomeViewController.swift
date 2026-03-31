@@ -22,12 +22,16 @@ class HomeViewController: UIViewController {
     private var isLoading = false
     private var didAnimateListOnFirstShow = false
     private let refreshControl = UIRefreshControl()
+    private var greetingTopConstraint: NSLayoutConstraint?
+    private var tableTopConstraint: NSLayoutConstraint?
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        homeTableView.backgroundColor = UIColor(named: "Color")
+        view.backgroundColor = AppDesign.Color.groupedBackground
+        homeTableView.backgroundColor = AppDesign.Color.groupedBackground
+        configureSafeAreaLayout()
         configureQuickActions()
         configureScrollingHeader()
         setupTable()
@@ -43,9 +47,15 @@ class HomeViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
         // Always refresh greeting in case session was just restored
         updateGreeting()
         loadData()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -67,6 +77,43 @@ class HomeViewController: UIViewController {
         offerButton.applyProminentPrimaryCTA(title: "Offer Ride")
     }
 
+    private func configureSafeAreaLayout() {
+        greetingsLabel.translatesAutoresizingMaskIntoConstraints = false
+        homeTableView.translatesAutoresizingMaskIntoConstraints = false
+        greetingsLabel.numberOfLines = 1
+        greetingsLabel.adjustsFontSizeToFitWidth = true
+        greetingsLabel.minimumScaleFactor = 0.75
+
+        view.constraints.forEach { constraint in
+            let firstView = constraint.firstItem as? UIView
+            let secondView = constraint.secondItem as? UIView
+            let touchesGreeting = firstView == greetingsLabel || secondView == greetingsLabel
+            let touchesTable = firstView == homeTableView || secondView == homeTableView
+
+            if touchesGreeting && (constraint.firstAttribute == .top || constraint.secondAttribute == .top) {
+                constraint.isActive = false
+            }
+
+            if touchesTable && (constraint.firstAttribute == .top || constraint.secondAttribute == .top) {
+                constraint.isActive = false
+            }
+        }
+
+        greetingTopConstraint = greetingsLabel.topAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.topAnchor,
+            constant: AppDesign.Spacing.md
+        )
+        tableTopConstraint = homeTableView.topAnchor.constraint(
+            equalTo: greetingsLabel.bottomAnchor,
+            constant: AppDesign.Spacing.md
+        )
+
+        NSLayoutConstraint.activate([
+            greetingTopConstraint,
+            tableTopConstraint
+        ].compactMap { $0 })
+    }
+
     private func configureScrollingHeader() {
         guard let buttonStack = offerButton.superview else { return }
         
@@ -74,18 +121,19 @@ class HomeViewController: UIViewController {
         buttonStack.removeFromSuperview()
         buttonStack.translatesAutoresizingMaskIntoConstraints = false
         
-        // Re-pin the table view to start below the greetings label
-        homeTableView.translatesAutoresizingMaskIntoConstraints = false
-        homeTableView.topAnchor.constraint(equalTo: greetingsLabel.bottomAnchor, constant: 16).isActive = true
-        
         // Create the scrolling container just for the buttons
         let headerView = UIView()
         headerView.addSubview(buttonStack)
         
+        if let stack = buttonStack as? UIStackView {
+            stack.distribution = .fillEqually
+            stack.spacing = 16
+        }
+        
         NSLayoutConstraint.activate([
             buttonStack.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 4),
-            buttonStack.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 20),
-            buttonStack.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
+            buttonStack.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 12),
+            buttonStack.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -12),
             buttonStack.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16)
         ])
         
@@ -311,7 +359,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
             if nearbyRides.isEmpty { return emptyRidesCell(for: tableView, at: indexPath) }
             let cell = tableView.dequeueReusableCell(withIdentifier: "RideCell", for: indexPath) as! RideTableViewCell
             let ride = nearbyRides[indexPath.row]
-            let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
+            let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
             cell.configure(with: ride, driver: driver)
             cell.onJoinTapped = { [weak self] in self?.openRideDetail(ride: ride, driver: driver) }
             return cell
@@ -354,7 +402,8 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
 
         if indexPath.section == ridesSectionIndex && !nearbyRides.isEmpty {
             let ride = nearbyRides[indexPath.row]
-            openRideDetail(ride: ride, driver: UserDataModel.shared.getUser(by: ride.driverUserID))
+            let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
+            openRideDetail(ride: ride, driver: driver)
         } else if indexPath.section == eventsSectionIndex && !events.isEmpty {
             openEventDetailsScreen(event: events[indexPath.row])
         }

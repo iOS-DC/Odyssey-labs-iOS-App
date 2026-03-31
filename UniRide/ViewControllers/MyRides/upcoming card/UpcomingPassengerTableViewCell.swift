@@ -22,7 +22,6 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     @IBOutlet weak var requestStatusLabel: UILabel!
     @IBOutlet weak var hostImageView: UIImageView!
     @IBOutlet weak var messageButton: UIButton!
-    @IBOutlet weak var callButton: UIButton!
     @IBOutlet weak var cancelRequestButton: UIButton!
 
     // MARK: - Programmatic map & button (inserted into XIB layout)
@@ -31,6 +30,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     private var mapHeightConstraint: NSLayoutConstraint!
     private var cancelTopConstraint: NSLayoutConstraint!     // replaces XIB's constraint
     private var isMapExpanded = false
+    private var driverHitArea: UIView?
 
     weak var delegate: UpcomingPassengerCellDelegate?
     private var currentTrip: RideDataModel.MyTrip?
@@ -131,6 +131,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             hitArea.trailingAnchor.constraint(equalTo: hostNameLabel.trailingAnchor, constant: 4),
         ])
         hitArea.addGestureRecognizer(tap)
+        self.driverHitArea = hitArea
     }
 
     // MARK: – Configure
@@ -221,13 +222,15 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         // Button styles
         messageButton.applyTintActionStyle(title: "Chat", imageSystemName: "message.fill")
         applyUnreadBadge(to: messageButton, rideID: ride.id.uuidString)
-        callButton.applyTintActionStyle(title: "Call", imageSystemName: "phone.fill")
         showMapButton.applyTintActionStyle(title: isMapExpanded ? "Hide" : "Map",
                                           imageSystemName: isMapExpanded ? "map.fill" : "map")
         cancelRequestButton.applyTintActionStyle(title: cancelTitle, color: AppDesign.Color.destructive)
 
         // Draw route on map
         drawRouteIfNeeded(for: ride)
+
+        // Ensure hit area is above labels/images
+        if let ha = driverHitArea { cardView.bringSubviewToFront(ha) }
     }
 
     // MARK: – Map
@@ -293,23 +296,21 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     // MARK: – Helpers
 
     private func configureHostInfo(driverID: UUID) {
-        guard let host = UserDataModel.shared.getUser(by: driverID) else {
-            hostNameLabel.text = "Driver"
-            hostImageView.loadAndFallback(from: nil, name: "Driver")
-            return
-        }
-        let name    = host.fullName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let display = name.isEmpty ? host.email : name
+        let host = currentTrip?.ride.driverProfile ?? UserDataModel.shared.getUser(by: driverID)
+        let name = host?.fullName.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let display = name.isEmpty ? (host?.email ?? "Driver") : name
+
         hostNameLabel.text      = display
         hostNameLabel.font      = AppDesign.Typography.subheadline
         hostNameLabel.textColor = .label
-        hostImageView.loadAndFallback(from: host.photoURL, name: display)
+        hostImageView.loadAndFallback(from: host?.photoURL, name: display)
     }
 
     @objc private func driverRowTapped() {
-        guard let trip = currentTrip,
-              let driver = UserDataModel.shared.getUser(by: trip.ride.driverUserID) else { return }
-        delegate?.passengerCellDidTapDriver(self, driver: driver, ride: trip.ride)
+        guard let trip = currentTrip else { return }
+        let driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)
+        guard let validDriver = driver else { return }
+        delegate?.passengerCellDidTapDriver(self, driver: validDriver, ride: trip.ride)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {

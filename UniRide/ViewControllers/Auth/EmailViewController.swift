@@ -1,6 +1,4 @@
 
-
-
 import UIKit
 
 class EmailViewController: UIViewController {
@@ -8,6 +6,9 @@ class EmailViewController: UIViewController {
     @IBOutlet weak var emailTextField: UITextField!
     @IBOutlet weak var errorLabel: UILabel!
     @IBOutlet weak var continueButton: UIButton!
+    @IBOutlet weak var containerCard: UIView!
+
+    private let guestButton = UIButton(type: .system)
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -15,6 +16,14 @@ class EmailViewController: UIViewController {
         title = "College Verification"
         applyOnboardingChrome(step: 1, total: 7)
         containerCard.applyCardStyle()
+        
+        // Remove fixed height constraint from Storyboard to allow dynamic growth
+        containerCard.constraints.forEach {
+            if $0.firstAttribute == .height {
+                $0.isActive = false
+            }
+        }
+        
         emailTextField.applyRoundedField()
         continueButton.applyPrimaryButton(color: AppDesign.Color.primary)
         applyPrimaryOnboardingCTAStyle(continueButton)
@@ -25,13 +34,59 @@ class EmailViewController: UIViewController {
         continueButton.setPrimaryCTAEnabled(false)
         emailTextField.addTarget(self, action: #selector(emailChanged), for: .editingChanged)
         configureAccessibility()
+        setupGuestButton()
+        
+        // Fix title padding if it's too high
+        adjustTitlePadding()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        animateOnboardingEntrance([containerCard, emailTextField, continueButton])
+        animateOnboardingEntrance([containerCard, emailTextField, continueButton, guestButton])
     }
-    @IBOutlet weak var containerCard: UIView!
+
+    private func setupGuestButton() {
+        guestButton.translatesAutoresizingMaskIntoConstraints = false
+        guestButton.setTitle("Explore as Guest", for: .normal)
+        guestButton.setTitleColor(.secondaryLabel, for: .normal)
+        guestButton.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .medium)
+        guestButton.addTarget(self, action: #selector(guestTapped), for: .touchUpInside)
+        
+        containerCard.addSubview(guestButton)
+        NSLayoutConstraint.activate([
+            guestButton.topAnchor.constraint(equalTo: continueButton.bottomAnchor, constant: 16),
+            guestButton.centerXAnchor.constraint(equalTo: continueButton.centerXAnchor),
+            guestButton.bottomAnchor.constraint(equalTo: containerCard.bottomAnchor, constant: -24), // More bottom padding
+            guestButton.heightAnchor.constraint(equalToConstant: 44)
+        ])
+    }
+
+    private func adjustTitlePadding() {
+        // Find the title label by checking its text
+        for subview in containerCard.subviews {
+            if let label = subview as? UILabel, (label.text?.contains("What's your") == true) {
+                // Increase top space if it's constrained to the top
+                for constraint in containerCard.constraints {
+                    if (constraint.firstItem as? UILabel == label || constraint.secondItem as? UILabel == label),
+                       (constraint.firstAttribute == .top || constraint.secondAttribute == .top) {
+                        constraint.constant = 32 // Increase from 24 to 32
+                    }
+                }
+            }
+        }
+    }
+
+    @objc private func guestTapped() {
+        AppHaptics.selection()
+        let sb = UIStoryboard(name: "Main", bundle: nil)
+        let rootVC = sb.instantiateViewController(withIdentifier: "MainTabBarController")
+        
+        if let scene = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
+           let window = scene.window {
+            window.rootViewController = rootVC
+            UIView.transition(with: window, duration: 0.45, options: .transitionCrossDissolve, animations: nil)
+        }
+    }
 
     private func configureAccessibility() {
         emailTextField.accessibilityLabel = "University email"

@@ -14,6 +14,14 @@
 	</array>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvYnhlaHdlcnB2ZWRsZmtiZm9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTIzODMsImV4cCI6MjA4NzgyODM4M30.xftgy_ZnxXDl6Ow5ZFL3m0Y_RojJDjsJEdq1DbYM3c0</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

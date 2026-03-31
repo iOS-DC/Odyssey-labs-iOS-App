@@ -61,7 +61,7 @@ final class PostDetailViewController: UIViewController {
         ])
 
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PostHeaderCell")
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "CommentCell")
+        tableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
     }
 
     private func setupComposeBar() {
@@ -211,7 +211,15 @@ final class PostDetailViewController: UIViewController {
                 self.sendButton.isHidden = false
             }
             do {
-                try await CommunityRepository.shared.insertComment(postID: post.id, text: text)
+                let newCount = try await CommunityRepository.shared.insertComment(postID: post.id, text: text)
+                
+                // NOTIFY GLOBALLY: So feed can update its local count immediately
+                NotificationCenter.default.post(
+                    name: .CommunityCommentDidUpdate,
+                    object: nil,
+                    userInfo: ["postID": post.id, "newCount": newCount]
+                )
+
                 self.comments = try await CommunityRepository.shared.fetchComments(postID: post.id)
                 await self.fetchRealAuthorNames()
                 let lastRow = IndexPath(row: self.comments.count - 1, section: 1)
@@ -278,11 +286,30 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
         config.secondaryText = df.localizedString(for: post.createdAt, relativeTo: Date())
         config.secondaryTextProperties.color = .tertiaryLabel
 
-        // Avatar
-        config.image = UIImage(systemName: "person.crop.circle.fill")
-        config.imageProperties.tintColor = AppDesign.Color.primary
-        config.imageToTextPadding = 8
+        // Avatar — dedicated view for reliability
+        if cell.contentView.viewWithTag(101) == nil {
+            let iv = UIImageView()
+            iv.tag = 101
+            iv.contentMode = .scaleAspectFill
+            iv.clipsToBounds = true
+            iv.layer.cornerRadius = 18
+            iv.backgroundColor = .systemGray6
+            iv.translatesAutoresizingMaskIntoConstraints = false
+            cell.contentView.addSubview(iv)
+            NSLayoutConstraint.activate([
+                iv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 16),
+                iv.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 12),
+                iv.widthAnchor.constraint(equalToConstant: 36),
+                iv.heightAnchor.constraint(equalToConstant: 36)
+            ])
+        }
+        
+        let avatar = cell.contentView.viewWithTag(101) as? UIImageView
+        avatar?.loadAndFallback(from: post.authorProfile?.photoURL, name: name)
 
+        config.image = nil // Disable standard image
+        config.imageToTextPadding = 52 // Room for avatar
+        
         cell.contentConfiguration = config
 
         // Verified badge
@@ -319,34 +346,11 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
 
     // Comment cell
     private func buildCommentCell(at row: Int) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CommentCell")!
-        cell.selectionStyle = .none
-        let comment = comments[row]
-
-        // 1. Real name freshly fetched from Supabase (highest priority)
-        // 2. Current user's local profile (always accurate for own comments)
-        // 3. Local cache as last resort
-        let name: String
-        if let realName = authorNames[comment.authorUserID], !realName.isEmpty {
-            name = realName
-        } else if let me = UserDataModel.shared.getCurrentUser(), me.id == comment.authorUserID,
-                  !me.fullName.isEmpty {
-            name = me.fullName
-        } else {
-            let cached = UserDataModel.shared.getUser(by: comment.authorUserID)
-            name = cached?.fullName.isEmpty == false ? cached!.fullName : "UniRide User"
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: CommentTableViewCell.identifier) as? CommentTableViewCell else {
+            return UITableViewCell()
         }
-
-        var config = UIListContentConfiguration.subtitleCell()
-        config.text = name
-        config.textProperties.font = .systemFont(ofSize: 13, weight: .semibold)
-        config.secondaryText = comment.text
-        config.secondaryTextProperties.numberOfLines = 0
-        config.secondaryTextProperties.font = .systemFont(ofSize: 14)
-        config.image = UIImage(systemName: "person.crop.circle")
-        config.imageProperties.tintColor = .secondaryLabel
-        config.imageToTextPadding = 8
-        cell.contentConfiguration = config
+        let comment = comments[row]
+        cell.configure(with: comment)
         return cell
     }
 }

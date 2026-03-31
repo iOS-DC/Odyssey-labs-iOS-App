@@ -40,6 +40,7 @@ final class MyRidesViewController: UIViewController {
     // Notification bell
     private let bellBtn   = UIButton(type: .system)
     private let bellBadge = UILabel()
+    private var bellTopConstraint: NSLayoutConstraint?
 
     // Empty states
     private lazy var upcomingEmptyState: EmptyStateView = {
@@ -72,6 +73,10 @@ final class MyRidesViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        navigationItem.title = nil
+        navigationItem.largeTitleDisplayMode = .never
+        view.backgroundColor = AppDesign.Color.groupedBackground
+        tableView.backgroundColor = AppDesign.Color.groupedBackground
         setupTableView()
         setupRefreshControl()
         setupFilterButton()
@@ -90,12 +95,41 @@ final class MyRidesViewController: UIViewController {
             name: .appNotificationsUpdated,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(chatDidUpdate),
+            name: .chatMessagesUpdated,
+            object: nil
+        )
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        navigationController?.navigationBar.prefersLargeTitles = false
+        // Make nav bar blend with the view background
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = AppDesign.Color.groupedBackground
+        appearance.shadowColor = .clear
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.compactAppearance = appearance
         reloadTrips()
         refreshBellBadge()
+        if let me = UserDataModel.shared.getCurrentUser() {
+            Task { await AppNotificationModel.shared.refreshFromBackend(for: me.id) }
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Restore default nav bar appearance
+        let defaultAppearance = UINavigationBarAppearance()
+        defaultAppearance.configureWithDefaultBackground()
+        navigationController?.navigationBar.standardAppearance = defaultAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = defaultAppearance
+        navigationController?.navigationBar.compactAppearance = nil
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -181,15 +215,21 @@ final class MyRidesViewController: UIViewController {
 
     @objc private func handleRefresh() {
         AppHaptics.selection()
+        syncFromBackend {
+            self.refreshControl.endRefreshing()
+        }
+    }
+
+    func syncFromBackend(completion: (() -> Void)? = nil) {
         guard let user = UserDataModel.shared.getCurrentUser() else {
-            refreshControl.endRefreshing()
+            completion?()
             return
         }
         Task {
             await RideDataModel.shared.syncMyFullHistoryAsync(userID: user.id)
             await MainActor.run {
                 self.reloadTrips()
-                self.refreshControl.endRefreshing()
+                completion?()
             }
         }
     }
@@ -210,6 +250,12 @@ final class MyRidesViewController: UIViewController {
     @objc private func ridesDidUpdate() {
         DispatchQueue.main.async { [weak self] in
             self?.reloadTrips()
+        }
+    }
+    
+    @objc private func chatDidUpdate() {
+        DispatchQueue.main.async { [weak self] in
+            self?.tableView.reloadData()
         }
     }
 
@@ -424,10 +470,46 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
             withIdentifier: PastRideCell.reuseIdentifier, for: indexPath
         ) as! PastRideCell
         cell.configure(with: trip)
+        cell.delegate = self
         cell.onRateTapped = { [weak self] tripToRate in
             self?.presentRatingSheet(for: tripToRate)
         }
         return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let trip: RideDataModel.MyTrip
+        if segmentedControl.selectedSegmentIndex == 0 {
+            guard indexPath.row < currentTrips.count else { return }
+            trip = currentTrips[indexPath.row]
+        } else {
+            guard indexPath.section < pastSections.count,
+                  indexPath.row < pastSections[indexPath.section].trips.count else { return }
+            trip = pastSections[indexPath.section].trips[indexPath.row]
+        }
+
+        if trip.role == .hosting {
+            let vc = RideDetailViewController()
+            vc.ride = trip.ride
+            vc.driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)
+            if let sheet = vc.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 24
+            }
+            present(vc, animated: true)
+        } else {
+            // Passenger: show driver details by default on card tap
+            if let driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID) {
+                let vc = DriverDetailViewController(driver: driver, ride: trip.ride)
+                if let sheet = vc.sheetPresentationController {
+                    sheet.detents = [.medium(), .large()]
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 24
+                }
+                present(vc, animated: true)
+            }
+        }
     }
 
 
@@ -656,6 +738,39 @@ extension MyRidesViewController: UpcomingPassengerCellDelegate {
     }
 }
 
+// MARK: - PastRideCellDelegate
+extension MyRidesViewController: PastRideCellDelegate {
+    func pastRideCellDidTapPerson(_ cell: PastRideCell, user: UserProfile) {
+        guard let indexPath = tableView.indexPath(for: cell) else { return }
+        let trip: RideDataModel.MyTrip
+        if segmentedControl.selectedSegmentIndex == 0 {
+            trip = currentTrips[indexPath.row]
+        } else {
+            trip = pastSections[indexPath.section].trips[indexPath.row]
+        }
+
+        if trip.role == .hosting {
+            // Tapped a passenger
+            let vc = PassengerDetailViewController(passenger: user, ride: trip.ride)
+            if let sheet = vc.sheetPresentationController {
+                sheet.detents = [.medium(), .large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 24
+            }
+            present(vc, animated: true)
+        } else {
+            // Tapped the driver
+            let vc = DriverDetailViewController(driver: user, ride: trip.ride)
+            if let sheet = vc.sheetPresentationController {
+                sheet.detents = [.medium(), .large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 24
+            }
+            present(vc, animated: true)
+        }
+    }
+}
+
 // MARK: - Passenger Actions
 
 extension MyRidesViewController {
@@ -736,6 +851,7 @@ extension MyRidesViewController {
     // MARK: - Notification Bell
 
     private func setupBellButton() {
+        bellBtn.translatesAutoresizingMaskIntoConstraints = false
         bellBtn.setImage(UIImage(systemName: "bell"), for: .normal)
         bellBtn.tintColor = .label
         bellBtn.addTarget(self, action: #selector(bellTapped), for: .touchUpInside)
@@ -755,7 +871,19 @@ extension MyRidesViewController {
             bellBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 14),
             bellBadge.heightAnchor.constraint(equalToConstant: 14),
         ])
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: bellBtn)
+
+        if navigationController != nil {
+            navigationItem.rightBarButtonItem = UIBarButtonItem(customView: bellBtn)
+        } else {
+            view.addSubview(bellBtn)
+            bellTopConstraint = bellBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10)
+            NSLayoutConstraint.activate([
+                bellTopConstraint!,
+                bellBtn.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+                bellBtn.widthAnchor.constraint(equalToConstant: 32),
+                bellBtn.heightAnchor.constraint(equalToConstant: 32),
+            ])
+        }
         refreshBellBadge()
     }
 
@@ -774,29 +902,33 @@ extension MyRidesViewController {
 
     @objc private func bellTapped() {
         guard let me = UserDataModel.shared.getCurrentUser() else { return }
-        let notifs = AppNotificationModel.shared.notifications
-            .filter { $0.recipientUserID == me.id }
+        Task { [weak self] in
+            await AppNotificationModel.shared.refreshFromBackend(for: me.id)
+            await MainActor.run {
+                guard let self else { return }
+                let notifs = AppNotificationModel.shared.all(for: me.id)
+                AppNotificationModel.shared.markAllRead(for: me.id)
+                self.refreshBellBadge()
 
-        AppNotificationModel.shared.markAllRead(for: me.id)
-        refreshBellBadge()
+                if notifs.isEmpty {
+                    let a = UIAlertController(title: "No Notifications",
+                                              message: "You're all caught up! ✅",
+                                              preferredStyle: .alert)
+                    a.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(a, animated: true)
+                    return
+                }
 
-        if notifs.isEmpty {
-            let a = UIAlertController(title: "No Notifications",
-                                      message: "You're all caught up! ✅",
-                                      preferredStyle: .alert)
-            a.addAction(UIAlertAction(title: "OK", style: .default))
-            present(a, animated: true)
-            return
+                let vc = NotificationInboxViewController(notifications: notifs)
+                vc.modalPresentationStyle = .pageSheet
+                if let sheet = vc.sheetPresentationController {
+                    sheet.detents = [.medium(), .large()]
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 24
+                }
+                self.present(vc, animated: true)
+            }
         }
-
-        let vc = NotificationInboxViewController(notifications: notifs)
-        vc.modalPresentationStyle = .pageSheet
-        if let sheet = vc.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 24
-        }
-        present(vc, animated: true)
     }
 }
 

@@ -7,6 +7,11 @@ class ProfileViewController: UIViewController {
     private let scrollView   = UIScrollView()
     private let contentStack = UIStackView()
 
+    // MARK: - Custom Header
+    private let customHeaderView  = UIView()
+    private let headerTitleLabel  = UILabel()
+    private let headerGearButton  = UIButton(type: .system)
+
     // Pull-to-refresh
     private let refreshControl = UIRefreshControl()
 
@@ -42,7 +47,7 @@ class ProfileViewController: UIViewController {
     // MARK: - Loading skeleton
     private lazy var skeletonOverlay: UIView = {
         let v = UIView()
-        v.backgroundColor = .systemGroupedBackground
+        v.backgroundColor = AppDesign.Color.groupedBackground
         v.translatesAutoresizingMaskIntoConstraints = false
         let spinner = UIActivityIndicatorView(style: .medium)
         spinner.translatesAutoresizingMaskIntoConstraints = false
@@ -58,45 +63,87 @@ class ProfileViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavBar()
+        setupCustomHeader()
         buildScrollLayout()
         setupRefreshControl()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
         loadProfile()
     }
 
-    // MARK: - Nav Bar
-    private func setupNavBar() {
-        title = "Profile"
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        // Restore default nav bar appearance
+        let defaultAppearance = UINavigationBarAppearance()
+        defaultAppearance.configureWithDefaultBackground()
+        navigationController?.navigationBar.standardAppearance = defaultAppearance
+        navigationController?.navigationBar.scrollEdgeAppearance = defaultAppearance
+        navigationController?.navigationBar.compactAppearance = nil
+    }
 
-        // Settings gear button (left) → pushes SettingsViewController
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "gearshape.fill"),
-            style: .plain, target: self, action: #selector(settingsTapped)
-        )
+    // MARK: - Custom Header (title + gear button on same line)
+    private func setupCustomHeader() {
+        navigationItem.title = nil          // clear so the nav bar shows no title
+        navigationItem.largeTitleDisplayMode = .never
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            image: UIImage(systemName: "pencil"),
-            style: .plain, target: self, action: #selector(editButtonTapped)
-        )
+        customHeaderView.translatesAutoresizingMaskIntoConstraints = false
+        customHeaderView.backgroundColor = .clear
+        view.addSubview(customHeaderView)
+
+        // "Profile" title label
+        headerTitleLabel.text = "Profile"
+        headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
+        headerTitleLabel.textColor = .label
+        headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // Gear (settings) button
+        var cfg = UIButton.Configuration.plain()
+        cfg.image = UIImage(systemName: "gearshape.fill",
+                            withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .medium))
+        cfg.baseForegroundColor = AppDesign.Color.primary
+        headerGearButton.configuration = cfg
+        headerGearButton.translatesAutoresizingMaskIntoConstraints = false
+        headerGearButton.addTarget(self, action: #selector(settingsTapped), for: .touchUpInside)
+
+        customHeaderView.addSubview(headerTitleLabel)
+        customHeaderView.addSubview(headerGearButton)
+
+        NSLayoutConstraint.activate([
+            customHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            customHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            customHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            customHeaderView.heightAnchor.constraint(equalToConstant: 44),
+
+            headerTitleLabel.leadingAnchor.constraint(equalTo: customHeaderView.leadingAnchor),
+            headerTitleLabel.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+
+            headerGearButton.trailingAnchor.constraint(equalTo: customHeaderView.trailingAnchor),
+            headerGearButton.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+            headerGearButton.widthAnchor.constraint(equalToConstant: 36),
+            headerGearButton.heightAnchor.constraint(equalToConstant: 36),
+        ])
     }
 
     // MARK: - Build scroll layout
     private func buildScrollLayout() {
-        view.backgroundColor = .systemGroupedBackground
+        view.backgroundColor = AppDesign.Color.groupedBackground
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.alwaysBounceVertical = true
         view.addSubview(scrollView)
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.topAnchor.constraint(equalTo: customHeaderView.bottomAnchor, constant: 4),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+
+        // Add Sign In button for guest mode (hidden by default)
+        setupGuestSignInButton()
 
         contentStack.axis    = .vertical
         contentStack.spacing = AppDesign.Spacing.md
@@ -107,7 +154,7 @@ class ProfileViewController: UIViewController {
             contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
             contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
             contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl),
-            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.xl * 2),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.md * 2),
         ])
 
         contentStack.addArrangedSubview(buildHeroCard())
@@ -137,6 +184,30 @@ class ProfileViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             self?.refreshControl.endRefreshing()
         }
+    }
+
+    // MARK: - Guest Mode
+    private let guestSignInButton = UIButton(type: .system)
+
+    private func setupGuestSignInButton() {
+        guestSignInButton.translatesAutoresizingMaskIntoConstraints = false
+        guestSignInButton.applyPrimaryButton(color: AppDesign.Color.primary)
+        guestSignInButton.setTitle("Sign In to UniRide", for: .normal)
+        guestSignInButton.isHidden = true
+        guestSignInButton.addTarget(self, action: #selector(guestSignInTapped), for: .touchUpInside)
+        
+        view.addSubview(guestSignInButton)
+        NSLayoutConstraint.activate([
+            guestSignInButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.xl),
+            guestSignInButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.xl),
+            guestSignInButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.lg),
+            guestSignInButton.heightAnchor.constraint(equalToConstant: 56)
+        ])
+    }
+
+    @objc private func guestSignInTapped() {
+        AppHaptics.impact(.medium)
+        SceneDelegate.setRootToAuth()
     }
 
     // MARK: - Hero Card
@@ -410,6 +481,7 @@ class ProfileViewController: UIViewController {
         //    This ensures freshly-registered accounts with an empty local cache (or any
         //    profile updated on another device) are reflected immediately.
         guard SessionManager.shared.isLoggedIn else {
+            applyGuestState()
             hideSkeleton()
             return
         }
@@ -432,7 +504,37 @@ class ProfileViewController: UIViewController {
         }
     }
 
+    private func applyGuestState() {
+        avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
+        avatarImageView.tintColor = .systemGray4
+        nameLabel.text = "Guest User"
+        subtitleLabel.text = "Sign in to join the community"
+        memberLabel.text = "You are browsing as a guest"
+        ratingLabel.text = "—"
+        ridesLabel.text = "0"
+        
+        emailValueLabel.text = "guest@uniride.com"
+        phoneValueLabel.text = "Login Required"
+        homeValueLabel.text  = "Sign in to set home"
+        
+        vehicleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        let emptyLabel = UILabel()
+        emptyLabel.text = "Sign in to add vehicles"
+        emptyLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
+        emptyLabel.textAlignment = .center
+        vehicleStack.addArrangedSubview(emptyLabel)
+        
+        guestSignInButton.isHidden = false
+        tabBarItem.badgeValue = nil
+        completionBanner?.removeFromSuperview()
+        
+        // Hide settings button
+        headerGearButton.isEnabled = false
+    }
+
     private func applyProfile(_ profile: UserProfile) {
+        guestSignInButton.isHidden = true
+        headerGearButton.isEnabled = true
 
         // Avatar — force a known size so loadAndFallback generates correct initials image
         // (view may not be laid out yet on first viewWillAppear call)
@@ -548,10 +650,6 @@ class ProfileViewController: UIViewController {
     }
 
     // MARK: - Actions
-    @objc private func editButtonTapped() {
-        openEditProfile()
-    }
-
     @objc private func settingsTapped() {
         let vc = SettingsViewController()
         navigationController?.pushViewController(vc, animated: true)

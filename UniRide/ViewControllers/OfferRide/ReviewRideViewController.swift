@@ -77,45 +77,54 @@ class ReviewRideViewController: UIViewController {
         cardView.applyCardStyle()
         let offerTitle = offerButton.currentTitle ?? "Offer Ride"
         offerButton.applyProminentPrimaryCTA(title: offerTitle, corner: AppDesign.Radius.md)
+
+        // Remove the storyboard fixed-width constraint and make the button fill the card
+        offerButton.translatesAutoresizingMaskIntoConstraints = false
+        offerButton.constraints
+            .filter { $0.firstAttribute == .width }
+            .forEach { $0.isActive = false }
+        NSLayoutConstraint.activate([
+            offerButton.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: AppDesign.Spacing.md),
+            offerButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -AppDesign.Spacing.md),
+        ])
+
+        // Style all labels
         fromLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 0)
         toLabel.applyTextStyle(AppDesign.Typography.body, color: .secondaryLabel, lines: 0)
-        dateLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
-        timeLabel.applyTextStyle(AppDesign.Typography.body)
-        vehicleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
-        seatsLabel.applyTextStyle(AppDesign.Typography.body)
-        fareLabel.applyTextStyle(AppDesign.Typography.body, lines: 0)
+        dateLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 0)
+        timeLabel.applyTextStyle(AppDesign.Typography.body, color: .secondaryLabel, lines: 0)
+        vehicleLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 0)
+        seatsLabel.applyTextStyle(AppDesign.Typography.body, color: .secondaryLabel, lines: 0)
+        fareLabel.applyTextStyle(AppDesign.Typography.body, color: .secondaryLabel, lines: 0)
         totalLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 0)
-        
+
+        // Force secondary labels to not get compressed to zero by UIKit
+        [toLabel, timeLabel, seatsLabel, fareLabel].forEach {
+            $0?.setContentCompressionResistancePriority(.required, for: .vertical)
+            $0?.setContentHuggingPriority(.defaultLow, for: .vertical)
+        }
+
         fillSummary()
         buildRecurringCard()
     }
 
 
     func fillSummary() {
-        // Only fare/total labels need multi-line wrapping
-        fareLabel.numberOfLines = 0
-        fareLabel.lineBreakMode = .byWordWrapping
-        totalLabel.numberOfLines = 0
-        totalLabel.lineBreakMode = .byWordWrapping
-
-        // Ensure the "To" subtitle is always visible
-        toLabel.isHidden = false
-
         fromLabel.text = "From \(summary.from.address ?? "")"
-        toLabel.text = "To \(summary.to.address ?? "")"
+        toLabel.text   = "To \(summary.to.address ?? "")"
 
         dateLabel.text = DateFormatterHelper.shared.formattedDate(summary.date)
         timeLabel.text = DateFormatterHelper.shared.formattedTime(summary.time)
 
-        // Show: "Car • Maruti Swift • PB-08-AB-1234" (or just "Car" if no extras saved)
+        // "Car • Maruti Swift • PB-08-AB-1234"
         var vehicleText = summary.vehicleType
-        if !summary.vehicleModel.isEmpty { vehicleText += " • " + summary.vehicleModel }
+        if !summary.vehicleModel.isEmpty      { vehicleText += " • " + summary.vehicleModel }
         if !summary.registrationPlate.isEmpty { vehicleText += " • " + summary.registrationPlate }
         vehicleLabel.text = vehicleText
-        seatsLabel.text = "\(summary.seats) seat\(summary.seats == 1 ? "" : "s") available"
+        seatsLabel.text   = "\(summary.seats) seat\(summary.seats == 1 ? "" : "s") available"
 
-        fareLabel.text = "₹\(Int(summary.farePerSeat)) per person"
         totalLabel.text = "Total: ₹\(Int(summary.totalFare))"
+        fareLabel.text  = "₹\(Int(summary.farePerSeat)) per person"
     }
 
     // MARK: - Recurring Card
@@ -231,27 +240,20 @@ class ReviewRideViewController: UIViewController {
 
  
     @IBAction func offerTapped(_ sender: UIButton) {
+        ensureNonGuest { [weak self] in
+            guard let self = self,
+                  let user = UserDataModel.shared.getCurrentUser() else { return }
 
-        guard let user = UserDataModel.shared.getCurrentUser() else {
-            let alert = UIAlertController(title: "Not Signed In",
-                                          message: "Please sign in before offering a ride.",
-                                          preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(alert, animated: true)
-            return
-        }
-
-
-        let finalDeparture = merge(summary.date, summary.time)
-
-        let rawWaypoints = summary.route?.coordinates ?? []
-        let waypoints: [LocationPoint]
-        if rawWaypoints.count > 120 {
-            let step = max(1, rawWaypoints.count / 100)
-            waypoints = stride(from: 0, to: rawWaypoints.count, by: step).map { rawWaypoints[$0] }
-        } else {
-            waypoints = rawWaypoints
-        }
+            let finalDeparture = self.merge(self.summary.date, self.summary.time)
+            
+            let rawWaypoints = self.summary.route?.coordinates ?? []
+            let waypoints: [LocationPoint]
+            if rawWaypoints.count > 120 {
+                let step = max(1, rawWaypoints.count / 100)
+                waypoints = stride(from: 0, to: rawWaypoints.count, by: step).map { rawWaypoints[$0] }
+            } else {
+                waypoints = rawWaypoints
+            }
 
         if isRecurring && recurringDays.isEmpty {
             let alert = UIAlertController(title: "Select Repeat Days",
@@ -308,10 +310,12 @@ class ReviewRideViewController: UIViewController {
                     preferredStyle: .alert
                 )
                 alert.addAction(UIAlertAction(title: "OK", style: .default))
-                present(alert, animated: true)
+                self.present(alert, animated: true)
             }
         }
     }
+}
+
     func merge(_ date: Date, _ time: Date) -> Date {
         let calendar = Calendar.current
 

@@ -1,42 +1,7 @@
 import Foundation
 
-// MARK: - Remote DTOs
-
-private struct RemotePost: Codable {
-    let id: String
-    let authorUserId: String
-    let text: String
-    let imageUrl: String?
-    let likeCount: Int
-    let shareCount: Int
-    let commentCount: Int
-    let createdAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id, text
-        case authorUserId  = "author_user_id"
-        case imageUrl      = "image_url"
-        case likeCount     = "like_count"
-        case shareCount    = "share_count"
-        case commentCount  = "comment_count"
-        case createdAt     = "created_at"
-    }
-}
-
-private struct RemoteComment: Codable {
-    let id: String
-    let postId: String
-    let authorUserId: String
-    let text: String
-    let createdAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id, text
-        case postId        = "post_id"
-        case authorUserId  = "author_user_id"
-        case createdAt     = "created_at"
-    }
-}
+// No longer using RemotePost/RemoteComment/AnyCodable with JSONDecoder
+// Shifting to JSONSerialization for robust Supabase join handling.
 
 // MARK: - Public model
 
@@ -49,6 +14,7 @@ struct CommunityPost {
     var shareCount: Int
     var commentCount: Int
     let createdAt: Date
+    var authorProfile: UserProfile?
 }
 
 // MARK: - Repository
@@ -71,14 +37,22 @@ final class CommunityRepository {
     /// Fetches the most recent `limit` posts, ordered newest first.
     func fetchPosts(limit: Int = 50) async throws -> [CommunityPost] {
         try await SessionManager.shared.validateSession()
+        
+        // 1. Get content IDs with 2+ reports to auto-hide
+        let hiddenIDs = await fetchModeratedContentIDs()
+        
+        // 2. Fetch posts
         let url = mgr.restURL(table: "community_posts",
-                              query: "order=created_at.desc&limit=\(limit)")
+                              query: "select=*,profiles!author_user_id(*)&order=created_at.desc&limit=\(limit)")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
-        let remote = try JSONDecoder().decode([RemotePost].self, from: data)
-        return remote.compactMap(postFromRemote)
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        
+        // 3. Filter out moderated content
+        return rows.compactMap(postFromRow)
+                   .filter { !hiddenIDs.contains($0.id) }
     }
 
     /// Inserts a new post for the current user.
@@ -104,8 +78,8 @@ final class CommunityRepository {
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
 
-        let inserted = try JSONDecoder().decode([RemotePost].self, from: data)
-        guard let first = inserted.first, let id = UUID(uuidString: first.id) else {
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        guard let first = rows.first, let idStr = first["id"] as? String, let id = UUID(uuidString: idStr) else {
             throw CommunityError.decodingFailed
         }
         return id
@@ -122,6 +96,32 @@ final class CommunityRepository {
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
+    }
+    
+    /// Fetches IDs of posts and comments that have reached the report threshold (2+ reports).
+    func fetchModeratedContentIDs() async -> Set<UUID> {
+        do {
+            // We use the count logic from Supabase REST. 
+            // Better: use a dedicated moderation system, but for now we aggregate reports.
+            let url = mgr.restURL(table: "reports", query: "select=content_id")
+            var req = URLRequest(url: url)
+            req.allHTTPHeaderFields = mgr.userHeaders
+            let (data, _) = try await URLSession.shared.data(for: req)
+            let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+            
+            var counts: [UUID: Int] = [:]
+            for row in rows {
+                if let idStr = row["content_id"] as? String, let id = UUID(uuidString: idStr) {
+                    counts[id, default: 0] += 1
+                }
+            }
+            
+            // Filter Content with 2 or more reports
+            let moderated = counts.filter { $0.value >= 2 }.map { $0.key }
+            return Set(moderated)
+        } catch {
+            return []
+        }
     }
 
     // MARK: - Likes
@@ -192,29 +192,46 @@ final class CommunityRepository {
         return (isNowLiked, newCount)
     }
 
+    /// Fetches all post IDs liked by the current user.
+    func fetchUserLikedPostIDs() async -> Set<UUID> {
+        guard let uid = SessionManager.shared.userID else { return [] }
+        do {
+            try await SessionManager.shared.validateSession()
+            let url = mgr.restURL(table: "community_likes", query: "user_id=eq.\(uid.uuidString)&select=post_id")
+            var req = URLRequest(url: url)
+            req.allHTTPHeaderFields = mgr.userHeaders
+            let (data, _) = try await URLSession.shared.data(for: req)
+            let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+            
+            let ids = rows.compactMap { $0["post_id"] as? String }.compactMap { UUID(uuidString: $0) }
+            return Set(ids)
+        } catch {
+            return []
+        }
+    }
+
     // MARK: - Comments
 
     func fetchComments(postID: UUID) async throws -> [CommunityComment] {
         try await SessionManager.shared.validateSession()
+        
+        // 1. Get moderated IDs
+        let hiddenIDs = await fetchModeratedContentIDs()
+        
+        // 2. Fetch comments
         let url = mgr.restURL(table: "community_comments",
-                              query: "post_id=eq.\(postID.uuidString)&order=created_at.asc")
+                               query: "post_id=eq.\(postID.uuidString)&select=*,profiles!author_user_id(*)&order=created_at.asc")
         var req = URLRequest(url: url)
         req.allHTTPHeaderFields = mgr.userHeaders
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
-        let remote = (try? JSONDecoder().decode([RemoteComment].self, from: data)) ?? []
-        let iso = ISO8601DateFormatter()
-        return remote.compactMap { r -> CommunityComment? in
-            guard let id   = UUID(uuidString: r.id),
-                  let auth = UUID(uuidString: r.authorUserId) else { return nil }
-            return CommunityComment(
-                id: id,
-                postID: postID,
-                authorUserID: auth,
-                text: r.text,
-                createdAt: iso.date(from: r.createdAt) ?? Date()
-            )
-        }
+        
+        let rows = (try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]) ?? []
+        
+        // 3. Filter out moderated content
+        return rows.compactMap { row in
+            commentFromRow(row, postID: postID)
+        }.filter { !hiddenIDs.contains($0.id) }
     }
 
     /// Inserts a new comment for a post.
@@ -301,9 +318,12 @@ final class CommunityRepository {
 
     // MARK: - Shares
 
-    func recordShare(postID: UUID, destination: String? = nil) async throws {
+    @discardableResult
+    func recordShare(postID: UUID, destination: String? = nil) async throws -> Int {
         try await SessionManager.shared.validateSession()
         guard let uid = SessionManager.shared.userID else { throw CommunityError.notLoggedIn }
+        
+        // 1. Record the share event
         var payload: [String: Any] = [
             "post_id": postID.uuidString,
             "user_id": uid.uuidString
@@ -318,6 +338,28 @@ final class CommunityRepository {
         req.httpBody = body
         let (data, response) = try await URLSession.shared.data(for: req)
         try checkHTTP(response, data: data)
+
+        // 2. Count the real total shares for this post
+        let countURL = mgr.restURL(table: "community_shares",
+                                   query: "post_id=eq.\(postID.uuidString)&select=id")
+        var countReq = URLRequest(url: countURL)
+        countReq.allHTTPHeaderFields = mgr.userHeaders
+        let (countData, _) = try await URLSession.shared.data(for: countReq)
+        let allShares = (try? JSONSerialization.jsonObject(with: countData) as? [[String: Any]]) ?? []
+        let newCount = allShares.count
+
+        // 3. PATCH share_count on community_posts
+        let patchURL = mgr.restURL(table: "community_posts",
+                                   query: "id=eq.\(postID.uuidString)")
+        var patchReq = URLRequest(url: patchURL)
+        patchReq.httpMethod = "PATCH"
+        patchReq.allHTTPHeaderFields = mgr.userHeaders
+        patchReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        patchReq.httpBody = try JSONSerialization.data(withJSONObject: ["share_count": newCount])
+        let (_, patchResp) = try await URLSession.shared.data(for: patchReq)
+        try checkHTTP(patchResp, data: Data())
+
+        return newCount
     }
 
     // MARK: - Event Attendance
@@ -372,17 +414,59 @@ final class CommunityRepository {
         return (likes, comments)
     }
 
-    private func postFromRemote(_ r: RemotePost) -> CommunityPost? {
-        guard let id   = UUID(uuidString: r.id),
-              let auth = UUID(uuidString: r.authorUserId) else { return nil }
+    private func postFromRow(_ row: [String: Any]) -> CommunityPost? {
+        guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr),
+              let authStr = row["author_user_id"] as? String, let auth = UUID(uuidString: authStr) else { return nil }
+        
+        let text = row["text"] as? String ?? ""
+        let imgUrl = row["image_url"] as? String
+        let likes = row["like_count"] as? Int ?? 0
+        let shares = row["share_count"] as? Int ?? 0
+        let comments = row["comment_count"] as? Int ?? 0
+        
+        let createdStr = row["created_at"] as? String ?? ""
         let iso = ISO8601DateFormatter()
-        let created = iso.date(from: r.createdAt) ?? Date()
-        return CommunityPost(
-            id: id, authorUserID: auth, text: r.text,
-            imageURL: r.imageUrl.flatMap(URL.init(string:)),
-            likeCount: r.likeCount, shareCount: r.shareCount,
-            commentCount: r.commentCount, createdAt: created
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let created = iso.date(from: createdStr) ?? Date()
+        
+        var post = CommunityPost(
+            id: id, authorUserID: auth, text: text,
+            imageURL: imgUrl.flatMap(URL.init(string:)),
+            likeCount: likes, shareCount: shares,
+            commentCount: comments, createdAt: created
         )
+        
+        // Robust Profile Join Handling:
+        if let profArray = row["profiles"] as? [[String: Any]], let firstProf = profArray.first {
+            post.authorProfile = UserProfile(row: firstProf)
+        } else if let profObj = row["profiles"] as? [String: Any] {
+            post.authorProfile = UserProfile(row: profObj)
+        }
+        
+        return post
+    }
+
+    private func commentFromRow(_ row: [String: Any], postID: UUID) -> CommunityComment? {
+        guard let idStr = row["id"] as? String, let id = UUID(uuidString: idStr),
+              let authStr = row["author_user_id"] as? String, let auth = UUID(uuidString: authStr) else { return nil }
+        
+        let text = row["text"] as? String ?? ""
+        let createdStr = row["created_at"] as? String ?? ""
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        var comment = CommunityComment(
+            id: id, postID: postID, authorUserID: auth, text: text,
+            createdAt: iso.date(from: createdStr) ?? Date()
+        )
+        
+        if let profArray = row["profiles"] as? [[String: Any]], let firstProf = profArray.first {
+            comment.authorProfile = UserProfile(row: firstProf)
+        } else if let profObj = row["profiles"] as? [String: Any] {
+            comment.authorProfile = UserProfile(row: profObj)
+        }
+        
+        return comment
     }
 
     private func checkHTTP(_ response: URLResponse, data: Data) throws {

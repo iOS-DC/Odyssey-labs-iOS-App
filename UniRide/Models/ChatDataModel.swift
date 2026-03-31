@@ -36,7 +36,29 @@ final class ChatDataModel {
 
     func append(_ message: ChatMessage, to rideID: String) {
         var current = messages(for: rideID)
+        // Deduplicate by ID
+        guard !current.contains(where: { $0.id == message.id }) else { return }
+        
         current.append(message)
+        save(current, for: rideID)
+        NotificationCenter.default.post(
+            name: .chatMessagesUpdated,
+            object: rideID
+        )
+    }
+
+    /// Appends multiple messages with deduplication and a single notification.
+    func appendContents(of newMessages: [ChatMessage], to rideID: String) {
+        var current = messages(for: rideID)
+        let existingIDs = Set(current.map { $0.id })
+        
+        let filtered = newMessages.filter { !existingIDs.contains($0.id) }
+        guard !filtered.isEmpty else { return }
+        
+        current.append(contentsOf: filtered)
+        // Sort by timestamp to ensure chronological order after merging remote/local
+        current.sort { $0.timestamp < $1.timestamp }
+        
         save(current, for: rideID)
         NotificationCenter.default.post(
             name: .chatMessagesUpdated,

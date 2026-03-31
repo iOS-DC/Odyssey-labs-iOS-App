@@ -1,9 +1,10 @@
 import UIKit
 
-class CommunityViewController: UIViewController,
-                               UITableViewDelegate,
-                               UITableViewDataSource,
-                               UITextViewDelegate {
+class CommunityViewController: UIViewController, 
+                                 UITableViewDelegate, 
+                                 UITableViewDataSource, 
+                                 UITextViewDelegate,
+                                 CommentTableViewCellDelegate {
     private let sheetHiddenOffset: CGFloat = 400
     private let sheetShowDuration: TimeInterval = 0.34
     private let sheetHideDuration: TimeInterval = 0.24
@@ -12,9 +13,6 @@ class CommunityViewController: UIViewController,
     @IBOutlet weak var segmentedControl: UISegmentedControl!
     @IBOutlet weak var tableView: UITableView!
 
-    // SHARE POPUP
-    @IBOutlet weak var sharePopView: UIView!
-    @IBOutlet weak var sharePopUpBottomConstraint: NSLayoutConstraint!
 
     // NEW POST POPUP
     @IBOutlet weak var newPostContainerView: UIView!
@@ -39,11 +37,17 @@ class CommunityViewController: UIViewController,
     private var liveCommentAuthorNames: [UUID: String] = [:]
     
     private var newPostBarButton: UIBarButtonItem?
+    /// Custom header view holding the "Community" title + plus button.
+    private let customHeaderView = UIView()
+    private let headerTitleLabel = UILabel()
+    private let headerPlusButton = UIButton(type: .system)
     /// Polls Supabase every 30 s so likes/comments from other users appear automatically.
     private var refreshTimer: Timer?
     private let refreshControl = UIRefreshControl()
     /// Tracks posts currently being liked/unliked to prevent auto-refresh flickers
     private var pendingLikeOperations: Set<UUID> = []
+    private var pendingCommentOperations: Set<UUID> = []
+    private var pendingShareOperations: Set<UUID> = []
 
     // MARK: - Models
     struct Post {
@@ -58,18 +62,17 @@ class CommunityViewController: UIViewController,
 
         /// The real Supabase UUID of the author — stored so we never look up by name.
         var authorUserID: UUID?
+        
+        /// The author's profile data, bundled from Supabase.
+        var authorProfile: UserProfile?
 
         var likeCount: Int
         var shareCount: Int
         var hasLiked: Bool = false
         var hasShared: Bool = false
 
-        var comments: [String] = []
-        /// Real comment count from the DB — always accurate even before comments are loaded.
-        var remoteCommentCount: Int = 0
-        var commentCount: Int {
-            remoteCommentCount > 0 ? remoteCommentCount : comments.count
-        }
+        /// Real comment count from the DB — always accurate.
+        var commentCount: Int = 0
     }
 
 
@@ -81,28 +84,25 @@ class CommunityViewController: UIViewController,
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        let defaultPost = Post(
-            name: "Admin",
-            subtitle: "Community Manager",
-            message: "Welcome to the community! Feel free to share your thoughts 👋",
-            timestamp: "1h ago",
-            likeCount: 2,
-            shareCount: 1,
-            comments: [
-                "This is really helpful 👍",
-                "Glad to be here!"
-            ]
-        )
-        eventPosts = EventDataModel.shared.eventList()
-
-
-        feedPosts.append(defaultPost)
+        // Use .inline so the navbar stays compact — heading lives in our custom header row
+        navigationItem.title = nil          // clear so the nav bar shows no text
+        navigationItem.largeTitleDisplayMode = .never
+        setupCustomHeader()
+        view.backgroundColor = AppDesign.Color.groupedBackground
+        // Feed is now entirely driven by Supabase. 
+        // fetchPostsFromSupabase() is called below.
         tableView.reloadData()
 
         // BUG FIX: Load posts from Supabase on first appearance.
         // Falls back to the seeded defaultPost if network is unavailable.
         fetchPostsFromSupabase()
-
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleGlobalCommentUpdate(_:)),
+            name: .CommunityCommentDidUpdate,
+            object: nil
+        )
 
         segmentedControl.setTitle("Events", forSegmentAt: 0)
         segmentedControl.setTitle("Feed", forSegmentAt: 1)
@@ -111,7 +111,7 @@ class CommunityViewController: UIViewController,
         tableView.delegate = self
         tableView.dataSource = self
         tableView.separatorStyle = .none
-        tableView.backgroundColor = .systemGroupedBackground
+        tableView.backgroundColor = AppDesign.Color.groupedBackground
         tableView.contentInset = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
         tableView.showsVerticalScrollIndicator = false
         
@@ -128,11 +128,9 @@ class CommunityViewController: UIViewController,
 
         newPostContainerView.isHidden = true
         commentPopupView.isHidden = true
-        sharePopView.isHidden = true
 
         newPostBottomConstraint.constant = 300
         commentPopupBottomConstraint.constant = sheetHiddenOffset
-        sharePopUpBottomConstraint.constant = sheetHiddenOffset
         
         // Register Custom Cells
         commentTableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
@@ -143,74 +141,135 @@ class CommunityViewController: UIViewController,
         
         setupPopupUI()
         setupNewPostUI()
-        setupShareUI()
         
-        // Save reference to button
-        newPostBarButton = navigationItem.rightBarButtonItem
+        // Plus button is now in customHeaderView; remove any storyboard bar button
+        navigationItem.rightBarButtonItem = nil
+        newPostBarButton = nil
+        
+        // Initial visibility check for the plus button
+        segmentChanged(segmentedControl)
+        
+        setupPopupConstraints()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
-        // Refresh events from Supabase so the Events tab shows real data
-        Task {
-            if let remote = try? await EventsAPI.shared.fetchTopEvents(limit: 30), !remote.isEmpty {
-                await MainActor.run {
-                    self.eventPosts = remote
-                    if self.segmentedControl.selectedSegmentIndex == 0 {
-                        self.tableView.reloadData()
-                    }
-                    self.refreshControl.endRefreshing()
-                }
-            } else {
-                await MainActor.run { self.refreshControl.endRefreshing() }
-            }
-        }
+        // Mock events as requested for better visual demonstration
+        self.eventPosts = EventDataModel.mockEvents()
+        
         // Start polling so other users' likes / comments appear automatically
         startFeedRefreshTimer()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
         NotificationCenter.default.removeObserver(self)
         stopFeedRefreshTimer()
     }
     
     @objc func keyboardWillShow(notification: NSNotification) {
-        if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
-            // Adjust bottom constraint to keyboard height
-            // Check if NewPost is visible
-            if !newPostContainerView.isHidden {
-                self.newPostBottomConstraint.constant = keyboardSize.height - view.safeAreaInsets.bottom
-                UIView.animate(withDuration: 0.3) {
-                    self.view.layoutIfNeeded()
-                }
-            }
-            if !commentPopupView.isHidden {
-                self.commentPopupBottomConstraint.constant = keyboardSize.height - view.safeAreaInsets.bottom
-                UIView.animate(withDuration: 0.3) {
-                    self.view.layoutIfNeeded()
-                }
-            }
+        guard let userInfo = notification.userInfo,
+              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curveRaw = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
+        
+        let keyboardHeight = keyboardFrame.cgRectValue.height
+        let safeAreaBottom = view.safeAreaInsets.bottom
+        let animationCurve = UIView.AnimationOptions(rawValue: curveRaw << 16)
+        
+        // Robust approach: Let Auto Layout handle the top limit via constraints added in setupPopupConstraints.
+        // We simply tell the view to move up by the keyboard height.
+        let targetConstant = -(keyboardHeight - safeAreaBottom)
+
+        if !newPostContainerView.isHidden {
+            self.newPostBottomConstraint.constant = targetConstant
+        }
+        if !commentPopupView.isHidden {
+            self.commentPopupBottomConstraint.constant = targetConstant
+        }
+
+        UIView.animate(withDuration: duration, delay: 0, options: [animationCurve, .beginFromCurrentState]) {
+            self.view.layoutIfNeeded()
         }
     }
 
     @objc func keyboardWillHide(notification: NSNotification) {
+        guard let userInfo = notification.userInfo,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curveRaw = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
+        
+        let animationCurve = UIView.AnimationOptions(rawValue: curveRaw << 16)
+
         if !newPostContainerView.isHidden {
-             self.newPostBottomConstraint.constant = 0
-             UIView.animate(withDuration: 0.3) {
-                 self.view.layoutIfNeeded()
-             }
+            self.newPostBottomConstraint.constant = 0
         }
         if !commentPopupView.isHidden {
-             self.commentPopupBottomConstraint.constant = 0
-             UIView.animate(withDuration: 0.3) {
-                 self.view.layoutIfNeeded()
-             }
+            self.commentPopupBottomConstraint.constant = 0
+        }
+
+        UIView.animate(withDuration: duration, delay: 0, options: [animationCurve, .beginFromCurrentState]) {
+            self.view.layoutIfNeeded()
         }
     }
     
+    // MARK: - Custom Header (title + plus button on same line)
+    func setupCustomHeader() {
+        customHeaderView.translatesAutoresizingMaskIntoConstraints = false
+        customHeaderView.backgroundColor = .clear
+        view.addSubview(customHeaderView)
+
+        // "Community" title label – large, bold, left-aligned
+        headerTitleLabel.text = "Community"
+        headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
+        headerTitleLabel.textColor = .label
+        headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        // Plus button – circular, primary colour
+        var cfg = UIButton.Configuration.filled()
+        cfg.image = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold))
+        cfg.baseForegroundColor = .white
+        cfg.baseBackgroundColor = AppDesign.Color.primary
+        cfg.cornerStyle = .capsule
+        headerPlusButton.configuration = cfg
+        headerPlusButton.translatesAutoresizingMaskIntoConstraints = false
+        headerPlusButton.addTarget(self, action: #selector(addNewPostButtonTapped(_:)), for: .touchUpInside)
+
+        customHeaderView.addSubview(headerTitleLabel)
+        customHeaderView.addSubview(headerPlusButton)
+
+        NSLayoutConstraint.activate([
+            // Header view pinned just below the safe-area top
+            customHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            customHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            customHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            customHeaderView.heightAnchor.constraint(equalToConstant: 44),
+
+            // Title on the left, vertically centred
+            headerTitleLabel.leadingAnchor.constraint(equalTo: customHeaderView.leadingAnchor),
+            headerTitleLabel.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+
+            // Plus button on the right, vertically centred, fixed size
+            headerPlusButton.trailingAnchor.constraint(equalTo: customHeaderView.trailingAnchor),
+            headerPlusButton.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+            headerPlusButton.widthAnchor.constraint(equalToConstant: 36),
+            headerPlusButton.heightAnchor.constraint(equalToConstant: 36),
+        ])
+
+        // Move segmented control below the custom header
+        // Remove existing top constraint on segmentedControl to safeArea and add a new one
+        if let existingTop = view.constraints.first(where: {
+            ($0.firstItem as? UISegmentedControl == segmentedControl || $0.secondItem as? UISegmentedControl == segmentedControl)
+            && ($0.firstAttribute == .top || $0.secondAttribute == .top)
+        }) {
+            existingTop.isActive = false
+        }
+        segmentedControl.topAnchor.constraint(equalTo: customHeaderView.bottomAnchor, constant: 12).isActive = true
+    }
+
     func setupNewPostUI() {
         // New Post Popup Styling
         newPostContainerView.backgroundColor = .systemBackground
@@ -315,71 +374,18 @@ class CommunityViewController: UIViewController,
         commentTextField.rightViewMode = .always
     }
 
-    func setupShareUI() {
-        // Container
-        sharePopView.backgroundColor = .systemBackground
-        sharePopView.layer.cornerRadius = AppDesign.Radius.lg
-        sharePopView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        sharePopView.layer.shadowColor = UIColor.black.cgColor
-        sharePopView.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
-        sharePopView.layer.shadowOffset = CGSize(width: 0, height: -AppDesign.Spacing.xs)
-        sharePopView.layer.shadowRadius = AppDesign.Shadow.cardRadius
-        
-        // Title (Tag 201)
-        if let titleLabel = sharePopView.viewWithTag(201) as? UILabel {
-            titleLabel.text = "Share Post"
-            titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
-        }
-        
-        // Style Buttons (Tags 1, 2, 3, 4)
-        let socialColors: [Int: UIColor] = [
-            1: AppDesign.Color.success, // WhatsApp
-            2: AppDesign.Color.primary, // Instagram
-            3: AppDesign.Color.primary, // Facebook
-            4: AppDesign.Color.textPrimary.withAlphaComponent(0.7) // More
-        ]
-        
-        for i in 1...4 {
-            if let btn = sharePopView.viewWithTag(i) as? UIButton {
-                btn.layer.cornerRadius = AppDesign.Radius.sm
-                btn.backgroundColor = .secondarySystemBackground
-                btn.tintColor = socialColors[i] ?? .label
-                btn.titleLabel?.font = AppDesign.Typography.subheadline
-                
-                // Add icons programmatically if needed, or rely on text
-                switch i {
-                case 1: btn.setImage(UIImage(systemName: "message.fill"), for: .normal)
-                case 2: btn.setImage(UIImage(systemName: "camera.fill"), for: .normal)
-                case 3: btn.setImage(UIImage(systemName: "safari.fill"), for: .normal) // Facebook-ish
-                case 4: btn.setImage(UIImage(systemName: "ellipsis.circle.fill"), for: .normal)
-                default: break
-                }
-                
-                // Padding for icon
-                btn.configuration = .borderedTinted()
-                btn.configuration?.imagePadding = 8
-                btn.configuration?.baseBackgroundColor = socialColors[i]?.withAlphaComponent(0.1)
-                btn.configuration?.baseForegroundColor = socialColors[i]
-            }
-        }
-        
-        // Cancel Button (Tag 202)
-        if let cancelBtn = sharePopView.viewWithTag(202) as? UIButton {
-            cancelBtn.layer.cornerRadius = AppDesign.Radius.md
-            cancelBtn.backgroundColor = AppDesign.Color.fieldBackground
-            cancelBtn.setTitleColor(.label, for: .normal)
-            cancelBtn.titleLabel?.font = AppDesign.Typography.button
-            // Remove defaultFilled if it conflicts
-            cancelBtn.configuration = .plain()
-            cancelBtn.setTitle("Cancel", for: .normal)
-        }
+
+    private func setupPopupConstraints() {
+        // Add a "Top Cap" constraint to prevent popups from sliding under/over the navigation tabs.
+        // This constraint ensures the top of the popup stays at least 140 points from the safe area top.
+        newPostContainerView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 140).isActive = true
+        commentPopupView.topAnchor.constraint(greaterThanOrEqualTo: view.safeAreaLayoutGuide.topAnchor, constant: 140).isActive = true
     }
 
     // MARK: - NEW POST POPUP
     func showComposer() {
         AppHaptics.impact(.light)
         hideCommentPopup()
-        hideSharePopup()
 
         newPostContainerView.isHidden = false
         newPostContainerView.alpha = 0
@@ -399,43 +405,28 @@ class CommunityViewController: UIViewController,
         }
     }
 
-    // MARK: - SHARE POPUP
-    func showSharePopup() {
-        AppHaptics.impact(.light)
-        hideComposer()
-        hideCommentPopup()
-
-        sharePopView.isHidden = false
-        sharePopView.alpha = 0
-        sharePopView.transform = CGAffineTransform(translationX: 0, y: 16)
-        sharePopUpBottomConstraint.constant = 0
-        animateSheetShow(sharePopView)
-    }
 
     @IBAction func segmentChanged(_ sender: Any) {
         AppHaptics.selection()
+        
+        // Ensure all popups are dismissed when switching tabs
+        hideComposer()
+        hideCommentPopup()
+        
         tableView.reloadData()
         
-        // Hide "New Post" button (plus) when in Events tab (index 0)
-        if segmentedControl.selectedSegmentIndex == 0 {
-            navigationItem.rightBarButtonItem = nil
-        } else {
-            navigationItem.rightBarButtonItem = newPostBarButton
+        // Hide the custom plus button when on Events tab (index 0)
+        UIView.animate(withDuration: 0.2) {
+            self.headerPlusButton.alpha = self.segmentedControl.selectedSegmentIndex == 0 ? 0 : 1
+            self.headerPlusButton.isUserInteractionEnabled = self.segmentedControl.selectedSegmentIndex != 0
         }
     }
-    func hideSharePopup() {
-        sharePopUpBottomConstraint.constant = sheetHiddenOffset
-        animateSheetHide(sharePopView) { [weak self] in
-            guard let self else { return }
-            self.sharePopView.isHidden = true
-        }
-    }
+
 
     // MARK: - COMMENT POPUP
     func showCommentPopup() {
         AppHaptics.impact(.light)
         hideComposer()
-        hideSharePopup()
 
         commentPopupView.isHidden = false
         commentPopupView.alpha = 0
@@ -492,7 +483,9 @@ class CommunityViewController: UIViewController,
 
     // MARK: - BUTTON ACTIONS
     @IBAction func addNewPostButtonTapped(_ sender: Any) {
-        showComposer()
+        ensureNonGuest { [weak self] in
+            self?.showComposer()
+        }
     }
 
     @IBAction func closeNewPostTapped(_ sender: UIButton) {
@@ -508,19 +501,24 @@ class CommunityViewController: UIViewController,
         let role    = user?.role == .faculty ? "Faculty" :
                       (user?.courseName.flatMap { c in user?.year.map { y in "\(c) · Year \(y)" } } ?? "Student")
 
-        let newPost = Post(name: name,
+        let cleanedText = ProfanityFilter.shared.clean(typedText)
+
+        var newPost = Post(name: name,
                            subtitle: role,
-                           message: typedText,
+                           message: cleanedText,
                            timestamp: "Just now",
                            likeCount: 0,
                            shareCount: 0)
+        newPost.authorProfile = user // Ensure profile pic shows immediately
+        newPost.authorUserID = user?.id
 
         feedPosts.insert(newPost, at: 0)
         tableView.reloadData()
 
         // BUG FIX: Persist the new post to Supabase and sync the remoteID immediately
         Task {
-            if let newID = try? await CommunityRepository.shared.insertPost(text: typedText) {
+            let cleanedText = ProfanityFilter.shared.clean(typedText)
+            if let newID = try? await CommunityRepository.shared.insertPost(text: cleanedText) {
                 await MainActor.run {
                     // Update the local post with its real Supabase ID
                     // Since it was just inserted at 0, it should be there.
@@ -539,56 +537,37 @@ class CommunityViewController: UIViewController,
 
     // MARK: - COMMENTS
     @IBAction func commentButtonTapped(_ sender: UIButton) {
-        guard let cell = getCell(from: sender),
-              let index = tableView.indexPath(for: cell)?.row else { return }
+        ensureNonGuest { [weak self] in
+            guard let self = self,
+                  let cell = self.getCell(from: sender),
+                  let index = self.tableView.indexPath(for: cell)?.row else { return }
 
-        currentPostIndex = index
-        selectedPostIndex = index
+            self.currentPostIndex = index
+            self.selectedPostIndex = index
 
-        // Clear stale data and show popup immediately
-        liveCommunityComments = []
-        liveCommentAuthorNames = [:]
-        commentTextField.text = ""
-        commentTableView.reloadData()
-        showCommentPopup()
+            // Clear stale data and show popup immediately
+            self.liveCommunityComments = []
+            self.liveCommentAuthorNames = [:]
+            self.commentTextField.text = ""
+            self.commentTableView.reloadData()
+            self.showCommentPopup()
 
-        // Fetch real comments from Supabase in background
-        guard let postID = feedPosts[index].remoteID else { return }
-        Task {
-            await loadLiveComments(for: postID)
+            // Fetch real comments from Supabase in background
+            guard let postID = self.feedPosts[index].remoteID else { return }
+            Task {
+                await self.loadLiveComments(for: postID)
+            }
         }
     }
 
     /// Fetches all comments for a post from Supabase and resolves author names.
     private func loadLiveComments(for postID: UUID) async {
-        guard let comments = try? await CommunityRepository.shared.fetchComments(postID: postID) else { return }
-
-        // Fetch author names in parallel
-        var names: [UUID: String] = [:]
-        let uniqueIDs = Set(comments.map { $0.authorUserID })
-        await withTaskGroup(of: (UUID, String)?.self) { group in
-            for id in uniqueIDs {
-                group.addTask {
-                    // Fast path: local cache
-                    if let cached = UserDataModel.shared.getUser(by: id), !cached.fullName.isEmpty {
-                        return (id, cached.fullName)
-                    }
-                    // Slow path: Supabase profiles
-                    guard let row = try? await ProfileRepository.shared.fetchProfile(userID: id),
-                          let name = row["full_name"] as? String,
-                          !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    else { return nil }
-                    return (id, name)
-                }
-            }
-            for await result in group {
-                if let (id, name) = result { names[id] = name }
-            }
-        }
+        guard let remoteComments = try? await CommunityRepository.shared.fetchComments(postID: postID) else { return }
+        let blockedIDs = await SafetyService.shared.fetchBlockedUserIDs()
+        let filtered = remoteComments.filter { !blockedIDs.contains($0.authorUserID) }
 
         await MainActor.run {
-            self.liveCommunityComments = comments
-            self.liveCommentAuthorNames = names
+            self.liveCommunityComments = filtered
             self.commentTableView.reloadData()
         }
     }
@@ -601,16 +580,22 @@ class CommunityViewController: UIViewController,
 
         guard let index = selectedPostIndex, let postID = feedPosts[index].remoteID else { return }
 
+        self.pendingCommentOperations.insert(postID)
         Task {
+            defer {
+                Task { @MainActor in self.pendingCommentOperations.remove(postID) }
+            }
+            let cleanedText = ProfanityFilter.shared.clean(text)
             // 1. Write to Supabase and get the new definitive total count
-            if let newCount = try? await CommunityRepository.shared.insertComment(postID: postID, text: text) {
+            if let newCount = try? await CommunityRepository.shared.insertComment(postID: postID, text: cleanedText) {
                 await MainActor.run {
                     self.view.endEditing(true)
-                    // Update the cell count from the backend truth
-                    if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                        self.feedPosts[i].remoteCommentCount = newCount
-                        self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
-                    }
+                    // Update locally + Notify globally
+                    NotificationCenter.default.post(
+                        name: .CommunityCommentDidUpdate,
+                        object: nil,
+                        userInfo: ["postID": postID, "newCount": newCount]
+                    )
                 }
             }
 
@@ -626,57 +611,100 @@ class CommunityViewController: UIViewController,
 
     // MARK: - LIKE / SHARE
     @IBAction func likeButtonTapped(_ sender: UIButton) {
-        guard let cell = getCell(from: sender),
-              let index = tableView.indexPath(for: cell)?.row else { return }
+        ensureNonGuest { [weak self] in
+            guard let self = self,
+                  let cell = self.getCell(from: sender),
+                  let index = self.tableView.indexPath(for: cell)?.row else { return }
 
-        // Optimistic local toggle so the button feels instant
-        let currentlyLiked = feedPosts[index].hasLiked
-        feedPosts[index].hasLiked = !currentlyLiked
-        feedPosts[index].likeCount += (currentlyLiked ? -1 : 1)
-        tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
-
-        guard let postID = feedPosts[index].remoteID else { return }
-        
-        // Track as pending so auto-refresh doesn't overwrite our optimistic state
-        pendingLikeOperations.insert(postID)
-        
-        Task {
-            defer {
-                Task { @MainActor in
-                    self.pendingLikeOperations.remove(postID)
-                }
-            }
+            guard let postID = self.feedPosts[index].remoteID else { return }
             
-            // Write to Supabase and get the final truth (isLiked, newTotalCount)
-            if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
-                await MainActor.run {
-                    if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                        // Sync with backend truth
-                        self.feedPosts[i].hasLiked = result.isLiked
-                        self.feedPosts[i].likeCount = result.count
-                        self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+            // Prevention: If we are already syncing this post, ignore additional taps to prevent race conditions.
+            if self.pendingLikeOperations.contains(postID) { return }
+            
+            // Optimistic local toggle so the button feels instant
+            let currentlyLiked = self.feedPosts[index].hasLiked
+            let newLiked = !currentlyLiked
+            let newCount = self.feedPosts[index].likeCount + (currentlyLiked ? -1 : 1)
+            
+            self.feedPosts[index].hasLiked = newLiked
+            self.feedPosts[index].likeCount = newCount
+            
+            // Direct UI update instead of reloadRows to prevent flickering
+            if var config = sender.configuration {
+                let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+                let iconName = newLiked ? "heart.fill" : "heart"
+                config.image = UIImage(systemName: iconName, withConfiguration: symbolConfig)
+                config.title = "\(newCount)"
+                config.baseForegroundColor = newLiked ? .systemRed : .label
+                sender.configuration = config
+            }
+
+            guard let postID = self.feedPosts[index].remoteID else { return }
+            
+            // Track as pending so auto-refresh doesn't overwrite our optimistic state
+            self.pendingLikeOperations.insert(postID)
+            
+            Task {
+                defer {
+                    Task { @MainActor in
+                        self.pendingLikeOperations.remove(postID)
+                    }
+                }
+                
+                // Write to Supabase and get the final truth (isLiked, newTotalCount)
+                if let result = try? await CommunityRepository.shared.toggleLike(postID: postID) {
+                    await MainActor.run {
+                        if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                            // Sync with backend truth if it differs from our optimistic guess
+                            if self.feedPosts[i].hasLiked != result.isLiked || self.feedPosts[i].likeCount != result.count {
+                                self.feedPosts[i].hasLiked = result.isLiked
+                                self.feedPosts[i].likeCount = result.count
+                                // Only reload if there was a correction to minimize visual noise
+                                self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    @IBAction func shareCancelButtonTapped(_ sender: Any) {
-       hideSharePopup()
-    }
     
     @IBAction func shareButtonTapped(_ sender: UIButton) {
-        guard let cell = getCell(from: sender),
-              let index = tableView.indexPath(for: cell)?.row else { return }
-        
-        let post = feedPosts[index]
-        let textToShare = "Check out this post from \(post.name): \(post.message)"
-        
-        showSystemShareSheet(items: [textToShare])
-        
-        // Track share count
-        feedPosts[index].shareCount += 1
-        tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+        ensureNonGuest { [weak self] in
+            guard let self = self,
+                  let cell = self.getCell(from: sender),
+                  let index = self.tableView.indexPath(for: cell)?.row else { return }
+            
+            self.currentPostIndex = index
+            let post = self.feedPosts[index]
+            let textToShare = "Check out this post from \(post.name) on UniRide!"
+            
+            self.showSystemShareSheet(items: [textToShare])
+            
+            guard let postID = post.remoteID else { return }
+
+            // Optimistic UI for shares
+            self.feedPosts[index].shareCount += 1
+            self.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+            self.pendingShareOperations.insert(postID)
+
+            // Backend Sync
+            Task {
+                defer {
+                    Task { @MainActor in self.pendingShareOperations.remove(postID) }
+                }
+                if let newCount = try? await CommunityRepository.shared.recordShare(postID: postID) {
+                    await MainActor.run {
+                        // Resync with backend truth
+                        if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                            self.feedPosts[i].shareCount = newCount
+                            self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
+                        }
+                    }
+                }
+            }
+        }
     }
     
     @IBAction func EventShareButtonTapped(_ sender: Any) {
@@ -684,14 +712,24 @@ class CommunityViewController: UIViewController,
         guard let button = sender as? UIView,
               let indexPath = getCellIndexPath(sender: button) else { return }
         
-        let event = eventPosts[indexPath.row]
-        let textToShare = "Join me at \(event.title) on \(event.startsAt)! 🚗"
+        currentPostIndex = indexPath.row
+        let event = eventPosts[currentPostIndex]
+        let textToShare = "Join me at \(event.title) on UniRide! 🚗"
         
         showSystemShareSheet(items: [textToShare])
         
-        // Track share count
-        eventPosts[indexPath.row].shareCount += 1
-        tableView.reloadRows(at: [IndexPath(row: indexPath.row, section: 0)], with: .none)
+        // Backend Sync
+        Task {
+            let eventID = event.id
+            if let newCount = try? await EventsAPI.shared.incrementShareCount(eventID: eventID, currentCount: event.shareCount) {
+                await MainActor.run {
+                    if self.currentPostIndex < self.eventPosts.count {
+                        self.eventPosts[self.currentPostIndex].shareCount = newCount
+                        self.tableView.reloadRows(at: [IndexPath(row: self.currentPostIndex, section: 0)], with: .none)
+                    }
+                }
+            }
+        }
     }
     
     @IBAction func shareEventTapped(_ sender: UIButton) {
@@ -703,65 +741,10 @@ class CommunityViewController: UIViewController,
     }
 
     
-    @IBAction func shareOptionTapped(_ sender: UIButton) {
-        hideSharePopup()
-        
-        // Get the partial message or link to share
-        let textToShare = "Check out this post on UniRide!"
-        
-        switch sender.tag {
-        case 1: // WhatsApp
-            let urlString = "whatsapp://send?text=\(textToShare.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-            if let url = URL(string: urlString) {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                } else {
-                    // Fallback to share sheet
-                    showSystemShareSheet(items: [textToShare])
-                }
-            }
-            
-        case 2: // Instagram
-            // Instagram doesn't support simple text sharing via URL scheme easily, usually requires UIDocumentInteractionController for images.
-            // For now, we'll try opening the app, or fallback to system share which handles it better.
-            let urlString = "instagram://app"
-            if let url = URL(string: urlString) {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                } else {
-                    showSystemShareSheet(items: [textToShare])
-                }
-            }
-            
-        case 3: // Facebook
-            let urlString = "fb://"
-            if let url = URL(string: urlString) {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:], completionHandler: nil)
-                } else {
-                    showSystemShareSheet(items: [textToShare])
-                }
-            }
-            
-        case 4: // More
-            showSystemShareSheet(items: [textToShare])
-            
-        default: break
-        }
-
-        // Increase share count for whichever post is currently selected
-        if segmentedControl.selectedSegmentIndex == 1 {
-            feedPosts[currentPostIndex].shareCount += 1
-        } else {
-            eventPosts[currentPostIndex].shareCount += 1
-        }
-
-        tableView.reloadRows(at: [IndexPath(row: currentPostIndex, section: 0)], with: .none)
-    }
     
     func showSystemShareSheet(items: [Any]) {
         let ac = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        present(ac, animated: true)
+        presentPopoverCentered(ac)
     }
 
     // MARK: - CHAR COUNT & DELEGATE
@@ -796,9 +779,9 @@ class CommunityViewController: UIViewController,
 
     // MARK: - Feed auto-refresh
     private func startFeedRefreshTimer() {
-        // Fire immediately then every 5 seconds
+        // Fire every 15 seconds for a good balance of "live" feeling without constant reloading
         refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             guard let self, self.segmentedControl.selectedSegmentIndex == 1 else { return }
             self.fetchPostsFromSupabase()
         }
@@ -846,96 +829,88 @@ class CommunityViewController: UIViewController,
                 return 
             }
 
+            let blockedIDs = await SafetyService.shared.fetchBlockedUserIDs()
+            let likedIDs   = await CommunityRepository.shared.fetchUserLikedPostIDs()
+            
             // Build initial posts with placeholder names and real counts
-            var mapped: [Post] = remotePosts.map { rp in
+            var mapped: [Post] = remotePosts.compactMap { rp in
+                // FILTER: Exclude posts from blocked users
+                if blockedIDs.contains(rp.authorUserID) { return nil }
+
                 let df = RelativeDateTimeFormatter()
                 df.unitsStyle = .short
                 var when = df.localizedString(for: rp.createdAt, relativeTo: Date())
-                // Handle future dates (clock sync issues) and very recent posts
-                if when.contains("in ") || when.contains("0 sec") {
+                
+                // Better relative time: Only "Just now" for < 30 seconds
+                let diff = Date().timeIntervalSince(rp.createdAt)
+                if diff < 30 {
+                    when = "Just now"
+                } else if diff < 0 {
+                    // Safety for future dates (clock sync)
                     when = "Just now"
                 }
+                let isMe = rp.authorUserID == UserDataModel.shared.getCurrentUser()?.id
+                let effectiveProfile = isMe ? UserDataModel.shared.getCurrentUser() : rp.authorProfile
+                
                 return Post(
-                    name: "UniRide User",          // placeholder — replaced below
-                    subtitle: "Community Member",  // placeholder
+                    name: effectiveProfile?.fullName ?? "UniRide User",
+                    subtitle: (effectiveProfile?.role == .faculty ? "Faculty" : "Student"),
                     message: rp.text,
                     timestamp: when,
                     remoteID: rp.id,
-                    authorUserID: rp.authorUserID, // ← store real UUID directly
+                    authorUserID: rp.authorUserID,
+                    authorProfile: effectiveProfile,
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount,
-                    remoteCommentCount: rp.commentCount // ← real count from DB
+                    hasLiked: likedIDs.contains(rp.id),
+                    commentCount: rp.commentCount
                 )
             }
-            guard !mapped.isEmpty else { return }
+            // If mapped is empty (e.g. all posts moderated), we still proceed
+            // to update feedPosts and the table so the UI reflects the emptiness.
 
-            // Show posts immediately with placeholder names.
-            // Preserve hasLiked + likeCount from the current session so that
-            // a refresh (timer/comment) never resets the user's own like.
+            // Merge local session state (likes, counts) into the freshly fetched posts 
+            // so we don't flicker or lose optimistic updates.
             await MainActor.run {
                 for i in mapped.indices {
                     guard let remoteID = mapped[i].remoteID else { continue }
                     
-                    // If we are currently liking/unlinking this post, DON'T let the server 
-                    // overwrite our local optimistic state yet.
-                    if self.pendingLikeOperations.contains(remoteID) {
-                        if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }) {
-                            mapped[i].hasLiked = existing.hasLiked
+                    if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }) {
+                        if self.pendingLikeOperations.contains(remoteID) {
+                            mapped[i].hasLiked  = existing.hasLiked
                             mapped[i].likeCount = existing.likeCount
                         }
-                        continue
-                    }
-
-                    if let existing = self.feedPosts.first(where: { $0.remoteID == remoteID }),
-                       existing.hasLiked {
-                        mapped[i].hasLiked  = true
-                        mapped[i].likeCount = max(mapped[i].likeCount, existing.likeCount)
-                    }
-                }
-                self.feedPosts = mapped
-                self.tableView.reloadData()
-            }
-
-            // Fetch real names from Supabase profiles in parallel
-            let uniqueAuthorIDs = Set(remotePosts.map { $0.authorUserID })
-            await withTaskGroup(of: (UUID, String, String)?.self) { group in
-                for authorID in uniqueAuthorIDs {
-                    group.addTask {
-                        // Try local cache first (fast), then Supabase
-                        if let cached = UserDataModel.shared.getUser(by: authorID),
-                           !cached.fullName.isEmpty {
-                            let role = cached.role == .faculty ? "Faculty" : "Student"
-                            return (authorID, cached.fullName, role)
+                        if self.pendingCommentOperations.contains(remoteID) {
+                            mapped[i].commentCount = existing.commentCount
                         }
-                        guard let row = try? await ProfileRepository.shared.fetchProfile(userID: authorID),
-                              let name = row["full_name"] as? String,
-                              !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        else { return nil }
-                        let role = (row["role"] as? String) == "faculty" ? "Faculty" : "Student"
-                        return (authorID, name, role)
+                        if self.pendingShareOperations.contains(remoteID) {
+                            mapped[i].shareCount = existing.shareCount
+                        }
+                        
+                        // Small aesthetic fix: if existing post was already rendered, 
+                        // try to keep its profile if our new one is nil for some reason.
+                        if mapped[i].authorProfile == nil {
+                            mapped[i].authorProfile = existing.authorProfile
+                        }
                     }
                 }
-                for await result in group {
-                    guard let (authorID, name, role) = result else { continue }
-                    // Update all posts by this author
-                    for i in mapped.indices where mapped[i].authorUserID == authorID {
-                        mapped[i].name = name
-                        mapped[i] = Post(
-                            name: name, subtitle: role,
-                            message: mapped[i].message, timestamp: mapped[i].timestamp,
-                            remoteID: mapped[i].remoteID, authorUserID: mapped[i].authorUserID,
-                            likeCount: mapped[i].likeCount, shareCount: mapped[i].shareCount,
-                            remoteCommentCount: mapped[i].remoteCommentCount
-                        )
-                    }
-                }
-            }
-
-            await MainActor.run {
+                
                 self.feedPosts = mapped
                 self.tableView.reloadData()
                 self.refreshControl.endRefreshing()
             }
+        }
+    }
+
+
+    @objc private func handleGlobalCommentUpdate(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let postID = userInfo["postID"] as? UUID,
+              let newCount = userInfo["newCount"] as? Int else { return }
+
+        if let index = feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+            feedPosts[index].commentCount = newCount
+            tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
         }
     }
 
@@ -991,8 +966,8 @@ class CommunityViewController: UIViewController,
                 return UITableViewCell()
             }
             let comment = liveCommunityComments[indexPath.row]
-            let authorName = liveCommentAuthorNames[comment.authorUserID] ?? "UniRide User"
-            cell.configure(text: comment.text, authorName: authorName)
+            cell.configure(with: comment)
+            cell.delegate = self
             return cell
         }
 
@@ -1010,12 +985,44 @@ class CommunityViewController: UIViewController,
                 )
             }
 
-            if let imgView = cell.viewWithTag(100) as? UIImageView {
-                imgView.layer.cornerRadius = AppDesign.Radius.lg
-                imgView.clipsToBounds = true
-                // Use initials-based avatar for the post author
-                imgView.image = UIImage.generatedAvatar(for: post.name, size: CGSize(width: 40, height: 40))
+            // Avatar: hide the storyboard placeholder and use a programmatic imageview
+            // so we always know the bounds (40×40) when calling loadAndFallback.
+            if let storyboardAvatar = cell.viewWithTag(5) as? UIImageView {
+                storyboardAvatar.isHidden = true
             }
+
+            let avatarTag = 201
+            let avatarSize: CGFloat = 42 // Match storyboard size
+            let avatarIV: UIImageView
+            
+            // Reference the card container to add the avatar inside it
+            let cardContainer = cell.contentView.subviews.first
+            
+            if let existing = cell.viewWithTag(avatarTag) as? UIImageView {
+                avatarIV = existing
+            } else {
+                let iv = UIImageView()
+                iv.tag = avatarTag
+                iv.contentMode = .scaleAspectFill
+                iv.clipsToBounds = true
+                iv.layer.cornerRadius = avatarSize / 2
+                iv.backgroundColor = AppDesign.Color.fieldBackground
+                iv.translatesAutoresizingMaskIntoConstraints = false
+                
+                // Add to the card container if it exists, otherwise contentView
+                let container = cardContainer ?? cell.contentView
+                container.addSubview(iv)
+                
+                // Position it exactly where the storyboard avatar sits (16, 16 inside card)
+                NSLayoutConstraint.activate([
+                    iv.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+                    iv.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
+                    iv.widthAnchor.constraint(equalToConstant: avatarSize),
+                    iv.heightAnchor.constraint(equalToConstant: avatarSize)
+                ])
+                avatarIV = iv
+            }
+            avatarIV.loadAndFallback(from: post.authorProfile?.photoURL, name: post.name.isEmpty ? "?" : post.name)
 
             if let label = cell.viewWithTag(1) as? UILabel {
                 label.text = post.name
@@ -1027,27 +1034,14 @@ class CommunityViewController: UIViewController,
             }
             if let label = cell.viewWithTag(3) as? UILabel {
                 label.text = post.timestamp
-                label.applyTextStyle(AppDesign.Typography.body, color: .secondaryLabel)
+                label.font = .systemFont(ofSize: 11, weight: .regular)
+                label.textColor = .secondaryLabel
             }
             // Verified badge logic: Use attributed string with attachment instead of subviews to prevent layout churn
+            // Name label: Simple text, no verified badge attachment
             if let nameLabel = cell.viewWithTag(1) as? UILabel {
-                let name = post.name
-                let isVerified = UserDataModel.shared.allUsers().first(where: { $0.fullName == name })?.isEmailVerified == true
-
-                if isVerified {
-                    let imageAttachment = NSTextAttachment()
-                    imageAttachment.image = UIImage(systemName: "checkmark.seal.fill")?.withTintColor(AppDesign.Color.primary)
-                    // Adjust vertical alignment
-                    let font = nameLabel.font ?? AppDesign.Typography.bodyStrong
-                    let mid = font.descender + font.capHeight
-                    imageAttachment.bounds = CGRect(x: 0, y: font.descender + (mid - 13) / 2, width: 13, height: 13)
-
-                    let fullString = NSMutableAttributedString(string: name + " ")
-                    fullString.append(NSAttributedString(attachment: imageAttachment))
-                    nameLabel.attributedText = fullString
-                } else {
-                    nameLabel.text = name
-                }
+                nameLabel.text = post.name
+                nameLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
             }
 
             if let label = cell.viewWithTag(4) as? UILabel {
@@ -1056,44 +1050,71 @@ class CommunityViewController: UIViewController,
                 label.lineBreakMode = .byTruncatingTail
             }
 
+            // ACTION BUTTONS (Like, Comment, Share, Report)
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+            
             if let likeButton = cell.viewWithTag(10) as? UIButton {
                 var config = UIButton.Configuration.plain()
-                config.title = "❤️ \(post.likeCount)"
-                config.baseForegroundColor = .label
-                config.titleLineBreakMode = .byTruncatingTail
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
+                let iconName = post.hasLiked ? "heart.fill" : "heart"
+                config.image = UIImage(systemName: iconName, withConfiguration: symbolConfig)
+                config.title = "\(post.likeCount)"
+                config.baseForegroundColor = post.hasLiked ? .systemRed : .label
+                config.imagePadding = 2
+                config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming
-                    outgoing.font = AppDesign.Typography.subheadline
-                    return outgoing
+                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
                 }
                 likeButton.configuration = config
             }
+
             if let commentButton = cell.viewWithTag(11) as? UIButton {
                 var config = UIButton.Configuration.plain()
-                config.title = "💬 \(post.commentCount)"
+                config.image = UIImage(systemName: "bubble.right", withConfiguration: symbolConfig)
+                config.title = "\(post.commentCount)"
                 config.baseForegroundColor = .label
-                config.titleLineBreakMode = .byTruncatingTail
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
+                config.imagePadding = 2
+                config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming
-                    outgoing.font = AppDesign.Typography.subheadline
-                    return outgoing
+                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
                 }
                 commentButton.configuration = config
             }
+
             if let shareButton = cell.viewWithTag(12) as? UIButton {
                 var config = UIButton.Configuration.plain()
-                config.title = "↪️ \(post.shareCount)"
+                config.image = UIImage(systemName: "square.and.arrow.up", withConfiguration: symbolConfig)
+                config.title = "\(post.shareCount)"
                 config.baseForegroundColor = .label
-                config.titleLineBreakMode = .byTruncatingTail
-                config.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8)
+                config.imagePadding = 2
+                config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming
-                    outgoing.font = AppDesign.Typography.subheadline
-                    return outgoing
+                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
                 }
                 shareButton.configuration = config
+            }
+
+            // Report Button & Stack Layout
+            if let stackView = cell.viewWithTag(12)?.superview as? UIStackView {
+                stackView.distribution = .fillEqually
+                stackView.alignment = .center
+                stackView.spacing = 0
+                stackView.isLayoutMarginsRelativeArrangement = true
+                stackView.layoutMargins = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+                
+                let reportTag = 25
+                if stackView.viewWithTag(reportTag) == nil {
+                    let reportBtn = UIButton(type: .system)
+                    reportBtn.tag = reportTag
+                    
+                    var config = UIButton.Configuration.plain()
+                    config.image = UIImage(systemName: "flag.fill", withConfiguration: symbolConfig)
+                    config.baseForegroundColor = .secondaryLabel
+                    config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
+                    reportBtn.configuration = config
+                    
+                    reportBtn.addTarget(self, action: #selector(reportFeedPostTapped(_:)), for: .touchUpInside)
+                    stackView.addArrangedSubview(reportBtn)
+                }
             }
 
             // Hide the redundant comments label to fix the card layout (excessive whitespace)
@@ -1144,26 +1165,29 @@ class CommunityViewController: UIViewController,
                 self.liveCommunityComments.remove(at: indexPath.row)
                 tableView.deleteRows(at: [indexPath], with: .fade)
 
+                self.pendingCommentOperations.insert(postID)
                 // 2. Delete from Supabase and update global count
                 Task {
+                    defer {
+                        Task { @MainActor in self.pendingCommentOperations.remove(postID) }
+                    }
                     do {
                         let newCount = try await CommunityRepository.shared.deleteComment(commentID: comment.id, postID: postID)
                         await MainActor.run {
                             // Update the post's comment count in the main feed
                             if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
-                                self.feedPosts[i].remoteCommentCount = newCount
+                                self.feedPosts[i].commentCount = newCount
                                 self.tableView.reloadRows(at: [IndexPath(row: i, section: 0)], with: .none)
                             }
                         }
                         completion(true)
                     } catch {
                         completion(false)
-                        // If delete failed, you could optionally re-fetch comments here
                     }
                 }
             }
             deleteAction.image = UIImage(systemName: "trash.fill")
-            deleteAction.backgroundColor = .systemRed
+            deleteAction.backgroundColor = UIColor.systemRed
             return UISwipeActionsConfiguration(actions: [deleteAction])
         }
 
@@ -1198,7 +1222,7 @@ class CommunityViewController: UIViewController,
         }
 
         deleteAction.image           = UIImage(systemName: "trash.fill")
-        deleteAction.backgroundColor = .systemRed
+        deleteAction.backgroundColor = UIColor.systemRed
         return UISwipeActionsConfiguration(actions: [deleteAction])
     }
 
@@ -1222,92 +1246,66 @@ extension CommunityViewController: EventCardCellDelegate {
               indexPath.row < eventPosts.count else { return }
         openEventDetailsScreen(event: eventPosts[indexPath.row])
     }
-}
 
-// MARK: - Custom Cells
-class CommentTableViewCell: UITableViewCell {
+    // MARK: - Safety Delegates
     
-    static let identifier = "CommentTableViewCell"
-    
-    private let avatarImageView: UIImageView = {
-        let iv = UIImageView()
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        iv.contentMode = .scaleAspectFill
-        iv.clipsToBounds = true
-        iv.layer.cornerRadius = AppDesign.Radius.md
-        iv.backgroundColor = AppDesign.Color.fieldBackground
-        iv.image = UIImage(systemName: "person.circle.fill")
-        iv.tintColor = AppDesign.Color.border
-        return iv
-    }()
-    
-    private let bubbleView: UIView = {
-        let v = UIView()
-        v.translatesAutoresizingMaskIntoConstraints = false
-        v.backgroundColor = AppDesign.Color.fieldBackground
-        v.layer.cornerRadius = AppDesign.Radius.sm
-        return v
-    }()
-    
-    private let nameLabel: UILabel = {
-        let l = UILabel()
-        l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = AppDesign.Typography.captionStrong
-        l.textColor = .secondaryLabel
-        return l
-    }()
-    
-    private let commentLabel: UILabel = {
-        let l = UILabel()
-        l.translatesAutoresizingMaskIntoConstraints = false
-        l.font = AppDesign.Typography.subheadline
-        l.numberOfLines = 0
-        l.textColor = .label
-        return l
-    }()
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupUI()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setupUI() {
-        backgroundColor = .clear
-        selectionStyle = .none
+    func commentCellDidTapReport(_ cell: CommentTableViewCell) {
+        guard let indexPath = commentTableView.indexPath(for: cell) else { return }
+        let comment = liveCommunityComments[indexPath.row]
         
-        contentView.addSubview(avatarImageView)
-        contentView.addSubview(bubbleView)
-        bubbleView.addSubview(nameLabel)
-        bubbleView.addSubview(commentLabel)
-        
-        NSLayoutConstraint.activate([
-            avatarImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            avatarImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            avatarImageView.widthAnchor.constraint(equalToConstant: 32),
-            avatarImageView.heightAnchor.constraint(equalToConstant: 32),
-            
-            bubbleView.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
-            bubbleView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            bubbleView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -32),
-            bubbleView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
-            
-            nameLabel.topAnchor.constraint(equalTo: bubbleView.topAnchor, constant: 8),
-            nameLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            nameLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            
-            commentLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
-            commentLabel.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor, constant: 12),
-            commentLabel.trailingAnchor.constraint(equalTo: bubbleView.trailingAnchor, constant: -12),
-            commentLabel.bottomAnchor.constraint(equalTo: bubbleView.bottomAnchor, constant: -8)
-        ])
+        SafetyHelper.shared.showReportUI(
+            from: self,
+            reportedUserID: comment.authorUserID,
+            contentType: .comment,
+            contentID: comment.id
+        ) { [weak self] success in
+            guard success, let self = self else { return }
+            Task {
+                let hiddenIDs = await CommunityRepository.shared.fetchModeratedContentIDs()
+                await MainActor.run {
+                    if hiddenIDs.contains(comment.id) {
+                        // Optimistically hide locally
+                        if let i = self.liveCommunityComments.firstIndex(where: { $0.id == comment.id }) {
+                            self.liveCommunityComments.remove(at: i)
+                            self.commentTableView.deleteRows(at: [IndexPath(row: i, section: 0)], with: .fade)
+                        }
+                    }
+
+                }
+            }
+        }
     }
     
-    func configure(text: String, authorName: String = "") {
-        nameLabel.text = authorName.isEmpty ? UserDataModel.shared.getCurrentUser()?.fullName ?? "" : authorName
-        commentLabel.text = text
+
+    @objc private func reportFeedPostTapped(_ sender: UIButton) {
+        guard let cell = getCell(from: sender),
+              let indexPath = tableView.indexPath(for: cell),
+              indexPath.row < feedPosts.count else { return }
+        
+        let post = feedPosts[indexPath.row]
+        guard let postID = post.remoteID else { return }
+        
+        SafetyHelper.shared.showReportUI(
+            from: self,
+            reportedUserID: post.authorUserID ?? UUID(),
+            contentType: .post,
+            contentID: postID
+        ) { [weak self] success in
+            guard success, let self = self else { return }
+            // Re-fetch to check if it should be moderated/hidden now
+            Task {
+                let hiddenIDs = await CommunityRepository.shared.fetchModeratedContentIDs()
+                await MainActor.run {
+                    if hiddenIDs.contains(postID) {
+                        // Optimistically hide locally
+                        if let i = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                            self.feedPosts.remove(at: i)
+                            self.tableView.deleteRows(at: [IndexPath(row: i, section: 0)], with: .fade)
+                        }
+
+                    }
+                }
+            }
+        }
     }
 }

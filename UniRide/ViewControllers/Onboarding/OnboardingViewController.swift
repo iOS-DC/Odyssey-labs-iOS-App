@@ -265,7 +265,7 @@ final class OnboardingViewController: UIViewController {
         // Skip button top right
         skipLabel.setTitle("Skip", for: .normal)
         skipLabel.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        skipLabel.setTitleColor(.tertiaryLabel, for: .normal)
+        skipLabel.setTitleColor(.white, for: .normal)
         skipLabel.translatesAutoresizingMaskIntoConstraints = false
         skipLabel.addTarget(self, action: #selector(skipTapped), for: .touchUpInside)
         view.addSubview(skipLabel)
@@ -442,14 +442,23 @@ final class OnboardingViewController: UIViewController {
 
     private func completeOnboarding() {
         UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
-        let sb     = UIStoryboard(name: "Main", bundle: nil)
-        let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
-        let nav    = UINavigationController(rootViewController: emailVC)
-        nav.modalTransitionStyle   = .crossDissolve
-        nav.modalPresentationStyle = .fullScreen
+        
+        let sb = UIStoryboard(name: "Main", bundle: nil)
+        let rootVC: UIViewController
+        
+        // If guest (skipped), go directly to Tab Bar. Otherwise (Get Started), go to Email.
+        if currentPage < pages.count - 1 {
+            // "Skip" tapped
+            rootVC = sb.instantiateViewController(withIdentifier: "MainTabBarController")
+        } else {
+            // "Get Started" tapped
+            let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
+            rootVC = UINavigationController(rootViewController: emailVC)
+        }
+        
         if let scene = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
            let window = scene.window {
-            window.rootViewController = nav
+            window.rootViewController = rootVC
             UIView.transition(with: window, duration: 0.45, options: .transitionCrossDissolve, animations: nil)
         }
     }

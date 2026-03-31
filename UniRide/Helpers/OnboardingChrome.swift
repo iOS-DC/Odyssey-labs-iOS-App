@@ -9,6 +9,8 @@ extension UIViewController {
     func applyOnboardingChrome(step: Int, total: Int) {
         guard total > 0 else { return }
         navigationItem.backButtonTitle = ""
+        view.backgroundColor = AppDesign.Color.groupedBackground
+        navigationController?.view.backgroundColor = AppDesign.Color.groupedBackground
 
         let progress = max(0, min(CGFloat(step) / CGFloat(total), 1))
         let track: UIView
@@ -112,5 +114,31 @@ extension UIViewController {
                 item.transform = .identity
             }
         }
+    }
+
+    /// Primary logo for onboarding/auth screens.
+    @discardableResult
+    func addOnboardingLogo(above container: UIView, offset: CGFloat = AppDesign.Spacing.xl) -> UIImageView {
+        let logoImageView = UIImageView()
+        logoImageView.accessibilityIdentifier = "OnboardingLogo"
+        logoImageView.image = UIImage(named: "Logo")
+        logoImageView.contentMode = .scaleAspectFit
+        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(logoImageView)
+        
+        NSLayoutConstraint.activate([
+            logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            logoImageView.bottomAnchor.constraint(equalTo: container.topAnchor, constant: -offset),
+            logoImageView.widthAnchor.constraint(equalToConstant: 160),
+            logoImageView.heightAnchor.constraint(equalToConstant: 160)
+        ])
+        return logoImageView
+    }
+
+    func removeOnboardingLogoIfPresent() {
+        view.subviews
+            .compactMap { $0 as? UIImageView }
+            .filter { $0.accessibilityIdentifier == "OnboardingLogo" }
+            .forEach { $0.removeFromSuperview() }
     }
 }

@@ -23,6 +23,7 @@ final class AvailableRideViewController: UIViewController,
     private var activeFilter = RideFilter()
     private var searchQuery  = ""
     private var didAnimateListOnFirstShow = false
+    private var blockedUserIDs: Set<UUID> = []
 
     // MARK: - UI
     private let searchController  = UISearchController(searchResultsController: nil)
@@ -224,8 +225,9 @@ final class AvailableRideViewController: UIViewController,
             // This ensures rides posted on other devices appear in this list.
             if let remote = try? await RideRepository.shared.fetchPublishedRides(), !remote.isEmpty {
                 RideDataModel.shared.mergeRemoteRides(remote)
-                UserDataModel.shared.ensureDriverProfiles(for: remote.map { $0.driverUserID })
             }
+
+            self.blockedUserIDs = await SafetyService.shared.fetchBlockedUserIDs()
 
             spinner.removeFromSuperview()
 
@@ -252,6 +254,9 @@ final class AvailableRideViewController: UIViewController,
 
     private func applyFilters() {
         var result = activeFilter.apply(to: rides)
+        
+        // FILTER: Exclude rides from blocked users
+        result = result.filter { !blockedUserIDs.contains($0.driverUserID) }
 
         // Apply text search on top of filter
         let q = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
@@ -342,7 +347,7 @@ extension AvailableRideViewController {
         else { return UITableViewCell() }
 
         let ride   = filteredRides[indexPath.row]
-        let driver = UserDataModel.shared.getUser(by: ride.driverUserID)
+        let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
         cell.configure(with: ride, driver: driver)
         cell.onJoinTapped = { [weak self] in
             self?.openDetail(ride: ride, driver: driver)
@@ -359,12 +364,15 @@ extension AvailableRideViewController {
         tableView.deselectRow(at: indexPath, animated: true)
         guard indexPath.row < filteredRides.count else { return }
         let ride = filteredRides[indexPath.row]
-        openDetail(ride: ride, driver: UserDataModel.shared.getUser(by: ride.driverUserID))
+        let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
+        openDetail(ride: ride, driver: driver)
     }
 
     private func openDetail(ride: Ride, driver: UserProfile?) {
-        let vc = RideDetailViewController()
-        vc.ride = ride; vc.driver = driver
-        navigationController?.pushViewController(vc, animated: true)
+        ensureNonGuest { [weak self] in
+            let vc = RideDetailViewController()
+            vc.ride = ride; vc.driver = driver
+            self?.navigationController?.pushViewController(vc, animated: true)
+        }
     }
 }

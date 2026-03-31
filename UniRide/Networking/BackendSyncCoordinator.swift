@@ -24,7 +24,6 @@ final class BackendSyncCoordinator {
             let rides = try await RideRepository.shared.fetchPublishedRides()
             await MainActor.run {
                 RideDataModel.shared.mergeRemoteRides(rides)
-                UserDataModel.shared.ensureDriverProfiles(for: rides.map { $0.driverUserID })
             }
         } catch {
             print("Supabase ride sync failed: \(error.localizedDescription)")

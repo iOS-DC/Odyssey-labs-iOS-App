@@ -1,5 +1,9 @@
 import UIKit
 
+protocol PastRideCellDelegate: AnyObject {
+    func pastRideCellDidTapPerson(_ cell: PastRideCell, user: UserProfile)
+}
+
 final class PastRideCell: UITableViewCell {
 
     static let reuseIdentifier = "PastRideCell"
@@ -26,6 +30,7 @@ final class PastRideCell: UITableViewCell {
 
     // MARK: - Data
     var onRateTapped: ((RideDataModel.MyTrip) -> Void)?
+    weak var delegate: PastRideCellDelegate?
     private var currentTrip: RideDataModel.MyTrip?
 
     // MARK: - Init
@@ -37,13 +42,17 @@ final class PastRideCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        // Clear people rows
-        peopleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        // Robust clearing of stack view
+        peopleStack.arrangedSubviews.forEach {
+            peopleStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        // Remove rate button if exists
         rateBtn?.removeFromSuperview()
         rateBtn = nil
         onRateTapped = nil
         currentTrip = nil
-        // Restore the card's bottom anchor so the cell sizes correctly on reuse
+        // Restore the card's bottom anchor
         priceLabelBottomConstraint?.isActive = true
     }
 
@@ -285,18 +294,22 @@ final class PastRideCell: UITableViewCell {
         if isCompleted { addRateButtonIfNeeded(trip: trip) }
     }
 
-    // MARK: - People Rows
+    private var displayedProfiles: [UserProfile] = []
 
     private func populatePeople(trip: RideDataModel.MyTrip, ride: Ride, isHost: Bool) {
-        peopleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        peopleStack.arrangedSubviews.forEach {
+            peopleStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        displayedProfiles.removeAll()
 
         var profiles: [UserProfile?]
         if isHost {
-            let confirmed = RideDataModel.shared.listBookings(for: ride.id).filter { $0.status == .confirmed }
-            profiles = confirmed.map { UserDataModel.shared.getUser(by: $0.passengerUserID) }
-            sectionHeader.text = "PASSENGERS (\(confirmed.count))"
+            let bookings = RideDataModel.shared.listBookings(for: ride.id).filter { $0.status == .confirmed }
+            profiles = bookings.map { b in b.passengerProfile ?? UserDataModel.shared.getUser(by: b.passengerUserID) }
+            sectionHeader.text = "PASSENGERS (\(bookings.count))"
         } else {
-            profiles = [UserDataModel.shared.getUser(by: ride.driverUserID)]
+            profiles = [ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)]
             sectionHeader.text = "YOUR DRIVER"
         }
 
@@ -309,11 +322,14 @@ final class PastRideCell: UITableViewCell {
         }
 
         for profile in profiles {
-            peopleStack.addArrangedSubview(makePersonRow(profile: profile))
+            if let p = profile {
+                displayedProfiles.append(p)
+                peopleStack.addArrangedSubview(makePersonRow(profile: p))
+            }
         }
     }
 
-    private func makePersonRow(profile: UserProfile?) -> UIView {
+    private func makePersonRow(profile: UserProfile) -> UIView {
         let row = UIView()
 
         let avatar = UIImageView()
@@ -322,20 +338,25 @@ final class PastRideCell: UITableViewCell {
         avatar.layer.cornerRadius = AppDesign.Radius.md
         avatar.backgroundColor = .systemGray5
         avatar.translatesAutoresizingMaskIntoConstraints = false
-        avatar.loadAndFallback(from: profile?.photoURL, name: profile?.fullName ?? "?")
+        avatar.loadAndFallback(from: profile.photoURL, name: profile.fullName)
 
         let nameLabel = UILabel()
-        nameLabel.text = profile?.fullName ?? "Unknown"
+        nameLabel.text = profile.fullName
         nameLabel.font = AppDesign.Typography.subheadline
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
 
         let subLabel = UILabel()
-        subLabel.text = profile?.role == .student ? "Student" : "Faculty"
+        subLabel.text = profile.role == .student ? "Student" : "Faculty"
         subLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         subLabel.translatesAutoresizingMaskIntoConstraints = false
 
         [avatar, nameLabel, subLabel].forEach { row.addSubview($0) }
         row.translatesAutoresizingMaskIntoConstraints = false
+
+        // Tap interaction
+        let tap = UITapGestureRecognizer(target: self, action: #selector(personTapped(_:)))
+        row.addGestureRecognizer(tap)
+        row.isUserInteractionEnabled = true
 
         NSLayoutConstraint.activate([
             avatar.leadingAnchor.constraint(equalTo: row.leadingAnchor),
@@ -354,6 +375,14 @@ final class PastRideCell: UITableViewCell {
             row.heightAnchor.constraint(greaterThanOrEqualToConstant: 40),
         ])
         return row
+    }
+
+    @objc private func personTapped(_ gesture: UITapGestureRecognizer) {
+        guard let view = gesture.view, let delegate = delegate else { return }
+        if let index = peopleStack.arrangedSubviews.firstIndex(of: view),
+           index < displayedProfiles.count {
+            delegate.pastRideCellDidTapPerson(self, user: displayedProfiles[index])
+        }
     }
 
     // MARK: - Rate Button
