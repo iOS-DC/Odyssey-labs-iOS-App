@@ -12,13 +12,12 @@ import MapKit
 final class MapKitManager: NSObject {
 
     static let shared = MapKitManager()
-
-    private let completer = MKLocalSearchCompleter()
-    // Bias all search/autocomplete to India.
-    private let indiaRegion = MKCoordinateRegion(
+    static let indiaRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 22.9734, longitude: 78.6569),
         span: MKCoordinateSpan(latitudeDelta: 40, longitudeDelta: 40)
     )
+
+    private let completer = MKLocalSearchCompleter()
 
     // Autocomplete callback
     var onSuggestionsUpdate: (([MKLocalSearchCompletion]) -> Void)?
@@ -26,7 +25,7 @@ final class MapKitManager: NSObject {
     private override init() {
         super.init()
         completer.delegate = self
-        completer.region = indiaRegion
+        completer.region = Self.indiaRegion
         completer.resultTypes = [.address, .pointOfInterest]
     }
 
@@ -38,15 +37,45 @@ final class MapKitManager: NSObject {
     func resolveCompletion(_ completion: MKLocalSearchCompletion, completionHandler: @escaping (MKMapItem?) -> Void) {
 
         let request = MKLocalSearch.Request(completion: completion)
-        request.region = indiaRegion
+        request.region = Self.indiaRegion
         request.resultTypes = [.address, .pointOfInterest]
         request.pointOfInterestFilter = .includingAll
 
         MKLocalSearch(request: request).start {
             response, _ in
-            let itemInIndia = response?.mapItems.first(where: { $0.placemark.isoCountryCode == "IN" })
+            let itemInIndia = response?.mapItems.first(where: Self.isInIndia)
             completionHandler(itemInIndia)
         }
+    }
+
+    func filterCompletionsToIndia(_ completions: [MKLocalSearchCompletion], completion: @escaping ([MKLocalSearchCompletion]) -> Void) {
+        guard !completions.isEmpty else {
+            completion([])
+            return
+        }
+
+        let group = DispatchGroup()
+        let lock = NSLock()
+        var filtered: [(index: Int, completion: MKLocalSearchCompletion)] = []
+
+        for (index, item) in completions.enumerated() {
+            group.enter()
+            resolveCompletion(item) { resolved in
+                defer { group.leave() }
+                guard resolved != nil else { return }
+                lock.lock()
+                filtered.append((index, item))
+                lock.unlock()
+            }
+        }
+
+        group.notify(queue: .main) {
+            completion(filtered.sorted { $0.index < $1.index }.map(\.completion))
+        }
+    }
+
+    static func isInIndia(_ item: MKMapItem) -> Bool {
+        item.placemark.isoCountryCode == "IN"
     }
 
     /// Finding ROUTES between the two points

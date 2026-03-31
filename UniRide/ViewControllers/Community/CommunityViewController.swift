@@ -48,6 +48,7 @@ class CommunityViewController: UIViewController,
     private var pendingLikeOperations: Set<UUID> = []
     private var pendingCommentOperations: Set<UUID> = []
     private var pendingShareOperations: Set<UUID> = []
+    private var expandedPostKeys: Set<String> = []
 
     // MARK: - Models
     struct Post {
@@ -73,6 +74,7 @@ class CommunityViewController: UIViewController,
 
         /// Real comment count from the DB — always accurate.
         var commentCount: Int = 0
+        var reportCount: Int = 0
     }
 
 
@@ -226,6 +228,9 @@ class CommunityViewController: UIViewController,
         headerTitleLabel.text = "Community"
         headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
         headerTitleLabel.textColor = .label
+        headerTitleLabel.adjustsFontSizeToFitWidth = true
+        headerTitleLabel.minimumScaleFactor = 0.8
+        headerTitleLabel.numberOfLines = 1
         headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // Plus button – circular, primary colour
@@ -863,7 +868,8 @@ class CommunityViewController: UIViewController,
                     likeCount: rp.likeCount,
                     shareCount: rp.shareCount,
                     hasLiked: likedIDs.contains(rp.id),
-                    commentCount: rp.commentCount
+                    commentCount: rp.commentCount,
+                    reportCount: rp.reportCount
                 )
             }
             // If mapped is empty (e.g. all posts moderated), we still proceed
@@ -885,6 +891,9 @@ class CommunityViewController: UIViewController,
                         }
                         if self.pendingShareOperations.contains(remoteID) {
                             mapped[i].shareCount = existing.shareCount
+                        }
+                        if existing.reportCount > mapped[i].reportCount {
+                            mapped[i].reportCount = existing.reportCount
                         }
                         
                         // Small aesthetic fix: if existing post was already rendered, 
@@ -958,6 +967,13 @@ class CommunityViewController: UIViewController,
         return tableView.indexPathForRow(at: point)
     }
 
+    private func postExpansionKey(for post: Post, at indexPath: IndexPath) -> String {
+        if let remoteID = post.remoteID {
+            return remoteID.uuidString
+        }
+        return "\(indexPath.row)-\(post.timestamp)-\(post.message.prefix(24))"
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         // COMMENT LIST — real comments from Supabase
@@ -975,6 +991,8 @@ class CommunityViewController: UIViewController,
         if segmentedControl.selectedSegmentIndex == 1 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
             let post = feedPosts[indexPath.row]
+            let expansionKey = postExpansionKey(for: post, at: indexPath)
+            let isExpanded = expandedPostKeys.contains(expansionKey)
 
             if let feedCard = cell.contentView.subviews.first {
                 feedCard.applyCardStyle(
@@ -1027,27 +1045,76 @@ class CommunityViewController: UIViewController,
             if let label = cell.viewWithTag(1) as? UILabel {
                 label.text = post.name
                 label.applyTextStyle(AppDesign.Typography.bodyStrong)
+                label.numberOfLines = 2
+                label.lineBreakMode = .byWordWrapping
+                label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             }
             if let label = cell.viewWithTag(2) as? UILabel {
                 label.text = post.subtitle
                 label.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+                label.numberOfLines = 2
+                label.lineBreakMode = .byWordWrapping
+                label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             }
             if let label = cell.viewWithTag(3) as? UILabel {
                 label.text = post.timestamp
                 label.font = .systemFont(ofSize: 11, weight: .regular)
                 label.textColor = .secondaryLabel
+                label.adjustsFontSizeToFitWidth = true
+                label.minimumScaleFactor = 0.8
             }
             // Verified badge logic: Use attributed string with attachment instead of subviews to prevent layout churn
             // Name label: Simple text, no verified badge attachment
             if let nameLabel = cell.viewWithTag(1) as? UILabel {
                 nameLabel.text = post.name
                 nameLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+                nameLabel.numberOfLines = 2
+                nameLabel.lineBreakMode = .byWordWrapping
             }
 
             if let label = cell.viewWithTag(4) as? UILabel {
                 label.text = post.message
-                label.applyTextStyle(AppDesign.Typography.body, lines: 2)
-                label.lineBreakMode = .byTruncatingTail
+                label.applyTextStyle(AppDesign.Typography.body, lines: isExpanded ? 0 : 2)
+                label.lineBreakMode = isExpanded ? .byWordWrapping : .byTruncatingTail
+            }
+
+            if let cardContainer, let messageLabel = cell.viewWithTag(4) as? UILabel, let stackView = cell.viewWithTag(12)?.superview as? UIStackView {
+                let readMoreTag = 202
+                let needsReadMore = post.message.count > 90
+                let readMoreButton: UIButton
+
+                if let existing = cardContainer.viewWithTag(readMoreTag) as? UIButton {
+                    readMoreButton = existing
+                } else {
+                    let button = UIButton(type: .system)
+                    button.tag = readMoreTag
+                    button.translatesAutoresizingMaskIntoConstraints = false
+                    button.contentHorizontalAlignment = .leading
+                    button.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+                    button.addTarget(self, action: #selector(readMoreButtonTapped(_:)), for: .touchUpInside)
+                    cardContainer.addSubview(button)
+
+                    cardContainer.constraints.forEach { constraint in
+                        if constraint.firstItem as? UIView == stackView,
+                           constraint.firstAttribute == .top,
+                           constraint.secondItem as? UIView == messageLabel,
+                           constraint.secondAttribute == .bottom {
+                            constraint.isActive = false
+                        }
+                    }
+
+                    NSLayoutConstraint.activate([
+                        button.leadingAnchor.constraint(equalTo: messageLabel.leadingAnchor),
+                        button.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 4),
+                        stackView.topAnchor.constraint(equalTo: button.bottomAnchor, constant: 6)
+                    ])
+                    readMoreButton = button
+                }
+
+                readMoreButton.isHidden = !needsReadMore
+                readMoreButton.setTitle(isExpanded ? "Read less" : "Read more", for: .normal)
+                readMoreButton.tintColor = AppDesign.Color.primary
+                readMoreButton.accessibilityIdentifier = expansionKey
             }
 
             // ACTION BUTTONS (Like, Comment, Share, Report)
@@ -1114,6 +1181,20 @@ class CommunityViewController: UIViewController,
                     
                     reportBtn.addTarget(self, action: #selector(reportFeedPostTapped(_:)), for: .touchUpInside)
                     stackView.addArrangedSubview(reportBtn)
+                }
+                if let reportBtn = stackView.viewWithTag(reportTag) as? UIButton {
+                    var config = reportBtn.configuration ?? UIButton.Configuration.plain()
+                    config.image = UIImage(systemName: "flag.fill", withConfiguration: symbolConfig)
+                    config.title = "\(post.reportCount)"
+                    config.baseForegroundColor = .secondaryLabel
+                    config.imagePadding = 2
+                    config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
+                    config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+                        var outgoing = incoming
+                        outgoing.font = .systemFont(ofSize: 12, weight: .medium)
+                        return outgoing
+                    }
+                    reportBtn.configuration = config
                 }
             }
 
@@ -1239,6 +1320,26 @@ class CommunityViewController: UIViewController,
     }
 }
 
+extension CommunityViewController {
+    @objc private func readMoreButtonTapped(_ sender: UIButton) {
+        guard let cell = getCell(from: sender),
+              let indexPath = tableView.indexPath(for: cell),
+              indexPath.row < feedPosts.count else { return }
+
+        let post = feedPosts[indexPath.row]
+        let key = postExpansionKey(for: post, at: indexPath)
+        if expandedPostKeys.contains(key) {
+            expandedPostKeys.remove(key)
+        } else {
+            expandedPostKeys.insert(key)
+        }
+
+        tableView.beginUpdates()
+        tableView.reloadRows(at: [indexPath], with: .none)
+        tableView.endUpdates()
+    }
+}
+
 // MARK: - EventCardCellDelegate
 extension CommunityViewController: EventCardCellDelegate {
     func eventCardCellDidTapAttend(_ cell: EventCardCell) {
@@ -1260,6 +1361,10 @@ extension CommunityViewController: EventCardCellDelegate {
             contentID: comment.id
         ) { [weak self] success in
             guard success, let self = self else { return }
+            if let liveIndex = self.liveCommunityComments.firstIndex(where: { $0.id == comment.id }) {
+                self.liveCommunityComments[liveIndex].reportCount += 1
+                self.commentTableView.reloadRows(at: [IndexPath(row: liveIndex, section: 0)], with: .none)
+            }
             Task {
                 let hiddenIDs = await CommunityRepository.shared.fetchModeratedContentIDs()
                 await MainActor.run {
@@ -1292,6 +1397,10 @@ extension CommunityViewController: EventCardCellDelegate {
             contentID: postID
         ) { [weak self] success in
             guard success, let self = self else { return }
+            if let liveIndex = self.feedPosts.firstIndex(where: { $0.remoteID == postID }) {
+                self.feedPosts[liveIndex].reportCount += 1
+                self.tableView.reloadRows(at: [IndexPath(row: liveIndex, section: 0)], with: .none)
+            }
             // Re-fetch to check if it should be moderated/hidden now
             Task {
                 let hiddenIDs = await CommunityRepository.shared.fetchModeratedContentIDs()

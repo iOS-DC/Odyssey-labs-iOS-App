@@ -53,6 +53,7 @@ class OfferRideViewController: UIViewController,
     // MARK: - Programmatic vehicle / seats / fare views
     private let vehicleCardsStack  = UIStackView()   // rows inside Vehicle card
     private let seatCountLbl       = UILabel()
+    private let seatsHintLabel     = UILabel()
     private let minusSeat          = UIButton(type: .system)
     private let plusSeat           = UIButton(type: .system)
     private let fareField          = UITextField()
@@ -373,16 +374,15 @@ class OfferRideViewController: UIViewController,
         plusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
         plusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(1) }, for: .touchUpInside)
 
-        let hint = UILabel()
-        hint.text = "Maximum 4 seats"
-        hint.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
+        seatsHintLabel.text = "Maximum 4 seats"
+        seatsHintLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
 
         let row = UIStackView(arrangedSubviews: [minusSeat, seatCountLbl, plusSeat])
         row.axis = .horizontal
         row.spacing = 16
         row.alignment = .center
 
-        let inner = UIStackView(arrangedSubviews: [row, hint])
+        let inner = UIStackView(arrangedSubviews: [row, seatsHintLabel])
         inner.axis = .vertical
         inner.spacing = 6
         inner.alignment = .center
@@ -391,22 +391,13 @@ class OfferRideViewController: UIViewController,
     }
 
     private func updateSeatsMax() {
-        let maxSeats = selectedVehicle?.type == .bike ? 1 : 4
+        let maxSeats = maxOfferableSeats()
         if seatCount > maxSeats { seatCount = maxSeats }
-
-        // Update hint label inside the seats card
-        seatsCard?.subviews.flatMap { $0.subviews }
-            .compactMap { $0 as? UIStackView }
-            .flatMap { $0.arrangedSubviews }
-            .compactMap { $0 as? UIStackView }
-            .flatMap { $0.arrangedSubviews }
-            .compactMap { $0 as? UILabel }
-            .filter { $0.font == AppDesign.Typography.caption }
-            .first?.text = "Maximum \(maxSeats) seat\(maxSeats == 1 ? "" : "s")"
+        seatsHintLabel.text = "Maximum \(maxSeats) seat\(maxSeats == 1 ? "" : "s")"
     }
 
     private func adjustSeats(_ delta: Int) {
-        let maxSeats = selectedVehicle?.type == .bike ? 1 : 4
+        let maxSeats = maxOfferableSeats()
         let newVal = seatCount + delta
         guard newVal >= 0, newVal <= maxSeats else { return }
         seatCount = newVal
@@ -414,11 +405,16 @@ class OfferRideViewController: UIViewController,
 
     private func updateSeatsUI() {
         seatCountLbl.text   = "\(seatCount)"
-        let maxSeats        = selectedVehicle?.type == .bike ? 1 : 4
+        let maxSeats        = maxOfferableSeats()
         minusSeat.isEnabled = seatCount > 0
         minusSeat.alpha     = seatCount > 0 ? 1 : 0.4
         plusSeat.isEnabled  = seatCount < maxSeats
         plusSeat.alpha      = seatCount < maxSeats ? 1 : 0.4
+    }
+
+    private func maxOfferableSeats() -> Int {
+        guard let vehicle = selectedVehicle else { return 0 }
+        return max(1, min(vehicle.seats, 6))
     }
 
     // MARK: - Fare content

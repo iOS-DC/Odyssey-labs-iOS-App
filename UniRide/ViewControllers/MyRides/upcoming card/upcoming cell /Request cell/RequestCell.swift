@@ -54,11 +54,15 @@ final class RequestCell: UITableViewCell {
         // Name
         nameLabel.font      = AppDesign.Typography.subheadline
         nameLabel.textColor = AppDesign.Color.textPrimary
+        nameLabel.numberOfLines = 2
+        nameLabel.lineBreakMode = .byWordWrapping
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // Subtitle (role/dept)
         subtitleLabel.font      = AppDesign.Typography.caption
         subtitleLabel.textColor = .secondaryLabel
+        subtitleLabel.numberOfLines = 2
+        subtitleLabel.lineBreakMode = .byWordWrapping
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // Approve button
@@ -81,13 +85,20 @@ final class RequestCell: UITableViewCell {
         let textStack = UIStackView(arrangedSubviews: [nameLabel, subtitleLabel])
         textStack.axis    = .vertical
         textStack.spacing = 2
+        textStack.alignment = .fill
         textStack.translatesAutoresizingMaskIntoConstraints = false
 
         // Button stack
         let btnStack = UIStackView(arrangedSubviews: [approveBtn, denyBtn])
         btnStack.axis    = .horizontal
         btnStack.spacing = 8
+        btnStack.alignment = .center
         btnStack.translatesAutoresizingMaskIntoConstraints = false
+
+        approveBtn.setContentHuggingPriority(.required, for: .horizontal)
+        approveBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
+        denyBtn.setContentHuggingPriority(.required, for: .horizontal)
+        denyBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         [avatarView, textStack, btnStack].forEach { contentView.addSubview($0) }
 

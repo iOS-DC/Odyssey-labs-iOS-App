@@ -78,7 +78,7 @@ class VehicleRegistrationViewController: UIViewController {
         formStack.addArrangedSubview(makeCard(title: "Vehicle Type", content: makeTypeSelector()))
 
         // 5. Seats
-        formStack.addArrangedSubview(makeCard(title: "Seats You Can Offer", content: makeSeatsControl()))
+        formStack.addArrangedSubview(makeCard(title: "Total Seats", content: makeSeatsControl()))
 
         // 6. Save button
         configureSaveButton()

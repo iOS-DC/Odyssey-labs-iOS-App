@@ -48,10 +48,20 @@ class CommentTableViewCell: UITableViewCell {
 
     private lazy var reportButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "ellipsis"), for: .normal)
-        btn.tintColor = .secondaryLabel
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.addTarget(self, action: #selector(reportTapped), for: .touchUpInside)
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: "flag.fill")
+        config.title = "0"
+        config.baseForegroundColor = .secondaryLabel
+        config.imagePadding = 4
+        config.contentInsets = .zero
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .systemFont(ofSize: 12, weight: .medium)
+            return outgoing
+        }
+        btn.configuration = config
         return btn
     }()
     
@@ -87,7 +97,7 @@ class CommentTableViewCell: UITableViewCell {
             
             reportButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
             reportButton.centerYAnchor.constraint(equalTo: bubbleView.centerYAnchor),
-            reportButton.widthAnchor.constraint(equalToConstant: 24),
+            reportButton.widthAnchor.constraint(equalToConstant: 52),
             reportButton.heightAnchor.constraint(equalToConstant: 24),
 
             nameLabel.topAnchor.constraint(equalTo: bubbleView.topAnchor, constant: 8),
@@ -109,6 +119,9 @@ class CommentTableViewCell: UITableViewCell {
         let name = authorName ?? comment.authorProfile?.fullName ?? "UniRide User"
         nameLabel.text = name
         commentLabel.text = comment.text
+        var config = reportButton.configuration ?? UIButton.Configuration.plain()
+        config.title = "\(comment.reportCount)"
+        reportButton.configuration = config
         
         avatarImageView.loadAndFallback(from: comment.authorProfile?.photoURL, name: name)
     }

@@ -34,12 +34,16 @@ class EventTableViewCell: UITableViewCell {
         titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 2)
         titleLabel.lineBreakMode = .byWordWrapping
         dateLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        dateLabel.numberOfLines = 0
         locationLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        locationLabel.numberOfLines = 0
         badgeLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: AppDesign.Color.primary)
         badgeLabel.isHidden = true // User requested removal of Today/Tomorrow/Soon labels
 
         attendButton.setTitle("View Details ›", for: .normal)
         attendButton.applyTextActionStyle(font: AppDesign.Typography.caption)
+        attendButton.titleLabel?.adjustsFontSizeToFitWidth = true
+        attendButton.titleLabel?.minimumScaleFactor = 0.8
     }
 
     override func layoutSubviews() {

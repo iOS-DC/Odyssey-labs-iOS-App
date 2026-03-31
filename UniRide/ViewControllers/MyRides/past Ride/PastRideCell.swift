@@ -27,6 +27,7 @@ final class PastRideCell: UITableViewCell {
     private var rateBtn: UIButton?
     // Kept so we can restore it in prepareForReuse after addRateButtonIfNeeded deactivates it
     private var priceLabelBottomConstraint: NSLayoutConstraint?
+    private var peopleStackBottomConstraint: NSLayoutConstraint?
 
     // MARK: - Data
     var onRateTapped: ((RideDataModel.MyTrip) -> Void)?
@@ -54,6 +55,10 @@ final class PastRideCell: UITableViewCell {
         currentTrip = nil
         // Restore the card's bottom anchor
         priceLabelBottomConstraint?.isActive = true
+        peopleStackBottomConstraint?.isActive = false
+        divider3.isHidden = false
+        priceLabel.isHidden = false
+        totalLabel.isHidden = false
     }
 
     // MARK: - Build UI
@@ -110,6 +115,8 @@ final class PastRideCell: UITableViewCell {
         dateLabel.font = AppDesign.Typography.caption
         dateLabel.textColor = .tertiaryLabel
         dateLabel.textAlignment = .right
+        dateLabel.adjustsFontSizeToFitWidth = true
+        dateLabel.minimumScaleFactor = 0.8
         dateLabel.setContentHuggingPriority(.required, for: .horizontal)
 
         // Dividers
@@ -137,18 +144,22 @@ final class PastRideCell: UITableViewCell {
         // Time
         timeLabel.font = AppDesign.Typography.caption
         timeLabel.textColor = .secondaryLabel
+        timeLabel.numberOfLines = 0
 
         // Section header
         sectionHeader.font = AppDesign.Typography.captionStrong
         sectionHeader.textColor = .tertiaryLabel
+        sectionHeader.numberOfLines = 0
 
         // Price labels
         priceLabel.font = AppDesign.Typography.subheadline
         priceLabel.textColor = .label
+        priceLabel.numberOfLines = 0
 
         totalLabel.font = AppDesign.Typography.subheadline
         totalLabel.textColor = AppDesign.Color.success
         totalLabel.textAlignment = .right
+        totalLabel.numberOfLines = 0
         totalLabel.setContentHuggingPriority(.required, for: .horizontal)
     }
 
@@ -158,6 +169,8 @@ final class PastRideCell: UITableViewCell {
         // Card bottom anchored to priceLabel — stored so prepareForReuse can restore it
         let priceBottom = priceLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -P)
         priceLabelBottomConstraint = priceBottom
+        let peopleBottom = peopleStack.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -P)
+        peopleStackBottomConstraint = peopleBottom
         NSLayoutConstraint.activate([
             // Card insets
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
@@ -283,9 +296,26 @@ final class PastRideCell: UITableViewCell {
         // Fare
         if isHost {
             let confirmed = RideDataModel.shared.listBookings(for: ride.id).filter { $0.status == .confirmed }
-            priceLabel.text  = "₹\(Int(ride.farePerSeat)) per seat"
-            totalLabel.text  = "Earned ₹\(Int(ride.farePerSeat * Double(confirmed.count)))"
+            let shouldShowFareRow = !confirmed.isEmpty
+            divider3.isHidden = !shouldShowFareRow
+            priceLabel.isHidden = !shouldShowFareRow
+            totalLabel.isHidden = !shouldShowFareRow
+            priceLabelBottomConstraint?.isActive = shouldShowFareRow
+            peopleStackBottomConstraint?.isActive = !shouldShowFareRow
+
+            if shouldShowFareRow {
+                priceLabel.text  = "₹\(Int(ride.farePerSeat)) per seat"
+                totalLabel.text  = "Earned ₹\(Int(ride.farePerSeat * Double(confirmed.count)))"
+            } else {
+                priceLabel.text = nil
+                totalLabel.text = nil
+            }
         } else {
+            divider3.isHidden = false
+            priceLabel.isHidden = false
+            totalLabel.isHidden = false
+            priceLabelBottomConstraint?.isActive = true
+            peopleStackBottomConstraint?.isActive = false
             priceLabel.text  = "₹\(Int(ride.farePerSeat)) paid"
             totalLabel.text  = ""
         }

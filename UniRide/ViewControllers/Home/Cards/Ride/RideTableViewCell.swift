@@ -62,7 +62,13 @@ final class RideTableViewCell: UITableViewCell {
 
         // Labels styling (safe defaults)
         nameLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        nameLabel.numberOfLines = 2
+        nameLabel.lineBreakMode = .byWordWrapping
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         yearLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        yearLabel.numberOfLines = 2
+        yearLabel.lineBreakMode = .byWordWrapping
+        yearLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         fromLabel.applyTextStyle(AppDesign.Typography.subheadline)
         toLabel.applyTextStyle(AppDesign.Typography.subheadline)
         timeLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
@@ -72,11 +78,21 @@ final class RideTableViewCell: UITableViewCell {
         timeLabel.minimumScaleFactor = 0.8
 
         priceLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        priceLabel.adjustsFontSizeToFitWidth = true
+        priceLabel.minimumScaleFactor = 0.8
+        priceLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         seatsLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
+        seatsLabel.adjustsFontSizeToFitWidth = true
+        seatsLabel.minimumScaleFactor = 0.75
+        seatsLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         
 
         // Join/View Details button (text-only action for cleaner card)
         joinButton.applyTextActionStyle(font: AppDesign.Typography.caption)
+        joinButton.titleLabel?.adjustsFontSizeToFitWidth = true
+        joinButton.titleLabel?.minimumScaleFactor = 0.8
+        joinButton.titleLabel?.numberOfLines = 1
+        joinButton.setContentCompressionResistancePriority(.required, for: .horizontal)
         joinButton.addTarget(self, action: #selector(joinTapped), for: .touchUpInside)
 
         fromLabel.numberOfLines = 2

@@ -242,6 +242,8 @@ final class EventCardCell: UITableViewCell {
         let l = UILabel()
         l.font = .systemFont(ofSize: 14)
         l.textColor = .secondaryLabel
+        l.numberOfLines = 0
+        l.lineBreakMode = .byWordWrapping
         return l
     }
 }

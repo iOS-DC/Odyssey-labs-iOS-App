@@ -30,13 +30,11 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
     // MARK: - State
     private let searchCompleter = MKLocalSearchCompleter()
     private var searchResults: [MKLocalSearchCompletion] = []
+    private var searchRequestID: Int = 0
     
     private var selectedLocation: LocationPoint?
     
-    private let defaultRegion = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 22.9734, longitude: 78.6569),
-        span: MKCoordinateSpan(latitudeDelta: 40, longitudeDelta: 40)
-    )
+    private let defaultRegion = MapKitManager.indiaRegion
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -226,7 +224,10 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
 
     @objc private func textFieldDidChange(_ textField: UITextField) {
         let query = textField.text ?? ""
+        searchRequestID += 1
         if query.isEmpty {
+            searchResults = []
+            suggestionsTableView.reloadData()
             suggestionsTableView.isHidden = true
             return
         }
@@ -234,9 +235,13 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
     }
     
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
-        searchResults = completer.results
-        suggestionsTableView.reloadData()
-        suggestionsTableView.isHidden = searchResults.isEmpty
+        let requestID = searchRequestID
+        MapKitManager.shared.filterCompletionsToIndia(completer.results) { [weak self] filtered in
+            guard let self, self.searchRequestID == requestID else { return }
+            self.searchResults = filtered
+            self.suggestionsTableView.reloadData()
+            self.suggestionsTableView.isHidden = filtered.isEmpty
+        }
     }
     
     // MARK: - TableView
@@ -256,6 +261,8 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let result = searchResults[indexPath.row]
         let request = MKLocalSearch.Request(completion: result)
+        request.region = defaultRegion
+        request.resultTypes = [.address, .pointOfInterest]
         
         searchTextField.text = result.title
         suggestionsTableView.isHidden = true
@@ -264,7 +271,7 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
         saveButton.setPrimaryCTAEnabled(false) // disable until geocoded
         
         MKLocalSearch(request: request).start { [weak self] response, error in
-            guard let self = self, let item = response?.mapItems.first else {
+            guard let self = self, let item = response?.mapItems.first(where: MapKitManager.isInIndia) else {
                 self?.saveButton.setPrimaryCTAEnabled(true)
                 return
             }

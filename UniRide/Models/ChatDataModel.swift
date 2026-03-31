@@ -86,7 +86,7 @@ final class ChatDataModel {
     private func readKey(_ rideID: String) -> String { "chat_read_\(rideID)" }
 
     // MARK: - Welcome message
-    /// Called once when a ride is first created. Seeds a friendly opener from the driver.
+    /// Called once when a ride chat is first created. Seeds a neutral opener for everyone in the ride.
     func seedWelcomeIfNeeded(ride: Ride, driverName: String) {
         let rideID = ride.id.uuidString
         guard messages(for: rideID).isEmpty else { return }
@@ -102,7 +102,7 @@ final class ChatDataModel {
             id: UUID(),
             senderID: ride.driverUserID.uuidString,
             senderName: driverName,
-            text: "👋 Hey! I'm your driver for \(from) → \(to) at \(timeStr). Feel free to coordinate here. See you at the pickup! 🚗",
+            text: "Hey! This ride is from \(from) to \(to) at \(timeStr). Feel free to coordinate here.",
             timestamp: Date().addingTimeInterval(-60)   // 1 min ago
         )
         save([welcome], for: rideID)

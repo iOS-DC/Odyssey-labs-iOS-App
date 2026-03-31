@@ -166,9 +166,9 @@ final class EventDataModel {
         return [
             EventItem(
                 createdByUserID: user,
-                title: "Rangrez 2025",
+                title: "Rangrez 2026",
                 details: """
-                Get ready for the most awaited cultural fest of the year! Rangrez 2025 is here to mesmerize you with a blend of art, music, and dance. 🎨✨
+                Get ready for the most awaited cultural fest of the year! Rangrez 2026 is here to mesmerize you with a blend of art, music, and dance. 🎨✨
                 
                 Experience electrifying performances by top artists! From classical symphonies to rock fusion, we have it all. Don't miss the grand finale night featuring a surprise celebrity guest! 🎸🎤
                 
@@ -187,9 +187,9 @@ final class EventDataModel {
 
             EventItem(
                 createdByUserID: user,
-                title: "Techno Fest 2025",
+                title: "Techno Fest 2026",
                 details: """
-                Step into the future with Techno Fest 2025! 🚀
+                Step into the future with Techno Fest 2026! 🚀
                 
                 Join us for a 3-day extravaganza of innovation and technology. Witness cutting-edge robotics, AI demonstrations, and coding marathons. 🤖💻
                 
@@ -209,7 +209,7 @@ final class EventDataModel {
             
             EventItem(
                 createdByUserID: user,
-                title: "Sports Meet 2025",
+                title: "Sports Meet 2026",
                 details: """
                 Unleash your inner athlete at the Annual Sports Meet! 🏆
                 
@@ -224,7 +224,7 @@ final class EventDataModel {
             
             EventItem(
                 createdByUserID: user,
-                title: "Hackathon 2025",
+                title: "Hackathon 2026",
                 details: """
                 Code your way to glory in our 24-hour Hackathon! 💻☕️
                 
