@@ -228,6 +228,9 @@ class CommunityViewController: UIViewController,
         headerTitleLabel.text = "Community"
         headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
         headerTitleLabel.textColor = .label
+        headerTitleLabel.adjustsFontSizeToFitWidth = true
+        headerTitleLabel.minimumScaleFactor = 0.8
+        headerTitleLabel.numberOfLines = 1
         headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // Plus button – circular, primary colour
@@ -1042,21 +1045,31 @@ class CommunityViewController: UIViewController,
             if let label = cell.viewWithTag(1) as? UILabel {
                 label.text = post.name
                 label.applyTextStyle(AppDesign.Typography.bodyStrong)
+                label.numberOfLines = 2
+                label.lineBreakMode = .byWordWrapping
+                label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             }
             if let label = cell.viewWithTag(2) as? UILabel {
                 label.text = post.subtitle
                 label.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+                label.numberOfLines = 2
+                label.lineBreakMode = .byWordWrapping
+                label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             }
             if let label = cell.viewWithTag(3) as? UILabel {
                 label.text = post.timestamp
                 label.font = .systemFont(ofSize: 11, weight: .regular)
                 label.textColor = .secondaryLabel
+                label.adjustsFontSizeToFitWidth = true
+                label.minimumScaleFactor = 0.8
             }
             // Verified badge logic: Use attributed string with attachment instead of subviews to prevent layout churn
             // Name label: Simple text, no verified badge attachment
             if let nameLabel = cell.viewWithTag(1) as? UILabel {
                 nameLabel.text = post.name
                 nameLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+                nameLabel.numberOfLines = 2
+                nameLabel.lineBreakMode = .byWordWrapping
             }
 
             if let label = cell.viewWithTag(4) as? UILabel {

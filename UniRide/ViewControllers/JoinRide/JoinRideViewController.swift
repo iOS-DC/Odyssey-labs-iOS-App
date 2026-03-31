@@ -19,6 +19,7 @@ class JoinRideViewController: UIViewController,
     // MARK: - Autocomplete
     private let searchCompleter = MKLocalSearchCompleter()
     private var searchResults: [MKLocalSearchCompletion] = []
+    private var searchRequestID: Int = 0
     private var activeTextField: UITextField?
 
     private var fromCoordinate: CLLocationCoordinate2D?
@@ -35,6 +36,7 @@ class JoinRideViewController: UIViewController,
 
         searchCompleter.resultTypes = .address
         searchCompleter.delegate = self
+        searchCompleter.region = MapKitManager.indiaRegion
 
         suggestionsTable.translatesAutoresizingMaskIntoConstraints = true
         suggestionsTable.isHidden = true
@@ -212,6 +214,7 @@ class JoinRideViewController: UIViewController,
                    replacementString string: String) -> Bool {
         guard textField == fromTextField || textField == toTextField else { return true }
         let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
+        searchRequestID += 1
         searchCompleter.queryFragment = updated
         activeTextField = textField
         updateSuggestionTablePosition()
@@ -223,11 +226,15 @@ class JoinRideViewController: UIViewController,
     }
 
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
-        searchResults = completer.results
-        suggestionsTable.reloadData()
-        let hasResults = !searchResults.isEmpty
-        suggestionsTable.isHidden = !hasResults
-        suggestionsTable.isUserInteractionEnabled = hasResults
+        let requestID = searchRequestID
+        MapKitManager.shared.filterCompletionsToIndia(completer.results) { [weak self] filtered in
+            guard let self, self.searchRequestID == requestID else { return }
+            self.searchResults = filtered
+            self.suggestionsTable.reloadData()
+            let hasResults = !filtered.isEmpty
+            self.suggestionsTable.isHidden = !hasResults
+            self.suggestionsTable.isUserInteractionEnabled = hasResults
+        }
     }
 
     // MARK: - Suggestions table
@@ -251,8 +258,11 @@ class JoinRideViewController: UIViewController,
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let result = searchResults[indexPath.row]
-        MKLocalSearch(request: MKLocalSearch.Request(completion: result)).start { [weak self] response, _ in
-            guard let self, let item = response?.mapItems.first else { return }
+        let request = MKLocalSearch.Request(completion: result)
+        request.region = MapKitManager.indiaRegion
+        request.resultTypes = .address
+        MKLocalSearch(request: request).start { [weak self] response, _ in
+            guard let self, let item = response?.mapItems.first(where: MapKitManager.isInIndia) else { return }
             DispatchQueue.main.async {
                 if self.activeTextField == self.fromTextField {
                     self.fromTextField.text = item.name

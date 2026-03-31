@@ -90,15 +90,26 @@ final class UpcomingTableViewCell: UITableViewCell {
         mapView.delegate = self
 
         roleLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+        roleLabel.adjustsFontSizeToFitWidth = true
+        roleLabel.minimumScaleFactor = 0.8
         statusLabel.applyTextStyle(AppDesign.Typography.captionStrong)
+        statusLabel.adjustsFontSizeToFitWidth = true
+        statusLabel.minimumScaleFactor = 0.8
         dateLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        dateLabel.adjustsFontSizeToFitWidth = true
+        dateLabel.minimumScaleFactor = 0.8
         fromLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 2)
+        fromLabel.lineBreakMode = .byWordWrapping
         toLabel.applyTextStyle(AppDesign.Typography.bodyStrong, lines: 2)
+        toLabel.lineBreakMode = .byWordWrapping
         startTimeLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         endTimeLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         durationLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         passengersLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        passengersLabel.numberOfLines = 0
         seatsLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        seatsLabel.adjustsFontSizeToFitWidth = true
+        seatsLabel.minimumScaleFactor = 0.8
 
         // Inline pending badge — sits to the right of roleLabel on the same row
         pendingBadge.font       = AppDesign.Typography.captionStrong

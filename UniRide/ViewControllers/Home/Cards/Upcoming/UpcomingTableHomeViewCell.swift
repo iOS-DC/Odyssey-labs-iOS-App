@@ -73,7 +73,8 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         // From label
         fromLbl.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
         fromLbl.textColor = .label
-        fromLbl.lineBreakMode = .byTruncatingTail
+        fromLbl.lineBreakMode = .byWordWrapping
+        fromLbl.numberOfLines = 2
         fromLbl.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         // To icon
@@ -86,7 +87,8 @@ class UpcomingTableHomeViewCell: UITableViewCell {
 
         toLbl.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
         toLbl.textColor = .label
-        toLbl.lineBreakMode = .byTruncatingTail
+        toLbl.lineBreakMode = .byWordWrapping
+        toLbl.numberOfLines = 2
         toLbl.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         // Route row — give from and to equal halves with arrow centered
@@ -102,8 +104,9 @@ class UpcomingTableHomeViewCell: UITableViewCell {
 
         let routeRow = UIStackView(arrangedSubviews: [fromStack, toStack])
         routeRow.axis = .horizontal
-        routeRow.alignment = .center
-        routeRow.distribution = .equalSpacing
+        routeRow.alignment = .top
+        routeRow.distribution = .fillEqually
+        routeRow.spacing = 12
 
         // ── Details row ────────────────────────────────────────
         // Clock + time
@@ -116,14 +119,19 @@ class UpcomingTableHomeViewCell: UITableViewCell {
 
         timeLbl.font = UIFont.systemFont(ofSize: 13, weight: .regular)
         timeLbl.textColor = .tertiaryLabel
+        timeLbl.adjustsFontSizeToFitWidth = true
+        timeLbl.minimumScaleFactor = 0.8
 
         dateLbl.font = UIFont.systemFont(ofSize: 13, weight: .regular)
         dateLbl.textColor = .tertiaryLabel
+        dateLbl.adjustsFontSizeToFitWidth = true
+        dateLbl.minimumScaleFactor = 0.8
 
         let timeStack = UIStackView(arrangedSubviews: [clockIcon, timeLbl, dateLbl])
         timeStack.axis = .horizontal
         timeStack.spacing = 4
         timeStack.alignment = .center
+        timeStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         // Spacer
         let spacer = UIView()
@@ -132,8 +140,11 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         // View details
         detailsBtn.setTitle("View Details ›", for: .normal)
         detailsBtn.titleLabel?.font = UIFont.systemFont(ofSize: 13, weight: .semibold)
+        detailsBtn.titleLabel?.adjustsFontSizeToFitWidth = true
+        detailsBtn.titleLabel?.minimumScaleFactor = 0.8
         detailsBtn.setTitleColor(AppDesign.Color.primary, for: .normal)
         detailsBtn.setContentHuggingPriority(.required, for: .horizontal)
+        detailsBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
         detailsBtn.addTarget(self, action: #selector(handleTap), for: .touchUpInside)
 
         let detailsRow = UIStackView(arrangedSubviews: [timeStack, spacer, detailsBtn])

@@ -98,6 +98,9 @@ class ProfileViewController: UIViewController {
         headerTitleLabel.text = "Profile"
         headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
         headerTitleLabel.textColor = .label
+        headerTitleLabel.adjustsFontSizeToFitWidth = true
+        headerTitleLabel.minimumScaleFactor = 0.8
+        headerTitleLabel.numberOfLines = 1
         headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         // Gear (settings) button
@@ -231,16 +234,19 @@ class ProfileViewController: UIViewController {
         // Name
         nameLabel.applyTextStyle(AppDesign.Typography.title)
         nameLabel.textAlignment = .center
+        nameLabel.numberOfLines = 2
         nameLabel.text          = "Your Name"
 
         // Subtitle (department / year)
         subtitleLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         subtitleLabel.textAlignment = .center
+        subtitleLabel.numberOfLines = 0
         subtitleLabel.text          = "—"
 
         // Member since
         memberLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
         memberLabel.textAlignment = .center
+        memberLabel.numberOfLines = 0
         memberLabel.text          = "—"
 
         // Divider
@@ -350,17 +356,20 @@ class ProfileViewController: UIViewController {
         let textStack      = UIStackView(arrangedSubviews: [titleLbl, homeValueLabel])
         textStack.axis     = .vertical
         textStack.spacing  = 2
+        textStack.alignment = .fill
+        textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         let editBtn = UIButton(type: .system)
         editBtn.setTitle("Edit", for: .normal)
         editBtn.applyTextActionStyle()
         editBtn.setContentHuggingPriority(.required, for: .horizontal)
+        editBtn.setContentCompressionResistancePriority(.required, for: .horizontal)
         editBtn.addTarget(self, action: #selector(editHomeLocationTapped), for: .touchUpInside)
 
         let row       = UIStackView(arrangedSubviews: [icon, textStack, editBtn])
         row.axis      = .horizontal
         row.spacing   = 10
-        row.alignment = .center
+        row.alignment = .top
         return row
     }
 
@@ -419,6 +428,7 @@ class ProfileViewController: UIViewController {
             emptyLabel.text = "No vehicles added. Tap + to add one."
             emptyLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
             emptyLabel.textAlignment = .center
+            emptyLabel.numberOfLines = 0
             vehicleStack.addArrangedSubview(emptyLabel)
         }
     }
@@ -434,14 +444,17 @@ class ProfileViewController: UIViewController {
         let nameLbl = UILabel()
         nameLbl.text = vehicle.alias ?? vehicle.model
         nameLbl.applyTextStyle(AppDesign.Typography.subheadline)
+        nameLbl.numberOfLines = 0
         
         let regLbl = UILabel()
         regLbl.text = vehicle.registrationNumber
         regLbl.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
+        regLbl.numberOfLines = 0
         
         let textStack = UIStackView(arrangedSubviews: [nameLbl, regLbl])
         textStack.axis = .vertical
         textStack.spacing = 2
+        textStack.alignment = .fill
         textStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
         textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         
@@ -461,7 +474,7 @@ class ProfileViewController: UIViewController {
         let row = UIStackView(arrangedSubviews: [icon, textStack, spacer, chevron])
         row.axis = .horizontal
         row.spacing = 12
-        row.alignment = .center
+        row.alignment = .top
         
         let tap = UIAction { [weak self] _ in
             let vc = VehicleRegistrationViewController()
@@ -534,6 +547,7 @@ class ProfileViewController: UIViewController {
         emptyLabel.text = "Sign in to add vehicles"
         emptyLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
         emptyLabel.textAlignment = .center
+        emptyLabel.numberOfLines = 0
         vehicleStack.addArrangedSubview(emptyLabel)
         
         guestSignInButton.isHidden = false
@@ -738,11 +752,14 @@ class ProfileViewController: UIViewController {
         let textStack     = UIStackView(arrangedSubviews: [titleLbl, valueLabel])
         textStack.axis    = .vertical
         textStack.spacing = 2
+        textStack.alignment = .fill
+        textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        valueLabel.numberOfLines = 0
 
         let row       = UIStackView(arrangedSubviews: [icon, textStack])
         row.axis      = .horizontal
         row.spacing   = 10
-        row.alignment = .center
+        row.alignment = .top
         return row
     }
 
