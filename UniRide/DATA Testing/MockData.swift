@@ -66,7 +66,7 @@ extension MockData {
 
         let e1 = EventItem(
             createdByUserID: UUID(),
-            title: "Rangrez 2025",
+            title: "Rangrez 2026",
             details: "Cultural festival",
             location: EventLocation(name: "Main Ground"),
             startsAt: Date().addingTimeInterval(86400)
@@ -74,7 +74,7 @@ extension MockData {
 
         let e2 = EventItem(
             createdByUserID: UUID(),
-            title: "TechNova 2025",
+            title: "TechNova 2026",
             details: "Annual tech fest",
             location: EventLocation(name: "B-Block Auditorium"),
             startsAt: Date().addingTimeInterval(172800)

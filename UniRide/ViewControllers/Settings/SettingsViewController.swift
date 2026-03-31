@@ -3,6 +3,7 @@
 // App settings: notifications, appearance, data, account, and about.
 
 import UIKit
+import SafariServices
 
 final class SettingsViewController: UIViewController {
 
@@ -261,7 +262,9 @@ final class SettingsViewController: UIViewController {
 
     private func openURL(_ string: String) {
         guard let url = URL(string: string) else { return }
-        UIApplication.shared.open(url)
+        let safariVC = SFSafariViewController(url: url)
+        safariVC.preferredControlTintColor = AppDesign.Color.primary
+        present(safariVC, animated: true)
     }
 
     private func signOut() {
