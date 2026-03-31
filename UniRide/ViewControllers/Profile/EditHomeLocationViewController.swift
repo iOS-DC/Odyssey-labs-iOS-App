@@ -6,7 +6,7 @@
 import UIKit
 import MapKit
 
-final class EditHomeLocationViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource, MKLocalSearchCompleterDelegate {
+final class EditHomeLocationViewController: UIViewController, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource, MKLocalSearchCompleterDelegate, UIGestureRecognizerDelegate {
 
     // MARK: - UI Components
     private let scrollView = UIScrollView()
@@ -54,6 +54,7 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
         
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
+        tap.delegate = self
         view.addGestureRecognizer(tap)
     }
 
@@ -115,6 +116,7 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
         suggestionsTableView.translatesAutoresizingMaskIntoConstraints = false
         suggestionsTableView.delegate = self
         suggestionsTableView.dataSource = self
+        suggestionsTableView.allowsSelection = true
         suggestionsTableView.isHidden = true
         suggestionsTableView.applySmallCard()
         suggestionsTableView.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
@@ -374,5 +376,16 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
                 }
             }
         }
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var currentView: UIView? = touch.view
+        while let view = currentView {
+            if view === suggestionsTableView {
+                return false
+            }
+            currentView = view.superview
+        }
+        return true
     }
 }
