@@ -94,7 +94,13 @@ final class PushNotificationService: NSObject {
         content.title = title
         content.body = body
         content.sound = .default
-        content.badge = 1
+        
+        if let userID = SessionManager.shared.userID {
+            content.badge = NSNumber(value: AppNotificationModel.shared.unreadCount(for: userID))
+        } else {
+            content.badge = 1
+        }
+        
         content.userInfo = data
 
         let request = UNNotificationRequest(

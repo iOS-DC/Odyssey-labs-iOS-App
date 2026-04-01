@@ -1,4 +1,6 @@
 import Foundation
+import UIKit
+import UserNotifications
 
 // MARK: - Model
 
@@ -50,6 +52,7 @@ final class AppNotificationModel {
             let decoded = try? JSONDecoder().decode([AppNotification].self, from: data)
         else { return }
         notifications = decoded
+        updateAppBadge()
     }
 
     private func save() {
@@ -63,7 +66,22 @@ final class AppNotificationModel {
         notifications.insert(notif, at: 0)
         notifications.sort { $0.timestamp > $1.timestamp }
         save()
+        updateAppBadge()
         NotificationCenter.default.post(name: .appNotificationsUpdated, object: nil)
+    }
+
+    private func updateAppBadge() {
+        guard let userID = SessionManager.shared.userID else { return }
+        let count = unreadCount(for: userID)
+        DispatchQueue.main.async {
+            UIApplication.shared.applicationIconBadgeNumber = count
+            if #available(iOS 16.0, *) {
+                UNUserNotificationCenter.current().setBadgeCount(count)
+            }
+            if count == 0 {
+                UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+            }
+        }
     }
 
     private func mergeRemote(_ incoming: [AppNotification]) {
@@ -83,6 +101,7 @@ final class AppNotificationModel {
         guard changed else { return }
         notifications.sort { $0.timestamp > $1.timestamp }
         save()
+        updateAppBadge()
         NotificationCenter.default.post(name: .appNotificationsUpdated, object: nil)
     }
 
@@ -192,6 +211,7 @@ final class AppNotificationModel {
             notifications[i].isRead = true
         }
         save()
+        updateAppBadge()
         NotificationCenter.default.post(name: .appNotificationsUpdated, object: nil)
 
         guard SessionManager.shared.isLoggedIn, !unreadIDs.isEmpty else { return }
