@@ -33,6 +33,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
         super.viewDidLoad()
         title = "Verify Email"
         applyOnboardingChrome(step: 2, total: 7)
+        configureBackButton()
         errorLabel.isHidden = true
         verifyButton.applyPrimaryButton(color: AppDesign.Color.primary, radius: AppDesign.Radius.sm)
         applyPrimaryOnboardingCTAStyle(verifyButton)
@@ -312,6 +313,23 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
         for (idx, field) in otpFields().enumerated() {
             field.accessibilityLabel = "OTP digit \(idx + 1)"
             field.accessibilityHint = "Enter digit \(idx + 1) of 6"
+        }
+    }
+
+    private func configureBackButton() {
+        let image = UIImage(systemName: "chevron.left")
+        let backButton = UIBarButtonItem(image: image, style: .plain, target: self, action: #selector(backTapped))
+        backButton.tintColor = .label
+        navigationItem.leftBarButtonItem = backButton
+    }
+
+    @objc private func backTapped() {
+        if let navigationController, navigationController.viewControllers.first != self {
+            navigationController.popViewController(animated: true)
+        } else if let navigationController {
+            navigationController.dismiss(animated: true)
+        } else {
+            dismiss(animated: true)
         }
     }
 }

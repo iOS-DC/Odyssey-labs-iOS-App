@@ -9,6 +9,11 @@ class EmailViewController: UIViewController {
     @IBOutlet weak var containerCard: UIView!
 
     private let guestButton = UIButton(type: .system)
+    private var errorLabelTopConstraint: NSLayoutConstraint?
+    private var errorLabelTrailingConstraint: NSLayoutConstraint?
+    private var continueButtonTopConstraint: NSLayoutConstraint?
+    private let otpCooldownKey = "emailOTPLastSentAt"
+    private let otpCooldownInterval: TimeInterval = 30
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -33,11 +38,60 @@ class EmailViewController: UIViewController {
         emailTextField.autocorrectionType = .no
         continueButton.setPrimaryCTAEnabled(false)
         emailTextField.addTarget(self, action: #selector(emailChanged), for: .editingChanged)
+        setupErrorLabelLayout()
         configureAccessibility()
         setupGuestButton()
         
         // Fix title padding if it's too high
         adjustTitlePadding()
+    }
+
+    private func setupErrorLabelLayout() {
+        errorLabel.translatesAutoresizingMaskIntoConstraints = false
+        errorLabel.numberOfLines = 0
+        errorLabel.lineBreakMode = .byWordWrapping
+        errorLabel.font = UIFont.systemFont(ofSize: 13, weight: .medium)
+        errorLabel.textColor = .systemRed
+        errorLabel.isHidden = true
+
+        containerCard.constraints.forEach { constraint in
+            let firstView = constraint.firstItem as? UIView
+            let secondView = constraint.secondItem as? UIView
+
+            let connectsErrorAndField =
+                (firstView == errorLabel && secondView == emailTextField) ||
+                (firstView == emailTextField && secondView == errorLabel)
+            let connectsErrorAndContinue =
+                (firstView == errorLabel && secondView == continueButton) ||
+                (firstView == continueButton && secondView == errorLabel)
+            let isErrorPositionConstraint =
+                firstView == errorLabel || secondView == errorLabel
+
+            if connectsErrorAndField || connectsErrorAndContinue || isErrorPositionConstraint {
+                if constraint.firstAttribute == .top || constraint.secondAttribute == .top ||
+                    constraint.firstAttribute == .leading || constraint.secondAttribute == .leading ||
+                    constraint.firstAttribute == .trailing || constraint.secondAttribute == .trailing ||
+                    constraint.firstAttribute == .centerX || constraint.secondAttribute == .centerX {
+                    constraint.isActive = false
+                }
+            }
+
+            if connectsErrorAndContinue,
+               constraint.firstAttribute == .top || constraint.secondAttribute == .top {
+                constraint.isActive = false
+            }
+        }
+
+        errorLabelTopConstraint = errorLabel.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 12)
+        errorLabelTrailingConstraint = errorLabel.trailingAnchor.constraint(equalTo: containerCard.trailingAnchor, constant: -20)
+        continueButtonTopConstraint = continueButton.topAnchor.constraint(equalTo: errorLabel.bottomAnchor, constant: 16)
+
+        NSLayoutConstraint.activate([
+            errorLabel.leadingAnchor.constraint(equalTo: containerCard.leadingAnchor, constant: 20),
+            errorLabelTopConstraint!,
+            errorLabelTrailingConstraint!,
+            continueButtonTopConstraint!
+        ])
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -105,7 +159,14 @@ class EmailViewController: UIViewController {
     
     @IBAction func continueTapped(_ sender: UIButton) {
         errorLabel.isHidden = true
+        errorLabel.text = nil
         let raw = (emailTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let remaining = remainingCooldownSeconds(), remaining > 0 {
+            showError("For security purposes, please retry after \(remaining)s.")
+            return
+        }
+
         continueButton.setPrimaryCTAEnabled(false)
 
         Task { @MainActor [weak self] in
@@ -114,6 +175,7 @@ class EmailViewController: UIViewController {
 
             do {
                 try await UserDataModel.shared.startEmailVerificationAsync(email: raw)
+                UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: otpCooldownKey)
 
                 // Storing email for OTP screen
                 UserDefaults.standard.set(raw, forKey: "lastEmailForOTP")
@@ -125,10 +187,26 @@ class EmailViewController: UIViewController {
                 nav.modalPresentationStyle = .fullScreen
                 present(nav, animated: true, completion: nil)
             } catch {
-                errorLabel.text = error.localizedDescription
-                errorLabel.isHidden = false
+                let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+                showError(message.isEmpty ? "Unable to send OTP right now. Please try again shortly." : message)
             }
         }
+    }
+
+    private func remainingCooldownSeconds() -> Int? {
+        let lastSentAt = UserDefaults.standard.double(forKey: otpCooldownKey)
+        guard lastSentAt > 0 else { return nil }
+
+        let elapsed = Date().timeIntervalSince1970 - lastSentAt
+        let remaining = otpCooldownInterval - elapsed
+        guard remaining > 0 else { return nil }
+        return Int(ceil(remaining))
+    }
+
+    private func showError(_ message: String) {
+        errorLabel.text = message
+        errorLabel.isHidden = false
+        view.layoutIfNeeded()
     }
     
 }
