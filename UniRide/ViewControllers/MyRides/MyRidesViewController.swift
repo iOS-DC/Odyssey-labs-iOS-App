@@ -489,6 +489,22 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
         }
 
         if trip.role == .hosting {
+            let confirmedCount = RideDataModel.shared
+                .listBookings(for: trip.ride.id)
+                .filter { $0.status == .confirmed }
+                .reduce(0) { $0 + $1.seats }
+            
+            if confirmedCount == 0 {
+                let alert = UIAlertController(
+                    title: "No passengers yet",
+                    message: "Once passengers join and are confirmed, you'll be able to see their details here.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+                return
+            }
+            
             let vc = RideDetailViewController()
             vc.ride = trip.ride
             vc.driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)

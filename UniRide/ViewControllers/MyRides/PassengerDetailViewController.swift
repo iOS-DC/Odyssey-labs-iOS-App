@@ -24,188 +24,274 @@ final class PassengerDetailViewController: UIViewController {
     }
 
     // MARK: - UI
+    // MARK: - UI
     private func buildUI() {
         view.backgroundColor = .systemBackground
 
-        // ── Close button (top-right X) ──────────────────────────────
+        // ── Scroll View for Responsiveness ───────────────────────────
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.showsVerticalScrollIndicator = false
+        view.addSubview(scrollView)
+
+        let contentView = UIView()
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(contentView)
+
+        // ── Main Stack View ──────────────────────────────────────────
+        let mainStack = UIStackView()
+        mainStack.axis = .vertical
+        mainStack.spacing = 24
+        mainStack.alignment = .center
+        mainStack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(mainStack)
+
+        // ── Header (Close Button & Title) ────────────────────────────
+        let headerView = UIView()
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(headerView)
+
         let closeBtn = UIButton(type: .system)
         closeBtn.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
         closeBtn.tintColor = .systemGray3
         closeBtn.translatesAutoresizingMaskIntoConstraints = false
         closeBtn.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
-        view.addSubview(closeBtn)
+        headerView.addSubview(closeBtn)
 
-        // ── Title ────────────────────────────────────────────────────
         let titleLabel = UILabel()
         titleLabel.text = "Passenger Details"
         titleLabel.font = AppDesign.Typography.bodyStrong
+        titleLabel.textColor = .secondaryLabel
         titleLabel.textAlignment = .center
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(titleLabel)
+        headerView.addSubview(titleLabel)
 
         // ── Avatar ───────────────────────────────────────────────────
-        let avatarSize: CGFloat = 90
+        let avatarContainer = UIView()
+        avatarContainer.translatesAutoresizingMaskIntoConstraints = false
+        
+        let avatarSize: CGFloat = 100
         let avatarView = UIImageView()
         avatarView.translatesAutoresizingMaskIntoConstraints = false
         avatarView.layer.cornerRadius = avatarSize / 2
         avatarView.layer.masksToBounds = true
-        avatarView.backgroundColor = .systemGray5
+        avatarView.backgroundColor = .systemGray6
         avatarView.contentMode = .scaleAspectFill
+        avatarView.layer.borderWidth = 3
+        avatarView.layer.borderColor = AppDesign.Color.primary.withAlphaComponent(0.1).cgColor
 
         // Initials fallback
-        let initial = String(passenger.fullName.prefix(1)).uppercased()
-        let initLabel = UILabel(frame: CGRect(x: 0, y: 0, width: avatarSize, height: avatarSize))
-        initLabel.text = initial
-        initLabel.font = AppDesign.Typography.h1
-        initLabel.textColor = .systemGray
-        initLabel.textAlignment = .center
-        avatarView.addSubview(initLabel)
+        let initialLabel = UILabel()
+        initialLabel.text = String(passenger.fullName.prefix(1)).uppercased()
+        initialLabel.font = .systemFont(ofSize: 40, weight: .bold)
+        initialLabel.textColor = .systemGray3
+        initialLabel.textAlignment = .center
+        initialLabel.translatesAutoresizingMaskIntoConstraints = false
+        avatarView.addSubview(initialLabel)
 
         if let url = passenger.photoURL {
             URLSession.shared.dataTask(with: url) { data, _, _ in
                 if let data = data, let img = UIImage(data: data) {
                     DispatchQueue.main.async {
                         avatarView.image = img
-                        initLabel.removeFromSuperview()
+                        initialLabel.isHidden = true
                     }
                 }
             }.resume()
         }
-        view.addSubview(avatarView)
+        avatarContainer.addSubview(avatarView)
+        mainStack.addArrangedSubview(avatarContainer)
 
-        // ── Name ─────────────────────────────────────────────────────
+        // ── Name & Role ──────────────────────────────────────────────
+        let nameStack = UIStackView()
+        nameStack.axis = .vertical
+        nameStack.spacing = 4
+        nameStack.alignment = .center
+        
         let nameLabel = UILabel()
         nameLabel.text = passenger.fullName
-        nameLabel.font = AppDesign.Typography.title
+        nameLabel.font = AppDesign.Typography.h2
+        nameLabel.textColor = AppDesign.Color.textPrimary
         nameLabel.textAlignment = .center
-        nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(nameLabel)
+        nameStack.addArrangedSubview(nameLabel)
 
-        // ── Role tag ─────────────────────────────────────────────────
-        let roleLabel = UILabel()
-        roleLabel.text = "Passenger"
-        roleLabel.font = AppDesign.Typography.subheadline
-        roleLabel.textColor = .secondaryLabel
-        roleLabel.textAlignment = .center
-        roleLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(roleLabel)
+        let roleBadge = UILabel()
+        roleBadge.text = "  PASSENGER  "
+        roleBadge.font = AppDesign.Typography.captionStrong
+        roleBadge.textColor = AppDesign.Color.primary
+        roleBadge.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.1)
+        roleBadge.layer.cornerRadius = 6
+        roleBadge.layer.masksToBounds = true
+        nameStack.addArrangedSubview(roleBadge)
+        
+        mainStack.addArrangedSubview(nameStack)
 
-        // ── Info stack ───────────────────────────────────────────────
+        // ── Info Card ────────────────────────────────────────────────
+        let infoCard = UIView()
+        infoCard.backgroundColor = AppDesign.Color.elevatedSurface
+        infoCard.layer.cornerRadius = AppDesign.Radius.md
+        infoCard.translatesAutoresizingMaskIntoConstraints = false
+        mainStack.addArrangedSubview(infoCard)
+        
         let infoStack = UIStackView()
         infoStack.axis = .vertical
-        infoStack.spacing = AppDesign.Spacing.xs
+        infoStack.spacing = 16
         infoStack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(infoStack)
+        infoCard.addSubview(infoStack)
 
         let pickup = ride.source.address ?? "Unknown"
         let dropoff = ride.destination.address ?? "Unknown"
-        let contact = passenger.phone ?? "—"
+        let contact = passenger.phone ?? "Not provided"
 
-        for (key, value) in [
-            ("Pickup", pickup),
-            ("Drop-off", dropoff),
-            ("Contact", contact),
-            ("Status", "Confirmed")
-        ] {
-            let row = UILabel()
-            row.text = "\(key): \(value)"
-            row.font = AppDesign.Typography.subheadline
-            row.textColor = .label
-            row.numberOfLines = 0
-            infoStack.addArrangedSubview(row)
-        }
+        infoStack.addArrangedSubview(makeInfoRow(icon: "mappin.and.ellipse", title: "Pickup", value: pickup))
+        infoStack.addArrangedSubview(makeInfoRow(icon: "location.fill", title: "Drop-off", value: dropoff))
+        infoStack.addArrangedSubview(makeInfoRow(icon: "phone.fill", title: "Contact", value: contact))
+        infoStack.addArrangedSubview(makeInfoRow(icon: "checkmark.seal.fill", title: "Status", value: "Confirmed", valueColor: AppDesign.Color.success))
 
-        // ── Message button ───────────────────────────────────────────
+        // ── Actions Stack ────────────────────────────────────────────
+        let actionsStack = UIStackView()
+        actionsStack.axis = .vertical
+        actionsStack.spacing = 12
+        actionsStack.alignment = .fill
+        actionsStack.translatesAutoresizingMaskIntoConstraints = false
+        mainStack.addArrangedSubview(actionsStack)
+
         let msgBtn = makeActionButton(
-            title: "Message \(passenger.fullName.components(separatedBy: " ").first ?? passenger.fullName)",
+            title: "Message \(passenger.fullName.components(separatedBy: " ").first ?? "Passenger")",
+            image: "message.fill",
             color: AppDesign.Color.primary
         )
         msgBtn.addTarget(self, action: #selector(messageTapped), for: .touchUpInside)
-        view.addSubview(msgBtn)
+        actionsStack.addArrangedSubview(msgBtn)
 
-        // ── Remove button ────────────────────────────────────────────
-        let removeBtn = makeActionButton(title: "Remove Passenger", color: AppDesign.Color.destructive)
+        let removeBtn = makeActionButton(title: "Remove Passenger", image: "person.badge.minus.fill", color: .systemGray6, textColor: AppDesign.Color.destructive)
         removeBtn.addTarget(self, action: #selector(removeTapped), for: .touchUpInside)
-        view.addSubview(removeBtn)
+        actionsStack.addArrangedSubview(removeBtn)
 
-        // Safety Buttons (Report / Block)
+        // ── Safety Buttons ───────────────────────────────────────────
         let safetyStack = UIStackView()
         safetyStack.axis = .horizontal
-        safetyStack.spacing = 24
+        safetyStack.spacing = 20
         safetyStack.distribution = .fillEqually
-        safetyStack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(safetyStack)
-
+        
         let reportBtn = UIButton(type: .system)
-        reportBtn.setTitle("Report User", for: .normal)
-        reportBtn.setTitleColor(.systemRed, for: .normal)
+        reportBtn.setTitle("Report", for: .normal)
+        reportBtn.setImage(UIImage(systemName: "exclamationmark.bubble"), for: .normal)
+        reportBtn.tintColor = .systemRed
         reportBtn.titleLabel?.font = AppDesign.Typography.subheadline
         reportBtn.addTarget(self, action: #selector(reportTapped), for: .touchUpInside)
-
+        
         let blockBtn = UIButton(type: .system)
-        blockBtn.setTitle("Block User", for: .normal)
-        blockBtn.setTitleColor(.systemRed, for: .normal)
+        blockBtn.setTitle("Block", for: .normal)
+        blockBtn.setImage(UIImage(systemName: "hand.raised.fill"), for: .normal)
+        blockBtn.tintColor = .systemRed
         blockBtn.titleLabel?.font = AppDesign.Typography.subheadline
         blockBtn.addTarget(self, action: #selector(blockTapped), for: .touchUpInside)
-
+        
         safetyStack.addArrangedSubview(reportBtn)
         safetyStack.addArrangedSubview(blockBtn)
+        mainStack.addArrangedSubview(safetyStack)
 
-        // ── Layout ───────────────────────────────────────────────────
+        // ── Layout Constraints ───────────────────────────────────────
         NSLayoutConstraint.activate([
-            closeBtn.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            closeBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+
+            headerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 16),
+            headerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 44),
+
+            closeBtn.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            closeBtn.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -20),
             closeBtn.widthAnchor.constraint(equalToConstant: 32),
             closeBtn.heightAnchor.constraint(equalToConstant: 32),
 
-            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: AppDesign.Spacing.lg),
-            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            titleLabel.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-            avatarView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
-            avatarView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            mainStack.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 10),
+            mainStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            mainStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
+            mainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40),
+
+            avatarView.topAnchor.constraint(equalTo: avatarContainer.topAnchor),
+            avatarView.centerXAnchor.constraint(equalTo: avatarContainer.centerXAnchor),
             avatarView.widthAnchor.constraint(equalToConstant: avatarSize),
             avatarView.heightAnchor.constraint(equalToConstant: avatarSize),
+            avatarView.bottomAnchor.constraint(equalTo: avatarContainer.bottomAnchor),
+            
+            initialLabel.centerXAnchor.constraint(equalTo: avatarView.centerXAnchor),
+            initialLabel.centerYAnchor.constraint(equalTo: avatarView.centerYAnchor),
 
-            nameLabel.topAnchor.constraint(equalTo: avatarView.bottomAnchor, constant: 14),
-            nameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-            nameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
+            infoCard.widthAnchor.constraint(equalTo: mainStack.widthAnchor),
+            infoStack.topAnchor.constraint(equalTo: infoCard.topAnchor, constant: 20),
+            infoStack.leadingAnchor.constraint(equalTo: infoCard.leadingAnchor, constant: 20),
+            infoStack.trailingAnchor.constraint(equalTo: infoCard.trailingAnchor, constant: -20),
+            infoStack.bottomAnchor.constraint(equalTo: infoCard.bottomAnchor, constant: -20),
 
-            roleLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
-            roleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-
-            infoStack.topAnchor.constraint(equalTo: roleLabel.bottomAnchor, constant: 20),
-            infoStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-            infoStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
-
-            msgBtn.topAnchor.constraint(equalTo: infoStack.bottomAnchor, constant: 28),
-            msgBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-            msgBtn.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
-            msgBtn.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight),
-
-            removeBtn.topAnchor.constraint(equalTo: msgBtn.bottomAnchor, constant: 12),
-            removeBtn.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-            removeBtn.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight),
-
-            safetyStack.topAnchor.constraint(equalTo: removeBtn.bottomAnchor, constant: 16),
-            safetyStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-            safetyStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
-            safetyStack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
+            actionsStack.widthAnchor.constraint(equalTo: mainStack.widthAnchor),
+            msgBtn.heightAnchor.constraint(equalToConstant: 56),
+            removeBtn.heightAnchor.constraint(equalToConstant: 56),
+            
+            safetyStack.widthAnchor.constraint(equalTo: mainStack.widthAnchor)
         ])
     }
 
-    private func makeActionButton(title: String, color: UIColor) -> UIButton {
+    private func makeInfoRow(icon: String, title: String, value: String, valueColor: UIColor = .label) -> UIView {
+        let hStack = UIStackView()
+        hStack.axis = .horizontal
+        hStack.spacing = 12
+        hStack.alignment = .top
+
+        let iconView = UIImageView(image: UIImage(systemName: icon))
+        iconView.tintColor = AppDesign.Color.primary
+        iconView.contentMode = .scaleAspectFit
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        iconView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        hStack.addArrangedSubview(iconView)
+
+        let vStack = UIStackView()
+        vStack.axis = .vertical
+        vStack.spacing = 2
+
+        let titleLbl = UILabel()
+        titleLbl.text = title
+        titleLbl.font = AppDesign.Typography.captionStrong
+        titleLbl.textColor = .secondaryLabel
+        vStack.addArrangedSubview(titleLbl)
+
+        let valueLbl = UILabel()
+        valueLbl.text = value
+        valueLbl.font = AppDesign.Typography.subheadline
+        valueLbl.textColor = valueColor
+        valueLbl.numberOfLines = 0
+        vStack.addArrangedSubview(valueLbl)
+
+        hStack.addArrangedSubview(vStack)
+        return hStack
+    }
+
+    private func makeActionButton(title: String, image: String, color: UIColor, textColor: UIColor = .white) -> UIButton {
         var config = UIButton.Configuration.filled()
         config.title = title
+        config.image = UIImage(systemName: image)
+        config.imagePadding = 10
         config.baseBackgroundColor = color
-        config.baseForegroundColor = .white
-        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
-            var a = attrs
-            a.font = AppDesign.Typography.action
-            return a
-        }
-        config.cornerStyle = .capsule
+        config.baseForegroundColor = textColor
+        config.cornerStyle = .large
+        
         let btn = UIButton(configuration: config)
-        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.applyPressMicroInteraction()
         return btn
     }
 
