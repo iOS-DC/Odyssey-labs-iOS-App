@@ -103,52 +103,15 @@ final class OnboardingViewController: UIViewController {
     }
 
     private func configureStaticUI() {
-        view.backgroundColor = UIColor(red: 0.937254902, green: 0.97254902, blue: 1, alpha: 1)
-
-        let alphas: [CGFloat] = [0.12, 0.10, 0.08, 0.09, 0.07]
-        for (index, circle) in floatingCircles.enumerated() {
-            circle.backgroundColor = UIColor.white.withAlphaComponent(alphas[index])
+        for circle in floatingCircles {
             circle.layer.cornerRadius = circle.bounds.width / 2
         }
 
-        iconContainer.backgroundColor = UIColor.white.withAlphaComponent(0.18)
-        iconContainer.layer.cornerRadius = 42
-        iconContainer.layer.borderWidth = 1.5
-        iconContainer.layer.borderColor = UIColor.white.withAlphaComponent(0.35).cgColor
-
-        iconImageView.tintColor = .white
-        iconImageView.contentMode = .scaleAspectFit
-
-        bottomPanel.backgroundColor = .systemBackground
-        bottomPanel.layer.cornerRadius = 36
         bottomPanel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         bottomPanel.layer.shadowColor = UIColor.black.cgColor
-        bottomPanel.layer.shadowOpacity = 0.12
-        bottomPanel.layer.shadowOffset = CGSize(width: 0, height: -4)
-        bottomPanel.layer.shadowRadius = 20
-
-        eyebrowLabel.font = UIFont.systemFont(ofSize: 11, weight: .bold)
-        eyebrowLabel.textColor = AppDesign.Color.primary.withAlphaComponent(0.7)
         eyebrowLabel.letterSpacing(2.0)
-
-        titleLabel.numberOfLines = 2
-        subtitleLabel.numberOfLines = 0
-        subtitleLabel.lineBreakMode = .byWordWrapping
-        subtitleLabel.font = UIFont.systemFont(ofSize: 15, weight: .regular)
-        subtitleLabel.textColor = .secondaryLabel
-
-        progressIndicator.backgroundColor = AppDesign.Color.primary
         progressIndicator.layer.cornerRadius = 2.5
-
-        nextButton.layer.cornerRadius = 16
         nextButton.clipsToBounds = true
-        nextButton.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
-        nextButton.backgroundColor = AppDesign.Color.primary
-        nextButton.setTitleColor(.white, for: .normal)
-
-        skipButton.setTitle("Skip", for: .normal)
-        skipButton.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        skipButton.setTitleColor(.white, for: .normal)
         skipButton.isHidden = false
         skipButton.alpha = 1
         if let skipContainer = skipButton.superview {
