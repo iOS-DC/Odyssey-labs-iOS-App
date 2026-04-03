@@ -16,91 +16,195 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5YN-hv-SS2">
-                                <rect key="frame" x="320" y="40" width="57" height="35"/>
-                                <state key="normal" title="Button"/>
-                                <buttonConfiguration key="configuration" style="plain" title="Skip"/>
-                                <connections>
-                                    <action selector="skipTapped:" destination="Vfr-ef-bjR" eventType="touchUpInside" id="fXc-CW-AGI"/>
-                                </connections>
-                            </button>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="qMr-Ee-40v">
-                                <rect key="frame" x="24" y="218" width="345" height="224"/>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-skip-wrap">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="103"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="5YN-hv-SS2">
+                                        <rect key="frame" x="323" y="59" width="46" height="20"/>
+                                        <state key="normal" title="Skip"/>
+                                        <connections>
+                                            <action selector="skipTapped:" destination="Vfr-ef-bjR" eventType="touchUpInside" id="fXc-CW-AGI"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="224" id="uGp-u8-el9"/>
+                                    <constraint firstItem="5YN-hv-SS2" firstAttribute="top" secondItem="ob-skip-wrap" secondAttribute="top" constant="59" id="ob-skip-top"/>
+                                    <constraint firstAttribute="trailing" secondItem="5YN-hv-SS2" secondAttribute="trailing" constant="24" id="ob-skip-trailing"/>
                                 </constraints>
-                            </imageView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="s8L-Kg-03Y">
-                                <rect key="frame" x="24" y="532" width="345" height="21"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <pageControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" numberOfPages="3" translatesAutoresizingMaskIntoConstraints="NO" id="28l-el-P2C">
-                                <rect key="frame" x="160" y="676" width="73" height="26"/>
-                                <color key="pageIndicatorTintColor" cyan="0.58999999999999997" magenta="0.0" yellow="0.70407241580000002" black="0.0" alpha="1" colorSpace="custom" customColorSpace="genericCMYKColorSpace"/>
-                                <color key="currentPageIndicatorTintColor" red="0.1960784314" green="0.67843137249999996" blue="0.90196078430000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <connections>
-                                    <action selector="pageChanged:" destination="Vfr-ef-bjR" eventType="valueChanged" id="8VO-oR-GBL"/>
-                                </connections>
-                            </pageControl>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tzq-B6-xiC">
-                                <rect key="frame" x="24" y="710" width="345" height="50"/>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-gradient-wrap" customClass="GradientView" customModule="UniRide" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="545"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-circle-1">
+                                        <rect key="frame" x="197" y="-66" width="220" height="220"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="220" id="ob-c1-w"/>
+                                            <constraint firstAttribute="height" constant="220" id="ob-c1-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-circle-2">
+                                        <rect key="frame" x="-31" y="39" width="140" height="140"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="140" id="ob-c2-w"/>
+                                            <constraint firstAttribute="height" constant="140" id="ob-c2-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-circle-3">
+                                        <rect key="frame" x="294" y="243" width="80" height="80"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="80" id="ob-c3-w"/>
+                                            <constraint firstAttribute="height" constant="80" id="ob-c3-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-circle-4">
+                                        <rect key="frame" x="-10" y="270" width="60" height="60"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="60" id="ob-c4-w"/>
+                                            <constraint firstAttribute="height" constant="60" id="ob-c4-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-circle-5">
+                                        <rect key="frame" x="146.5" y="-22" width="100" height="100"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="100" id="ob-c5-w"/>
+                                            <constraint firstAttribute="height" constant="100" id="ob-c5-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-icon-wrap">
+                                        <rect key="frame" x="123.5" y="199.5" width="146" height="146"/>
+                                        <subviews>
+                                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="qMr-Ee-40v">
+                                                <rect key="frame" x="37" y="37" width="72" height="72"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="width" constant="72" id="ob-icon-img-w"/>
+                                                    <constraint firstAttribute="height" constant="72" id="ob-icon-img-h"/>
+                                                </constraints>
+                                            </imageView>
+                                        </subviews>
+                                        <constraints>
+                                            <constraint firstItem="qMr-Ee-40v" firstAttribute="centerX" secondItem="ob-icon-wrap" secondAttribute="centerX" id="ob-icon-img-cx"/>
+                                            <constraint firstItem="qMr-Ee-40v" firstAttribute="centerY" secondItem="ob-icon-wrap" secondAttribute="centerY" id="ob-icon-img-cy"/>
+                                            <constraint firstAttribute="width" constant="146" id="ob-icon-wrap-w"/>
+                                            <constraint firstAttribute="height" constant="146" id="ob-icon-wrap-h"/>
+                                        </constraints>
+                                    </view>
+                                </subviews>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="50" id="o8k-Ax-oVf"/>
+                                    <constraint firstItem="ob-icon-wrap" firstAttribute="centerX" secondItem="ob-gradient-wrap" secondAttribute="centerX" id="ob-icon-wrap-cx"/>
+                                    <constraint firstItem="ob-icon-wrap" firstAttribute="centerY" secondItem="ob-gradient-wrap" secondAttribute="centerY" id="ob-icon-wrap-cy"/>
+                                    <constraint firstItem="ob-circle-1" firstAttribute="centerX" secondItem="ob-gradient-wrap" secondAttribute="leading" constant="306.5" id="ob-c1-cx"/>
+                                    <constraint firstItem="ob-circle-1" firstAttribute="centerY" secondItem="ob-gradient-wrap" secondAttribute="top" constant="44" id="ob-c1-cy"/>
+                                    <constraint firstItem="ob-circle-2" firstAttribute="centerX" secondItem="ob-gradient-wrap" secondAttribute="leading" constant="39.299999999999997" id="ob-c2-cx"/>
+                                    <constraint firstItem="ob-circle-2" firstAttribute="centerY" secondItem="ob-gradient-wrap" secondAttribute="top" constant="109" id="ob-c2-cy"/>
+                                    <constraint firstItem="ob-circle-3" firstAttribute="centerX" secondItem="ob-gradient-wrap" secondAttribute="leading" constant="334.05000000000001" id="ob-c3-cx"/>
+                                    <constraint firstItem="ob-circle-3" firstAttribute="centerY" secondItem="ob-gradient-wrap" secondAttribute="top" constant="283.39999999999998" id="ob-c3-cy"/>
+                                    <constraint firstItem="ob-circle-4" firstAttribute="centerX" secondItem="ob-gradient-wrap" secondAttribute="leading" constant="19.649999999999999" id="ob-c4-cx"/>
+                                    <constraint firstItem="ob-circle-4" firstAttribute="centerY" secondItem="ob-gradient-wrap" secondAttribute="top" constant="299.75" id="ob-c4-cy"/>
+                                    <constraint firstItem="ob-circle-5" firstAttribute="centerX" secondItem="ob-gradient-wrap" secondAttribute="leading" constant="196.5" id="ob-c5-cx"/>
+                                    <constraint firstItem="ob-circle-5" firstAttribute="centerY" secondItem="ob-gradient-wrap" secondAttribute="top" constant="27.25" id="ob-c5-cy"/>
                                 </constraints>
-                                <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
-                                <state key="normal" title="Button">
-                                    <color key="titleColor" red="0.93333333330000001" green="0.96862745100000003" blue="0.97647058819999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                    <color key="titleShadowColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                </state>
-                                <buttonConfiguration key="configuration" style="plain" title="Button">
-                                    <backgroundConfiguration key="background">
-                                        <color key="backgroundColor" systemColor="systemBlueColor"/>
-                                    </backgroundConfiguration>
-                                    <color key="baseForegroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                </buttonConfiguration>
-                                <connections>
-                                    <action selector="nextTapped:" destination="Vfr-ef-bjR" eventType="touchUpInside" id="3Ze-Te-oOW"/>
-                                </connections>
-                            </button>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RhF-1Q-WOL">
-                                <rect key="frame" x="24" y="472" width="345" height="30"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="25"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-bottom-panel">
+                                <rect key="frame" x="0.0" y="486" width="393" height="366"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-track">
+                                        <rect key="frame" x="28" y="24" width="337" height="5"/>
+                                        <subviews>
+                                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ob-progress">
+                                                <rect key="frame" x="0.0" y="0.0" width="84.25" height="5"/>
+                                            </view>
+                                        </subviews>
+                                        <color key="backgroundColor" systemColor="systemGray5Color"/>
+                                        <constraints>
+                                            <constraint firstItem="ob-progress" firstAttribute="top" secondItem="ob-track" secondAttribute="top" id="ob-progress-top"/>
+                                            <constraint firstItem="ob-progress" firstAttribute="bottom" secondItem="ob-track" secondAttribute="bottom" id="ob-progress-bot"/>
+                                            <constraint firstItem="ob-progress" firstAttribute="leading" secondItem="ob-track" secondAttribute="leading" id="ob-progress-leading"/>
+                                            <constraint firstItem="ob-progress" firstAttribute="width" secondItem="ob-track" secondAttribute="width" multiplier="0.25" id="ob-progress-width"/>
+                                            <constraint firstAttribute="height" constant="5" id="ob-track-height"/>
+                                        </constraints>
+                                    </view>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="ob-text-stack">
+                                        <rect key="frame" x="28" y="57" width="337" height="123"/>
+                                        <subviews>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="CAMPUS COMMUTE" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ob-eyebrow">
+                                                <rect key="frame" x="0.0" y="0.0" width="337" height="14"/>
+                                                <fontDescription key="fontDescription" type="system" pointSize="11" weight="bold"/>
+                                                <nil key="textColor"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="251" text="Ride Together,&#10;Save Together" lineBreakMode="wordWrap" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RhF-1Q-WOL">
+                                                <rect key="frame" x="0.0" y="20" width="337" height="68"/>
+                                                <fontDescription key="fontDescription" type="boldSystem" pointSize="28"/>
+                                                <nil key="textColor"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" verticalHuggingPriority="251" text="UniRide connects Chitkara students and faculty for safe, affordable carpools — right to your doorstep." lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="s8L-Kg-03Y">
+                                                <rect key="frame" x="0.0" y="98" width="337" height="25"/>
+                                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                                <nil key="textColor"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                        </subviews>
+                                    </stackView>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tzq-B6-xiC">
+                                        <rect key="frame" x="24" y="290" width="345" height="56"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="56" id="ob-next-height"/>
+                                        </constraints>
+                                        <state key="normal" title="Continue →"/>
+                                        <connections>
+                                            <action selector="nextTapped:" destination="Vfr-ef-bjR" eventType="touchUpInside" id="3Ze-Te-oOW"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <viewLayoutGuide key="safeArea" id="ob-bottom-safe"/>
+                                <constraints>
+                                    <constraint firstItem="ob-track" firstAttribute="top" secondItem="ob-bottom-panel" secondAttribute="top" constant="24" id="ob-track-top"/>
+                                    <constraint firstItem="ob-track" firstAttribute="leading" secondItem="ob-bottom-panel" secondAttribute="leading" constant="28" id="ob-track-leading"/>
+                                    <constraint firstItem="ob-track" firstAttribute="trailing" secondItem="ob-bottom-panel" secondAttribute="trailing" constant="-28" id="ob-track-trailing"/>
+                                    <constraint firstItem="ob-text-stack" firstAttribute="top" secondItem="ob-track" secondAttribute="bottom" constant="28" id="ob-text-top"/>
+                                    <constraint firstItem="ob-text-stack" firstAttribute="leading" secondItem="ob-bottom-panel" secondAttribute="leading" constant="28" id="ob-text-leading"/>
+                                    <constraint firstItem="ob-text-stack" firstAttribute="trailing" secondItem="ob-bottom-panel" secondAttribute="trailing" constant="-28" id="ob-text-trailing"/>
+                                    <constraint firstItem="tzq-B6-xiC" firstAttribute="leading" secondItem="ob-bottom-panel" secondAttribute="leading" constant="24" id="ob-next-leading"/>
+                                    <constraint firstItem="tzq-B6-xiC" firstAttribute="trailing" secondItem="ob-bottom-panel" secondAttribute="trailing" constant="-24" id="ob-next-trailing"/>
+                                    <constraint firstItem="tzq-B6-xiC" firstAttribute="bottom" secondItem="ob-bottom-safe" secondAttribute="bottom" constant="-20" id="ob-next-bottom"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vN5-aX-Jcg"/>
                         <color key="backgroundColor" red="0.93725490199999995" green="0.97254901959999995" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <constraints>
-                            <constraint firstItem="RhF-1Q-WOL" firstAttribute="top" secondItem="qMr-Ee-40v" secondAttribute="bottom" constant="30" id="16T-gX-BzX"/>
-                            <constraint firstItem="qMr-Ee-40v" firstAttribute="leading" secondItem="vN5-aX-Jcg" secondAttribute="leading" constant="24" id="2ap-Z6-E97"/>
-                            <constraint firstItem="tzq-B6-xiC" firstAttribute="leading" secondItem="vN5-aX-Jcg" secondAttribute="leading" constant="24" id="9EK-uD-VaS"/>
-                            <constraint firstItem="RhF-1Q-WOL" firstAttribute="leading" secondItem="vN5-aX-Jcg" secondAttribute="leading" constant="24" id="CGn-vW-mJc"/>
-                            <constraint firstItem="5YN-hv-SS2" firstAttribute="top" secondItem="EeW-Dd-tU4" secondAttribute="top" constant="40" id="Ga1-Cm-8yO"/>
-                            <constraint firstItem="vN5-aX-Jcg" firstAttribute="bottom" secondItem="tzq-B6-xiC" secondAttribute="bottom" constant="24" id="J7Z-Bg-LYK"/>
-                            <constraint firstItem="5YN-hv-SS2" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="EeW-Dd-tU4" secondAttribute="leading" constant="20" symbolic="YES" id="Mb5-7g-HlZ"/>
-                            <constraint firstItem="vN5-aX-Jcg" firstAttribute="trailing" secondItem="s8L-Kg-03Y" secondAttribute="trailing" constant="24" id="NJ7-B9-IAE"/>
-                            <constraint firstItem="28l-el-P2C" firstAttribute="leading" secondItem="vN5-aX-Jcg" secondAttribute="leading" constant="160" id="Q74-6z-nu9"/>
-                            <constraint firstAttribute="trailing" secondItem="5YN-hv-SS2" secondAttribute="trailing" constant="16" id="Zax-78-cWt"/>
-                            <constraint firstItem="s8L-Kg-03Y" firstAttribute="leading" secondItem="vN5-aX-Jcg" secondAttribute="leading" constant="24" id="dJR-e6-Tju"/>
-                            <constraint firstItem="vN5-aX-Jcg" firstAttribute="trailing" secondItem="28l-el-P2C" secondAttribute="trailing" constant="160" id="e5W-qe-WAp"/>
-                            <constraint firstItem="vN5-aX-Jcg" firstAttribute="trailing" secondItem="qMr-Ee-40v" secondAttribute="trailing" constant="24" id="ehd-E0-NlI"/>
-                            <constraint firstItem="28l-el-P2C" firstAttribute="centerX" secondItem="tzq-B6-xiC" secondAttribute="centerX" id="enP-MF-4fV"/>
-                            <constraint firstItem="qMr-Ee-40v" firstAttribute="top" secondItem="vN5-aX-Jcg" secondAttribute="top" constant="100" id="jus-KV-mBQ"/>
-                            <constraint firstItem="vN5-aX-Jcg" firstAttribute="trailing" secondItem="RhF-1Q-WOL" secondAttribute="trailing" constant="24" id="po4-tl-NbF"/>
-                            <constraint firstItem="s8L-Kg-03Y" firstAttribute="top" secondItem="RhF-1Q-WOL" secondAttribute="bottom" constant="30" id="rpK-Jz-E4t"/>
-                            <constraint firstItem="tzq-B6-xiC" firstAttribute="top" secondItem="28l-el-P2C" secondAttribute="bottom" constant="8" symbolic="YES" id="u2G-T6-gCr"/>
-                            <constraint firstItem="vN5-aX-Jcg" firstAttribute="trailing" secondItem="tzq-B6-xiC" secondAttribute="trailing" constant="24" id="yyT-on-uh2"/>
+                            <constraint firstItem="ob-gradient-wrap" firstAttribute="top" secondItem="EeW-Dd-tU4" secondAttribute="top" id="ob-gradient-top"/>
+                            <constraint firstItem="ob-gradient-wrap" firstAttribute="leading" secondItem="EeW-Dd-tU4" secondAttribute="leading" id="ob-gradient-leading"/>
+                            <constraint firstItem="ob-gradient-wrap" firstAttribute="trailing" secondItem="EeW-Dd-tU4" secondAttribute="trailing" id="ob-gradient-trailing"/>
+                            <constraint firstItem="ob-gradient-wrap" firstAttribute="height" secondItem="EeW-Dd-tU4" secondAttribute="height" multiplier="0.64" id="ob-gradient-height"/>
+                            <constraint firstItem="ob-bottom-panel" firstAttribute="leading" secondItem="EeW-Dd-tU4" secondAttribute="leading" id="ob-panel-leading"/>
+                            <constraint firstItem="ob-bottom-panel" firstAttribute="trailing" secondItem="EeW-Dd-tU4" secondAttribute="trailing" id="ob-panel-trailing"/>
+                            <constraint firstItem="ob-bottom-panel" firstAttribute="bottom" secondItem="EeW-Dd-tU4" secondAttribute="bottom" id="ob-panel-bottom"/>
+                            <constraint firstItem="ob-bottom-panel" firstAttribute="top" secondItem="EeW-Dd-tU4" secondAttribute="top" constant="486" id="ob-panel-top"/>
+                            <constraint firstItem="ob-skip-wrap" firstAttribute="top" secondItem="EeW-Dd-tU4" secondAttribute="top" id="ob-skip-wrap-top"/>
+                            <constraint firstItem="ob-skip-wrap" firstAttribute="leading" secondItem="EeW-Dd-tU4" secondAttribute="leading" id="ob-skip-wrap-leading"/>
+                            <constraint firstItem="ob-skip-wrap" firstAttribute="trailing" secondItem="EeW-Dd-tU4" secondAttribute="trailing" id="ob-skip-wrap-trailing"/>
+                            <constraint firstItem="ob-skip-wrap" firstAttribute="height" constant="103" id="ob-skip-wrap-height"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="wA3-td-Iy3"/>
                     <connections>
-                        <outlet property="imageView" destination="qMr-Ee-40v" id="jBv-V7-Zg0"/>
+                        <outlet property="bottomPanel" destination="ob-bottom-panel" id="ob-ol-bottom-panel"/>
+                        <outlet property="decorativeCircle1" destination="ob-circle-1" id="ob-ol-circle-1"/>
+                        <outlet property="decorativeCircle2" destination="ob-circle-2" id="ob-ol-circle-2"/>
+                        <outlet property="decorativeCircle3" destination="ob-circle-3" id="ob-ol-circle-3"/>
+                        <outlet property="decorativeCircle4" destination="ob-circle-4" id="ob-ol-circle-4"/>
+                        <outlet property="decorativeCircle5" destination="ob-circle-5" id="ob-ol-circle-5"/>
+                        <outlet property="gradientView" destination="ob-gradient-wrap" id="ob-ol-gradient"/>
+                        <outlet property="iconContainer" destination="ob-icon-wrap" id="ob-ol-icon-container"/>
+                        <outlet property="iconImageView" destination="qMr-Ee-40v" id="ob-ol-icon-image"/>
+                        <outlet property="eyebrowLabel" destination="ob-eyebrow" id="ob-ol-eyebrow"/>
                         <outlet property="nextButton" destination="tzq-B6-xiC" id="Rxi-s2-gzc"/>
-                        <outlet property="pageControl" destination="28l-el-P2C" id="qeL-uQ-VHt"/>
                         <outlet property="subtitleLabel" destination="s8L-Kg-03Y" id="1iT-Ha-sEU"/>
+                        <outlet property="progressIndicator" destination="ob-progress" id="ob-ol-progress"/>
+                        <outlet property="progressLeadingConstraint" destination="ob-progress-leading" id="ob-ol-progress-leading"/>
+                        <outlet property="skipButton" destination="5YN-hv-SS2" id="ob-ol-skip"/>
                         <outlet property="titleLabel" destination="RhF-1Q-WOL" id="9mk-WS-5Th"/>
                     </connections>
                 </viewController>

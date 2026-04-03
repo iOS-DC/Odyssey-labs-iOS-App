@@ -8,24 +8,110 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--Profile-->
+        <!--Profile View Controller-->
         <scene sceneID="s0d-6b-0kx">
             <objects>
                 <viewController storyboardIdentifier="ProfileViewController" id="Y6W-OH-hqX" customClass="ProfileViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <!-- Custom Header View -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PV1-hv-001">
+                                <rect key="frame" x="16" y="60" width="361" height="44"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <subviews>
+                                    <!-- Profile Title Label -->
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Profile" adjustsFontSizeToFit="YES" minimumScaleFactor="0.8" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="PV1-tl-001">
+                                        <rect key="frame" x="0.0" y="0.0" width="290" height="44"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="34" weight="bold"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <!-- Gear Button -->
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="PV1-gb-001">
+                                        <rect key="frame" x="325" y="4" width="36" height="36"/>
+                                        <state key="normal" image="gearshape.fill"/>
+                                        <connections>
+                                            <action selector="settingsTapped" destination="Y6W-OH-hqX" eventType="touchUpInside" id="PV1-ac-gear"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="PV1-tl-001" firstAttribute="leading" secondItem="PV1-hv-001" secondAttribute="leading" id="PV1-ct-tl-lead"/>
+                                    <constraint firstItem="PV1-tl-001" firstAttribute="centerY" secondItem="PV1-hv-001" secondAttribute="centerY" id="PV1-ct-tl-cy"/>
+                                    <constraint firstItem="PV1-tl-001" firstAttribute="trailing" secondItem="PV1-gb-001" secondAttribute="leading" constant="-8" id="PV1-ct-tl-trail"/>
+                                    <constraint firstItem="PV1-gb-001" firstAttribute="trailing" secondItem="PV1-hv-001" secondAttribute="trailing" id="PV1-ct-gb-trail"/>
+                                    <constraint firstItem="PV1-gb-001" firstAttribute="centerY" secondItem="PV1-hv-001" secondAttribute="centerY" id="PV1-ct-gb-cy"/>
+                                    <constraint firstItem="PV1-gb-001" firstAttribute="width" constant="36" id="PV1-ct-gb-w"/>
+                                    <constraint firstItem="PV1-gb-001" firstAttribute="height" constant="36" id="PV1-ct-gb-h"/>
+                                </constraints>
+                            </view>
+                            <!-- Scroll View -->
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="PV1-sv-001">
+                                <rect key="frame" x="0.0" y="108" width="393" height="744"/>
+                                <subviews>
+                                    <!-- Content Stack (cards added programmatically at runtime) -->
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="16" translatesAutoresizingMaskIntoConstraints="NO" id="PV1-cs-001">
+                                        <rect key="frame" x="16" y="16" width="361" height="0"/>
+                                    </stackView>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="PV1-cs-001" firstAttribute="top" secondItem="PV1-clg-001" secondAttribute="top" constant="16" id="PV1-ct-cs-top"/>
+                                    <constraint firstItem="PV1-cs-001" firstAttribute="leading" secondItem="PV1-clg-001" secondAttribute="leading" constant="16" id="PV1-ct-cs-lead"/>
+                                    <constraint firstAttribute="trailing" secondItem="PV1-cs-001" secondAttribute="trailing" constant="16" id="PV1-ct-cs-trail"/>
+                                    <constraint firstAttribute="bottom" secondItem="PV1-cs-001" secondAttribute="bottom" constant="24" id="PV1-ct-cs-bot"/>
+                                    <constraint firstItem="PV1-cs-001" firstAttribute="width" secondItem="PV1-flg-001" secondAttribute="width" constant="-32" id="PV1-ct-cs-w"/>
+                                </constraints>
+                                <viewLayoutGuide key="contentLayoutGuide" id="PV1-clg-001"/>
+                                <viewLayoutGuide key="frameLayoutGuide" id="PV1-flg-001"/>
+                            </scrollView>
+                            <!-- Guest Sign In Button (hidden by default) -->
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="PV1-gsi-001">
+                                <rect key="frame" x="24" y="772" width="345" height="56"/>
+                                <state key="normal" title="Sign In to UniRide"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                <connections>
+                                    <action selector="guestSignInTapped" destination="Y6W-OH-hqX" eventType="touchUpInside" id="PV1-ac-gsi"/>
+                                </connections>
+                            </button>
+                        </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
                         <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <constraints>
+                            <!-- Custom header -->
+                            <constraint firstItem="PV1-hv-001" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="8" id="PV1-ct-hv-top"/>
+                            <constraint firstItem="PV1-hv-001" firstAttribute="leading" secondItem="5EZ-qb-Rvc" secondAttribute="leading" constant="16" id="PV1-ct-hv-lead"/>
+                            <constraint firstItem="PV1-hv-001" firstAttribute="trailing" secondItem="5EZ-qb-Rvc" secondAttribute="trailing" constant="-16" id="PV1-ct-hv-trail"/>
+                            <constraint firstItem="PV1-hv-001" firstAttribute="height" constant="44" id="PV1-ct-hv-h"/>
+                            <!-- Scroll view -->
+                            <constraint firstItem="PV1-sv-001" firstAttribute="top" secondItem="PV1-hv-001" secondAttribute="bottom" constant="4" id="PV1-ct-sv-top"/>
+                            <constraint firstItem="PV1-sv-001" firstAttribute="leading" secondItem="5EZ-qb-Rvc" secondAttribute="leading" id="PV1-ct-sv-lead"/>
+                            <constraint firstItem="PV1-sv-001" firstAttribute="trailing" secondItem="5EZ-qb-Rvc" secondAttribute="trailing" id="PV1-ct-sv-trail"/>
+                            <constraint firstItem="PV1-sv-001" firstAttribute="bottom" secondItem="5EZ-qb-Rvc" secondAttribute="bottom" id="PV1-ct-sv-bot"/>
+                            <!-- Guest sign in button -->
+                            <constraint firstItem="PV1-gsi-001" firstAttribute="leading" secondItem="5EZ-qb-Rvc" secondAttribute="leading" constant="24" id="PV1-ct-gsi-lead"/>
+                            <constraint firstItem="PV1-gsi-001" firstAttribute="trailing" secondItem="5EZ-qb-Rvc" secondAttribute="trailing" constant="-24" id="PV1-ct-gsi-trail"/>
+                            <constraint firstItem="PV1-gsi-001" firstAttribute="bottom" secondItem="vDu-zF-Fre" secondAttribute="bottom" constant="-20" id="PV1-ct-gsi-bot"/>
+                            <constraint firstItem="PV1-gsi-001" firstAttribute="height" constant="56" id="PV1-ct-gsi-h"/>
+                        </constraints>
                     </view>
                     <navigationItem key="navigationItem" title="Profile" id="OvI-cT-WiC"/>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
+                    <connections>
+                        <outlet property="customHeaderView" destination="PV1-hv-001" id="PV1-ol-hv"/>
+                        <outlet property="headerTitleLabel" destination="PV1-tl-001" id="PV1-ol-tl"/>
+                        <outlet property="headerGearButton" destination="PV1-gb-001" id="PV1-ol-gb"/>
+                        <outlet property="scrollView" destination="PV1-sv-001" id="PV1-ol-sv"/>
+                        <outlet property="contentStack" destination="PV1-cs-001" id="PV1-ol-cs"/>
+                        <outlet property="guestSignInButton" destination="PV1-gsi-001" id="PV1-ol-gsi"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ief-a0-LHa" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="1673" y="-58"/>
         </scene>
-        <!--Profile-->
+        <!--Profile Navigation-->
         <scene sceneID="JwS-4e-3qU">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="UCs-bb-Yik" sceneMemberID="viewController">
@@ -48,6 +134,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="gearshape.fill" catalog="system" width="128" height="128"/>
         <image name="person.crop.circle.fill" catalog="system" width="128" height="123"/>
         <systemColor name="systemGroupedBackgroundColor">
             <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

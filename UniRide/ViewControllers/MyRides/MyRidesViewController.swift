@@ -489,7 +489,8 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
         }
 
         if trip.role == .hosting {
-            let vc = RideDetailViewController()
+            let sb = UIStoryboard(name: "RideDetail", bundle: nil)
+            guard let vc = sb.instantiateViewController(withIdentifier: "RideDetailViewController") as? RideDetailViewController else { return }
             vc.ride = trip.ride
             vc.driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)
             if let sheet = vc.sheetPresentationController {
@@ -501,7 +502,10 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
         } else {
             // Passenger: show driver details by default on card tap
             if let driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID) {
-                let vc = DriverDetailViewController(driver: driver, ride: trip.ride)
+                let sb = UIStoryboard(name: "DriverDetail", bundle: nil)
+                guard let vc = sb.instantiateViewController(withIdentifier: "DriverDetailViewController") as? DriverDetailViewController else { return }
+                vc.driver = driver
+                vc.ride = trip.ride
                 if let sheet = vc.sheetPresentationController {
                     sheet.detents = [.medium(), .large()]
                     sheet.prefersGrabberVisible = true
@@ -527,7 +531,9 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
     func upcomingCellDidTapViewRequests(_ cell: UpcomingTableViewCell) {
         guard let index = tableView.indexPath(for: cell)?.row, index < currentTrips.count else { return }
         let trip = currentTrips[index]
-        let vc = DriverRequestsViewController(trip: trip)
+        let sb = UIStoryboard(name: "DriverRequests", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "DriverRequestsViewController") as? DriverRequestsViewController else { return }
+        vc.trip = trip
         let nav = UINavigationController(rootViewController: vc)
         if let sheet = nav.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
@@ -604,7 +610,12 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
             return
         }
         let remaining = Array(queue.dropFirst())
-        let vc = RateRideViewController(rideID: rideID, revieweeID: first.0, name: first.1, photoURL: first.2)
+        let sb = UIStoryboard(name: "RateRide", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "RateRideViewController") as? RateRideViewController else { return }
+        vc.rideID = rideID
+        vc.revieweeID = first.0
+        vc.revieweeName = first.1
+        vc.revieweePhotoURL = first.2
         vc.onSubmitted = { [weak self] in
             self?.presentNextRating(rideID: rideID, queue: remaining)
         }
@@ -710,7 +721,10 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
     }
 
     func upcomingCellDidTapPassenger(_ cell: UpcomingTableViewCell, passenger: UserProfile, ride: Ride) {
-        let vc = PassengerDetailViewController(passenger: passenger, ride: ride)
+        let sb = UIStoryboard(name: "PassengerDetail", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "PassengerDetailViewController") as? PassengerDetailViewController else { return }
+        vc.passenger = passenger
+        vc.ride = ride
         vc.onRemovePassenger = { [weak self] in self?.reloadTrips() }
         if let sheet = vc.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
@@ -728,7 +742,10 @@ extension MyRidesViewController: UpcomingPassengerCellDelegate {
         driver: UserProfile,
         ride: Ride
     ) {
-        let vc = DriverDetailViewController(driver: driver, ride: ride)
+        let sb = UIStoryboard(name: "DriverDetail", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "DriverDetailViewController") as? DriverDetailViewController else { return }
+        vc.driver = driver
+        vc.ride = ride
         if let sheet = vc.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
@@ -751,7 +768,10 @@ extension MyRidesViewController: PastRideCellDelegate {
 
         if trip.role == .hosting {
             // Tapped a passenger
-            let vc = PassengerDetailViewController(passenger: user, ride: trip.ride)
+            let sb = UIStoryboard(name: "PassengerDetail", bundle: nil)
+            guard let vc = sb.instantiateViewController(withIdentifier: "PassengerDetailViewController") as? PassengerDetailViewController else { return }
+            vc.passenger = user
+            vc.ride = trip.ride
             if let sheet = vc.sheetPresentationController {
                 sheet.detents = [.medium(), .large()]
                 sheet.prefersGrabberVisible = true
@@ -760,7 +780,10 @@ extension MyRidesViewController: PastRideCellDelegate {
             present(vc, animated: true)
         } else {
             // Tapped the driver
-            let vc = DriverDetailViewController(driver: user, ride: trip.ride)
+            let sb = UIStoryboard(name: "DriverDetail", bundle: nil)
+            guard let vc = sb.instantiateViewController(withIdentifier: "DriverDetailViewController") as? DriverDetailViewController else { return }
+            vc.driver = user
+            vc.ride = trip.ride
             if let sheet = vc.sheetPresentationController {
                 sheet.detents = [.medium(), .large()]
                 sheet.prefersGrabberVisible = true
@@ -919,7 +942,9 @@ extension MyRidesViewController {
                     return
                 }
 
-                let vc = NotificationInboxViewController(notifications: notifs)
+                let sb = UIStoryboard(name: "NotificationInbox", bundle: nil)
+                guard let vc = sb.instantiateViewController(withIdentifier: "NotificationInboxViewController") as? NotificationInboxViewController else { return }
+                vc.notifications = notifs
                 vc.modalPresentationStyle = .pageSheet
                 if let sheet = vc.sheetPresentationController {
                     sheet.detents = [.medium(), .large()]

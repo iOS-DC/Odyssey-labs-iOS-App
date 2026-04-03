@@ -27,7 +27,7 @@ final class SettingsViewController: UIViewController {
 
     // MARK: - UI
 
-    private let tableView = UITableView(frame: .zero, style: .insetGrouped)
+    @IBOutlet private var tableView: UITableView!
 
     // MARK: - Lifecycle
 
@@ -37,7 +37,10 @@ final class SettingsViewController: UIViewController {
         view.backgroundColor = AppDesign.Color.groupedBackground
         navigationItem.largeTitleDisplayMode = .never
         buildSections()
-        setupTableView()
+        tableView.delegate   = self
+        tableView.dataSource = self
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "SettingCell")
+        tableView.backgroundColor = AppDesign.Color.groupedBackground
     }
 
     // MARK: - Build Sections
@@ -140,23 +143,6 @@ final class SettingsViewController: UIViewController {
                             action: { [weak self] in self?.deleteAccount() })
             ])
         ]
-    }
-
-    // MARK: - TableView Setup
-
-    private func setupTableView() {
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.delegate   = self
-        tableView.dataSource = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "SettingCell")
-        tableView.backgroundColor = AppDesign.Color.groupedBackground
-        view.addSubview(tableView)
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
     }
 
     // MARK: - Actions

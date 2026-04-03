@@ -259,7 +259,8 @@ class HomeViewController: UIViewController {
     }
 
     private func openRideDetail(ride: Ride, driver: UserProfile?) {
-        let vc = RideDetailViewController()
+        let sb = UIStoryboard(name: "RideDetail", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "RideDetailViewController") as? RideDetailViewController else { return }
         vc.ride = ride
         vc.driver = driver
         navigationController?.pushViewController(vc, animated: true)

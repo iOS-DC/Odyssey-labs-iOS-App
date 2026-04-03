@@ -335,7 +335,8 @@ class OfferRideViewController: UIViewController,
     }
 
     @objc private func addVehicleTapped() {
-        let vc = VehicleRegistrationViewController()
+        let sb = UIStoryboard(name: "VehicleRegistration", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "VehicleRegistrationViewController") as? VehicleRegistrationViewController else { return }
         vc.vehicleToEdit = nil
         // After the user saves and pops back, viewWillAppear will reload vehicles
         navigationController?.pushViewController(vc, animated: true)

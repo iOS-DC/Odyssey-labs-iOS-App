@@ -3,14 +3,13 @@ import UIKit
 // MARK: - ProfileViewController
 class ProfileViewController: UIViewController {
 
-    // MARK: - Scroll
-    private let scrollView   = UIScrollView()
-    private let contentStack = UIStackView()
-
-    // MARK: - Custom Header
-    private let customHeaderView  = UIView()
-    private let headerTitleLabel  = UILabel()
-    private let headerGearButton  = UIButton(type: .system)
+    // MARK: - IBOutlets (wired in Profile.storyboard)
+    @IBOutlet private var customHeaderView: UIView!
+    @IBOutlet private var headerTitleLabel: UILabel!
+    @IBOutlet private var headerGearButton: UIButton!
+    @IBOutlet private var scrollView: UIScrollView!
+    @IBOutlet private var contentStack: UIStackView!
+    @IBOutlet private var guestSignInButton: UIButton!
 
     // Pull-to-refresh
     private let refreshControl = UIRefreshControl()
@@ -40,7 +39,7 @@ class ProfileViewController: UIViewController {
     private let emailValueLabel  = UILabel()
     private let phoneValueLabel  = UILabel()
     private let homeValueLabel   = UILabel()
- 
+
     // MARK: - Vehicle card
     private let vehicleStack     = UIStackView()
 
@@ -77,7 +76,6 @@ class ProfileViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        // Restore default nav bar appearance
         let defaultAppearance = UINavigationBarAppearance()
         defaultAppearance.configureWithDefaultBackground()
         navigationController?.navigationBar.standardAppearance = defaultAppearance
@@ -85,86 +83,31 @@ class ProfileViewController: UIViewController {
         navigationController?.navigationBar.compactAppearance = nil
     }
 
-    // MARK: - Custom Header (title + gear button on same line)
+    // MARK: - Custom Header
     private func setupCustomHeader() {
-        navigationItem.title = nil          // clear so the nav bar shows no title
+        navigationItem.title = nil
         navigationItem.largeTitleDisplayMode = .never
-
-        customHeaderView.translatesAutoresizingMaskIntoConstraints = false
-        customHeaderView.backgroundColor = .clear
-        view.addSubview(customHeaderView)
-
-        // "Profile" title label
-        headerTitleLabel.text = "Profile"
         headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
-        headerTitleLabel.textColor = .label
-        headerTitleLabel.adjustsFontSizeToFitWidth = true
-        headerTitleLabel.minimumScaleFactor = 0.8
-        headerTitleLabel.numberOfLines = 1
-        headerTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        // Gear (settings) button
-        var cfg = UIButton.Configuration.plain()
-        cfg.image = UIImage(systemName: "gearshape.fill",
-                            withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .medium))
-        cfg.baseForegroundColor = AppDesign.Color.primary
-        headerGearButton.configuration = cfg
-        headerGearButton.translatesAutoresizingMaskIntoConstraints = false
-        headerGearButton.addTarget(self, action: #selector(settingsTapped), for: .touchUpInside)
-
-        customHeaderView.addSubview(headerTitleLabel)
-        customHeaderView.addSubview(headerGearButton)
-
-        NSLayoutConstraint.activate([
-            customHeaderView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            customHeaderView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            customHeaderView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            customHeaderView.heightAnchor.constraint(equalToConstant: 44),
-
-            headerTitleLabel.leadingAnchor.constraint(equalTo: customHeaderView.leadingAnchor),
-            headerTitleLabel.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
-
-            headerGearButton.trailingAnchor.constraint(equalTo: customHeaderView.trailingAnchor),
-            headerGearButton.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
-            headerGearButton.widthAnchor.constraint(equalToConstant: 36),
-            headerGearButton.heightAnchor.constraint(equalToConstant: 36),
-        ])
+        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        headerGearButton.configuration = nil
+        headerGearButton.setImage(UIImage(systemName: "gearshape.fill", withConfiguration: symbolConfig), for: .normal)
+        headerGearButton.tintColor = AppDesign.Color.primary
+        headerGearButton.setPreferredSymbolConfiguration(symbolConfig, forImageIn: .normal)
+        headerGearButton.backgroundColor = .clear
     }
 
     // MARK: - Build scroll layout
     private func buildScrollLayout() {
         view.backgroundColor = AppDesign.Color.groupedBackground
-
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.alwaysBounceVertical = true
-        view.addSubview(scrollView)
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: customHeaderView.bottomAnchor, constant: 4),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
-
-        // Add Sign In button for guest mode (hidden by default)
-        setupGuestSignInButton()
-
+        guestSignInButton.applyPrimaryButton(color: AppDesign.Color.primary)
         contentStack.axis    = .vertical
         contentStack.spacing = AppDesign.Spacing.md
-        contentStack.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(contentStack)
-        NSLayoutConstraint.activate([
-            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.md),
-            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
-            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
-            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl),
-            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.md * 2),
-        ])
-
         contentStack.addArrangedSubview(buildHeroCard())
         contentStack.addArrangedSubview(buildContactCard())
         contentStack.addArrangedSubview(buildVehicleCard())
 
-        // Skeleton overlay covers the content until the first profile loads
+        // Skeleton overlay covers the content until the first profile loads (dynamic runtime subview)
         view.addSubview(skeletonOverlay)
         NSLayoutConstraint.activate([
             skeletonOverlay.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -182,35 +125,10 @@ class ProfileViewController: UIViewController {
 
     @objc private func handleRefresh() {
         AppHaptics.selection()
-        // Reset banner dismissal so a profile-change refresh can re-surface it
         loadProfile()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             self?.refreshControl.endRefreshing()
         }
-    }
-
-    // MARK: - Guest Mode
-    private let guestSignInButton = UIButton(type: .system)
-
-    private func setupGuestSignInButton() {
-        guestSignInButton.translatesAutoresizingMaskIntoConstraints = false
-        guestSignInButton.applyPrimaryButton(color: AppDesign.Color.primary)
-        guestSignInButton.setTitle("Sign In to UniRide", for: .normal)
-        guestSignInButton.isHidden = true
-        guestSignInButton.addTarget(self, action: #selector(guestSignInTapped), for: .touchUpInside)
-        
-        view.addSubview(guestSignInButton)
-        NSLayoutConstraint.activate([
-            guestSignInButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.xl),
-            guestSignInButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.xl),
-            guestSignInButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.lg),
-            guestSignInButton.heightAnchor.constraint(equalToConstant: 56)
-        ])
-    }
-
-    @objc private func guestSignInTapped() {
-        AppHaptics.impact(.medium)
-        SceneDelegate.setRootToAuth()
     }
 
     // MARK: - Hero Card
@@ -218,7 +136,6 @@ class ProfileViewController: UIViewController {
         let card = UIView()
         card.applyCardStyle()
 
-        // Avatar
         avatarImageView.contentMode    = .scaleAspectFill
         avatarImageView.clipsToBounds  = true
         avatarImageView.layer.cornerRadius = 44
@@ -231,34 +148,28 @@ class ProfileViewController: UIViewController {
             avatarImageView.heightAnchor.constraint(equalToConstant: 88),
         ])
 
-        // Name
         nameLabel.applyTextStyle(AppDesign.Typography.title)
         nameLabel.textAlignment = .center
         nameLabel.numberOfLines = 2
         nameLabel.text          = "Your Name"
 
-        // Subtitle (department / year)
         subtitleLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         subtitleLabel.textAlignment = .center
         subtitleLabel.numberOfLines = 0
         subtitleLabel.text          = "—"
 
-        // Member since
         memberLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
         memberLabel.textAlignment = .center
         memberLabel.numberOfLines = 0
         memberLabel.text          = "—"
 
-        // Divider
         let divider            = UIView()
         divider.backgroundColor = .systemGray5
         divider.translatesAutoresizingMaskIntoConstraints = false
         divider.heightAnchor.constraint(equalToConstant: 1).isActive = true
 
-        // Stats row
         let statsStack = buildStatsRow()
 
-        // Summary stack (avatar → name → subtitle → member → divider → stats)
         let stack = UIStackView(arrangedSubviews: [
             centeredView(avatarImageView), nameLabel, subtitleLabel,
             memberLabel, divider, statsStack
@@ -280,7 +191,6 @@ class ProfileViewController: UIViewController {
     }
 
     private func buildStatsRow() -> UIView {
-        // Rating stat
         let ratingTitleLbl = makeCaptionLabel("Rating")
         ratingLabel.font          = AppDesign.Typography.bodyStrong
         ratingLabel.textAlignment = .center
@@ -288,7 +198,6 @@ class ProfileViewController: UIViewController {
 
         let ratingCol = column(top: ratingLabel, bottom: ratingTitleLbl)
 
-        // Rides stat
         let ridesTitleLbl = makeCaptionLabel("Rides")
         ridesLabel.font          = AppDesign.Typography.bodyStrong
         ridesLabel.textAlignment = .center
@@ -313,16 +222,13 @@ class ProfileViewController: UIViewController {
         titleLabel.text      = "Contact Information"
         titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
 
-        // Email row
         emailValueLabel.applyTextStyle(AppDesign.Typography.subheadline)
         emailValueLabel.numberOfLines = 0
         let emailRow = infoRow(icon: "envelope.fill", titleText: "Email", valueLabel: emailValueLabel)
 
-        // Phone row
         phoneValueLabel.applyTextStyle(AppDesign.Typography.subheadline)
         let phoneRow = infoRow(icon: "phone.fill", titleText: "Phone", valueLabel: phoneValueLabel)
 
-        // Home row (with edit button)
         homeValueLabel.applyTextStyle(AppDesign.Typography.subheadline)
         homeValueLabel.numberOfLines = 0
         let homeRow = buildHomeRow()
@@ -381,7 +287,7 @@ class ProfileViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.text = "My Vehicles"
         titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
-        
+
         let addBtn = UIButton(type: .system)
         var cfg = UIButton.Configuration.plain()
         cfg.image = UIImage(systemName: "plus.circle.fill")
@@ -414,7 +320,7 @@ class ProfileViewController: UIViewController {
 
     private func refreshVehicles(for profile: UserProfile) {
         vehicleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        
+
         if let vehicles = profile.vehicles, !vehicles.isEmpty {
             for v in vehicles {
                 let row = buildVehicleSummaryRow(vehicle: v)
@@ -432,7 +338,7 @@ class ProfileViewController: UIViewController {
             vehicleStack.addArrangedSubview(emptyLabel)
         }
     }
-    
+
     private func buildVehicleSummaryRow(vehicle: Vehicle) -> UIView {
         let icon = UIImageView(image: UIImage(systemName: vehicle.type == .car ? "car.fill" : "bicycle"))
         icon.tintColor = AppDesign.Color.primary
@@ -440,24 +346,24 @@ class ProfileViewController: UIViewController {
         icon.translatesAutoresizingMaskIntoConstraints = false
         icon.widthAnchor.constraint(equalToConstant: 24).isActive = true
         icon.heightAnchor.constraint(equalToConstant: 24).isActive = true
-        
+
         let nameLbl = UILabel()
         nameLbl.text = vehicle.alias ?? vehicle.model
         nameLbl.applyTextStyle(AppDesign.Typography.subheadline)
         nameLbl.numberOfLines = 0
-        
+
         let regLbl = UILabel()
         regLbl.text = vehicle.registrationNumber
         regLbl.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel)
         regLbl.numberOfLines = 0
-        
+
         let textStack = UIStackView(arrangedSubviews: [nameLbl, regLbl])
         textStack.axis = .vertical
         textStack.spacing = 2
         textStack.alignment = .fill
         textStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
         textStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        
+
         let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
         chevron.tintColor = .tertiaryLabel
         chevron.contentMode = .scaleAspectFit
@@ -470,14 +376,15 @@ class ProfileViewController: UIViewController {
         let spacer = UIView()
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         spacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        
+
         let row = UIStackView(arrangedSubviews: [icon, textStack, spacer, chevron])
         row.axis = .horizontal
         row.spacing = 12
         row.alignment = .top
-        
+
         let tap = UIAction { [weak self] _ in
-            let vc = VehicleRegistrationViewController()
+            let sb = UIStoryboard(name: "VehicleRegistration", bundle: nil)
+            guard let vc = sb.instantiateViewController(withIdentifier: "VehicleRegistrationViewController") as? VehicleRegistrationViewController else { return }
             vc.vehicleToEdit = vehicle
             self?.navigationController?.pushViewController(vc, animated: true)
         }
@@ -490,21 +397,17 @@ class ProfileViewController: UIViewController {
             btn.trailingAnchor.constraint(equalTo: row.trailingAnchor),
             btn.bottomAnchor.constraint(equalTo: row.bottomAnchor),
         ])
-        
+
         return row
     }
 
     // MARK: - Load Profile
     private func loadProfile() {
-        // 1. Show whatever we have locally right now (fast path)
         if let profile = UserDataModel.shared.getCurrentUser() {
             applyProfile(profile)
             hideSkeleton()
         }
 
-        // 2. Always refresh from Supabase in the background (stale-while-revalidate).
-        //    This ensures freshly-registered accounts with an empty local cache (or any
-        //    profile updated on another device) are reflected immediately.
         guard SessionManager.shared.isLoggedIn else {
             applyGuestState()
             hideSkeleton()
@@ -537,11 +440,11 @@ class ProfileViewController: UIViewController {
         memberLabel.text = "You are browsing as a guest"
         ratingLabel.text = "—"
         ridesLabel.text = "0"
-        
+
         emailValueLabel.text = "guest@uniride.com"
         phoneValueLabel.text = "Login Required"
         homeValueLabel.text  = "Sign in to set home"
-        
+
         vehicleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         let emptyLabel = UILabel()
         emptyLabel.text = "Sign in to add vehicles"
@@ -549,12 +452,11 @@ class ProfileViewController: UIViewController {
         emptyLabel.textAlignment = .center
         emptyLabel.numberOfLines = 0
         vehicleStack.addArrangedSubview(emptyLabel)
-        
+
         guestSignInButton.isHidden = false
         tabBarItem.badgeValue = nil
         completionBanner?.removeFromSuperview()
-        
-        // Hide settings button
+
         headerGearButton.isEnabled = false
     }
 
@@ -562,20 +464,15 @@ class ProfileViewController: UIViewController {
         guestSignInButton.isHidden = true
         headerGearButton.isEnabled = true
 
-        // Avatar — force a known size so loadAndFallback generates correct initials image
-        // (view may not be laid out yet on first viewWillAppear call)
         let avatarSize = CGSize(width: 88, height: 88)
         if avatarImageView.bounds.width < 4 {
-            // Provide an explicit size hint before layout pass
             let placeholder = UIImage.generatedAvatar(for: profile.fullName.isEmpty ? "?" : profile.fullName, size: avatarSize)
             avatarImageView.image = placeholder
         }
         avatarImageView.loadAndFallback(from: profile.photoURL, name: profile.fullName.isEmpty ? "?" : profile.fullName)
 
-        // Name
         nameLabel.text = profile.fullName.isEmpty ? "Your Name" : profile.fullName
 
-        // Subtitle
         if let role = profile.role {
             if role == .student {
                 let course = profile.courseName ?? ""
@@ -586,7 +483,6 @@ class ProfileViewController: UIViewController {
             }
         }
 
-        // Member Since — derived from the session's loginDate or current year as fallback
         let yearStr: String
         if let date = SessionManager.shared.loginDate {
             let cal = Calendar.current
@@ -597,13 +493,11 @@ class ProfileViewController: UIViewController {
         }
         memberLabel.text = "Member Since \(yearStr)"
 
-        // Stats — rating from ReviewDataModel, rides from RideDataModel
         let avg = ReviewDataModel.shared.averageRating(for: profile.id)
         ratingLabel.text = avg.map { String(format: "%.1f ★", $0) } ?? "—"
         let total = ReviewDataModel.shared.totalRides(for: profile.id)
         ridesLabel.text = "\(total)"
 
-        // Contact
         emailValueLabel.text = profile.email
         phoneValueLabel.text = (profile.phone?.isEmpty == false) ? profile.phone : "Not set"
 
@@ -613,13 +507,10 @@ class ProfileViewController: UIViewController {
             homeValueLabel.text = "Tap Edit to set home"
         }
 
-        // Tab badge — "!" when profile is incomplete
         let completion = ProfileCompletionCalculator.compute(for: profile)
         tabBarItem.badgeValue = completion.isComplete ? nil : "!"
 
-        // Banner — re-show if profile became incomplete again (e.g. after logout/login)
         if completion.isComplete {
-            // Profile is now complete — reset dismissed state so banner shows next time a step regresses
             UserDefaults.standard.removeObject(forKey: bannerDismissedKey)
         }
         refreshCompletionBanner(for: profile)
@@ -638,9 +529,7 @@ class ProfileViewController: UIViewController {
         let banner = ProfileCompletionBannerView(completion: completion)
         banner.translatesAutoresizingMaskIntoConstraints = false
 
-        // Insert banner at top of contentStack (index 0)
         contentStack.insertArrangedSubview(banner, at: 0)
-
         completionBanner = banner
 
         banner.onStepTapped = { [weak self] step in self?.handleStep(step) }
@@ -671,18 +560,26 @@ class ProfileViewController: UIViewController {
     }
 
     @objc private func openVehicleDetails() {
-        let vc = VehicleRegistrationViewController()
+        let sb = UIStoryboard(name: "VehicleRegistration", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "VehicleRegistrationViewController") as? VehicleRegistrationViewController else { return }
         navigationController?.pushViewController(vc, animated: true)
     }
 
     // MARK: - Actions
-    @objc private func settingsTapped() {
-        let vc = SettingsViewController()
+    @IBAction private func settingsTapped() {
+        let sb = UIStoryboard(name: "Settings", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "SettingsViewController") as? SettingsViewController else { return }
         navigationController?.pushViewController(vc, animated: true)
     }
 
+    @IBAction private func guestSignInTapped() {
+        AppHaptics.impact(.medium)
+        SceneDelegate.setRootToAuth()
+    }
+
     @objc private func editHomeLocationTapped() {
-        let vc = EditHomeLocationViewController()
+        let sb = UIStoryboard(name: "EditHomeLocation", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "EditHomeLocationViewController") as? EditHomeLocationViewController else { return }
         navigationController?.pushViewController(vc, animated: true)
     }
 
