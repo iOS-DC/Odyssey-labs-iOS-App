@@ -701,8 +701,11 @@ final class RideDataModel {
             return sqrt(dx*dx + dy*dy)
         }
 
+        let now = Date()
+
         return rides
             .filter { $0.status == .published }
+            .filter { $0.departureTime > now }
             .filter { distM($0.source, point) <= maxMeters }
             .sorted { $0.departureTime < $1.departureTime }
     }
@@ -932,8 +935,9 @@ final class RideDataModel {
                 }
                 bookings.append(contentsOf: newBookings)
                 
-                // Merge rides
-                mergeRemoteRides(history.rides)
+                // Merge only the rides related to this user's history without
+                // replacing the broader published ride snapshot used by Home.
+                mergeHistoryRides(history.rides)
                 
                 saveRequests()
                 saveBookings()
@@ -942,6 +946,19 @@ final class RideDataModel {
         } catch {
             print("Failed to sync my rides history: \(error.localizedDescription)")
         }
+    }
+
+    private func mergeHistoryRides(_ incoming: [Ride]) {
+        guard !incoming.isEmpty else { return }
+
+        var mergedByID = Dictionary(uniqueKeysWithValues: rides.map { ($0.id, $0) })
+        for ride in incoming {
+            mergedByID[ride.id] = ride
+        }
+
+        rides = mergedByID.values.sorted { $0.departureTime < $1.departureTime }
+        saveRides()
+        NotificationCenter.default.post(name: .ridesUpdated, object: nil)
     }
 
     private func loadAll() {
