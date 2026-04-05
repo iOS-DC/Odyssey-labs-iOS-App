@@ -258,6 +258,14 @@ final class AvailableRideViewController: UIViewController,
         // FILTER: Exclude rides from blocked users
         result = result.filter { !blockedUserIDs.contains($0.driverUserID) }
 
+        // FILTER: Exclude my own rides
+        if let currentUID = UserDataModel.shared.getCurrentUser()?.id {
+            result = result.filter { $0.driverUserID != currentUID }
+        }
+
+        // FILTER: Exclude full rides
+        result = result.filter { $0.seatsAvailable > 0 }
+
         // Apply text search on top of filter
         let q = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
         if !q.isEmpty {
@@ -276,7 +284,13 @@ final class AvailableRideViewController: UIViewController,
         tableView.reloadData()
 
         // Result count label
-        let total    = rides.count
+        let currentUID = UserDataModel.shared.getCurrentUser()?.id
+        let eligible  = rides.filter { ride in
+            !blockedUserIDs.contains(ride.driverUserID) &&
+            ride.driverUserID != currentUID &&
+            ride.seatsAvailable > 0
+        }
+        let total    = eligible.count
         let showing  = filteredRides.count
         let filtered = !activeFilter.isDefault || !searchQuery.isEmpty
 
