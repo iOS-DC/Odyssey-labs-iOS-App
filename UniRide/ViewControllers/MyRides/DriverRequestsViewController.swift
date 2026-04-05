@@ -3,23 +3,17 @@ import UIKit
 /// A dedicated sheet for drivers to review and manage pending passenger requests.
 final class DriverRequestsViewController: UIViewController {
 
-    private let trip: RideDataModel.MyTrip
+    var trip: RideDataModel.MyTrip!
     private var requests: [RideRequest] = []
 
-    private let tableView = UITableView(frame: .zero, style: .plain)
+    @IBOutlet private var tableView: UITableView!
+
     private let emptyStateView = EmptyStateView(
         systemImage: "checkmark.seal.fill",
         title: "All Caught Up!",
         body: "No pending join requests for this ride.",
         tintColor: AppDesign.Color.primary
     )
-
-    init(trip: RideDataModel.MyTrip) {
-        self.trip = trip
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,22 +29,14 @@ final class DriverRequestsViewController: UIViewController {
     // MARK: - Layout
 
     private func setupTableView() {
-        tableView.backgroundColor  = .clear
-        tableView.delegate         = self
-        tableView.dataSource       = self
-        tableView.rowHeight        = UITableView.automaticDimension
+        tableView.backgroundColor    = .clear
+        tableView.delegate           = self
+        tableView.dataSource         = self
+        tableView.rowHeight          = UITableView.automaticDimension
         tableView.estimatedRowHeight = 72
-        tableView.separatorInset   = UIEdgeInsets(top: 0, left: 72, bottom: 0, right: 0)
-        tableView.contentInset     = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
+        tableView.separatorInset     = UIEdgeInsets(top: 0, left: 72, bottom: 0, right: 0)
+        tableView.contentInset       = UIEdgeInsets(top: 8, left: 0, bottom: 24, right: 0)
         tableView.register(RequestCell.self, forCellReuseIdentifier: RequestCell.identifier)
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(tableView)
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
     }
 
     private func setupEmptyState() {

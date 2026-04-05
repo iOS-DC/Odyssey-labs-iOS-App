@@ -4,43 +4,44 @@ import UIKit
 /// Mirrors PassengerDetailViewController but shows driver/vehicle info.
 final class DriverDetailViewController: UIViewController {
 
-    private let driver: UserProfile
-    private let ride: Ride
+    var driver: UserProfile!
+    var ride: Ride!
 
-    init(driver: UserProfile, ride: Ride) {
-        self.driver = driver
-        self.ride   = ride
-        super.init(nibName: nil, bundle: nil)
-    }
-    required init?(coder: NSCoder) { fatalError() }
+    // MARK: - UI Components
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let mainStack = UIStackView()
+    private let avatarView = UIImageView()
+    private let nameLabel = UILabel()
+    private let infoStack = UIStackView()
+    private var msgBtn: UIButton!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        buildUI()
+        setupUI()
+        configureSheetPresentation()
     }
 
-    private func buildUI() {
+    // MARK: - UI Setup
+    private func setupUI() {
         view.backgroundColor = .systemBackground
 
-        // ── Scroll View for Responsiveness ───────────────────────────
-        let scrollView = UIScrollView()
+        // ── Scroll View ──
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsVerticalScrollIndicator = false
         view.addSubview(scrollView)
 
-        let contentView = UIView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(contentView)
 
-        // ── Main Stack View ──────────────────────────────────────────
-        let mainStack = UIStackView()
+        // ── Main Stack ──
         mainStack.axis = .vertical
         mainStack.spacing = 24
         mainStack.alignment = .center
         mainStack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(mainStack)
 
-        // ── Header (Close Button & Title) ────────────────────────────
+        // ── Header ──
         let headerView = UIView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(headerView)
@@ -60,12 +61,11 @@ final class DriverDetailViewController: UIViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         headerView.addSubview(titleLabel)
 
-        // ── Avatar ───────────────────────────────────────────────────
+        // ── Avatar ──
         let avatarContainer = UIView()
         avatarContainer.translatesAutoresizingMaskIntoConstraints = false
         
         let avatarSize: CGFloat = 100
-        let avatarView = UIImageView()
         avatarView.translatesAutoresizingMaskIntoConstraints = false
         avatarView.layer.cornerRadius = avatarSize / 2
         avatarView.layer.masksToBounds = true
@@ -74,7 +74,6 @@ final class DriverDetailViewController: UIViewController {
         avatarView.layer.borderWidth = 3
         avatarView.layer.borderColor = AppDesign.Color.primary.withAlphaComponent(0.1).cgColor
 
-        // Initials fallback
         let initialLabel = UILabel()
         initialLabel.text = String(driver.fullName.prefix(1)).uppercased()
         initialLabel.font = .systemFont(ofSize: 40, weight: .bold)
@@ -84,10 +83,10 @@ final class DriverDetailViewController: UIViewController {
         avatarView.addSubview(initialLabel)
 
         if let url = driver.photoURL {
-            URLSession.shared.dataTask(with: url) { data, _, _ in
+            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
                 if let data = data, let img = UIImage(data: data) {
                     DispatchQueue.main.async {
-                        avatarView.image = img
+                        self?.avatarView.image = img
                         initialLabel.isHidden = true
                     }
                 }
@@ -96,13 +95,12 @@ final class DriverDetailViewController: UIViewController {
         avatarContainer.addSubview(avatarView)
         mainStack.addArrangedSubview(avatarContainer)
 
-        // ── Name & Role ──────────────────────────────────────────────
+        // ── Name & Role ──
         let nameStack = UIStackView()
         nameStack.axis = .vertical
         nameStack.spacing = 4
         nameStack.alignment = .center
         
-        let nameLabel = UILabel()
         nameLabel.text = driver.fullName
         nameLabel.font = AppDesign.Typography.h2
         nameLabel.textColor = AppDesign.Color.textPrimary
@@ -117,48 +115,24 @@ final class DriverDetailViewController: UIViewController {
         roleBadge.layer.cornerRadius = 6
         roleBadge.layer.masksToBounds = true
         nameStack.addArrangedSubview(roleBadge)
-        
         mainStack.addArrangedSubview(nameStack)
 
-        // ── Info Card ────────────────────────────────────────────────
+        // ── Info Card ──
         let infoCard = UIView()
         infoCard.backgroundColor = AppDesign.Color.elevatedSurface
         infoCard.layer.cornerRadius = AppDesign.Radius.md
         infoCard.translatesAutoresizingMaskIntoConstraints = false
         mainStack.addArrangedSubview(infoCard)
         
-        let infoStack = UIStackView()
         infoStack.axis = .vertical
         infoStack.spacing = 16
         infoStack.translatesAutoresizingMaskIntoConstraints = false
         infoCard.addSubview(infoStack)
 
-        var rows: [(String, String, String)] = [
-            ("mappin.and.ellipse", "Pickup",    ride.source.address      ?? "—"),
-            ("location.fill",      "Drop-off",  ride.destination.address ?? "—"),
-            ("phone.fill",         "Contact",   driver.phone             ?? "Not provided"),
-        ]
+        buildInfoRows()
 
-        if let model = ride.vehicleModel, !model.isEmpty {
-            let plate = ride.registrationPlate ?? "—"
-            rows.append(("car.fill", "Vehicle", model))
-            rows.append(("number",   "Plate",   plate))
-        } else if let v = driver.vehicles?.first {
-            let typeStr = (v.type == .car) ? "Car" : "Bike"
-            let icon = (v.type == .car) ? "car.fill" : "bicycle"
-            rows.append((icon, "Vehicle", "\(typeStr) · \(v.model)"))
-            rows.append(("number", "Plate", v.registrationNumber))
-            if v.seats > 0 {
-                rows.append(("person.2.fill", "Seats", "\(v.seats)"))
-            }
-        }
-
-        for (icon, key, value) in rows {
-            infoStack.addArrangedSubview(makeInfoRow(icon: icon, title: key, value: value))
-        }
-
-        // ── Message Button ───────────────────────────────────────────
-        let msgBtn = makeActionButton(
+        // ── Message Button ──
+        msgBtn = makeActionButton(
             title: "Message \(driver.fullName.components(separatedBy: " ").first ?? "Driver")",
             image: "message.fill",
             color: AppDesign.Color.primary
@@ -166,7 +140,7 @@ final class DriverDetailViewController: UIViewController {
         msgBtn.addTarget(self, action: #selector(messageTapped), for: .touchUpInside)
         mainStack.addArrangedSubview(msgBtn)
 
-        // ── Safety Buttons ───────────────────────────────────────────
+        // ── Safety Buttons ──
         let safetyStack = UIStackView()
         safetyStack.axis = .horizontal
         safetyStack.spacing = 20
@@ -190,7 +164,7 @@ final class DriverDetailViewController: UIViewController {
         safetyStack.addArrangedSubview(blockBtn)
         mainStack.addArrangedSubview(safetyStack)
 
-        // ── Layout Constraints ───────────────────────────────────────
+        // ── Constraints ──
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -243,8 +217,46 @@ final class DriverDetailViewController: UIViewController {
         ])
     }
 
-    // MARK: - Helpers
+    private func buildInfoRows() {
+        infoStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
+        var rows: [(String, String, String)] = [
+            ("mappin.and.ellipse", "Pickup",    ride.source.address      ?? "—"),
+            ("location.fill",      "Drop-off",  ride.destination.address ?? "—"),
+            ("phone.fill",         "Contact",   driver.phone             ?? "Not provided")
+        ]
+
+        if let model = ride.vehicleModel, !model.isEmpty {
+            let plate = ride.registrationPlate ?? "—"
+            rows.append(("car.fill", "Vehicle", model))
+            rows.append(("number",   "Plate",   plate))
+        } else if let v = driver.vehicles?.first {
+            let typeStr = (v.type == .car) ? "Car" : "Bike"
+            let icon = (v.type == .car) ? "car.fill" : "bicycle"
+            rows.append((icon, "Vehicle", "\(typeStr) · \(v.model)"))
+            rows.append(("number", "Plate", v.registrationNumber))
+            if v.seats > 0 {
+                rows.append(("person.2.fill", "Seats", "\(v.seats)"))
+            }
+        }
+
+        for (icon, key, value) in rows {
+            infoStack.addArrangedSubview(makeInfoRow(icon: icon, title: key, value: value))
+        }
+    }
+
+    private func configureSheetPresentation() {
+        guard let sheet = sheetPresentationController else { return }
+        let compactDetent = UISheetPresentationController.Detent.custom(identifier: .init("driverCompact")) { context in
+            context.maximumDetentValue * 0.70
+        }
+        sheet.detents = [compactDetent, .large()]
+        sheet.selectedDetentIdentifier = .init("driverCompact")
+        sheet.prefersGrabberVisible = true
+        sheet.preferredCornerRadius = AppDesign.Radius.lg
+    }
+
+    // MARK: - Helpers
     private func makeInfoRow(icon: String, title: String, value: String, valueColor: UIColor = .label) -> UIView {
         let hStack = UIStackView()
         hStack.axis = .horizontal

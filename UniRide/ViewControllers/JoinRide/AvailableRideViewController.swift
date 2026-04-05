@@ -302,7 +302,8 @@ final class AvailableRideViewController: UIViewController,
 
     @objc private func filterTapped() {
         AppHaptics.impact(.light)
-        let vc = RideFilterViewController()
+        let sb = UIStoryboard(name: "RideFilter", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "RideFilterViewController") as? RideFilterViewController else { return }
         vc.currentFilter = activeFilter
         vc.onApply = { [weak self] newFilter in
             self?.activeFilter = newFilter
@@ -370,8 +371,10 @@ extension AvailableRideViewController {
 
     private func openDetail(ride: Ride, driver: UserProfile?) {
         ensureNonGuest { [weak self] in
-            let vc = RideDetailViewController()
-            vc.ride = ride; vc.driver = driver
+            let sb = UIStoryboard(name: "RideDetail", bundle: nil)
+            guard let vc = sb.instantiateViewController(withIdentifier: "RideDetailViewController") as? RideDetailViewController else { return }
+            vc.ride = ride
+            vc.driver = driver
             self?.navigationController?.pushViewController(vc, animated: true)
         }
     }

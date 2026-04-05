@@ -696,3 +696,90 @@ extension UIImageView {
         }
     }
 }
+
+// MARK: - Loading Overlay
+extension UIViewController {
+    private struct LoadingConstants {
+        static let loaderTag = 999123
+    }
+
+    /// Shows a elegant fullscreen loading overlay with a blur effect and message
+    func showAppLoading(message: String = "Please wait...") {
+        // Ensure only one loader is shown at a time
+        if view.viewWithTag(LoadingConstants.loaderTag) != nil {
+            hideAppLoading()
+        }
+
+        let overlay = UIView(frame: view.bounds)
+        overlay.backgroundColor = .clear
+        overlay.tag = LoadingConstants.loaderTag
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        overlay.alpha = 0
+        
+        let blurEffect = UIBlurEffect(style: traitCollection.userInterfaceStyle == .dark ? .dark : .extraLight)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        blurView.frame = overlay.bounds
+        blurView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        overlay.addSubview(blurView)
+
+        let container = UIView()
+        container.backgroundColor = AppDesign.Color.surface.withAlphaComponent(0.85)
+        container.layer.cornerRadius = AppDesign.Radius.md
+        container.applySmallCard() // Adds subtle shadow
+        container.translatesAutoresizingMaskIntoConstraints = false
+        overlay.addSubview(container)
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 16
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+
+        let spinner = UIActivityIndicatorView(style: .large)
+        spinner.color = AppDesign.Color.primary
+        spinner.startAnimating()
+        stack.addArrangedSubview(spinner)
+
+        let label = UILabel()
+        label.text = message
+        label.font = AppDesign.Typography.subheadline
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        stack.addArrangedSubview(label)
+
+        view.addSubview(overlay)
+
+        NSLayoutConstraint.activate([
+            overlay.topAnchor.constraint(equalTo: view.topAnchor),
+            overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            container.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            container.centerYAnchor.constraint(equalTo: overlay.centerYAnchor),
+            container.widthAnchor.constraint(greaterThanOrEqualToConstant: 160),
+            container.widthAnchor.constraint(lessThanOrEqualTo: overlay.widthAnchor, constant: -80),
+
+            stack.topAnchor.constraint(equalTo: container.topAnchor, constant: 24),
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -24),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -24)
+        ])
+
+        UIView.animate(withDuration: 0.25) {
+            overlay.alpha = 1.0
+        }
+    }
+
+    /// Dismisess the loading overlay with an animation
+    func hideAppLoading() {
+        guard let loader = view.viewWithTag(LoadingConstants.loaderTag) else { return }
+        UIView.animate(withDuration: 0.2, animations: {
+            loader.alpha = 0
+        }) { _ in
+            loader.removeFromSuperview()
+        }
+    }
+}

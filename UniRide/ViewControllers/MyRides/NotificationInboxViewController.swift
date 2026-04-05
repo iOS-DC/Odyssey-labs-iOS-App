@@ -3,14 +3,9 @@ import UIKit
 /// A simple inbox sheet showing all in-app notifications for the current user.
 final class NotificationInboxViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
-    private let notifications: [AppNotification]
-    private let tableView = UITableView(frame: .zero, style: .insetGrouped)
+    var notifications: [AppNotification]!
 
-    init(notifications: [AppNotification]) {
-        self.notifications = notifications
-        super.init(nibName: nil, bundle: nil)
-    }
-    required init?(coder: NSCoder) { fatalError() }
+    @IBOutlet private var tableView: UITableView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,14 +17,6 @@ final class NotificationInboxViewController: UIViewController, UITableViewDataSo
         tableView.delegate   = self
         tableView.rowHeight  = UITableView.automaticDimension
         tableView.estimatedRowHeight = 80
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(tableView)
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
     }
 
     // MARK: - DataSource

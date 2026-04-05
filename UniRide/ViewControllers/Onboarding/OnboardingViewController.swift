@@ -14,13 +14,22 @@ struct OnboardingPage {
 // MARK: - OnboardingViewController
 
 final class OnboardingViewController: UIViewController {
-
-    // Storyboard outlets — kept so IB wires don't crash; all hidden below
-    @IBOutlet private weak var imageView:     UIImageView!
-    @IBOutlet private weak var titleLabel:    UILabel!
+    @IBOutlet private weak var gradientView: GradientView!
+    @IBOutlet private weak var decorativeCircle1: UIView!
+    @IBOutlet private weak var decorativeCircle2: UIView!
+    @IBOutlet private weak var decorativeCircle3: UIView!
+    @IBOutlet private weak var decorativeCircle4: UIView!
+    @IBOutlet private weak var decorativeCircle5: UIView!
+    @IBOutlet private weak var iconContainer: UIView!
+    @IBOutlet private weak var iconImageView: UIImageView!
+    @IBOutlet private weak var bottomPanel: UIView!
+    @IBOutlet private weak var eyebrowLabel: UILabel!
+    @IBOutlet private weak var titleLabel: UILabel!
     @IBOutlet private weak var subtitleLabel: UILabel!
-    @IBOutlet private weak var pageControl:   UIPageControl!
-    @IBOutlet private weak var nextButton:    UIButton!
+    @IBOutlet private weak var progressIndicator: UIView!
+    @IBOutlet private weak var progressLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet private weak var nextButton: UIButton!
+    @IBOutlet private weak var skipButton: UIButton!
 
     // MARK: Pages
     private let pages: [OnboardingPage] = [
@@ -58,43 +67,34 @@ final class OnboardingViewController: UIViewController {
         )
     ]
 
-    // MARK: Programmatic Views
-    private let gradientView = GradientView()
-
-    // Floating decorative circles
-    private var floatingCircles: [UIView] = []
-
-    // Icon container (sits in gradient area)
-    private let iconContainer = UIView()
-    private let iconImageView = UIImageView()
-
-    // Bottom sliding panel
-    private let bottomPanel   = UIView()
-    private let eyebrowLabel  = UILabel()
-    private let pageTitleLabel = UILabel()
-    private let pageSubtitle   = UILabel()
-    private let progressBar    = UIView()
-    private var progressIndicator = UIView()
-    private let ctaButton      = UIButton(type: .system)
-    private let skipLabel      = UIButton(type: .system)
-
     private var currentPage = 0
-    private var progressLeading: NSLayoutConstraint?
+    private var hasStartedFloatingAnimation = false
+
+    private var floatingCircles: [UIView] {
+        [decorativeCircle1, decorativeCircle2, decorativeCircle3, decorativeCircle4, decorativeCircle5]
+    }
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        hideStoryboardOutlets()
-        buildGradient()
-        buildDecorativeCircles()
-        buildIconArea()
-        buildBottomPanel()
+        configureStaticUI()
+        installGestures()
         applyPage(pages[0], animated: false)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !hasStartedFloatingAnimation else { return }
+        hasStartedFloatingAnimation = true
+        startFloatAnimation()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        for circle in floatingCircles {
+            circle.layer.cornerRadius = circle.bounds.width / 2
+        }
         bottomPanel.layer.shadowPath = UIBezierPath(
             roundedRect: bottomPanel.bounds,
             cornerRadius: 36
@@ -102,59 +102,28 @@ final class OnboardingViewController: UIViewController {
         updateProgressBar(animated: false)
     }
 
-    private func hideStoryboardOutlets() {
-        imageView?.isHidden     = true
-        titleLabel?.isHidden    = true
-        subtitleLabel?.isHidden = true
-        pageControl?.isHidden   = true
-        nextButton?.isHidden    = true
-    }
+    private func configureStaticUI() {
+        for circle in floatingCircles {
+            circle.layer.cornerRadius = circle.bounds.width / 2
+        }
 
-    // MARK: - Build Gradient (Top 65%)
-
-    private func buildGradient() {
-        gradientView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(gradientView)
-        NSLayoutConstraint.activate([
-            gradientView.topAnchor.constraint(equalTo: view.topAnchor),
-            gradientView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            gradientView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            gradientView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.64)
-        ])
+        bottomPanel.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        bottomPanel.layer.shadowColor = UIColor.black.cgColor
+        eyebrowLabel.letterSpacing(2.0)
+        progressIndicator.layer.cornerRadius = 2.5
+        nextButton.clipsToBounds = true
+        skipButton.isHidden = false
+        skipButton.alpha = 1
+        if let skipContainer = skipButton.superview {
+            skipContainer.isHidden = false
+            skipContainer.alpha = 1
+            view.bringSubviewToFront(skipContainer)
+        } else {
+            view.bringSubviewToFront(skipButton)
+        }
     }
 
     // MARK: - Decorative Circles
-
-    private func buildDecorativeCircles() {
-        let specs: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [
-            // size, x-multiplier, y-multiplier, alpha
-            (220, 0.78, 0.08, 0.12),
-            (140, 0.10, 0.20, 0.10),
-            (80,  0.85, 0.52, 0.08),
-            (60,  0.05, 0.55, 0.09),
-            (100, 0.50, 0.02, 0.07)
-        ]
-        let screenW = UIScreen.main.bounds.width
-        let gradH   = UIScreen.main.bounds.height * 0.64  // matches the 0.64 height multiplier
-
-        for spec in specs {
-            let circle = UIView()
-            circle.backgroundColor = UIColor.white.withAlphaComponent(spec.3)
-            circle.translatesAutoresizingMaskIntoConstraints = false
-            gradientView.addSubview(circle)
-            circle.layer.cornerRadius = spec.0 / 2
-            NSLayoutConstraint.activate([
-                circle.widthAnchor.constraint(equalToConstant: spec.0),
-                circle.heightAnchor.constraint(equalToConstant: spec.0),
-                circle.centerXAnchor.constraint(equalTo: gradientView.leadingAnchor,
-                                                constant: screenW * spec.1),
-                circle.centerYAnchor.constraint(equalTo: gradientView.topAnchor,
-                                                constant: gradH   * spec.2)
-            ])
-            floatingCircles.append(circle)
-        }
-        startFloatAnimation()
-    }
 
     private func startFloatAnimation() {
         for (i, circle) in floatingCircles.enumerated() {
@@ -169,149 +138,19 @@ final class OnboardingViewController: UIViewController {
         }
     }
 
-    // MARK: - Icon Area
-
-    private func buildIconArea() {
-        iconContainer.translatesAutoresizingMaskIntoConstraints = false
-        iconContainer.backgroundColor = UIColor.white.withAlphaComponent(0.18)
-        iconContainer.layer.cornerRadius = 42
-        iconContainer.layer.borderWidth  = 1.5
-        iconContainer.layer.borderColor  = UIColor.white.withAlphaComponent(0.35).cgColor
-        gradientView.addSubview(iconContainer)
-
-        iconImageView.contentMode = .scaleAspectFit
-        iconImageView.tintColor   = .white
-        iconImageView.translatesAutoresizingMaskIntoConstraints = false
-        iconContainer.addSubview(iconImageView)
-
-        NSLayoutConstraint.activate([
-            iconContainer.centerXAnchor.constraint(equalTo: gradientView.centerXAnchor),
-            iconContainer.centerYAnchor.constraint(equalTo: gradientView.centerYAnchor),
-            iconContainer.widthAnchor.constraint(equalToConstant: 146),
-            iconContainer.heightAnchor.constraint(equalToConstant: 146),
-
-            iconImageView.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
-            iconImageView.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor),
-            iconImageView.widthAnchor.constraint(equalToConstant: 72),
-            iconImageView.heightAnchor.constraint(equalToConstant: 72)
-        ])
-    }
-
-    // MARK: - Bottom Panel
-
-    private func buildBottomPanel() {
-        bottomPanel.translatesAutoresizingMaskIntoConstraints = false
-        bottomPanel.backgroundColor = .systemBackground
-        bottomPanel.layer.cornerRadius    = 36
-        bottomPanel.layer.maskedCorners   = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        bottomPanel.layer.shadowColor     = UIColor.black.cgColor
-        bottomPanel.layer.shadowOpacity   = 0.12
-        bottomPanel.layer.shadowOffset    = CGSize(width: 0, height: -4)
-        bottomPanel.layer.shadowRadius    = 20
-        view.addSubview(bottomPanel)
-
-        NSLayoutConstraint.activate([
-            bottomPanel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            bottomPanel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bottomPanel.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            bottomPanel.topAnchor.constraint(equalTo: view.topAnchor, constant: view.bounds.height * 0.57)
-        ])
-
-        // Eyebrow
-        eyebrowLabel.font = UIFont.systemFont(ofSize: 11, weight: .bold)
-        eyebrowLabel.textColor = AppDesign.Color.primary.withAlphaComponent(0.7)
-        eyebrowLabel.letterSpacing(2.0)
-        eyebrowLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        // Title
-        pageTitleLabel.font = UIFont.systemFont(ofSize: 28, weight: .bold)
-        pageTitleLabel.textColor    = .label
-        pageTitleLabel.numberOfLines = 2
-        pageTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        // Subtitle
-        pageSubtitle.font = UIFont.systemFont(ofSize: 15, weight: .regular)
-        pageSubtitle.textColor = .secondaryLabel
-        pageSubtitle.numberOfLines = 0
-        pageSubtitle.lineBreakMode = .byWordWrapping
-        pageSubtitle.translatesAutoresizingMaskIntoConstraints = false
-
-        // Progress bar track
-        let track = UIView()
-        track.backgroundColor = .systemGray5
-        track.layer.cornerRadius = 2.5
-        track.translatesAutoresizingMaskIntoConstraints = false
-        bottomPanel.addSubview(track)
-
-        // Progress fill
-        progressIndicator.backgroundColor = AppDesign.Color.primary
-        progressIndicator.layer.cornerRadius = 2.5
-        progressIndicator.translatesAutoresizingMaskIntoConstraints = false
-        track.addSubview(progressIndicator)
-
-        progressLeading = progressIndicator.leadingAnchor.constraint(equalTo: track.leadingAnchor)
-        NSLayoutConstraint.activate([
-            track.topAnchor.constraint(equalTo: bottomPanel.topAnchor, constant: 24),
-            track.leadingAnchor.constraint(equalTo: bottomPanel.leadingAnchor, constant: 28),
-            track.trailingAnchor.constraint(equalTo: bottomPanel.trailingAnchor, constant: -28),
-            track.heightAnchor.constraint(equalToConstant: 5),
-
-            progressIndicator.topAnchor.constraint(equalTo: track.topAnchor),
-            progressIndicator.bottomAnchor.constraint(equalTo: track.bottomAnchor),
-            progressIndicator.widthAnchor.constraint(equalTo: track.widthAnchor, multiplier: 1.0 / CGFloat(pages.count)),
-            progressLeading!
-        ])
-
-        // Skip button top right
-        skipLabel.setTitle("Skip", for: .normal)
-        skipLabel.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        skipLabel.setTitleColor(.white, for: .normal)
-        skipLabel.translatesAutoresizingMaskIntoConstraints = false
-        skipLabel.addTarget(self, action: #selector(skipTapped), for: .touchUpInside)
-        view.addSubview(skipLabel)
-
-        NSLayoutConstraint.activate([
-            skipLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            skipLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24)
-        ])
-
-        // Text content
-        let textStack = UIStackView(arrangedSubviews: [eyebrowLabel, pageTitleLabel, pageSubtitle])
-        textStack.axis = .vertical
-        textStack.spacing = 10
-        textStack.setCustomSpacing(6, after: eyebrowLabel)
-        textStack.translatesAutoresizingMaskIntoConstraints = false
-        bottomPanel.addSubview(textStack)
-
-        // CTA Button
-        ctaButton.translatesAutoresizingMaskIntoConstraints = false
-        ctaButton.layer.cornerRadius = 16
-        ctaButton.clipsToBounds = true
-        ctaButton.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
-        ctaButton.backgroundColor = AppDesign.Color.primary
-        ctaButton.setTitleColor(.white, for: .normal)
-        ctaButton.addTarget(self, action: #selector(primaryTapped), for: .touchUpInside)
-        bottomPanel.addSubview(ctaButton)
-
-        NSLayoutConstraint.activate([
-            textStack.topAnchor.constraint(equalTo: track.bottomAnchor, constant: 28),
-            textStack.leadingAnchor.constraint(equalTo: bottomPanel.leadingAnchor, constant: 28),
-            textStack.trailingAnchor.constraint(equalTo: bottomPanel.trailingAnchor, constant: -28),
-
-            ctaButton.leadingAnchor.constraint(equalTo: bottomPanel.leadingAnchor, constant: 24),
-            ctaButton.trailingAnchor.constraint(equalTo: bottomPanel.trailingAnchor, constant: -24),
-            ctaButton.bottomAnchor.constraint(equalTo: bottomPanel.safeAreaLayoutGuide.bottomAnchor, constant: -20),
-            ctaButton.heightAnchor.constraint(equalToConstant: 56)
-        ])
-
-        // Swipe gesture on gradient area
+    private func installGestures() {
         let swipeLeft  = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeLeft))
         swipeLeft.direction = .left
         let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeRight))
         swipeRight.direction = .right
         gradientView.addGestureRecognizer(swipeLeft)
         gradientView.addGestureRecognizer(swipeRight)
-        bottomPanel.addGestureRecognizer(UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeLeft)))
+        let panelSwipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeLeft))
+        panelSwipeLeft.direction = .left
+        bottomPanel.addGestureRecognizer(panelSwipeLeft)
+        let panelSwipeRight = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeRight))
+        panelSwipeRight.direction = .right
+        bottomPanel.addGestureRecognizer(panelSwipeRight)
     }
 
     // MARK: - Apply Page
@@ -338,14 +177,14 @@ final class OnboardingViewController: UIViewController {
             // Text crossfade
             UIView.animate(withDuration: 0.18, animations: {
                 self.eyebrowLabel.alpha = 0
-                self.pageTitleLabel.alpha = 0
-                self.pageSubtitle.alpha = 0
+                self.titleLabel.alpha = 0
+                self.subtitleLabel.alpha = 0
             }) { _ in
                 self.updateTextContent(page: page, isLast: isLast)
                 UIView.animate(withDuration: 0.28) {
                     self.eyebrowLabel.alpha = 1
-                    self.pageTitleLabel.alpha = 1
-                    self.pageSubtitle.alpha = 1
+                    self.titleLabel.alpha = 1
+                    self.subtitleLabel.alpha = 1
                 }
             }
 
@@ -362,12 +201,13 @@ final class OnboardingViewController: UIViewController {
     }
 
     private func updateTextContent(page: OnboardingPage, isLast: Bool) {
-        eyebrowLabel.text               = page.eyebrow
-        pageTitleLabel.attributedText   = makeTitle(page.title)
-        pageSubtitle.text               = page.subtitle
-        ctaButton.setTitle(isLast ? "Get Started →" : "Continue →", for: .normal)
+        eyebrowLabel.text = page.eyebrow
+        eyebrowLabel.letterSpacing(2.0)
+        titleLabel.attributedText = makeTitle(page.title)
+        subtitleLabel.text = page.subtitle
+        nextButton.setTitle(isLast ? "Get Started →" : "Continue →", for: .normal)
         UIView.animate(withDuration: 0.2, animations: {
-            self.skipLabel.alpha = isLast ? 0 : 1
+            self.skipButton.alpha = isLast ? 0 : 1
         })
     }
 
@@ -388,7 +228,7 @@ final class OnboardingViewController: UIViewController {
         let stepWidth = barWidth / CGFloat(pages.count)
         let offset = stepWidth * CGFloat(currentPage)
 
-        progressLeading?.constant = offset
+        progressLeadingConstraint.constant = offset
         if animated {
             UIView.animate(withDuration: 0.35, delay: 0,
                            usingSpringWithDamping: 0.75, initialSpringVelocity: 0) {
@@ -400,14 +240,11 @@ final class OnboardingViewController: UIViewController {
     // MARK: - Actions
 
     @IBAction private func nextTapped(_ sender: UIButton)    { advance() }
-    @IBAction private func pageChanged(_ sender: UIPageControl) {}
     @IBAction private func skipTapped(_ sender: UIButton)   { performSkip() }
-
-    @objc private func primaryTapped() { advance() }
 
     @objc private func performSkip() {
         AppHaptics.selection()
-        completeOnboarding()
+        completeOnboarding(openEmail: true)
     }
 
     @objc private func handleSwipeLeft()  { advance() }
@@ -425,36 +262,28 @@ final class OnboardingViewController: UIViewController {
             applyPage(pages[currentPage], animated: true)
         } else {
             AppHaptics.success()
-            completeOnboarding()
+            completeOnboarding(openEmail: true)
         }
         // Button bounce
         UIView.animate(withDuration: 0.1, animations: {
-            self.ctaButton.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
+            self.nextButton.transform = CGAffineTransform(scaleX: 0.96, y: 0.96)
         }) { _ in
             UIView.animate(withDuration: 0.2, delay: 0,
                            usingSpringWithDamping: 0.5,
                            initialSpringVelocity: 0.8,
                            options: [], animations: {
-                self.ctaButton.transform = .identity
+                self.nextButton.transform = .identity
             }, completion: nil)
         }
     }
 
-    private func completeOnboarding() {
+    private func completeOnboarding(openEmail: Bool) {
         UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
         
         let sb = UIStoryboard(name: "Main", bundle: nil)
         let rootVC: UIViewController
-        
-        // If guest (skipped), go directly to Tab Bar. Otherwise (Get Started), go to Email.
-        if currentPage < pages.count - 1 {
-            // "Skip" tapped
-            rootVC = sb.instantiateViewController(withIdentifier: "MainTabBarController")
-        } else {
-            // "Get Started" tapped
-            let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
-            rootVC = UINavigationController(rootViewController: emailVC)
-        }
+        let emailVC = sb.instantiateViewController(withIdentifier: "EmailViewController")
+        rootVC = UINavigationController(rootViewController: emailVC)
         
         if let scene = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
            let window = scene.window {
@@ -482,10 +311,17 @@ final class GradientView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        configureGradient()
+    }
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configureGradient()
+    }
+
+    private func configureGradient() {
         gradientLayer.startPoint = CGPoint(x: 0.15, y: 0)
         gradientLayer.endPoint   = CGPoint(x: 0.85, y: 1)
     }
-    required init?(coder: NSCoder) { fatalError() }
 
     func animate(to colors: [UIColor], duration: TimeInterval) {
         let newColors = colors.map { $0.cgColor }

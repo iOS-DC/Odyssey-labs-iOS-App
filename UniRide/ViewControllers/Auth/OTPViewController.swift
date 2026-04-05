@@ -131,9 +131,14 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
             return
         }
         verifyButton.setPrimaryCTAEnabled(false)
+        showAppLoading(message: "Verifying code...")
+
         Task { @MainActor [weak self] in
             guard let self else { return }
-            defer { self.updateVerifyButtonState() }
+            defer { 
+                self.hideAppLoading()
+                self.updateVerifyButtonState() 
+            }
 
             do {
                 switch verificationMode {
@@ -199,8 +204,11 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     @objc private func resendTapped() {
         guard seconds <= 0 else { return }
         resendLabel.isUserInteractionEnabled = false
+        showAppLoading(message: "Resending OTP...")
+        
         Task { @MainActor [weak self] in
             guard let self else { return }
+            defer { self.hideAppLoading() }
             do {
                 switch verificationMode {
                 case .email:

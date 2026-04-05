@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Driver Detail View Controller-->
+        <scene sceneID="DD1-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="DriverDetailViewController" id="DD1-vc-001" customClass="DriverDetailViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="DD1-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <!-- Close Button -->
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-cb-001">
+                                <rect key="frame" x="341" y="66" width="32" height="32"/>
+                                <accessibility key="accessibilityConfiguration">
+                                    <accessibilityDescription key="accessibilityLabel">Close</accessibilityDescription>
+                                </accessibility>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <image key="image" systemName="xmark.circle.fill"/>
+                                <color key="tintColor" systemColor="systemGray3Color"/>
+                                <connections>
+                                    <action selector="closeTapped" destination="DD1-vc-001" eventType="touchUpInside" id="DD1-ac-close"/>
+                                </connections>
+                            </button>
+                            <!-- Title Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Driver Details" textAlignment="center" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-tl-001">
+                                <rect key="frame" x="97" y="74" width="199" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Avatar Image View -->
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-av-001">
+                                <rect key="frame" x="152" y="119" width="90" height="90"/>
+                                <color key="backgroundColor" systemColor="systemGray5Color"/>
+                            </imageView>
+                            <!-- Name Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="center" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-nl-001">
+                                <rect key="frame" x="20" y="223" width="353" height="26"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="22" weight="bold"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Role Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Driver" textAlignment="center" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-rl-001">
+                                <rect key="frame" x="97" y="253" width="199" height="18"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="15" weight="medium"/>
+                                <color key="textColor" systemColor="secondaryLabelColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Info Stack (rows added dynamically) -->
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-is-001">
+                                <rect key="frame" x="20" y="291" width="353" height="0"/>
+                            </stackView>
+                            <!-- Message Button -->
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-mb-001">
+                                <rect key="frame" x="20" y="319" width="353" height="52"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <connections>
+                                    <action selector="messageTapped" destination="DD1-vc-001" eventType="touchUpInside" id="DD1-ac-msg"/>
+                                </connections>
+                            </button>
+                            <!-- Safety Stack -->
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="horizontal" spacing="20" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-ss-001">
+                                <rect key="frame" x="20" y="387" width="353" height="21"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-rpt-001">
+                                        <rect key="frame" x="0.0" y="0.0" width="166" height="21"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="15" weight="medium"/>
+                                        <state key="normal" title="Report User">
+                                            <color key="titleColor" systemColor="systemRedColor"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="reportTapped" destination="DD1-vc-001" eventType="touchUpInside" id="DD1-ac-rpt"/>
+                                        </connections>
+                                    </button>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DD1-blk-001">
+                                        <rect key="frame" x="186" y="0.0" width="167" height="21"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="15" weight="medium"/>
+                                        <state key="normal" title="Block User">
+                                            <color key="titleColor" systemColor="systemRedColor"/>
+                                        </state>
+                                        <connections>
+                                            <action selector="blockTapped" destination="DD1-vc-001" eventType="touchUpInside" id="DD1-ac-blk"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                            </stackView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="DD1-sa-001"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <!-- Close Button -->
+                            <constraint firstItem="DD1-cb-001" firstAttribute="top" secondItem="DD1-sa-001" secondAttribute="top" constant="16" id="DD1-ct-cb-top"/>
+                            <constraint firstItem="DD1-cb-001" firstAttribute="trailing" secondItem="DD1-vw-001" secondAttribute="trailing" constant="-20" id="DD1-ct-cb-trail"/>
+                            <constraint firstItem="DD1-cb-001" firstAttribute="width" constant="32" id="DD1-ct-cb-w"/>
+                            <constraint firstItem="DD1-cb-001" firstAttribute="height" constant="32" id="DD1-ct-cb-h"/>
+                            <!-- Title Label -->
+                            <constraint firstItem="DD1-tl-001" firstAttribute="top" secondItem="DD1-sa-001" secondAttribute="top" constant="20" id="DD1-ct-tl-top"/>
+                            <constraint firstItem="DD1-tl-001" firstAttribute="centerX" secondItem="DD1-vw-001" secondAttribute="centerX" id="DD1-ct-tl-cx"/>
+                            <!-- Avatar -->
+                            <constraint firstItem="DD1-av-001" firstAttribute="top" secondItem="DD1-tl-001" secondAttribute="bottom" constant="24" id="DD1-ct-av-top"/>
+                            <constraint firstItem="DD1-av-001" firstAttribute="centerX" secondItem="DD1-vw-001" secondAttribute="centerX" id="DD1-ct-av-cx"/>
+                            <constraint firstItem="DD1-av-001" firstAttribute="width" constant="90" id="DD1-ct-av-w"/>
+                            <constraint firstItem="DD1-av-001" firstAttribute="height" constant="90" id="DD1-ct-av-h"/>
+                            <!-- Name Label -->
+                            <constraint firstItem="DD1-nl-001" firstAttribute="top" secondItem="DD1-av-001" secondAttribute="bottom" constant="14" id="DD1-ct-nl-top"/>
+                            <constraint firstItem="DD1-nl-001" firstAttribute="leading" secondItem="DD1-vw-001" secondAttribute="leading" constant="20" id="DD1-ct-nl-lead"/>
+                            <constraint firstItem="DD1-nl-001" firstAttribute="trailing" secondItem="DD1-vw-001" secondAttribute="trailing" constant="-20" id="DD1-ct-nl-trail"/>
+                            <!-- Role Label -->
+                            <constraint firstItem="DD1-rl-001" firstAttribute="top" secondItem="DD1-nl-001" secondAttribute="bottom" constant="4" id="DD1-ct-rl-top"/>
+                            <constraint firstItem="DD1-rl-001" firstAttribute="centerX" secondItem="DD1-vw-001" secondAttribute="centerX" id="DD1-ct-rl-cx"/>
+                            <!-- Info Stack -->
+                            <constraint firstItem="DD1-is-001" firstAttribute="top" secondItem="DD1-rl-001" secondAttribute="bottom" constant="20" id="DD1-ct-is-top"/>
+                            <constraint firstItem="DD1-is-001" firstAttribute="leading" secondItem="DD1-vw-001" secondAttribute="leading" constant="20" id="DD1-ct-is-lead"/>
+                            <constraint firstItem="DD1-is-001" firstAttribute="trailing" secondItem="DD1-vw-001" secondAttribute="trailing" constant="-20" id="DD1-ct-is-trail"/>
+                            <!-- Message Button -->
+                            <constraint firstItem="DD1-mb-001" firstAttribute="top" secondItem="DD1-is-001" secondAttribute="bottom" constant="28" id="DD1-ct-mb-top"/>
+                            <constraint firstItem="DD1-mb-001" firstAttribute="leading" secondItem="DD1-vw-001" secondAttribute="leading" constant="20" id="DD1-ct-mb-lead"/>
+                            <constraint firstItem="DD1-mb-001" firstAttribute="trailing" secondItem="DD1-vw-001" secondAttribute="trailing" constant="-20" id="DD1-ct-mb-trail"/>
+                            <constraint firstItem="DD1-mb-001" firstAttribute="height" constant="52" id="DD1-ct-mb-h"/>
+                            <!-- Safety Stack -->
+                            <constraint firstItem="DD1-ss-001" firstAttribute="top" secondItem="DD1-mb-001" secondAttribute="bottom" constant="16" id="DD1-ct-ss-top"/>
+                            <constraint firstItem="DD1-ss-001" firstAttribute="leading" secondItem="DD1-vw-001" secondAttribute="leading" constant="20" id="DD1-ct-ss-lead"/>
+                            <constraint firstItem="DD1-ss-001" firstAttribute="trailing" secondItem="DD1-vw-001" secondAttribute="trailing" constant="-20" id="DD1-ct-ss-trail"/>
+                            <constraint firstItem="DD1-ss-001" firstAttribute="bottom" secondItem="DD1-sa-001" secondAttribute="bottom" constant="-20" id="DD1-ct-ss-bot"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="avatarView" destination="DD1-av-001" id="DD1-ol-av"/>
+                        <outlet property="nameLabel" destination="DD1-nl-001" id="DD1-ol-nl"/>
+                        <outlet property="roleLabel" destination="DD1-rl-001" id="DD1-ol-rl"/>
+                        <outlet property="infoStack" destination="DD1-is-001" id="DD1-ol-is"/>
+                        <outlet property="msgBtn" destination="DD1-mb-001" id="DD1-ol-mb"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="DD1-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="0.0" y="0.0"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="secondaryLabelColor">
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.26274509803921570" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemGray3Color">
+            <color red="0.78039215686274510" green="0.78039215686274510" blue="0.80000000000000004" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemGray5Color">
+            <color red="0.89803921568627450" green="0.89803921568627450" blue="0.91764705882352940" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemRedColor">
+            <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

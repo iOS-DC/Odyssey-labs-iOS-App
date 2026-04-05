@@ -71,183 +71,35 @@ final class RideFilterViewController: UIViewController {
     var currentFilter = RideFilter()
     var onApply: ((RideFilter) -> Void)?
 
-    // MARK: UI
-    private let grabber      = UIView()
-    private let titleLabel   = UILabel()
+    // MARK: IBOutlets (wired in RideFilter.storyboard)
+    @IBOutlet private var sortControl: UISegmentedControl!
+    @IBOutlet private var fareSlider: UISlider!
+    @IBOutlet private var fareValueLbl: UILabel!
+    @IBOutlet private var seatsStepper: UIStepper!
+    @IBOutlet private var seatsValueLbl: UILabel!
+    @IBOutlet private var chipStack: UIStackView!
+    @IBOutlet private var applyBtn: UIButton!
+    @IBOutlet private var resetBtn: UIButton!
 
-    // Sort
-    private let sortLabel    = UILabel()
-    private let sortControl  = UISegmentedControl(
-        items: RideFilter.SortOption.allCases.map { $0.label }
-    )
-
-    // Fare
-    private let fareLabel    = UILabel()
-    private let fareSlider   = UISlider()
-    private let fareValueLbl = UILabel()
-
-    // Seats
-    private let seatsLabel   = UILabel()
-    private let seatsStepper = UIStepper()
-    private let seatsValueLbl = UILabel()
-
-    // Time slot
-    private let timeLabel    = UILabel()
     private var timeChips: [UIButton] = []
-
-    // Buttons
-    private let applyBtn     = UIButton(type: .system)
-    private let resetBtn     = UIButton(type: .system)
 
     // MARK: Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        buildUI()
-        applyCurrentFilter()
-    }
-
-    // MARK: - Build UI
-
-    private func buildUI() {
-        // Grabber
-        grabber.backgroundColor = AppDesign.Color.border
-        grabber.layer.cornerRadius = 2.5
-        grabber.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(grabber)
-
-        // Title
-        titleLabel.text = "Filter Rides"
-        titleLabel.font = AppDesign.Typography.bodyStrong
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(titleLabel)
-
-        // ── Sort ──
-        sortLabel.text = "SORT BY"
-        styleSection(sortLabel)
-        sortControl.selectedSegmentIndex = 0
-        sortControl.addTarget(self, action: #selector(sortChanged), for: .valueChanged)
-        sortControl.translatesAutoresizingMaskIntoConstraints = false
-
-        // ── Fare ──
-        fareLabel.text = "MAX FARE"
-        styleSection(fareLabel)
-        fareSlider.minimumValue = 0
-        fareSlider.maximumValue = 500
-        fareSlider.tintColor    = AppDesign.Color.primary
-        fareSlider.addTarget(self, action: #selector(fareChanged), for: .valueChanged)
-        fareSlider.translatesAutoresizingMaskIntoConstraints = false
-        fareValueLbl.font = AppDesign.Typography.subheadline
-        fareValueLbl.textAlignment = .right
-        fareValueLbl.setContentHuggingPriority(.required, for: .horizontal)
-        fareValueLbl.translatesAutoresizingMaskIntoConstraints = false
-
-        let fareRow = UIStackView(arrangedSubviews: [fareSlider, fareValueLbl])
-        fareRow.axis = .horizontal; fareRow.spacing = 10; fareRow.alignment = .center
-        fareRow.translatesAutoresizingMaskIntoConstraints = false
-
-        // ── Seats ──
-        seatsLabel.text = "MIN SEATS"
-        styleSection(seatsLabel)
-        seatsStepper.minimumValue = 1; seatsStepper.maximumValue = 6
-        seatsStepper.stepValue = 1; seatsStepper.value = 1
-        seatsStepper.addTarget(self, action: #selector(seatsChanged), for: .valueChanged)
-        seatsStepper.translatesAutoresizingMaskIntoConstraints = false
-        seatsValueLbl.font = AppDesign.Typography.bodyStrong
-        seatsValueLbl.text = "1"
-        seatsValueLbl.setContentHuggingPriority(.required, for: .horizontal)
-        seatsValueLbl.translatesAutoresizingMaskIntoConstraints = false
-
-        let seatsRow = UIStackView(arrangedSubviews: [seatsValueLbl, seatsStepper])
-        seatsRow.axis = .horizontal; seatsRow.spacing = 12; seatsRow.alignment = .center
-        seatsRow.translatesAutoresizingMaskIntoConstraints = false
-
-        // ── Time slot chips ──
-        timeLabel.text = "TIME OF DAY"
-        styleSection(timeLabel)
-        let chipStack = UIStackView()
-        chipStack.axis = .horizontal; chipStack.spacing = 8; chipStack.distribution = .fillEqually
-        chipStack.translatesAutoresizingMaskIntoConstraints = false
+        fareSlider.tintColor = AppDesign.Color.primary
+        applyBtn.applyProminentPrimaryCTA(title: "Apply Filters", corner: AppDesign.Radius.md)
+        resetBtn.applyTextActionStyle(color: .secondaryLabel, font: AppDesign.Typography.action)
+        resetBtn.setTitle("Reset", for: .normal)
         for slot in RideFilter.TimeSlot.allCases {
             let btn = makeChipButton(slot.label, tag: slot.rawValue)
             timeChips.append(btn)
             chipStack.addArrangedSubview(btn)
         }
-
-        // ── Apply / Reset ──
-        applyBtn.applyProminentPrimaryCTA(title: "Apply Filters", corner: AppDesign.Radius.md)
-        applyBtn.addTarget(self, action: #selector(applyTapped), for: .touchUpInside)
-        applyBtn.translatesAutoresizingMaskIntoConstraints = false
-
-        resetBtn.applyTextActionStyle(color: .secondaryLabel, font: AppDesign.Typography.action)
-        resetBtn.setTitle("Reset", for: .normal)
-        resetBtn.addTarget(self, action: #selector(resetTapped), for: .touchUpInside)
-        resetBtn.translatesAutoresizingMaskIntoConstraints = false
-
-        let btnRow = UIStackView(arrangedSubviews: [resetBtn, applyBtn])
-        btnRow.axis = .horizontal; btnRow.spacing = 12; btnRow.distribution = .fill
-        btnRow.translatesAutoresizingMaskIntoConstraints = false
-
-        // Main stack
-        let divider1 = separator()
-        let divider2 = separator()
-        let divider3 = separator()
-
-        let mainStack = UIStackView(arrangedSubviews: [
-            sortLabel, sortControl, divider1,
-            fareLabel, fareRow, divider2,
-            seatsLabel, seatsRow, divider3,
-            timeLabel, chipStack,
-        ])
-        mainStack.axis = .vertical
-        mainStack.spacing = AppDesign.Spacing.sm - AppDesign.Spacing.xxs / 2
-        mainStack.setCustomSpacing(16, after: sortControl)
-        mainStack.setCustomSpacing(16, after: fareRow)
-        mainStack.setCustomSpacing(16, after: seatsRow)
-        mainStack.setCustomSpacing(16, after: timeLabel)
-        mainStack.translatesAutoresizingMaskIntoConstraints = false
-
-        [mainStack, btnRow].forEach { view.addSubview($0) }
-
-        NSLayoutConstraint.activate([
-            grabber.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
-            grabber.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            grabber.widthAnchor.constraint(equalToConstant: 36),
-            grabber.heightAnchor.constraint(equalToConstant: 5),
-
-            titleLabel.topAnchor.constraint(equalTo: grabber.bottomAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-
-            mainStack.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDesign.Spacing.lg),
-            mainStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-            mainStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
-
-            chipStack.heightAnchor.constraint(equalToConstant: 40),
-
-            btnRow.topAnchor.constraint(equalTo: mainStack.bottomAnchor, constant: AppDesign.Spacing.xl),
-            btnRow.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDesign.Spacing.lg),
-            btnRow.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.lg),
-            btnRow.heightAnchor.constraint(equalToConstant: 48),
-
-            applyBtn.widthAnchor.constraint(equalTo: btnRow.widthAnchor, multiplier: 0.68),
-        ])
+        applyCurrentFilter()
     }
 
     // MARK: - Helpers
-
-    private func styleSection(_ label: UILabel) {
-        label.font = AppDesign.Typography.captionStrong
-        label.textColor = .tertiaryLabel
-        label.translatesAutoresizingMaskIntoConstraints = false
-    }
-
-    private func separator() -> UIView {
-        let v = UIView()
-        v.backgroundColor = AppDesign.Color.border
-        v.heightAnchor.constraint(equalToConstant: 1).isActive = true
-        v.translatesAutoresizingMaskIntoConstraints = false
-        return v
-    }
 
     private func makeChipButton(_ title: String, tag: Int) -> UIButton {
         let btn = UIButton(type: .system)
@@ -260,7 +112,6 @@ final class RideFilterViewController: UIViewController {
         btn.setTitleColor(.secondaryLabel, for: .normal)
         btn.tag = tag
         btn.addTarget(self, action: #selector(timeChipTapped(_:)), for: .touchUpInside)
-        btn.translatesAutoresizingMaskIntoConstraints = false
         return btn
     }
 
@@ -292,11 +143,11 @@ final class RideFilterViewController: UIViewController {
 
     // MARK: - Actions
 
-    @objc private func sortChanged() {
+    @IBAction private func sortChanged() {
         currentFilter.sortBy = RideFilter.SortOption(rawValue: sortControl.selectedSegmentIndex) ?? .departureTime
     }
 
-    @objc private func fareChanged() {
+    @IBAction private func fareChanged() {
         // Snap to nearest 10
         let snapped = (fareSlider.value / 10).rounded() * 10
         fareSlider.value = snapped
@@ -304,7 +155,7 @@ final class RideFilterViewController: UIViewController {
         fareValueLbl.text = snapped >= 500 ? "Any" : "≤ ₹\(Int(snapped))"
     }
 
-    @objc private func seatsChanged() {
+    @IBAction private func seatsChanged() {
         let v = Int(seatsStepper.value)
         currentFilter.minSeats = v
         seatsValueLbl.text = "\(v)"
@@ -316,12 +167,12 @@ final class RideFilterViewController: UIViewController {
         updateChipSelection(selected: sender.tag)
     }
 
-    @objc private func applyTapped() {
+    @IBAction private func applyTapped() {
         onApply?(currentFilter)
         dismiss(animated: true)
     }
 
-    @objc private func resetTapped() {
+    @IBAction private func resetTapped() {
         currentFilter = RideFilter()
         applyCurrentFilter()
         onApply?(currentFilter)

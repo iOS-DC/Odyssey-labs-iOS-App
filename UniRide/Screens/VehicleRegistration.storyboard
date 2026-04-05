@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Vehicle Registration View Controller-->
+        <scene sceneID="VR1-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="VehicleRegistrationViewController" id="VR1-vc-001" customClass="VehicleRegistrationViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="VR1-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <!-- Scroll View -->
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="VR1-sv-001">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                                <subviews>
+                                    <!-- Form Stack -->
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="20" translatesAutoresizingMaskIntoConstraints="NO" id="VR1-fs-001">
+                                        <rect key="frame" x="16" y="24" width="329" height="0"/>
+                                    </stackView>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="VR1-fs-001" firstAttribute="top" secondItem="VR1-clg-001" secondAttribute="top" constant="24" id="VR1-ct-fs-top"/>
+                                    <constraint firstItem="VR1-fs-001" firstAttribute="leading" secondItem="VR1-clg-001" secondAttribute="leading" constant="16" id="VR1-ct-fs-lead"/>
+                                    <constraint firstAttribute="trailing" secondItem="VR1-fs-001" secondAttribute="trailing" constant="16" id="VR1-ct-fs-trail"/>
+                                    <constraint firstAttribute="bottom" secondItem="VR1-fs-001" secondAttribute="bottom" constant="32" id="VR1-ct-fs-bot"/>
+                                    <constraint firstItem="VR1-fs-001" firstAttribute="width" secondItem="VR1-flg-001" secondAttribute="width" constant="-48" id="VR1-ct-fs-w"/>
+                                </constraints>
+                                <viewLayoutGuide key="contentLayoutGuide" id="VR1-clg-001"/>
+                                <viewLayoutGuide key="frameLayoutGuide" id="VR1-flg-001"/>
+                            </scrollView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="VR1-sa-001"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="VR1-sv-001" firstAttribute="top" secondItem="VR1-sa-001" secondAttribute="top" id="VR1-ct-sv-top"/>
+                            <constraint firstItem="VR1-sv-001" firstAttribute="leading" secondItem="VR1-vw-001" secondAttribute="leading" id="VR1-ct-sv-lead"/>
+                            <constraint firstItem="VR1-sv-001" firstAttribute="trailing" secondItem="VR1-vw-001" secondAttribute="trailing" id="VR1-ct-sv-trail"/>
+                            <constraint firstItem="VR1-sv-001" firstAttribute="bottom" secondItem="VR1-vw-001" secondAttribute="bottom" id="VR1-ct-sv-bot"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="scrollView" destination="VR1-sv-001" id="VR1-ol-sv"/>
+                        <outlet property="formStack" destination="VR1-fs-001" id="VR1-ol-fs"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="VR1-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="0.0" y="0.0"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="systemGroupedBackgroundColor">
+            <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

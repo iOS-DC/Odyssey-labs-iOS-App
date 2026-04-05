@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Post Detail View Controller-->
+        <scene sceneID="PD1-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="PostDetailViewController" id="PD1-vc-001" customClass="PostDetailViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="PD1-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <!-- UITableView -->
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="interactive" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="80" translatesAutoresizingMaskIntoConstraints="NO" id="PD1-tv-001">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="800"/>
+                                <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                            </tableView>
+                            <!-- Compose Bar -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PD1-cb-001">
+                                <rect key="frame" x="0.0" y="800" width="393" height="52"/>
+                                <color key="backgroundColor" systemColor="secondarySystemGroupedBackgroundColor"/>
+                                <subviews>
+                                    <!-- Comment Text Field -->
+                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Add a comment…" borderStyle="none" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="PD1-tf-001">
+                                        <rect key="frame" x="16" y="12" width="281" height="28"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                        <returnKeyType key="returnKeyType" value="send"/>
+                                        <textInputTraits key="textInputTraits" returnKeyType="send"/>
+                                    </textField>
+                                    <!-- Send Button -->
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" translatesAutoresizingMaskIntoConstraints="NO" id="PD1-sb-001">
+                                        <rect key="frame" x="301" y="10" width="32" height="32"/>
+                                        <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
+                                        <state key="normal" image="paperplane.fill"/>
+                                        <connections>
+                                            <action selector="sendTapped" destination="PD1-vc-001" eventType="touchUpInside" id="PD1-ac-send"/>
+                                        </connections>
+                                    </button>
+                                    <!-- Spinner -->
+                                    <activityIndicatorView opaque="NO" contentMode="scaleToFill" hidesWhenStopped="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="PD1-sp-001">
+                                        <rect key="frame" x="355" y="15" width="22" height="22"/>
+                                    </activityIndicatorView>
+                                </subviews>
+                                <constraints>
+                                    <!-- Text field -->
+                                    <constraint firstItem="PD1-tf-001" firstAttribute="leading" secondItem="PD1-cb-001" secondAttribute="leading" constant="16" id="PD1-ct-tf-lead"/>
+                                    <constraint firstItem="PD1-tf-001" firstAttribute="centerY" secondItem="PD1-cb-001" secondAttribute="centerY" id="PD1-ct-tf-cy"/>
+                                    <constraint firstItem="PD1-tf-001" firstAttribute="trailing" secondItem="PD1-sb-001" secondAttribute="leading" constant="-8" id="PD1-ct-tf-trail"/>
+                                    <!-- Send button -->
+                                    <constraint firstItem="PD1-sb-001" firstAttribute="trailing" secondItem="PD1-sp-001" secondAttribute="leading" constant="-4" id="PD1-ct-sb-trail"/>
+                                    <constraint firstItem="PD1-sb-001" firstAttribute="centerY" secondItem="PD1-cb-001" secondAttribute="centerY" id="PD1-ct-sb-cy"/>
+                                    <constraint firstItem="PD1-sb-001" firstAttribute="width" constant="32" id="PD1-ct-sb-w"/>
+                                    <!-- Spinner -->
+                                    <constraint firstItem="PD1-sp-001" firstAttribute="trailing" secondItem="PD1-cb-001" secondAttribute="trailing" constant="-16" id="PD1-ct-sp-trail"/>
+                                    <constraint firstItem="PD1-sp-001" firstAttribute="centerY" secondItem="PD1-cb-001" secondAttribute="centerY" id="PD1-ct-sp-cy"/>
+                                    <constraint firstItem="PD1-sp-001" firstAttribute="width" constant="22" id="PD1-ct-sp-w"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="PD1-sa-001"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <constraints>
+                            <!-- TableView -->
+                            <constraint firstItem="PD1-tv-001" firstAttribute="top" secondItem="PD1-sa-001" secondAttribute="top" id="PD1-ct-tv-top"/>
+                            <constraint firstItem="PD1-tv-001" firstAttribute="leading" secondItem="PD1-vw-001" secondAttribute="leading" id="PD1-ct-tv-lead"/>
+                            <constraint firstItem="PD1-tv-001" firstAttribute="trailing" secondItem="PD1-vw-001" secondAttribute="trailing" id="PD1-ct-tv-trail"/>
+                            <constraint firstItem="PD1-tv-001" firstAttribute="bottom" secondItem="PD1-cb-001" secondAttribute="top" id="PD1-ct-tv-bot"/>
+                            <!-- Compose bar horizontal -->
+                            <constraint firstItem="PD1-cb-001" firstAttribute="leading" secondItem="PD1-vw-001" secondAttribute="leading" id="PD1-ct-cb-lead"/>
+                            <constraint firstItem="PD1-cb-001" firstAttribute="trailing" secondItem="PD1-vw-001" secondAttribute="trailing" id="PD1-ct-cb-trail"/>
+                            <constraint firstItem="PD1-cb-001" firstAttribute="height" constant="52" id="PD1-ct-cb-h"/>
+                            <!-- Compose bar bottom — wired as IBOutlet so keyboard animation can mutate it -->
+                            <constraint firstItem="PD1-cb-001" firstAttribute="bottom" secondItem="PD1-sa-001" secondAttribute="bottom" id="PD1-ct-cb-bot"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Post" id="PD1-ni-001"/>
+                    <connections>
+                        <outlet property="tableView" destination="PD1-tv-001" id="PD1-ol-tv"/>
+                        <outlet property="composeBar" destination="PD1-cb-001" id="PD1-ol-cb"/>
+                        <outlet property="commentTextField" destination="PD1-tf-001" id="PD1-ol-tf"/>
+                        <outlet property="sendButton" destination="PD1-sb-001" id="PD1-ol-sb"/>
+                        <outlet property="spinner" destination="PD1-sp-001" id="PD1-ol-sp"/>
+                        <outlet property="composeBarBottom" destination="PD1-ct-cb-bot" id="PD1-ol-cbb"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="PD1-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="0.0" y="0.0"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="paperplane.fill" catalog="system" width="128" height="128"/>
+        <systemColor name="systemGroupedBackgroundColor">
+            <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="secondarySystemGroupedBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>

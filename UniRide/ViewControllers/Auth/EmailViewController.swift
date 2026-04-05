@@ -168,10 +168,14 @@ class EmailViewController: UIViewController {
         }
 
         continueButton.setPrimaryCTAEnabled(false)
+        showAppLoading(message: "Verifying your email...")
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            defer { self.emailChanged() }
+            defer { 
+                self.hideAppLoading()
+                self.emailChanged() 
+            }
 
             do {
                 try await UserDataModel.shared.startEmailVerificationAsync(email: raw)

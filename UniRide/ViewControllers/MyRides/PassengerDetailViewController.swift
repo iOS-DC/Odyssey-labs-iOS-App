@@ -5,48 +5,47 @@ import UIKit
 final class PassengerDetailViewController: UIViewController {
 
     // MARK: - Data
-    private let passenger: UserProfile
-    private let ride: Ride
+    var passenger: UserProfile!
+    var ride: Ride!
     var onRemovePassenger: (() -> Void)?
 
-    init(passenger: UserProfile, ride: Ride) {
-        self.passenger = passenger
-        self.ride = ride
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
+    // MARK: - UI Components
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let mainStack = UIStackView()
+    private let avatarView = UIImageView()
+    private let nameLabel = UILabel()
+    private let infoStack = UIStackView()
+    private var msgBtn: UIButton!
+    private var removeBtn: UIButton!
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        buildUI()
+        setupUI()
+        configureSheetPresentation()
     }
 
-    // MARK: - UI
-    // MARK: - UI
-    private func buildUI() {
+    // MARK: - UI Setup
+    private func setupUI() {
         view.backgroundColor = .systemBackground
 
-        // ── Scroll View for Responsiveness ───────────────────────────
-        let scrollView = UIScrollView()
+        // ── Scroll View ──
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.showsVerticalScrollIndicator = false
         view.addSubview(scrollView)
 
-        let contentView = UIView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(contentView)
 
-        // ── Main Stack View ──────────────────────────────────────────
-        let mainStack = UIStackView()
+        // ── Main Stack ──
         mainStack.axis = .vertical
         mainStack.spacing = 24
         mainStack.alignment = .center
         mainStack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(mainStack)
 
-        // ── Header (Close Button & Title) ────────────────────────────
+        // ── Header ──
         let headerView = UIView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(headerView)
@@ -66,12 +65,11 @@ final class PassengerDetailViewController: UIViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         headerView.addSubview(titleLabel)
 
-        // ── Avatar ───────────────────────────────────────────────────
+        // ── Avatar ──
         let avatarContainer = UIView()
         avatarContainer.translatesAutoresizingMaskIntoConstraints = false
         
         let avatarSize: CGFloat = 100
-        let avatarView = UIImageView()
         avatarView.translatesAutoresizingMaskIntoConstraints = false
         avatarView.layer.cornerRadius = avatarSize / 2
         avatarView.layer.masksToBounds = true
@@ -80,7 +78,6 @@ final class PassengerDetailViewController: UIViewController {
         avatarView.layer.borderWidth = 3
         avatarView.layer.borderColor = AppDesign.Color.primary.withAlphaComponent(0.1).cgColor
 
-        // Initials fallback
         let initialLabel = UILabel()
         initialLabel.text = String(passenger.fullName.prefix(1)).uppercased()
         initialLabel.font = .systemFont(ofSize: 40, weight: .bold)
@@ -90,10 +87,10 @@ final class PassengerDetailViewController: UIViewController {
         avatarView.addSubview(initialLabel)
 
         if let url = passenger.photoURL {
-            URLSession.shared.dataTask(with: url) { data, _, _ in
+            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
                 if let data = data, let img = UIImage(data: data) {
                     DispatchQueue.main.async {
-                        avatarView.image = img
+                        self?.avatarView.image = img
                         initialLabel.isHidden = true
                     }
                 }
@@ -102,13 +99,12 @@ final class PassengerDetailViewController: UIViewController {
         avatarContainer.addSubview(avatarView)
         mainStack.addArrangedSubview(avatarContainer)
 
-        // ── Name & Role ──────────────────────────────────────────────
+        // ── Name & Role ──
         let nameStack = UIStackView()
         nameStack.axis = .vertical
         nameStack.spacing = 4
         nameStack.alignment = .center
         
-        let nameLabel = UILabel()
         nameLabel.text = passenger.fullName
         nameLabel.font = AppDesign.Typography.h2
         nameLabel.textColor = AppDesign.Color.textPrimary
@@ -123,32 +119,23 @@ final class PassengerDetailViewController: UIViewController {
         roleBadge.layer.cornerRadius = 6
         roleBadge.layer.masksToBounds = true
         nameStack.addArrangedSubview(roleBadge)
-        
         mainStack.addArrangedSubview(nameStack)
 
-        // ── Info Card ────────────────────────────────────────────────
+        // ── Info Card ──
         let infoCard = UIView()
         infoCard.backgroundColor = AppDesign.Color.elevatedSurface
         infoCard.layer.cornerRadius = AppDesign.Radius.md
         infoCard.translatesAutoresizingMaskIntoConstraints = false
         mainStack.addArrangedSubview(infoCard)
         
-        let infoStack = UIStackView()
         infoStack.axis = .vertical
         infoStack.spacing = 16
         infoStack.translatesAutoresizingMaskIntoConstraints = false
         infoCard.addSubview(infoStack)
 
-        let pickup = ride.source.address ?? "Unknown"
-        let dropoff = ride.destination.address ?? "Unknown"
-        let contact = passenger.phone ?? "Not provided"
+        buildInfoRows()
 
-        infoStack.addArrangedSubview(makeInfoRow(icon: "mappin.and.ellipse", title: "Pickup", value: pickup))
-        infoStack.addArrangedSubview(makeInfoRow(icon: "location.fill", title: "Drop-off", value: dropoff))
-        infoStack.addArrangedSubview(makeInfoRow(icon: "phone.fill", title: "Contact", value: contact))
-        infoStack.addArrangedSubview(makeInfoRow(icon: "checkmark.seal.fill", title: "Status", value: "Confirmed", valueColor: AppDesign.Color.success))
-
-        // ── Actions Stack ────────────────────────────────────────────
+        // ── Actions Stack ──
         let actionsStack = UIStackView()
         actionsStack.axis = .vertical
         actionsStack.spacing = 12
@@ -156,7 +143,7 @@ final class PassengerDetailViewController: UIViewController {
         actionsStack.translatesAutoresizingMaskIntoConstraints = false
         mainStack.addArrangedSubview(actionsStack)
 
-        let msgBtn = makeActionButton(
+        msgBtn = makeActionButton(
             title: "Message \(passenger.fullName.components(separatedBy: " ").first ?? "Passenger")",
             image: "message.fill",
             color: AppDesign.Color.primary
@@ -164,11 +151,16 @@ final class PassengerDetailViewController: UIViewController {
         msgBtn.addTarget(self, action: #selector(messageTapped), for: .touchUpInside)
         actionsStack.addArrangedSubview(msgBtn)
 
-        let removeBtn = makeActionButton(title: "Remove Passenger", image: "person.badge.minus.fill", color: .systemGray6, textColor: AppDesign.Color.destructive)
+        removeBtn = makeActionButton(
+            title: "Remove Passenger",
+            image: "person.badge.minus.fill",
+            color: .systemGray6,
+            textColor: AppDesign.Color.destructive
+        )
         removeBtn.addTarget(self, action: #selector(removeTapped), for: .touchUpInside)
         actionsStack.addArrangedSubview(removeBtn)
 
-        // ── Safety Buttons ───────────────────────────────────────────
+        // ── Safety Buttons ──
         let safetyStack = UIStackView()
         safetyStack.axis = .horizontal
         safetyStack.spacing = 20
@@ -192,7 +184,7 @@ final class PassengerDetailViewController: UIViewController {
         safetyStack.addArrangedSubview(blockBtn)
         mainStack.addArrangedSubview(safetyStack)
 
-        // ── Layout Constraints ───────────────────────────────────────
+        // ── Constraints ──
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -246,6 +238,31 @@ final class PassengerDetailViewController: UIViewController {
         ])
     }
 
+    private func buildInfoRows() {
+        infoStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        let pickup  = ride.source.address      ?? "Unknown"
+        let dropoff = ride.destination.address ?? "Unknown"
+        let contact = passenger.phone ?? "Not provided"
+
+        infoStack.addArrangedSubview(makeInfoRow(icon: "mappin.and.ellipse", title: "Pickup", value: pickup))
+        infoStack.addArrangedSubview(makeInfoRow(icon: "location.fill", title: "Drop-off", value: dropoff))
+        infoStack.addArrangedSubview(makeInfoRow(icon: "phone.fill", title: "Contact", value: contact))
+        infoStack.addArrangedSubview(makeInfoRow(icon: "checkmark.seal.fill", title: "Status", value: "Confirmed", valueColor: AppDesign.Color.success))
+    }
+
+    private func configureSheetPresentation() {
+        guard let sheet = sheetPresentationController else { return }
+        let compactDetent = UISheetPresentationController.Detent.custom(identifier: .init("passengerCompact")) { context in
+            context.maximumDetentValue * 0.65
+        }
+        sheet.detents = [compactDetent, .large()]
+        sheet.selectedDetentIdentifier = .init("passengerCompact")
+        sheet.prefersGrabberVisible = true
+        sheet.preferredCornerRadius = AppDesign.Radius.lg
+    }
+
+    // MARK: - Helpers
     private func makeInfoRow(icon: String, title: String, value: String, valueColor: UIColor = .label) -> UIView {
         let hStack = UIStackView()
         hStack.axis = .horizontal
@@ -296,14 +313,8 @@ final class PassengerDetailViewController: UIViewController {
     }
 
     // MARK: - Actions
-    @objc private func closeTapped() {
-        dismiss(animated: true)
-    }
-
-    @objc private func messageTapped() {
-        dismiss(animated: true)
-        // Future: open messaging screen
-    }
+    @objc private func closeTapped() { dismiss(animated: true) }
+    @objc private func messageTapped() { dismiss(animated: true) }
 
     @objc private func reportTapped() {
         SafetyHelper.shared.showReportUI(from: self, reportedUserID: passenger.id, contentType: .user)
@@ -339,7 +350,7 @@ final class PassengerDetailViewController: UIViewController {
                     self.dismiss(animated: true)
                 } catch {
                     let fail = UIAlertController(
-                        title: "Couldn’t remove passenger",
+                        title: "Couldn't remove passenger",
                         message: error.localizedDescription,
                         preferredStyle: .alert
                     )
