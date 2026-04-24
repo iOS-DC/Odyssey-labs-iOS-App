@@ -10,8 +10,9 @@ final class DriverRequestsViewController: UIViewController {
 
     private let emptyStateView = EmptyStateView(
         systemImage: "checkmark.seal.fill",
-        title: "All Caught Up!",
-        body: "No pending join requests for this ride.",
+        title: "No requests yet",
+        body: "Share your ride with classmates to start getting requests.",
+        actionTitle: "Share Ride",
         tintColor: AppDesign.Color.primary
     )
 
@@ -42,12 +43,26 @@ final class DriverRequestsViewController: UIViewController {
     private func setupEmptyState() {
         emptyStateView.translatesAutoresizingMaskIntoConstraints = false
         emptyStateView.isHidden = true
+        emptyStateView.onAction = { [weak self] in self?.shareRide() }
         view.addSubview(emptyStateView)
         NSLayoutConstraint.activate([
             emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -40),
             emptyStateView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
         ])
+    }
+
+    private func shareRide() {
+        let ride = trip.ride
+        let tf = DateFormatter()
+        tf.dateStyle = .medium
+        tf.timeStyle = .short
+        let from = ride.source.address ?? "Pickup"
+        let to   = ride.destination.address ?? "Drop-off"
+        let date = tf.string(from: ride.departureTime)
+        let text = "I'm offering a ride on UniRide 🚗\n\(from) → \(to)\n\(date)\n\nFare: ₹\(Int(ride.farePerSeat)) per seat · \(ride.seatsAvailable) seat\(ride.seatsAvailable == 1 ? "" : "s") left\n\nOpen UniRide to request a seat."
+        let vc = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+        present(vc, animated: true)
     }
 
     // MARK: - Data
@@ -116,7 +131,7 @@ extension DriverRequestsViewController: RequestCellDelegate {
                     requestID: request.id, hostUserID: trip.ride.driverUserID)
                 handleActionResult(removingAt: index)
             } catch {
-                showError("Couldn't approve request", message: error.localizedDescription)
+                showError("Request Not Approved", message: error.localizedDescription)
             }
         }
     }
@@ -131,7 +146,7 @@ extension DriverRequestsViewController: RequestCellDelegate {
                     requestID: request.id, hostUserID: trip.ride.driverUserID)
                 handleActionResult(removingAt: index)
             } catch {
-                showError("Couldn't decline request", message: error.localizedDescription)
+                showError("Request Not Declined", message: error.localizedDescription)
             }
         }
     }

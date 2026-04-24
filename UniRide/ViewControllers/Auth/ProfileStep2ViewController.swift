@@ -292,7 +292,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
         let maxSeats = vehicleType.lowercased() == "car" ? 4 : 1
         let alert = UIAlertController(
             title: "Seat Capacity",
-            message: "How many passengers can travel? (1-\(maxSeats))",
+            message: "How many passengers can sit comfortably? (Max \(maxSeats))",
             preferredStyle: .alert
         )
         alert.addTextField { tf in
@@ -358,8 +358,8 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
                                       collected: [LocationPoint],
                                       completion: @escaping ([LocationPoint]) -> Void) {
         let alert = UIAlertController(
-            title: "Couldn’t resolve location",
-            message: failureMessage,
+            title: "Couldn’t Find Address",
+            message: "We couldn’t find that address. Try a nearby landmark or area.",
             preferredStyle: .alert
         )
 

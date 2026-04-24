@@ -73,9 +73,9 @@ class ReviewRideViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Step 2"
+        title = "Review & Confirm"
         cardView.applyCardStyle()
-        let offerTitle = offerButton.currentTitle ?? "Offer Ride"
+        let offerTitle = offerButton.currentTitle ?? "Publish Ride"
         offerButton.applyProminentPrimaryCTA(title: offerTitle, corner: AppDesign.Radius.md)
 
         // Remove the storyboard fixed-width constraint and make the button fill the card
@@ -124,7 +124,7 @@ class ReviewRideViewController: UIViewController {
         seatsLabel.text   = "\(summary.seats) seat\(summary.seats == 1 ? "" : "s") available"
 
         totalLabel.text = "Total: ₹\(Int(summary.totalFare))"
-        fareLabel.text  = "₹\(Int(summary.farePerSeat)) per person"
+        fareLabel.text  = "₹\(Int(summary.farePerSeat)) per seat"
     }
 
     // MARK: - Recurring Card
@@ -165,7 +165,7 @@ class ReviewRideViewController: UIViewController {
             let btn = UIButton(type: .system)
             btn.tag = iso
             btn.setTitle(name, for: .normal)
-            btn.titleLabel?.font = UIFont.systemFont(ofSize: 12, weight: .semibold)
+            btn.titleLabel?.font = AppDesign.Typography.captionStrong
             btn.layer.cornerRadius = 8
             btn.clipsToBounds = true
             btn.addTarget(self, action: #selector(dayPillTapped(_:)), for: .touchUpInside)
@@ -256,8 +256,8 @@ class ReviewRideViewController: UIViewController {
             }
 
         if isRecurring && recurringDays.isEmpty {
-            let alert = UIAlertController(title: "Select Repeat Days",
-                                          message: "Please select at least one weekday for this recurring ride.",
+            let alert = UIAlertController(title: "No Days Selected",
+                                          message: "Pick at least one day for your recurring ride.",
                                           preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             present(alert, animated: true)
@@ -284,7 +284,7 @@ class ReviewRideViewController: UIViewController {
         // Show loading state inline on the button
         var loadingCfg = offerButton.configuration ?? UIButton.Configuration.filled()
         loadingCfg.showsActivityIndicator = true
-        loadingCfg.title = "Publishing…"
+        loadingCfg.title = "Offering…"
         offerButton.configuration = loadingCfg
         offerButton.isEnabled = false
 
@@ -305,8 +305,8 @@ class ReviewRideViewController: UIViewController {
                 navigationController?.popToRootViewController(animated: true)
             } catch {
                 let alert = UIAlertController(
-                    title: "Couldn't publish ride",
-                    message: error.localizedDescription,
+                    title: "Ride Not Published",
+                    message: "Something went wrong. Try again, or check your connection.",
                     preferredStyle: .alert
                 )
                 alert.addAction(UIAlertAction(title: "OK", style: .default))

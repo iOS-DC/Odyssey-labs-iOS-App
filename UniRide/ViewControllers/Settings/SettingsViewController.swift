@@ -68,7 +68,7 @@ final class SettingsViewController: UIViewController {
             SettingSection(header: "Notifications", items: [
                 SettingItem(icon: "bell.badge.fill",
                             title: "Push Notifications",
-                            subtitle: "Ride approvals, denials, and chat",
+                            subtitle: "Get notified about ride requests, approvals, and messages",
                             tintColor: AppDesign.Color.primary,
                             toggle: true,
                             action: nil),
@@ -156,8 +156,8 @@ final class SettingsViewController: UIViewController {
 
     private func clearCache() {
         let alert = UIAlertController(
-            title: "Clear Cache",
-            message: "This will remove all locally cached rides and chat messages. Your account data will not be affected.",
+            title: "Clear Cache?",
+            message: "This removes locally saved rides and messages. Your account won't be affected.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -193,16 +193,16 @@ final class SettingsViewController: UIViewController {
 
     private func deleteAccount() {
         let alert = UIAlertController(
-            title: "Delete Account",
-            message: "This will permanently delete your UniRide account, all your rides, and personal data. This cannot be undone.",
+            title: "Delete Account?",
+            message: "This removes your account, rides, and all data permanently. This can't be undone.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: "Delete My Account", style: .destructive) { [weak self] _ in
             guard let self else { return }
             
             // Show simple loading alert
-            let loading = UIAlertController(title: "Deleting Account...", message: "Please wait", preferredStyle: .alert)
+            let loading = UIAlertController(title: "Deleting Account…", message: "Please wait…", preferredStyle: .alert)
             self.present(loading, animated: true)
             
             Task { @MainActor in
@@ -223,7 +223,7 @@ final class SettingsViewController: UIViewController {
                     loading.dismiss(animated: true) {
                         let errorAlert = UIAlertController(
                             title: "Deletion Failed",
-                            message: "We couldn't delete your account on the server: \(error.localizedDescription). Please try again or contact support.",
+                            message: "We couldn't delete your account. Try again or contact support.",
                             preferredStyle: .alert
                         )
                         errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
@@ -254,7 +254,7 @@ final class SettingsViewController: UIViewController {
     }
 
     private func signOut() {
-        let alert = UIAlertController(title: "Sign Out", message: "Are you sure?", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Sign Out?", message: "You'll need to sign in again to access your rides.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "Sign Out", style: .destructive) { _ in
             Task { @MainActor in

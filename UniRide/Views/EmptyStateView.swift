@@ -38,7 +38,7 @@ final class EmptyStateView: UIView {
                    tintColor: UIColor = .systemGreen) {
         iconView.image = UIImage(systemName: systemImage)?
             .withRenderingMode(.alwaysTemplate)
-        iconView.tintColor = tintColor.withAlphaComponent(0.4)
+        iconView.tintColor = tintColor.withAlphaComponent(0.6)
 
         titleLabel.text = title
         bodyLabel.text  = body
@@ -59,6 +59,8 @@ final class EmptyStateView: UIView {
 
         iconView.contentMode = .scaleAspectFit
         iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.layer.cornerRadius = 14
+        iconView.clipsToBounds = false
 
         titleLabel.font = AppDesign.Typography.bodyStrong
         titleLabel.textColor = .label.withAlphaComponent(0.6)
@@ -81,12 +83,15 @@ final class EmptyStateView: UIView {
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
 
+        let centerY = stack.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -8)
+        centerY.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            iconView.widthAnchor.constraint(equalToConstant: 64),
-            iconView.heightAnchor.constraint(equalToConstant: 64),
+            iconView.widthAnchor.constraint(equalToConstant: 48),
+            iconView.heightAnchor.constraint(equalToConstant: 48),
 
             stack.centerXAnchor.constraint(equalTo: centerXAnchor),
-            stack.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -20),
+            centerY,
+            stack.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 24),
             stack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 40),
             stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -40),
         ])

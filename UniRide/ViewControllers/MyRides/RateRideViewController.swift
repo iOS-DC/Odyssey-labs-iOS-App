@@ -72,7 +72,7 @@ final class RateRideViewController: UIViewController {
 
     private func configureSubmitButton() {
         var cfg = UIButton.Configuration.filled()
-        cfg.title              = "Submit Rating"
+        cfg.title              = "Rate Driver"
         cfg.image              = UIImage(systemName: "checkmark.circle.fill")
         cfg.imagePlacement     = .leading
         cfg.imagePadding       = 6
@@ -172,7 +172,7 @@ extension RateRideViewController: UITextViewDelegate {
     }
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            textView.text = "Add a comment (optional)..."
+            textView.text = "How was this ride? (optional)"
             textView.textColor = .tertiaryLabel
         }
     }

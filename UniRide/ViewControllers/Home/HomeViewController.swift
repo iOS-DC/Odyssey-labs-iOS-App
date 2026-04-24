@@ -22,6 +22,7 @@ class HomeViewController: UIViewController {
     private var isLoading = false
     private var didAnimateListOnFirstShow = false
     private let refreshControl = UIRefreshControl()
+    private let greetingSubtitleLabel = UILabel()
     private var greetingTopConstraint: NSLayoutConstraint?
     private var tableTopConstraint: NSLayoutConstraint?
 
@@ -73,16 +74,22 @@ class HomeViewController: UIViewController {
     // MARK: - Setup
 
     private func configureQuickActions() {
-        requestButton.applyProminentPrimaryCTA(title: "Request Ride")
-        offerButton.applyProminentPrimaryCTA(title: "Offer Ride")
+        requestButton.applyProminentPrimaryCTA(title: "Find a Ride")
+        offerButton.applyCompactSecondaryButton(title: "Offer a Ride")
     }
 
     private func configureSafeAreaLayout() {
         greetingsLabel.translatesAutoresizingMaskIntoConstraints = false
         homeTableView.translatesAutoresizingMaskIntoConstraints = false
+        greetingsLabel.applyGreetingStyle()
         greetingsLabel.numberOfLines = 1
         greetingsLabel.adjustsFontSizeToFitWidth = true
         greetingsLabel.minimumScaleFactor = 0.75
+
+        greetingSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        greetingSubtitleLabel.text = "Where are you heading today?"
+        greetingSubtitleLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
+        view.addSubview(greetingSubtitleLabel)
 
         view.constraints.forEach { constraint in
             let firstView = constraint.firstItem as? UIView
@@ -104,12 +111,14 @@ class HomeViewController: UIViewController {
             constant: AppDesign.Spacing.md
         )
         tableTopConstraint = homeTableView.topAnchor.constraint(
-            equalTo: greetingsLabel.bottomAnchor,
-            constant: AppDesign.Spacing.md
+            equalTo: greetingSubtitleLabel.bottomAnchor,
+            constant: AppDesign.Spacing.sm
         )
 
         NSLayoutConstraint.activate([
             greetingTopConstraint,
+            greetingSubtitleLabel.topAnchor.constraint(equalTo: greetingsLabel.bottomAnchor, constant: 2),
+            greetingSubtitleLabel.leadingAnchor.constraint(equalTo: greetingsLabel.leadingAnchor),
             tableTopConstraint
         ].compactMap { $0 })
     }
@@ -126,8 +135,9 @@ class HomeViewController: UIViewController {
         headerView.addSubview(buttonStack)
         
         if let stack = buttonStack as? UIStackView {
-            stack.distribution = .fillEqually
-            stack.spacing = 16
+            stack.distribution = .fill
+            stack.spacing = 12
+            offerButton.widthAnchor.constraint(equalTo: requestButton.widthAnchor, multiplier: 0.62).isActive = true
         }
         
         NSLayoutConstraint.activate([
@@ -189,7 +199,7 @@ class HomeViewController: UIViewController {
         case 12..<17: timeGreeting = "Good afternoon"
         default:      timeGreeting = "Good evening"
         }
-        greetingsLabel.text = "\(timeGreeting), \(first) 👋"
+        greetingsLabel.text = "\(timeGreeting), \(first)"
     }
 
     private func loadData(isRefreshing: Bool = false) {
@@ -297,17 +307,28 @@ class HomeViewController: UIViewController {
         cell.backgroundColor = .clear
         let esv = EmptyStateView(
             systemImage: "car.fill",
-            title: "No nearby rides",
-            body: "No rides found near your location right now.\nTry offering a ride!",
+            title: "No rides near you yet",
+            body: "Be the first on your route — offer a ride and let classmates find you.",
+            actionTitle: "Offer a Ride",
             tintColor: AppDesign.Color.primary
         )
+        esv.onAction = { [weak self] in
+            guard let self else { return }
+            let sb = UIStoryboard(name: "OfferRide", bundle: nil)
+            guard let vc = sb.instantiateViewController(withIdentifier: "OfferRideViewController") as? OfferRideViewController else { return }
+            navigationController?.pushViewController(vc, animated: true)
+        }
         esv.translatesAutoresizingMaskIntoConstraints = false
-        cell.contentView.addSubview(esv)
+
+        let container = UIStackView(arrangedSubviews: [esv])
+        container.axis = .vertical
+        container.translatesAutoresizingMaskIntoConstraints = false
+        cell.contentView.addSubview(container)
         NSLayoutConstraint.activate([
-            esv.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
-            esv.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
-            esv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
-            esv.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
+            container.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 20),
+            container.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -12),
+            container.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
         ])
         return cell
     }
@@ -372,10 +393,22 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 let cell = UITableViewCell()
                 cell.selectionStyle = .none
                 cell.backgroundColor = .clear
-                cell.textLabel?.text = "No upcoming events"
-                cell.textLabel?.textColor = .secondaryLabel
-                cell.textLabel?.textAlignment = .center
-                cell.textLabel?.font = AppDesign.Typography.subheadline
+                let esv = EmptyStateView(
+                    systemImage: "calendar",
+                    title: "Nothing on the calendar yet",
+                    body: "Check back soon — events from your campus will appear here.",
+                    actionTitle: "Browse Community",
+                    tintColor: AppDesign.Color.primary
+                )
+                esv.onAction = { [weak self] in self?.tabBarController?.selectedIndex = 2 }
+                esv.translatesAutoresizingMaskIntoConstraints = false
+                cell.contentView.addSubview(esv)
+                NSLayoutConstraint.activate([
+                    esv.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 12),
+                    esv.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -12),
+                    esv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
+                    esv.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
+                ])
                 return cell
             }
             let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
@@ -393,7 +426,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if isLoading { return 100 }
         if indexPath.section == upcomingSectionIndex { return UITableView.automaticDimension }
-        if indexPath.section == ridesSectionIndex { return nearbyRides.isEmpty ? 200 : 220 }
+        if indexPath.section == ridesSectionIndex { return nearbyRides.isEmpty ? 240 : 220 }
         return 150
     }
 
@@ -411,6 +444,8 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        // Skip inset for the empty-state cell so the icon isn't clipped.
+        guard !(indexPath.section == ridesSectionIndex && nearbyRides.isEmpty) else { return }
         let inset: CGFloat = 12
         cell.contentView.frame = cell.contentView.frame.insetBy(dx: 0, dy: inset / 2)
     }
@@ -426,10 +461,10 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.backgroundColor = .clear
-        label.applyTextStyle(AppDesign.Typography.title)
+        label.applyTextStyle(AppDesign.Typography.bodyStrong)
 
         if section == upcomingSectionIndex      { label.text = "Upcoming Ride" }
-        else if section == ridesSectionIndex    { label.text = "Rides Available" }
+        else if section == ridesSectionIndex    { label.text = "Rides Near You" }
         else if section == eventsSectionIndex   { label.text = "Top Events" }
 
         container.addSubview(label)
@@ -457,7 +492,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return isLoading ? 0 : 52
+        return isLoading ? 0 : 36
     }
 }
 

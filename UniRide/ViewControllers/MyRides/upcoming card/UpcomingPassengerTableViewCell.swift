@@ -76,7 +76,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     private func insertMapButton() {
         // Insert "Map" button as first item in the existing XIB button stack
         guard let btnStack = messageButton.superview as? UIStackView else { return }
-        showMapButton.applyTintActionStyle(title: "Map", imageSystemName: "map")
+        showMapButton.applyTintActionStyle(title: "View Map", imageSystemName: "map")
         showMapButton.addTarget(self, action: #selector(toggleMap), for: .touchUpInside)
         btnStack.insertArrangedSubview(showMapButton, at: 0)
     }
@@ -164,7 +164,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
 
         // Role badge
         roleLabel.text            = "  Passenger  "
-        roleLabel.backgroundColor = .systemGray6
+        roleLabel.backgroundColor = AppDesign.Color.surfaceElevated
         roleLabel.textColor       = .secondaryLabel
         roleLabel.font            = AppDesign.Typography.captionStrong
         roleLabel.layer.cornerRadius  = AppDesign.Radius.sm
@@ -183,7 +183,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let cancelTitle: String
         if isConfirmed {
             if ride.status == .ongoing {
-                requestStatusLabel.text            = "  Trip Started  "
+                requestStatusLabel.text            = "  Ride Started  "
                 requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
                 requestStatusLabel.textColor       = .white
                 cancelTitle = "Cancel Booking"
@@ -209,7 +209,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
             requestStatusLabel.text            = text
             requestStatusLabel.backgroundColor = color
             requestStatusLabel.textColor       = .white
-            cancelTitle = "Cancel Request"
+            cancelTitle = "Cancel Booking"
         }
         requestStatusLabel.font                   = AppDesign.Typography.captionStrong
         requestStatusLabel.layer.cornerRadius     = AppDesign.Radius.sm
@@ -222,7 +222,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         // Button styles
         messageButton.applyTintActionStyle(title: "Chat", imageSystemName: "message.fill")
         applyUnreadBadge(to: messageButton, rideID: ride.id.uuidString)
-        showMapButton.applyTintActionStyle(title: isMapExpanded ? "Hide" : "Map",
+        showMapButton.applyTintActionStyle(title: isMapExpanded ? "Hide Map" : "View Map",
                                           imageSystemName: isMapExpanded ? "map.fill" : "map")
         cancelRequestButton.applyTintActionStyle(title: cancelTitle, color: AppDesign.Color.destructive)
 
@@ -243,14 +243,14 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         isMapExpanded = true
         mapView.isHidden = false
         mapHeightConstraint.constant = 180
-        showMapButton.applyTintActionStyle(title: "Hide", imageSystemName: "map.fill")
+        showMapButton.applyTintActionStyle(title: "Hide Map", imageSystemName: "map.fill")
         animateIfNeeded(animated)
     }
 
     private func collapseMap(animated: Bool) {
         isMapExpanded = false
         mapHeightConstraint.constant = 0
-        showMapButton.applyTintActionStyle(title: "Map", imageSystemName: "map")
+        showMapButton.applyTintActionStyle(title: "View Map", imageSystemName: "map")
         animateIfNeeded(animated) { [weak self] in
             self?.mapView.isHidden = true
         }

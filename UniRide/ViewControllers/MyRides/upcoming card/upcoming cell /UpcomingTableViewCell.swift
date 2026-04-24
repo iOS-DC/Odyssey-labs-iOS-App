@@ -177,8 +177,8 @@ final class UpcomingTableViewCell: UITableViewCell {
         let ride = trip.ride
 
         // Role badge
-        roleLabel.text = "  Hosting  "
-        applyBadgeStyle(to: roleLabel, backgroundColor: .systemGray6, textColor: .darkGray)
+        roleLabel.text = "  Driving  "
+        applyBadgeStyle(to: roleLabel, backgroundColor: AppDesign.Color.surfaceElevated, textColor: AppDesign.Color.textSecondary)
 
         // Date & times
         dateLabel.text = DateFormatter.localizedString(from: ride.departureTime, dateStyle: .medium, timeStyle: .none)
@@ -261,7 +261,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         callButton.isHidden = true
         
         showMapButton.applyTintActionStyle(
-            title: isMapExpanded ? "Hide" : "Map",
+            title: isMapExpanded ? "Hide Map" : "View Map",
             imageSystemName: isMapExpanded ? "map.fill" : "map"
         )
         showMapButton.configuration?.buttonSize = .large
@@ -272,7 +272,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         switch ride.status {
         case .published:
             var startConfig = UIButton.Configuration.filled()
-            startConfig.title = "Start Trip"
+            startConfig.title = "Start Ride"
             startConfig.image = UIImage(systemName: "play.fill")
             startConfig.imagePlacement = .leading
             startConfig.imagePadding = 6
@@ -283,7 +283,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             startTripButton.isHidden = false
         case .ongoing:
             var endConfig = UIButton.Configuration.filled()
-            endConfig.title = "End Trip"
+            endConfig.title = "End Ride"
             endConfig.image = UIImage(systemName: "stop.fill")
             endConfig.imagePlacement = .leading
             endConfig.imagePadding = 6
@@ -312,7 +312,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         mapView.isHidden = !isMapExpanded
         mapHeightConstraint.constant = isMapExpanded ? 180 : 1
         var config = sender.configuration ?? UIButton.Configuration.tinted()
-        config.title = isMapExpanded ? "Hide" : "Map"
+        config.title = isMapExpanded ? "Hide Map" : "View Map"
         config.image = UIImage(systemName: isMapExpanded ? "map.fill" : "map")
         sender.configuration = config
         delegate?.upcomingCellRequestsToggled(self)
@@ -372,7 +372,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             avatarView.layer.borderWidth = 2.5
             avatarView.layer.borderColor = UIColor.white.cgColor
             avatarView.contentMode = .scaleAspectFill
-            avatarView.backgroundColor = .systemGray5
+            avatarView.backgroundColor = AppDesign.Color.borderSubtle
             avatarView.isUserInteractionEnabled = true
 
             if i < passengers.count {
@@ -398,7 +398,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             } else {
                 let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .light)
                 avatarView.image = UIImage(systemName: "person.fill", withConfiguration: config)
-                avatarView.tintColor = .systemGray3
+                avatarView.tintColor = AppDesign.Color.textTertiary
                 avatarView.contentMode = .center
             }
 

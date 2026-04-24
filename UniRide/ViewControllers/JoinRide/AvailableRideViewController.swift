@@ -160,18 +160,18 @@ final class AvailableRideViewController: UIViewController,
         view.addSubview(emptyStateView)
 
         let iconView = UIImageView(image: UIImage(systemName: "magnifyingglass"))
-        iconView.tintColor = .systemGray3
+        iconView.tintColor = AppDesign.Color.textTertiary
         iconView.contentMode = .scaleAspectFit
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
         let titleLbl = UILabel()
-        titleLbl.text = "No rides found"
+        titleLbl.text = "No rides on this route"
         titleLbl.applyTextStyle(AppDesign.Typography.bodyStrong, color: .secondaryLabel)
         titleLbl.textAlignment = .center
         titleLbl.translatesAutoresizingMaskIntoConstraints = false
 
         let bodyLbl = UILabel()
-        bodyLbl.text = "Try adjusting your filters\nor search for a different route."
+        bodyLbl.text = "Try a nearby date or widen your search — or offer this ride yourself."
         bodyLbl.applyTextStyle(AppDesign.Typography.subheadline, color: .tertiaryLabel, lines: 0)
         bodyLbl.textAlignment = .center
         bodyLbl.translatesAutoresizingMaskIntoConstraints = false
@@ -182,7 +182,13 @@ final class AvailableRideViewController: UIViewController,
         clearBtn.addTarget(self, action: #selector(clearFilters), for: .touchUpInside)
         clearBtn.translatesAutoresizingMaskIntoConstraints = false
 
-        let stack = UIStackView(arrangedSubviews: [iconView, titleLbl, bodyLbl, clearBtn])
+        let offerBtn = UIButton(type: .system)
+        offerBtn.setTitle("Offer This Route", for: .normal)
+        offerBtn.applyTextActionStyle()
+        offerBtn.addTarget(self, action: #selector(offerThisRoute), for: .touchUpInside)
+        offerBtn.translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = UIStackView(arrangedSubviews: [iconView, titleLbl, bodyLbl, clearBtn, offerBtn])
         stack.axis = .vertical
         stack.alignment = .center
         stack.spacing = AppDesign.Spacing.sm
@@ -295,7 +301,7 @@ final class AvailableRideViewController: UIViewController,
         let filtered = !activeFilter.isDefault || !searchQuery.isEmpty
 
         if filtered {
-            resultCountLabel.text = showing == 0 ? "No rides match your filters"
+            resultCountLabel.text = showing == 0 ? "No matches — try clearing your filters"
                                                  : "Showing \(showing) of \(total) ride\(total == 1 ? "" : "s")"
         } else {
             resultCountLabel.text = "\(total) ride\(total == 1 ? "" : "s") available"
@@ -338,6 +344,12 @@ final class AvailableRideViewController: UIViewController,
         searchQuery  = ""
         searchController.searchBar.text = nil
         applyFilters()
+    }
+
+    @objc private func offerThisRoute() {
+        let sb = UIStoryboard(name: "OfferRide", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "OfferRideViewController") as? OfferRideViewController else { return }
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     // MARK: - UISearchResultsUpdating

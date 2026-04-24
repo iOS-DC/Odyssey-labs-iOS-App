@@ -55,7 +55,9 @@ final class RideDetailViewController: UIViewController {
     // MARK: - Setup
 
     private func setupMapView() {
-        mapView.layer.cornerRadius = 0
+        mapView.layer.cornerRadius = AppDesign.Radius.lg
+        mapView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        mapView.clipsToBounds = true
         mapView.isZoomEnabled   = true
         mapView.isScrollEnabled = true
         mapView.delegate = self
@@ -83,7 +85,7 @@ final class RideDetailViewController: UIViewController {
         bottomBar.layer.shadowOffset  = CGSize(width: 0, height: -AppDesign.Spacing.xxs)
         bottomBar.layer.shadowRadius  = AppDesign.Shadow.smallCardRadius
         requestBtn.applyProminentPrimaryCTA(
-            title: "Request to Join",
+            title: "Request Seat",
             corner: AppDesign.Radius.md,
             imageSystemName: "arrow.right.circle.fill",
             imagePlacement: .trailing
@@ -119,7 +121,7 @@ final class RideDetailViewController: UIViewController {
         avatar.layer.cornerRadius = 30
         avatar.clipsToBounds = true
         avatar.contentMode = .scaleAspectFill
-        avatar.backgroundColor = .systemGray5
+        avatar.backgroundColor = AppDesign.Color.borderSubtle
         avatar.layer.borderWidth  = 2.5
         avatar.layer.borderColor  = AppDesign.Color.primary.withAlphaComponent(0.5).cgColor
         avatar.loadAndFallback(from: driver?.photoURL, name: driver?.fullName ?? "D")
@@ -183,7 +185,7 @@ final class RideDetailViewController: UIViewController {
 
         for i in 1...5 {
             let img = UIImageView(image: UIImage(systemName: i <= filled ? "star.fill" : "star"))
-            img.tintColor = i <= filled ? .systemYellow : .systemGray3
+            img.tintColor = i <= filled ? AppDesign.Color.warning : AppDesign.Color.borderSubtle
             img.widthAnchor.constraint(equalToConstant: 14).isActive = true
             img.heightAnchor.constraint(equalToConstant: 14).isActive = true
             stack.addArrangedSubview(img)
@@ -227,12 +229,22 @@ final class RideDetailViewController: UIViewController {
         }
         let vehicleChip = makeChip(icon: "car.fill", color: AppDesign.Color.primary, text: vehicleText)
 
-        let chipStack = UIStackView(arrangedSubviews: [dateChip, seatsChip, fareChip, vehicleChip])
-        chipStack.axis = .vertical
-        chipStack.spacing = 10
-        chipStack.translatesAutoresizingMaskIntoConstraints = false
+        let topRow = UIStackView(arrangedSubviews: [dateChip, seatsChip])
+        topRow.axis = .horizontal
+        topRow.spacing = AppDesign.Spacing.sm
+        topRow.distribution = .fillEqually
 
-        [sectionLabel, chipStack].forEach {
+        let bottomRow = UIStackView(arrangedSubviews: [fareChip, vehicleChip])
+        bottomRow.axis = .horizontal
+        bottomRow.spacing = AppDesign.Spacing.sm
+        bottomRow.distribution = .fillEqually
+
+        let chipGrid = UIStackView(arrangedSubviews: [topRow, bottomRow])
+        chipGrid.axis = .vertical
+        chipGrid.spacing = AppDesign.Spacing.sm
+        chipGrid.translatesAutoresizingMaskIntoConstraints = false
+
+        [sectionLabel, chipGrid].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             infoGrid.addSubview($0)
         }
@@ -241,10 +253,10 @@ final class RideDetailViewController: UIViewController {
             sectionLabel.topAnchor.constraint(equalTo: infoGrid.topAnchor, constant: 14),
             sectionLabel.leadingAnchor.constraint(equalTo: infoGrid.leadingAnchor, constant: 16),
 
-            chipStack.topAnchor.constraint(equalTo: sectionLabel.bottomAnchor, constant: 10),
-            chipStack.leadingAnchor.constraint(equalTo: infoGrid.leadingAnchor, constant: 16),
-            chipStack.trailingAnchor.constraint(equalTo: infoGrid.trailingAnchor, constant: -16),
-            chipStack.bottomAnchor.constraint(equalTo: infoGrid.bottomAnchor, constant: -16),
+            chipGrid.topAnchor.constraint(equalTo: sectionLabel.bottomAnchor, constant: 10),
+            chipGrid.leadingAnchor.constraint(equalTo: infoGrid.leadingAnchor, constant: 16),
+            chipGrid.trailingAnchor.constraint(equalTo: infoGrid.trailingAnchor, constant: -16),
+            chipGrid.bottomAnchor.constraint(equalTo: infoGrid.bottomAnchor, constant: -16),
         ])
     }
 
@@ -312,9 +324,8 @@ final class RideDetailViewController: UIViewController {
 
     private func makeSectionLabel(_ text: String) -> UILabel {
         let l = UILabel()
-        l.text = text
-        l.applyTextStyle(AppDesign.Typography.captionStrong, color: .tertiaryLabel)
-        l.letterSpacing(1.2)
+        l.text = text.capitalized
+        l.applyTextStyle(AppDesign.Typography.cardTitle)
         return l
     }
 
@@ -381,26 +392,30 @@ final class RideDetailViewController: UIViewController {
         
         if isDriver {
             cfg.title = "Your Offered Ride"
-            cfg.baseBackgroundColor = .systemGray4
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = AppDesign.Color.textSecondary
             cfg.image = nil
             requestBtn.isEnabled = false
         } else if alreadyRequested {
-            cfg.title = "Request Sent ✓"
-            cfg.baseBackgroundColor = .systemGray4
+            cfg.title = "Request Sent"
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = AppDesign.Color.textSecondary
             cfg.image = nil
             requestBtn.isEnabled = false
         } else if hasTimeConflict {
-            cfg.title = "Time Conflict"
-            cfg.baseBackgroundColor = .systemGray4
+            cfg.title = "You have a ride at this time"
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = AppDesign.Color.textSecondary
             cfg.image = nil
             requestBtn.isEnabled = false
         } else if ride.seatsAvailable <= 0 {
-            cfg.title = "Ride Full"
-            cfg.baseBackgroundColor = .systemGray4
+            cfg.title = "Fully Booked"
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = AppDesign.Color.textSecondary
             cfg.image = nil
             requestBtn.isEnabled = false
         } else {
-            cfg.title = "Request to Join"
+            cfg.title = "Request Seat"
             cfg.baseBackgroundColor = AppDesign.Color.primary
             cfg.image = UIImage(systemName: "arrow.right.circle.fill")
             cfg.imagePlacement = .trailing
@@ -416,8 +431,8 @@ final class RideDetailViewController: UIViewController {
         // Final safety checks
         if isDriver { return }
         if hasTimeConflict {
-            let alert = UIAlertController(title: "Time Conflict", message: "You already have a ride around this time.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            let alert = UIAlertController(title: "Time Conflict", message: "You've already got a ride around this time. Check My Rides before requesting.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Got It", style: .default))
             present(alert, animated: true)
             return
         }
@@ -441,11 +456,11 @@ final class RideDetailViewController: UIViewController {
                 AppHaptics.success()
 
                 let alert = UIAlertController(
-                    title: "Request Sent! 🎉",
-                    message: "The driver will approve your request. Check My Rides → Upcoming.",
+                    title: "Request Sent!",
+                    message: "The driver will review your request. Check My Rides → Upcoming for updates.",
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+                alert.addAction(UIAlertAction(title: "Got It", style: .default) { [weak self] _ in
                     self?.onRequested?()
                     self?.navigationController?.popViewController(animated: true)
                 })
@@ -454,11 +469,11 @@ final class RideDetailViewController: UIViewController {
                 requestBtn.isEnabled = true
                 updateButtonState()
                 let alert = UIAlertController(
-                    title: "Couldn't send request",
-                    message: error.localizedDescription,
+                    title: "Request Failed",
+                    message: "Couldn't send your request. Try again or contact the driver.",
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                alert.addAction(UIAlertAction(title: "Got It", style: .default))
                 present(alert, animated: true)
             }
         }

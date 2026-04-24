@@ -33,7 +33,7 @@ final class EventCardCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 22, weight: .bold)
+        l.font = AppDesign.Typography.display
         l.textColor = .white
         l.numberOfLines = 2
         l.adjustsFontSizeToFitWidth = true
@@ -53,7 +53,7 @@ final class EventCardCell: UITableViewCell {
 
     private let attendeesBadge: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 12, weight: .semibold)
+        l.font = AppDesign.Typography.micro
         l.textAlignment = .center
         l.layer.cornerRadius = 6
         l.layer.masksToBounds = true
@@ -65,7 +65,7 @@ final class EventCardCell: UITableViewCell {
         var config = UIButton.Configuration.filled()
         
         var attTitle = AttributedString("Attend")
-        attTitle.font = .systemFont(ofSize: 16, weight: .bold)
+        attTitle.font = AppDesign.Typography.bodyStrong
         config.attributedTitle = attTitle
         
         config.cornerStyle = .capsule
@@ -92,19 +92,13 @@ final class EventCardCell: UITableViewCell {
 
     private func buildLayout() {
         // Card container
-        card.backgroundColor = .systemBackground
-        card.layer.cornerRadius = 20
-        card.layer.masksToBounds = false
-        card.layer.shadowColor = UIColor.black.cgColor
-        card.layer.shadowOpacity = 0.08
-        card.layer.shadowRadius = 12
-        card.layer.shadowOffset = CGSize(width: 0, height: 4)
+        card.applyCardStyle(corner: AppDesign.Radius.lg)
         card.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(card)
 
         // Hero image
         heroImageView.translatesAutoresizingMaskIntoConstraints = false
-        heroImageView.layer.cornerRadius = 20
+        heroImageView.layer.cornerRadius = AppDesign.Radius.lg
         heroImageView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         card.addSubview(heroImageView)
 
@@ -160,7 +154,7 @@ final class EventCardCell: UITableViewCell {
             attendButton.topAnchor.constraint(equalTo: metaStack.bottomAnchor, constant: 16),
             attendButton.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16),
             attendButton.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            attendButton.heightAnchor.constraint(equalToConstant: 38),
+            attendButton.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeightSm),
             attendButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 110),
 
             attendeesBadge.centerYAnchor.constraint(equalTo: attendButton.centerYAnchor),
@@ -211,9 +205,17 @@ final class EventCardCell: UITableViewCell {
             text: event.location?.name ?? "TBA"
         )
 
-        attendeesBadge.text = "  \(event.attendeeCount) attending  "
-        attendeesBadge.textColor = primaryColor
-        attendeesBadge.backgroundColor = primaryColor.withAlphaComponent(0.10)
+        if event.attendeeCount > 0 {
+            attendeesBadge.text = "  \(event.attendeeCount) attending  "
+            attendeesBadge.textColor = primaryColor
+            attendeesBadge.backgroundColor = primaryColor.withAlphaComponent(0.10)
+            attendeesBadge.isHidden = false
+        } else {
+            attendeesBadge.text = "  Be the first!  "
+            attendeesBadge.textColor = .secondaryLabel
+            attendeesBadge.backgroundColor = AppDesign.Color.borderSubtle
+            attendeesBadge.isHidden = false
+        }
 
         attendButton.configuration?.baseBackgroundColor = primaryColor
     }
@@ -231,7 +233,7 @@ final class EventCardCell: UITableViewCell {
         result.append(NSAttributedString(
             string: "  " + text,
             attributes: [
-                .font: UIFont.systemFont(ofSize: 14, weight: .medium),
+                .font: AppDesign.Typography.subheadline,
                 .foregroundColor: UIColor.secondaryLabel
             ]
         ))
@@ -240,7 +242,7 @@ final class EventCardCell: UITableViewCell {
 
     private static func metaLabel() -> UILabel {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 14)
+        l.font = AppDesign.Typography.subheadline
         l.textColor = .secondaryLabel
         l.numberOfLines = 0
         l.lineBreakMode = .byWordWrapping

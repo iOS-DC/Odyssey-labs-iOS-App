@@ -80,8 +80,8 @@ final class PassengerDetailViewController: UIViewController {
 
         let initialLabel = UILabel()
         initialLabel.text = String(passenger.fullName.prefix(1)).uppercased()
-        initialLabel.font = .systemFont(ofSize: 40, weight: .bold)
-        initialLabel.textColor = .systemGray3
+        initialLabel.font = AppDesign.Typography.display
+        initialLabel.textColor = AppDesign.Color.textTertiary
         initialLabel.textAlignment = .center
         initialLabel.translatesAutoresizingMaskIntoConstraints = false
         avatarView.addSubview(initialLabel)
@@ -106,7 +106,7 @@ final class PassengerDetailViewController: UIViewController {
         nameStack.alignment = .center
         
         nameLabel.text = passenger.fullName
-        nameLabel.font = AppDesign.Typography.h2
+        nameLabel.font = AppDesign.Typography.largeTitle
         nameLabel.textColor = AppDesign.Color.textPrimary
         nameLabel.textAlignment = .center
         nameStack.addArrangedSubview(nameLabel)

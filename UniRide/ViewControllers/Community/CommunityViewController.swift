@@ -226,7 +226,7 @@ class CommunityViewController: UIViewController,
 
         // "Community" title label – large, bold, left-aligned
         headerTitleLabel.text = "Community"
-        headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
+        headerTitleLabel.font = AppDesign.Typography.display
         headerTitleLabel.textColor = .label
         headerTitleLabel.adjustsFontSizeToFitWidth = true
         headerTitleLabel.minimumScaleFactor = 0.8
@@ -1058,7 +1058,7 @@ class CommunityViewController: UIViewController,
             }
             if let label = cell.viewWithTag(3) as? UILabel {
                 label.text = post.timestamp
-                label.font = .systemFont(ofSize: 11, weight: .regular)
+                label.font = AppDesign.Typography.micro
                 label.textColor = .secondaryLabel
                 label.adjustsFontSizeToFitWidth = true
                 label.minimumScaleFactor = 0.8
@@ -1090,7 +1090,7 @@ class CommunityViewController: UIViewController,
                     button.tag = readMoreTag
                     button.translatesAutoresizingMaskIntoConstraints = false
                     button.contentHorizontalAlignment = .leading
-                    button.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+                    button.titleLabel?.font = AppDesign.Typography.captionStrong
                     button.addTarget(self, action: #selector(readMoreButtonTapped(_:)), for: .touchUpInside)
                     cardContainer.addSubview(button)
 
@@ -1129,7 +1129,7 @@ class CommunityViewController: UIViewController,
                 config.imagePadding = 2
                 config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
+                    var outgoing = incoming; outgoing.font = AppDesign.Typography.micro; return outgoing
                 }
                 likeButton.configuration = config
             }
@@ -1142,7 +1142,7 @@ class CommunityViewController: UIViewController,
                 config.imagePadding = 2
                 config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
+                    var outgoing = incoming; outgoing.font = AppDesign.Typography.micro; return outgoing
                 }
                 commentButton.configuration = config
             }
@@ -1155,7 +1155,7 @@ class CommunityViewController: UIViewController,
                 config.imagePadding = 2
                 config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                 config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-                    var outgoing = incoming; outgoing.font = .systemFont(ofSize: 12, weight: .medium); return outgoing
+                    var outgoing = incoming; outgoing.font = AppDesign.Typography.micro; return outgoing
                 }
                 shareButton.configuration = config
             }
@@ -1191,7 +1191,7 @@ class CommunityViewController: UIViewController,
                     config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 2, bottom: 8, trailing: 2)
                     config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
                         var outgoing = incoming
-                        outgoing.font = .systemFont(ofSize: 12, weight: .medium)
+                        outgoing.font = AppDesign.Typography.micro
                         return outgoing
                     }
                     reportBtn.configuration = config

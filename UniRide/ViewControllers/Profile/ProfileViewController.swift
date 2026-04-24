@@ -87,7 +87,7 @@ class ProfileViewController: UIViewController {
     private func setupCustomHeader() {
         navigationItem.title = nil
         navigationItem.largeTitleDisplayMode = .never
-        headerTitleLabel.font = UIFont.systemFont(ofSize: 34, weight: .bold)
+        headerTitleLabel.font = AppDesign.Typography.display
         let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
         headerGearButton.configuration = nil
         headerGearButton.setImage(UIImage(systemName: "gearshape.fill", withConfiguration: symbolConfig), for: .normal)
@@ -100,6 +100,7 @@ class ProfileViewController: UIViewController {
     private func buildScrollLayout() {
         view.backgroundColor = AppDesign.Color.groupedBackground
         scrollView.alwaysBounceVertical = true
+        guestSignInButton.setTitle("Sign In to Continue", for: .normal)
         guestSignInButton.applyPrimaryButton(color: AppDesign.Color.primary)
         contentStack.axis    = .vertical
         contentStack.spacing = AppDesign.Spacing.md
@@ -138,17 +139,19 @@ class ProfileViewController: UIViewController {
 
         avatarImageView.contentMode    = .scaleAspectFill
         avatarImageView.clipsToBounds  = true
-        avatarImageView.layer.cornerRadius = 44
+        avatarImageView.layer.cornerRadius = 48
+        avatarImageView.layer.borderWidth = 3
+        avatarImageView.layer.borderColor = AppDesign.Color.primary.withAlphaComponent(0.25).cgColor
         avatarImageView.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.15)
         avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
         avatarImageView.tintColor = AppDesign.Color.primary
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            avatarImageView.widthAnchor.constraint(equalToConstant: 88),
-            avatarImageView.heightAnchor.constraint(equalToConstant: 88),
+            avatarImageView.widthAnchor.constraint(equalToConstant: 96),
+            avatarImageView.heightAnchor.constraint(equalToConstant: 96),
         ])
 
-        nameLabel.applyTextStyle(AppDesign.Typography.title)
+        nameLabel.applyTextStyle(AppDesign.Typography.largeTitle)
         nameLabel.textAlignment = .center
         nameLabel.numberOfLines = 2
         nameLabel.text          = "Your Name"
@@ -163,10 +166,7 @@ class ProfileViewController: UIViewController {
         memberLabel.numberOfLines = 0
         memberLabel.text          = "—"
 
-        let divider            = UIView()
-        divider.backgroundColor = .systemGray5
-        divider.translatesAutoresizingMaskIntoConstraints = false
-        divider.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        let divider = UIView.makeDivider()
 
         let statsStack = buildStatsRow()
 
@@ -175,17 +175,19 @@ class ProfileViewController: UIViewController {
             memberLabel, divider, statsStack
         ])
         stack.axis         = .vertical
-        stack.spacing      = 6
-        stack.setCustomSpacing(16, after: memberLabel)
-        stack.setCustomSpacing(12, after: divider)
+        stack.spacing      = 8
+        stack.setCustomSpacing(4, after: nameLabel)
+        stack.setCustomSpacing(2, after: subtitleLabel)
+        stack.setCustomSpacing(20, after: memberLabel)
+        stack.setCustomSpacing(16, after: divider)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         card.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 24),
-            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -20),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: AppDesign.Spacing.xl),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -AppDesign.Spacing.xl),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -AppDesign.Spacing.xl),
         ])
         return card
     }
@@ -194,7 +196,7 @@ class ProfileViewController: UIViewController {
         let ratingTitleLbl = makeCaptionLabel("Rating")
         ratingLabel.font          = AppDesign.Typography.bodyStrong
         ratingLabel.textAlignment = .center
-        ratingLabel.text          = "—"
+        ratingLabel.text          = "No reviews yet"
 
         let ratingCol = column(top: ratingLabel, bottom: ratingTitleLbl)
 
@@ -205,12 +207,30 @@ class ProfileViewController: UIViewController {
 
         let ridesCol = column(top: ridesLabel, bottom: ridesTitleLbl)
 
-        let statsStack        = UIStackView(arrangedSubviews: [ratingCol, ridesCol])
-        statsStack.axis       = .horizontal
-        statsStack.alignment  = .center
-        statsStack.distribution = .fillEqually
-        statsStack.spacing    = 0
-        return statsStack
+        let verticalDivider = UIView()
+        verticalDivider.translatesAutoresizingMaskIntoConstraints = false
+        verticalDivider.backgroundColor = AppDesign.Color.divider
+        verticalDivider.widthAnchor.constraint(equalToConstant: 0.5).isActive = true
+
+        let innerStack = UIStackView(arrangedSubviews: [ratingCol, verticalDivider, ridesCol])
+        innerStack.axis        = .horizontal
+        innerStack.alignment   = .center
+        innerStack.distribution = .fill
+        innerStack.spacing     = 0
+        ratingCol.widthAnchor.constraint(equalTo: ridesCol.widthAnchor).isActive = true
+
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.applyTonalPanel(color: AppDesign.Color.primary, corner: AppDesign.Radius.sm)
+        innerStack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(innerStack)
+        NSLayoutConstraint.activate([
+            innerStack.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
+            innerStack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12),
+            innerStack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            innerStack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+        ])
+        return container
     }
 
     // MARK: - Contact Card
@@ -220,7 +240,7 @@ class ProfileViewController: UIViewController {
 
         let titleLabel = UILabel()
         titleLabel.text      = "Contact Information"
-        titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        titleLabel.applyTextStyle(AppDesign.Typography.cardTitle)
 
         emailValueLabel.applyTextStyle(AppDesign.Typography.subheadline)
         emailValueLabel.numberOfLines = 0
@@ -257,7 +277,7 @@ class ProfileViewController: UIViewController {
         icon.heightAnchor.constraint(equalToConstant: 20).isActive = true
 
         let titleLbl = makeCaptionLabel("Home Location")
-        homeValueLabel.text = "Tap Edit to set home"
+        homeValueLabel.text = "Add your home address to find rides faster."
 
         let textStack      = UIStackView(arrangedSubviews: [titleLbl, homeValueLabel])
         textStack.axis     = .vertical
@@ -286,7 +306,7 @@ class ProfileViewController: UIViewController {
 
         let titleLabel = UILabel()
         titleLabel.text = "My Vehicles"
-        titleLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
+        titleLabel.applyTextStyle(AppDesign.Typography.cardTitle)
 
         let addBtn = UIButton(type: .system)
         var cfg = UIButton.Configuration.plain()
@@ -331,7 +351,7 @@ class ProfileViewController: UIViewController {
             }
         } else {
             let emptyLabel = UILabel()
-            emptyLabel.text = "No vehicles added. Tap + to add one."
+            emptyLabel.text = "No vehicles yet. Tap + to add one."
             emptyLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
             emptyLabel.textAlignment = .center
             emptyLabel.numberOfLines = 0
@@ -436,18 +456,18 @@ class ProfileViewController: UIViewController {
         avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
         avatarImageView.tintColor = .systemGray4
         nameLabel.text = "Guest User"
-        subtitleLabel.text = "Sign in to join the community"
-        memberLabel.text = "You are browsing as a guest"
-        ratingLabel.text = "—"
+        subtitleLabel.text = "Join UniRide to find rides near you"
+        memberLabel.text = "Browsing as a guest"
+        ratingLabel.text = "No reviews yet"
         ridesLabel.text = "0"
 
         emailValueLabel.text = "guest@uniride.com"
-        phoneValueLabel.text = "Login Required"
-        homeValueLabel.text  = "Sign in to set home"
+        phoneValueLabel.text = "Sign in to add"
+        homeValueLabel.text  = "Sign in to add"
 
         vehicleStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         let emptyLabel = UILabel()
-        emptyLabel.text = "Sign in to add vehicles"
+        emptyLabel.text = "Sign in to add your vehicles"
         emptyLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
         emptyLabel.textAlignment = .center
         emptyLabel.numberOfLines = 0
@@ -494,17 +514,17 @@ class ProfileViewController: UIViewController {
         memberLabel.text = "Member Since \(yearStr)"
 
         let avg = ReviewDataModel.shared.averageRating(for: profile.id)
-        ratingLabel.text = avg.map { String(format: "%.1f ★", $0) } ?? "—"
+        ratingLabel.text = avg.map { String(format: "%.1f ★", $0) } ?? "No reviews yet"
         let total = ReviewDataModel.shared.totalRides(for: profile.id)
         ridesLabel.text = "\(total)"
 
         emailValueLabel.text = profile.email
-        phoneValueLabel.text = (profile.phone?.isEmpty == false) ? profile.phone : "Not set"
+        phoneValueLabel.text = (profile.phone?.isEmpty == false) ? profile.phone : "Add a phone number"
 
         if let home = UserDataModel.shared.preferredHomeLocation() {
             homeValueLabel.text = home.address
         } else {
-            homeValueLabel.text = "Tap Edit to set home"
+            homeValueLabel.text = "Add your home address to find rides faster."
         }
 
         let completion = ProfileCompletionCalculator.compute(for: profile)
@@ -584,9 +604,9 @@ class ProfileViewController: UIViewController {
     }
 
     @objc private func logoutTapped() {
-        let alert = UIAlertController(title: "Log Out", message: "Are you sure you want to log out?", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Sign Out?", message: "You'll need to sign in again to access your rides.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Log Out", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: "Sign Out", style: .destructive) { [weak self] _ in
             self?.performLogout()
         })
         present(alert, animated: true)

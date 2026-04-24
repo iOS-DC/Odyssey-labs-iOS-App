@@ -50,7 +50,7 @@
                                     <!-- Request Button -->
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="RD1-rb-001">
                                         <rect key="frame" x="20" y="12" width="353" height="52"/>
-                                        <state key="normal" title="Request to Join"/>
+                                        <state key="normal" title="Request Seat"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
                                         <connections>
                                             <action selector="requestTapped" destination="RD1-vc-001" eventType="touchUpInside" id="RD1-ac-req"/>

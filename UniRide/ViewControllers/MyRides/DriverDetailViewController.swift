@@ -76,8 +76,8 @@ final class DriverDetailViewController: UIViewController {
 
         let initialLabel = UILabel()
         initialLabel.text = String(driver.fullName.prefix(1)).uppercased()
-        initialLabel.font = .systemFont(ofSize: 40, weight: .bold)
-        initialLabel.textColor = .systemGray3
+        initialLabel.font = AppDesign.Typography.display
+        initialLabel.textColor = AppDesign.Color.textTertiary
         initialLabel.textAlignment = .center
         initialLabel.translatesAutoresizingMaskIntoConstraints = false
         avatarView.addSubview(initialLabel)
@@ -102,7 +102,7 @@ final class DriverDetailViewController: UIViewController {
         nameStack.alignment = .center
         
         nameLabel.text = driver.fullName
-        nameLabel.font = AppDesign.Typography.h2
+        nameLabel.font = AppDesign.Typography.largeTitle
         nameLabel.textColor = AppDesign.Color.textPrimary
         nameLabel.textAlignment = .center
         nameStack.addArrangedSubview(nameLabel)

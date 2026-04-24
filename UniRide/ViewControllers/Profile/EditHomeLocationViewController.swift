@@ -98,7 +98,7 @@ final class EditHomeLocationViewController: UIViewController, UITextFieldDelegat
         summaryCard.applyCardStyle()
         summaryTitleLabel.text = "Selected Location"
         summaryTitleLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
-        summaryAddressLabel.text = "No location selected"
+        summaryAddressLabel.text = "Search above to find your address"
         summaryAddressLabel.applyTextStyle(AppDesign.Typography.bodyStrong)
         summaryAddressLabel.numberOfLines = 0
         saveButton.setTitle("Save Location", for: .normal)

@@ -71,7 +71,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         fromIcon.setContentHuggingPriority(.required, for: .horizontal)
 
         // From label
-        fromLbl.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+        fromLbl.font = AppDesign.Typography.bodyStrong
         fromLbl.textColor = .label
         fromLbl.lineBreakMode = .byWordWrapping
         fromLbl.numberOfLines = 2
@@ -85,7 +85,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         toIcon.translatesAutoresizingMaskIntoConstraints = false
         toIcon.setContentHuggingPriority(.required, for: .horizontal)
 
-        toLbl.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+        toLbl.font = AppDesign.Typography.bodyStrong
         toLbl.textColor = .label
         toLbl.lineBreakMode = .byWordWrapping
         toLbl.numberOfLines = 2
@@ -117,12 +117,12 @@ class UpcomingTableHomeViewCell: UITableViewCell {
         clockIcon.translatesAutoresizingMaskIntoConstraints = false
         clockIcon.widthAnchor.constraint(equalToConstant: 14).isActive = true
 
-        timeLbl.font = UIFont.systemFont(ofSize: 13, weight: .regular)
+        timeLbl.font = AppDesign.Typography.caption
         timeLbl.textColor = .tertiaryLabel
         timeLbl.adjustsFontSizeToFitWidth = true
         timeLbl.minimumScaleFactor = 0.8
 
-        dateLbl.font = UIFont.systemFont(ofSize: 13, weight: .regular)
+        dateLbl.font = AppDesign.Typography.caption
         dateLbl.textColor = .tertiaryLabel
         dateLbl.adjustsFontSizeToFitWidth = true
         dateLbl.minimumScaleFactor = 0.8
@@ -139,7 +139,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
 
         // View details
         detailsBtn.setTitle("View Details ›", for: .normal)
-        detailsBtn.titleLabel?.font = UIFont.systemFont(ofSize: 13, weight: .semibold)
+        detailsBtn.titleLabel?.font = AppDesign.Typography.captionStrong
         detailsBtn.titleLabel?.adjustsFontSizeToFitWidth = true
         detailsBtn.titleLabel?.minimumScaleFactor = 0.8
         detailsBtn.setTitleColor(AppDesign.Color.primary, for: .normal)
@@ -166,7 +166,7 @@ class UpcomingTableHomeViewCell: UITableViewCell {
 
         // Live badge (hidden by default)
         liveBadge.text = "  ● Live  "
-        liveBadge.font = UIFont.systemFont(ofSize: 11, weight: .bold)
+        liveBadge.font = AppDesign.Typography.micro
         liveBadge.textColor = .white
         liveBadge.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
         liveBadge.layer.cornerRadius = 10

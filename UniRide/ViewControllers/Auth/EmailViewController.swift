@@ -38,6 +38,10 @@ class EmailViewController: UIViewController {
         emailTextField.autocorrectionType = .no
         continueButton.setPrimaryCTAEnabled(false)
         emailTextField.addTarget(self, action: #selector(emailChanged), for: .editingChanged)
+        // Also handle iOS autofill which doesn't always fire .editingChanged
+        NotificationCenter.default.addObserver(self, selector: #selector(emailChanged),
+                                               name: UITextField.textDidChangeNotification,
+                                               object: emailTextField)
         setupErrorLabelLayout()
         configureAccessibility()
         setupGuestButton()
@@ -50,7 +54,7 @@ class EmailViewController: UIViewController {
         errorLabel.translatesAutoresizingMaskIntoConstraints = false
         errorLabel.numberOfLines = 0
         errorLabel.lineBreakMode = .byWordWrapping
-        errorLabel.font = UIFont.systemFont(ofSize: 13, weight: .medium)
+        errorLabel.font = AppDesign.Typography.captionStrong
         errorLabel.textColor = .systemRed
         errorLabel.isHidden = true
 
@@ -94,6 +98,11 @@ class EmailViewController: UIViewController {
         ])
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        emailChanged() // catch any pre-filled / autofilled text
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         animateOnboardingEntrance([containerCard, emailTextField, continueButton, guestButton])
@@ -103,7 +112,7 @@ class EmailViewController: UIViewController {
         guestButton.translatesAutoresizingMaskIntoConstraints = false
         guestButton.setTitle("Explore as Guest", for: .normal)
         guestButton.setTitleColor(.secondaryLabel, for: .normal)
-        guestButton.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .medium)
+        guestButton.titleLabel?.font = AppDesign.Typography.subheadline
         guestButton.addTarget(self, action: #selector(guestTapped), for: .touchUpInside)
         
         containerCard.addSubview(guestButton)
@@ -163,7 +172,11 @@ class EmailViewController: UIViewController {
         let raw = (emailTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
 
         if let remaining = remainingCooldownSeconds(), remaining > 0 {
-            showError("For security purposes, please retry after \(remaining)s.")
+            let msg = "Too many attempts. Try again in \(remaining)s."
+            showError(msg)
+            let alert = UIAlertController(title: "Too Many Attempts", message: msg, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Got It", style: .default))
+            present(alert, animated: true)
             return
         }
 
@@ -192,7 +205,11 @@ class EmailViewController: UIViewController {
                 present(nav, animated: true, completion: nil)
             } catch {
                 let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-                showError(message.isEmpty ? "Unable to send OTP right now. Please try again shortly." : message)
+                let displayMessage = message.isEmpty ? "Couldn't send a code. Double-check your email and try again." : message
+                showError(displayMessage)
+                let alert = UIAlertController(title: "Sign-In Failed", message: displayMessage, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Got It", style: .default))
+                present(alert, animated: true)
             }
         }
     }

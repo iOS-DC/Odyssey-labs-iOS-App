@@ -136,7 +136,7 @@ class VehicleRegistrationViewController: UIViewController {
     private func makeSeatsControl() -> UIView {
         var minusCfg = UIButton.Configuration.filled()
         minusCfg.image = UIImage(systemName: "minus")
-        minusCfg.baseBackgroundColor = .systemGray5
+        minusCfg.baseBackgroundColor = AppDesign.Color.borderSubtle
         minusCfg.baseForegroundColor = .label
         minusCfg.cornerStyle = .capsule
         minusSeat.configuration = minusCfg
@@ -145,7 +145,7 @@ class VehicleRegistrationViewController: UIViewController {
         minusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(-1) }, for: .touchUpInside)
 
         seatCountLbl.text          = "\(seatCount)"
-        seatCountLbl.font          = AppDesign.Typography.h2
+        seatCountLbl.font          = AppDesign.Typography.display
         seatCountLbl.textAlignment = .center
         seatCountLbl.widthAnchor.constraint(equalToConstant: 60).isActive = true
 
@@ -311,7 +311,7 @@ class VehicleRegistrationViewController: UIViewController {
     }
 
     @objc private func deleteTapped() {
-        let alert = UIAlertController(title: "Delete Vehicle?", message: "This action cannot be undone.", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Delete Vehicle?", message: "This vehicle will be removed from your profile. This can't be undone.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
             self?.performDelete()

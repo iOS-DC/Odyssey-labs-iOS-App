@@ -126,7 +126,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
         let code = otpFields().map { $0.text ?? "" }.joined()
 
         guard code.count == 6 else {
-            errorLabel.text = "Please enter the full OTP"
+            errorLabel.text = "Please enter all 6 digits"
             errorLabel.isHidden = false
             return
         }
@@ -147,7 +147,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
                         .trimmingCharacters(in: .whitespacesAndNewlines)
                         .lowercased()
                     guard !email.isEmpty else {
-                        errorLabel.text = "OTP session expired. Please request OTP again."
+                        errorLabel.text = "Code expired. Tap 'Resend code' to get a new one."
                         errorLabel.isHidden = false
                         return
                     }
@@ -183,7 +183,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
 
     private func startResendTimer() {
         seconds = 30
-        resendLabel.text = "Resend OTP in \(seconds)s"
+        resendLabel.text = "Resend code in \(seconds)s"
         resendLabel.isUserInteractionEnabled = false
         resendTimer?.invalidate()
         resendTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in // prevents retain cycle between Timer and ViewController
@@ -191,11 +191,11 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
             self.seconds -= 1
             if self.seconds <= 0 {
                 self.resendTimer?.invalidate()
-                self.resendLabel.text = "Resend OTP"
+                self.resendLabel.text = "Resend code"
                 self.resendLabel.isUserInteractionEnabled = true
                 self.resendLabel.accessibilityTraits.insert(.button)
             } else {
-                self.resendLabel.text = "Resend OTP in \(self.seconds)s"
+                self.resendLabel.text = "Resend code in \(self.seconds)s"
                 self.resendLabel.accessibilityTraits.remove(.button)
             }
         }
@@ -204,8 +204,8 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     @objc private func resendTapped() {
         guard seconds <= 0 else { return }
         resendLabel.isUserInteractionEnabled = false
-        showAppLoading(message: "Resending OTP...")
-        
+        showAppLoading(message: "Resending code...")
+
         Task { @MainActor [weak self] in
             guard let self else { return }
             defer { self.hideAppLoading() }
@@ -216,7 +216,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
                         .trimmingCharacters(in: .whitespacesAndNewlines)
                         .lowercased()
                     guard !email.isEmpty else {
-                        errorLabel.text = "Email missing. Go back and request OTP again."
+                        errorLabel.text = "Something went wrong. Go back and re-enter your email."
                         errorLabel.isHidden = false
                         return
                     }
@@ -277,7 +277,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     private func configureSubtitle() {
         titleLabel.text = "Verify your email"
         let email = (UserDefaults.standard.string(forKey: "lastEmailForOTP") ?? "").lowercased()
-        subtitleLabel?.text = "Enter the 6-digit code we sent to\n\(maskedEmail(email))"
+        subtitleLabel?.text = "We sent a 6-digit code to \(maskedEmail(email)). It expires in 10 minutes."
     }
 
     private func maskedEmail(_ email: String) -> String {

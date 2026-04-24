@@ -28,7 +28,7 @@ final class ProfileCompletionBannerView: UIView {
     private func buildUI(completion: ProfileCompletion) {
         backgroundColor     = .systemBackground
         layer.cornerRadius  = 16
-        layer.shadowColor   = UIColor.black.cgColor
+        layer.shadowColor   = AppDesign.Color.shadow.cgColor
         layer.shadowOpacity = 0.08
         layer.shadowRadius  = 8
         layer.shadowOffset  = CGSize(width: 0, height: 3)
@@ -36,11 +36,12 @@ final class ProfileCompletionBannerView: UIView {
 
         // ── Header row ──────────────────────────────────────────
         let titleLabel         = UILabel()
-        titleLabel.text        = "Complete Your Profile"
+        titleLabel.text        = "Your profile is \(completion.percentage)% complete"
         titleLabel.font        = AppDesign.Typography.bodyStrong
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        fractionLabel.text     = completion.completedFraction
+        let stepsLeft = completion.steps.count - completion.completedSteps.count
+        fractionLabel.text     = "\(stepsLeft) step\(stepsLeft == 1 ? "" : "s") left"
         fractionLabel.font     = AppDesign.Typography.caption
         fractionLabel.textColor = .secondaryLabel
         fractionLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -66,7 +67,7 @@ final class ProfileCompletionBannerView: UIView {
         progressView.translatesAutoresizingMaskIntoConstraints = false
 
         let pctLabel         = UILabel()
-        pctLabel.text        = "\(completion.percentage)% complete"
+        pctLabel.text        = "\(completion.percentage)%"
         pctLabel.font        = AppDesign.Typography.caption
         pctLabel.textColor   = .systemGreen
         pctLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -102,8 +103,8 @@ final class ProfileCompletionBannerView: UIView {
             mainStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
 
             progressView.heightAnchor.constraint(equalToConstant: 5),
-            dismissBtn.widthAnchor.constraint(equalToConstant: 20),
-            dismissBtn.heightAnchor.constraint(equalToConstant: 20),
+            dismissBtn.widthAnchor.constraint(equalToConstant: 44),
+            dismissBtn.heightAnchor.constraint(equalToConstant: 44),
         ])
     }
 

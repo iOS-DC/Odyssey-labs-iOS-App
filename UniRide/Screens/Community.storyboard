@@ -69,7 +69,7 @@
                                                                     <rect key="frame" x="0.0" y="0.6666666666666714" width="66.333333333333329" height="35.333333333333336"/>
                                                                     <color key="tintColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                     <state key="normal" title="Button"/>
-                                                                    <buttonConfiguration key="configuration" style="plain" title="like"/>
+                                                                    <buttonConfiguration key="configuration" style="plain" title="Like"/>
                                                                     <connections>
                                                                         <action selector="likeButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="6Fy-5U-2f8"/>
                                                                     </connections>
@@ -78,7 +78,7 @@
                                                                     <rect key="frame" x="116.66666666666666" y="0.6666666666666714" width="96" height="35.333333333333336"/>
                                                                     <color key="tintColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                     <state key="normal" title="Button"/>
-                                                                    <buttonConfiguration key="configuration" style="plain" title="comment"/>
+                                                                    <buttonConfiguration key="configuration" style="plain" title="Comment"/>
                                                                     <connections>
                                                                         <action selector="commentButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="nQV-7G-H63"/>
                                                                     </connections>
@@ -87,7 +87,7 @@
                                                                     <rect key="frame" x="262.66666666666669" y="1.3333333333333286" width="66.333333333333314" height="34.333333333333336"/>
                                                                     <color key="tintColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                                     <state key="normal" title="Button"/>
-                                                                    <buttonConfiguration key="configuration" style="plain" title="share"/>
+                                                                    <buttonConfiguration key="configuration" style="plain" title="Share"/>
                                                                     <connections>
                                                                         <action selector="shareButtonTapped:" destination="Y6W-OH-hqX" eventType="touchUpInside" id="sja-Tb-7yF"/>
                                                                     </connections>
@@ -453,7 +453,7 @@
                                             <button opaque="NO" tag="101" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="FpK-kO-ltj">
                                                 <rect key="frame" x="0.0" y="0.0" width="172.66666666666666" height="45"/>
                                                 <state key="normal" title="Button"/>
-                                                <buttonConfiguration key="configuration" style="gray" title="offer ride"/>
+                                                <buttonConfiguration key="configuration" style="gray" title="Offer a Ride"/>
                                                 <connections>
                                                     <action selector="offerRideTapped:" destination="v9b-YD-mDa" eventType="touchUpInside" id="cp5-YE-UZk"/>
                                                 </connections>
@@ -461,7 +461,7 @@
                                             <button opaque="NO" tag="102" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="w3d-Kz-HFi">
                                                 <rect key="frame" x="188.66666666666663" y="0.0" width="172.33333333333337" height="45"/>
                                                 <state key="normal" title="Button"/>
-                                                <buttonConfiguration key="configuration" style="gray" title="join ride"/>
+                                                <buttonConfiguration key="configuration" style="gray" title="Find a Ride"/>
                                                 <connections>
                                                     <action selector="joinRide:" destination="v9b-YD-mDa" eventType="touchUpInside" id="lAy-Ts-lT9"/>
                                                 </connections>

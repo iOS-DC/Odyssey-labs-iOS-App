@@ -46,19 +46,26 @@ final class MyRidesViewController: UIViewController {
     private lazy var upcomingEmptyState: EmptyStateView = {
         let v = EmptyStateView(
             systemImage: "car.2.fill",
-            title: "No upcoming rides",
-            body: "Rides you've offered or joined will appear here once approved.",
+            title: "Nothing coming up",
+            body: "Find a ride nearby, or offer one to classmates.",
+            actionTitle: "Find a Ride",
             tintColor: AppDesign.Color.primary
         )
+        v.onAction = { [weak self] in
+            guard let self else { return }
+            let sb = UIStoryboard(name: "JoinRide", bundle: nil)
+            guard let vc = sb.instantiateViewController(withIdentifier: "JoinRideViewController") as? JoinRideViewController else { return }
+            navigationController?.pushViewController(vc, animated: true)
+        }
         return v
     }()
 
     private lazy var pastEmptyState: EmptyStateView = {
         let v = EmptyStateView(
             systemImage: "clock.arrow.circlepath",
-            title: "No past rides yet",
-            body: "Completed and cancelled rides will show up here.",
-            actionTitle: "Clear filter",
+            title: "No rides yet",
+            body: "Rides you've taken or offered appear here after they complete.",
+            actionTitle: "Clear Filters",
             tintColor: .systemGray
         )
         v.onAction = { [weak self] in
@@ -497,10 +504,10 @@ extension MyRidesViewController: UITableViewDataSource, UITableViewDelegate {
             if confirmedCount == 0 {
                 let alert = UIAlertController(
                     title: "No passengers yet",
-                    message: "Once passengers join and are confirmed, you'll be able to see their details here.",
+                    message: "Share your ride to get requests. Approved passengers will appear here.",
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                alert.addAction(UIAlertAction(title: "Got It", style: .default))
                 present(alert, animated: true)
                 return
             }
@@ -641,9 +648,9 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         let rideID = currentTrips[index].ride.id
 
         // Ask for cancellation reason before cancelling
-        let reasons = ["Change of plans", "Vehicle issue", "Emergency", "Found alternative", "Other"]
-        let sheet = UIAlertController(title: "Cancel Ride",
-                                      message: "Please select a reason for cancellation:",
+        let reasons = ["Plans changed", "Vehicle issue", "Emergency", "Found alternative", "Other"]
+        let sheet = UIAlertController(title: "Why are you cancelling?",
+                                      message: nil,
                                       preferredStyle: .actionSheet)
         for reason in reasons {
             sheet.addAction(UIAlertAction(title: reason, style: .destructive) { [weak self] _ in
@@ -656,7 +663,7 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
                         self.reloadTrips()
                     } catch {
                         let alert = UIAlertController(
-                            title: "Couldn't cancel ride",
+                            title: "Cancellation Failed",
                             message: error.localizedDescription,
                             preferredStyle: .alert
                         )
@@ -678,12 +685,12 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
         let rideID = currentTrips[index].ride.id
         let alert = UIAlertController(
-            title: "Start Trip?",
-            message: "This will mark the ride as ongoing. Passengers will be notified.",
+            title: "Start Ride?",
+            message: "Your passengers will be notified that the ride has started.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Start Trip", style: .default) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: "Start Ride", style: .default) { [weak self] _ in
             self?.showActionLoading()
             Task { @MainActor in
                 defer { self?.hideActionLoading() }
@@ -692,7 +699,7 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
                     self?.reloadTrips()
                 } catch {
                     let alert = UIAlertController(
-                        title: "Couldn't start trip",
+                        title: "Couldn't Start Ride",
                         message: error.localizedDescription,
                         preferredStyle: .alert
                     )
@@ -708,12 +715,12 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
         let rideID = currentTrips[index].ride.id
         let alert = UIAlertController(
-            title: "End Trip?",
-            message: "This will mark the ride as completed. It will move to your past rides.",
+            title: "End Ride?",
+            message: "This completes the ride. It'll appear in your ride history.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "End Trip", style: .destructive) { [weak self] _ in
+        alert.addAction(UIAlertAction(title: "End Ride", style: .destructive) { [weak self] _ in
             self?.showActionLoading()
             Task { @MainActor in
                 defer { self?.hideActionLoading() }
@@ -722,7 +729,7 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
                     self?.reloadTrips()
                 } catch {
                     let alert = UIAlertController(
-                        title: "Couldn't end trip",
+                        title: "Couldn't End Ride",
                         message: error.localizedDescription,
                         preferredStyle: .alert
                     )
@@ -845,9 +852,9 @@ extension MyRidesViewController {
         if isConfirmed {
             let from = trip.ride.source.address ?? "Origin"
             let to   = trip.ride.destination.address ?? "Destination"
-            msg = "Cancel your confirmed booking for \(from) → \(to)?\n\nThe driver will be notified and your seat will be freed automatically."
+            msg = "Cancel your ride from \(from) to \(to)? The driver will be notified and your seat will open up for others."
         } else {
-            msg = "Are you sure you want to cancel this ride request?"
+            msg = "Cancel this booking? You can always find another ride."
         }
 
         let alert = UIAlertController(title: alertTitle, message: msg, preferredStyle: .alert)
@@ -869,7 +876,7 @@ extension MyRidesViewController {
                     self.reloadTrips()
                 } catch {
                     let fail = UIAlertController(
-                        title: "Couldn't cancel",
+                        title: "Cancellation Failed",
                         message: error.localizedDescription,
                         preferredStyle: .alert
                     )
@@ -944,10 +951,10 @@ extension MyRidesViewController {
                 self.refreshBellBadge()
 
                 if notifs.isEmpty {
-                    let a = UIAlertController(title: "No Notifications",
-                                              message: "You're all caught up! ✅",
+                    let a = UIAlertController(title: "You're all caught up",
+                                              message: "No new notifications right now.",
                                               preferredStyle: .alert)
-                    a.addAction(UIAlertAction(title: "OK", style: .default))
+                    a.addAction(UIAlertAction(title: "Got It", style: .default))
                     self.present(a, animated: true)
                     return
                 }

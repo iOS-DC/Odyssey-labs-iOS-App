@@ -205,7 +205,7 @@ final class OnboardingViewController: UIViewController {
         eyebrowLabel.letterSpacing(2.0)
         titleLabel.attributedText = makeTitle(page.title)
         subtitleLabel.text = page.subtitle
-        nextButton.setTitle(isLast ? "Get Started →" : "Continue →", for: .normal)
+        nextButton.setTitle(isLast ? "Get Started" : "Continue", for: .normal)
         UIView.animate(withDuration: 0.2, animations: {
             self.skipButton.alpha = isLast ? 0 : 1
         })
@@ -215,7 +215,7 @@ final class OnboardingViewController: UIViewController {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineSpacing = 4
         return NSAttributedString(string: text, attributes: [
-            .font: UIFont.systemFont(ofSize: 28, weight: .bold),
+            .font: AppDesign.Typography.display,
             .paragraphStyle: paragraphStyle,
             .foregroundColor: UIColor.label
         ])

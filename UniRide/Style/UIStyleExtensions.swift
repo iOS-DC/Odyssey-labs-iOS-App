@@ -9,76 +9,208 @@ import Foundation
 import UIKit
 import ObjectiveC
 
-// MARK: - Design Tokens
+// MARK: - Design System
+// UniRide design tokens. All UI must pull values from here — no magic numbers in VCs or views.
+
 enum AppDesign {
+
+    // ─────────────────────────────────────────────
+    // MARK: Spacing  (8pt base grid)
+    // ─────────────────────────────────────────────
+    // Use these for margins, padding, and gaps.
+    // Never hard-code a spacing value in a VC or view.
+    //
+    //  xxs  4   half-unit — icon inner padding, tight badge gaps
+    //  xs   8   1 unit    — icon-to-label gap, progress bar insets
+    //  sm   12  1.5 units — stack internal spacing, chip padding
+    //  md   16  2 units   — standard horizontal margin, field padding
+    //  lg   20  2.5 units — card gutters, section-to-CTA gap
+    //  xl   24  3 units   — card padding, screen horizontal inset
+    //  xxl  32  4 units   — section-to-section gap, hero vertical rhythm
+    //  xxxl 48  6 units   — screen breathing room (top/bottom of full-screen cards)
+
     enum Spacing {
-        static let xxs: CGFloat = 4
-        static let xs: CGFloat = 8
-        static let sm: CGFloat = 12
-        static let md: CGFloat = 16
-        static let lg: CGFloat = 20
-        static let xl: CGFloat = 24
+        static let xxs:  CGFloat = 4
+        static let xs:   CGFloat = 8
+        static let sm:   CGFloat = 12
+        static let md:   CGFloat = 16
+        static let lg:   CGFloat = 20
+        static let xl:   CGFloat = 24
+        static let xxl:  CGFloat = 32
+        static let xxxl: CGFloat = 48
     }
+
+    // ─────────────────────────────────────────────
+    // MARK: Corner Radius
+    // ─────────────────────────────────────────────
+    // xs   8   tags, badges, input accessory chips
+    // sm   12  text fields, small inline buttons
+    // md   16  standard CTAs, dropdown buttons
+    // lg   20  cards, prominent quick-action buttons
+    // xl   28  hero cards, bottom sheets
+    // pill 999 fully rounded / capsule shape
 
     enum Radius {
-        static let sm: CGFloat = 12
-        static let md: CGFloat = 16
-        static let lg: CGFloat = 20
+        static let xs:   CGFloat = 8
+        static let sm:   CGFloat = 12
+        static let md:   CGFloat = 16
+        static let lg:   CGFloat = 20
+        static let xl:   CGFloat = 28
+        static let pill: CGFloat = 999
     }
 
+    // ─────────────────────────────────────────────
+    // MARK: Size
+    // ─────────────────────────────────────────────
     enum Size {
-        static let buttonHeight: CGFloat = 52
-        static let fieldHeight: CGFloat = 52
+        // Tap targets
+        static let touchTarget:   CGFloat = 44  // HIG minimum for any interactive element
+        // Buttons
+        static let buttonHeight:  CGFloat = 56  // primary & secondary CTAs
+        static let buttonHeightSm: CGFloat = 44 // secondary inline / compact actions
+        // Fields
+        static let fieldHeight:   CGFloat = 52
+        // Icons
+        static let iconSm:        CGFloat = 20  // accessory icons in row cells
+        static let iconMd:        CGFloat = 28  // card / cell leading icons
+        static let iconLg:        CGFloat = 48  // empty-state illustrations
+        // Avatars
+        static let avatarSm:      CGFloat = 36  // compact list rows
+        static let avatarMd:      CGFloat = 48  // standard cells
+        static let avatarLg:      CGFloat = 72  // profile header
+        // Misc
         static let progressHeight: CGFloat = 4
     }
 
-    enum Shadow {
-        static let cardOpacity: Float = 0.08
-        static let cardRadius: CGFloat = 12
-        static let cardOffset = CGSize(width: 0, height: 6)
+    // ─────────────────────────────────────────────
+    // MARK: Elevation
+    // ─────────────────────────────────────────────
+    // Three named levels replace the old flat Shadow enum.
+    // l1 — chips, small cards, filter pills
+    // l2 — standard content cards (use applyCardStyle)
+    // l3 — modals, bottom sheets, popovers
 
-        static let smallCardOpacity: Float = 0.06
-        static let smallCardRadius: CGFloat = 8
-        static let smallCardOffset = CGSize(width: 0, height: 4)
+    enum Elevation {
+        static let l1Opacity: Float   = 0.08;  static let l1Radius: CGFloat = 6;  static let l1Offset = CGSize(width: 0, height: 2)
+        static let l2Opacity: Float   = 0.12;  static let l2Radius: CGFloat = 10; static let l2Offset = CGSize(width: 0, height: 4)
+        static let l3Opacity: Float   = 0.18;  static let l3Radius: CGFloat = 16; static let l3Offset = CGSize(width: 0, height: 8)
     }
 
+    // Backward-compat aliases — new code should use Elevation directly.
+    enum Shadow {
+        static let cardOpacity:      Float    = Elevation.l2Opacity
+        static let cardRadius:       CGFloat  = Elevation.l2Radius
+        static let cardOffset:       CGSize   = Elevation.l2Offset
+        static let smallCardOpacity: Float    = Elevation.l1Opacity
+        static let smallCardRadius:  CGFloat  = Elevation.l1Radius
+        static let smallCardOffset:  CGSize   = Elevation.l1Offset
+    }
+
+    // ─────────────────────────────────────────────
+    // MARK: Color
+    // ─────────────────────────────────────────────
     enum Color {
-        static let primary = UIColor.systemBlue
-        static let surface = UIColor.systemBackground
-        static let elevatedSurface = UIColor.secondarySystemBackground
+
+        // Brand
+        static let primary      = UIColor.systemBlue
+        static let onPrimary    = UIColor.white
+
+        // Tonal fills (primary color at reduced opacity — for secondary CTAs, selected states)
+        static let primaryTonal  = UIColor.systemBlue.withAlphaComponent(0.12)
+        static let primarySubtle = UIColor.systemBlue.withAlphaComponent(0.07)
+
+        // Surfaces (light = white hierarchy; dark = dark hierarchy)
+        static let surface         = UIColor.systemBackground           // cards, sheets
+        static let surfaceElevated = UIColor.secondarySystemBackground  // elevated cards, input backgrounds
         static let groupedBackground = UIColor { trait in
-            if trait.userInterfaceStyle == .dark {
-                return UIColor(red: 0.07, green: 0.09, blue: 0.12, alpha: 1.0)
-            }
-            return UIColor(named: "Color") ?? UIColor.systemGroupedBackground
+            trait.userInterfaceStyle == .dark
+                ? UIColor(red: 0.07, green: 0.09, blue: 0.12, alpha: 1.0)
+                : (UIColor(named: "Color") ?? UIColor.systemGroupedBackground)
         }
-        static let border = UIColor.systemGray4
+
+        // Semantic
+        static let success          = UIColor.systemGreen
+        static let successTonal     = UIColor.systemGreen.withAlphaComponent(0.12)
+        static let destructive      = UIColor.systemRed
+        static let destructiveTonal = UIColor.systemRed.withAlphaComponent(0.12)
+        static let warning          = UIColor.systemOrange
+        static let warningTonal     = UIColor.systemOrange.withAlphaComponent(0.12)
+
+        // Text
+        static let textPrimary   = UIColor.label
+        static let textSecondary = UIColor.secondaryLabel
+        static let textTertiary  = UIColor.tertiaryLabel
+        static let placeholder   = UIColor.placeholderText
+
+        // Borders & dividers
+        static let border        = UIColor.systemGray4
+        static let borderSubtle  = UIColor.systemGray5
+        static let divider       = UIColor.separator
+
+        // Fills
         static let fieldBackground = UIColor.secondarySystemBackground
-        static let progressTrack = UIColor.systemGray5
-        static let textPrimary = UIColor.label
-        static let success = UIColor.systemGreen
-        static let destructive = UIColor.systemRed
-        static let warning = UIColor.systemOrange
+        static let progressTrack   = UIColor.systemGray5
+        static let overlay         = UIColor.black.withAlphaComponent(0.4)
+
+        // Shadow base color
         static let shadow = UIColor { trait in
             trait.userInterfaceStyle == .dark
                 ? UIColor.black.withAlphaComponent(0.35)
                 : UIColor.black.withAlphaComponent(0.12)
         }
+
+        // Backward-compat aliases
+        static let elevatedSurface = surfaceElevated
     }
 
+    // ─────────────────────────────────────────────
+    // MARK: Typography
+    // ─────────────────────────────────────────────
+    // Scale (size / weight):
+    //   display        28 bold     — splash, onboarding hero moment (use once per screen)
+    //   largeTitle     22 bold     — screen/section group titles
+    //   cardTitle      18 semibold — card and sheet headings
+    //   greeting       22 semibold — home screen greeting (not bold — action should dominate)
+    //   bodyStrong     17 semibold — emphasized body, CTA labels
+    //   body           17 regular  — default reading text
+    //   subheadline    15 medium   — supporting text, row subtitles
+    //   captionStrong  13 semibold — tags, status badges, small headers
+    //   caption        13 regular  — secondary metadata, timestamps
+    //   micro          11 medium   — badge counters, legal (use sparingly — 11pt is the floor)
+
     enum Typography {
-        static let h1 = UIFont.systemFont(ofSize: 34, weight: .bold)
-        static let h2 = UIFont.systemFont(ofSize: 28, weight: .bold)
-        static let title = UIFont.systemFont(ofSize: 22, weight: .bold)
+        // Screen-level
+        static let display    = UIFont.systemFont(ofSize: 28, weight: .bold)
+        static let largeTitle = UIFont.systemFont(ofSize: 22, weight: .bold)
+        static let greeting   = UIFont.systemFont(ofSize: 22, weight: .semibold)
+        static let cardTitle  = UIFont.systemFont(ofSize: 18, weight: .semibold)
+
+        // Body
         static let bodyStrong = UIFont.systemFont(ofSize: 17, weight: .semibold)
-        static let body = UIFont.systemFont(ofSize: 17, weight: .regular)
-        static let subheadline = UIFont.systemFont(ofSize: 15, weight: .medium)
+        static let body       = UIFont.systemFont(ofSize: 17, weight: .regular)
+
+        // Supporting
+        static let subheadline        = UIFont.systemFont(ofSize: 15, weight: .medium)
+        static let subheadlineRegular = UIFont.systemFont(ofSize: 15, weight: .regular)
+
+        // Small
         static let captionStrong = UIFont.systemFont(ofSize: 13, weight: .semibold)
-        static let caption = UIFont.systemFont(ofSize: 13, weight: .regular)
-        static let action = UIFont.systemFont(ofSize: 17, weight: .semibold)
-        static let button = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        static let caption       = UIFont.systemFont(ofSize: 13, weight: .regular)
+        static let micro         = UIFont.systemFont(ofSize: 11, weight: .medium)
+
+        // Functional
+        static let action    = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        static let button    = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        static let buttonSm  = UIFont.systemFont(ofSize: 15, weight: .semibold)
+
+        // Route pills
         static let pillSelected = UIFont.systemFont(ofSize: 14, weight: .semibold)
-        static let pillRegular = UIFont.systemFont(ofSize: 13, weight: .medium)
+        static let pillRegular  = UIFont.systemFont(ofSize: 13, weight: .medium)
+
+        // Backward-compat aliases
+        static let h1    = UIFont.systemFont(ofSize: 34, weight: .bold)
+        static let h2    = display
+        static let title = largeTitle
     }
 }
 
@@ -145,16 +277,15 @@ extension UITableView {
 // MARK: - Cards / Containers
 extension UIView {
 
-    /// Standard app card (used across Home, Offer Ride, Join Ride)
+    /// Standard content card — Elevation l2. Used on Home, Offer Ride, Join Ride, onboarding steps.
     func applyCardStyle(
         corner: CGFloat = AppDesign.Radius.lg,
-        shadowOpacity: Float = AppDesign.Shadow.cardOpacity,
-        shadowRadius: CGFloat = AppDesign.Shadow.cardRadius,
-        shadowOffset: CGSize = AppDesign.Shadow.cardOffset
+        shadowOpacity: Float = AppDesign.Elevation.l2Opacity,
+        shadowRadius: CGFloat = AppDesign.Elevation.l2Radius,
+        shadowOffset: CGSize = AppDesign.Elevation.l2Offset
     ) {
         layer.cornerRadius = corner
         layer.masksToBounds = false
-
         layer.shadowColor = AppDesign.Color.shadow.cgColor
         layer.shadowOpacity = shadowOpacity
         layer.shadowRadius = shadowRadius
@@ -162,16 +293,32 @@ extension UIView {
         backgroundColor = AppDesign.Color.surface
     }
 
-    /// Smaller card (filters, dropdowns, suggestions)
+    /// Chip / filter card — Elevation l1. Used on filter pills, dropdowns, suggestion rows.
     func applySmallCard(corner: CGFloat = AppDesign.Radius.md) {
         layer.cornerRadius = corner
         layer.masksToBounds = false
-
         layer.shadowColor = AppDesign.Color.shadow.cgColor
-        layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
-        layer.shadowRadius = AppDesign.Shadow.smallCardRadius
-        layer.shadowOffset = AppDesign.Shadow.smallCardOffset
-        backgroundColor = AppDesign.Color.elevatedSurface
+        layer.shadowOpacity = AppDesign.Elevation.l1Opacity
+        layer.shadowRadius = AppDesign.Elevation.l1Radius
+        layer.shadowOffset = AppDesign.Elevation.l1Offset
+        backgroundColor = AppDesign.Color.surfaceElevated
+    }
+
+    /// Modal / bottom-sheet card — Elevation l3. Used on sheets, alert containers.
+    func applySheetStyle(corner: CGFloat = AppDesign.Radius.xl) {
+        layer.cornerRadius = corner
+        layer.masksToBounds = false
+        layer.shadowColor = AppDesign.Color.shadow.cgColor
+        layer.shadowOpacity = AppDesign.Elevation.l3Opacity
+        layer.shadowRadius = AppDesign.Elevation.l3Radius
+        layer.shadowOffset = AppDesign.Elevation.l3Offset
+        backgroundColor = AppDesign.Color.surface
+    }
+
+    /// Tonal highlight panel — used for status banners, info strips inside cards.
+    func applyTonalPanel(color: UIColor = AppDesign.Color.primary, corner: CGFloat = AppDesign.Radius.sm) {
+        layer.cornerRadius = corner
+        backgroundColor = color.withAlphaComponent(0.08)
     }
 }
 
@@ -434,17 +581,17 @@ extension UIButton {
         applyPressMicroInteraction(scale: 0.97, hapticStyle: .light)
     }
 
-    /// Secondary prominent CTA (brand-tinted with blue outline).
+    /// Secondary prominent CTA — tonal fill (primary@12%) + primary border.
+    /// Use for co-equal actions like "Offer Ride" paired with a primary "Find a Ride".
     func applyProminentSecondaryCTA(
         title: String,
         color: UIColor = AppDesign.Color.primary,
-        fillAlpha: CGFloat = 0.14,
         corner: CGFloat = AppDesign.Radius.lg,
         borderWidth: CGFloat = 1.5
     ) {
         var config = UIButton.Configuration.filled()
         config.title = title
-        config.baseBackgroundColor = color.withAlphaComponent(fillAlpha)
+        config.baseBackgroundColor = AppDesign.Color.primaryTonal
         config.baseForegroundColor = color
         config.cornerStyle = .fixed
         config.background.cornerRadius = corner
@@ -458,6 +605,66 @@ extension UIButton {
         configuration = config
         setMinimumHeight(AppDesign.Size.buttonHeight, for: self)
         applyPressMicroInteraction(scale: 0.97, hapticStyle: .light)
+    }
+
+    /// Compact secondary action — 44pt height, smaller font. Use inside cards or rows.
+    func applyCompactSecondaryButton(
+        title: String,
+        color: UIColor = AppDesign.Color.primary,
+        corner: CGFloat = AppDesign.Radius.md
+    ) {
+        var config = UIButton.Configuration.filled()
+        config.title = title
+        config.baseBackgroundColor = AppDesign.Color.primaryTonal
+        config.baseForegroundColor = color
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = corner
+        config.background.strokeColor = color.withAlphaComponent(0.4)
+        config.background.strokeWidth = 1
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
+            var out = attrs
+            out.font = AppDesign.Typography.buttonSm
+            return out
+        }
+        configuration = config
+        setMinimumHeight(AppDesign.Size.buttonHeightSm, for: self)
+        applyPressMicroInteraction(scale: 0.97, hapticStyle: .light)
+    }
+
+    /// Destructive primary CTA — red fill. Use only for irreversible actions (Delete, Cancel Ride).
+    func applyDestructiveButton(corner: CGFloat = AppDesign.Radius.md) {
+        var config = UIButton.Configuration.filled()
+        config.baseBackgroundColor = AppDesign.Color.destructive
+        config.baseForegroundColor = AppDesign.Color.onPrimary
+        config.cornerStyle = .fixed
+        config.background.cornerRadius = corner
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
+            var out = attrs
+            out.font = AppDesign.Typography.bodyStrong
+            return out
+        }
+        configuration = config
+        setMinimumHeight(AppDesign.Size.buttonHeight, for: self)
+        applyPressMicroInteraction(scale: 0.97, hapticStyle: .medium)
+    }
+
+    /// Non-interactive disabled-state button (offered, already requested, full, conflict).
+    /// Use instead of hardcoding .systemGray4 / .systemGray5.
+    func applyDisabledCTA(title: String, corner: CGFloat = AppDesign.Radius.md) {
+        var cfg = UIButton.Configuration.filled()
+        cfg.title = title
+        cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+        cfg.baseForegroundColor = AppDesign.Color.textSecondary
+        cfg.cornerStyle = .fixed
+        cfg.background.cornerRadius = corner
+        cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
+            var out = attrs
+            out.font = AppDesign.Typography.bodyStrong
+            return out
+        }
+        configuration = cfg
+        isEnabled = false
+        isUserInteractionEnabled = false
     }
 
     /// Secondary outline button
@@ -553,9 +760,9 @@ extension UITextField {
     }
 
     /// Add SF Symbol icon inside the left
-    func addLeftIcon(_ systemName: String) {
+    func addLeftIcon(_ systemName: String, tint: UIColor = .systemGray) {
         let icon = UIImageView(image: UIImage(systemName: systemName))
-        icon.tintColor = .systemGray
+        icon.tintColor = tint
         icon.frame = CGRect(x: 0, y: 0, width: 22, height: 22)
 
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 36, height: 30))
@@ -569,6 +776,8 @@ extension UITextField {
 
 // MARK: - Typography
 extension UILabel {
+
+    /// Base setter — use named semantic wrappers below wherever possible.
     func applyTextStyle(
         _ font: UIFont,
         color: UIColor = AppDesign.Color.textPrimary,
@@ -577,6 +786,48 @@ extension UILabel {
         self.font = font
         textColor = color
         numberOfLines = lines
+    }
+
+    /// Screen/section group title (22pt bold). For section headers and nav push titles.
+    func applyLargeTitleStyle(lines: Int = 1) {
+        applyTextStyle(AppDesign.Typography.largeTitle, lines: lines)
+    }
+
+    /// Card or sheet heading (18pt semibold). The primary label inside a card.
+    func applyCardTitleStyle(lines: Int = 1) {
+        applyTextStyle(AppDesign.Typography.cardTitle, lines: lines)
+    }
+
+    /// Home screen greeting (22pt semibold, not bold — lets actions dominate).
+    func applyGreetingStyle() {
+        applyTextStyle(AppDesign.Typography.greeting)
+    }
+
+    /// Supporting metadata under a title (15pt medium, secondaryLabel).
+    func applySubheadlineStyle(lines: Int = 1) {
+        applyTextStyle(AppDesign.Typography.subheadline, color: AppDesign.Color.textSecondary, lines: lines)
+    }
+
+    /// Tag / badge label (13pt semibold). For status chips, category labels.
+    func applyCaptionStrongStyle(color: UIColor = AppDesign.Color.textSecondary) {
+        applyTextStyle(AppDesign.Typography.captionStrong, color: color)
+    }
+
+    /// Secondary metadata (13pt regular, tertiaryLabel). For timestamps, ride distance, etc.
+    func applyCaptionStyle(lines: Int = 0) {
+        applyTextStyle(AppDesign.Typography.caption, color: AppDesign.Color.textTertiary, lines: lines)
+    }
+}
+
+// MARK: - Divider
+extension UIView {
+    /// One-line horizontal rule. Pin leading/trailing to parent and call this.
+    static func makeDivider() -> UIView {
+        let v = UIView()
+        v.backgroundColor = AppDesign.Color.divider
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
+        return v
     }
 }
 

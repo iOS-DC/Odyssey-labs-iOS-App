@@ -14,7 +14,7 @@ extension UIViewController {
             )
             
             alert.addAction(UIAlertAction(title: "Maybe Later", style: .cancel))
-            alert.addAction(UIAlertAction(title: "Login", style: .default) { _ in
+            alert.addAction(UIAlertAction(title: "Sign In", style: .default) { _ in
                 SceneDelegate.setRootToAuth()
             })
             

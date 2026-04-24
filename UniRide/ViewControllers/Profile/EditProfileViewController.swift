@@ -114,7 +114,7 @@ class EditProfileViewController: UIViewController,
         // ── Avatar ───────────────────────────────────────────────────────────
         avatarImageView.contentMode   = .scaleAspectFill
         avatarImageView.clipsToBounds = true
-        avatarImageView.backgroundColor = .systemGray5
+        avatarImageView.backgroundColor = AppDesign.Color.borderSubtle
         avatarImageView.layer.cornerRadius = 55        // half of 110 — always circular
         avatarImageView.layer.borderWidth  = 3
         avatarImageView.layer.borderColor  = AppDesign.Color.primary.withAlphaComponent(0.7).cgColor

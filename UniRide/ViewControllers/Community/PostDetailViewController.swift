@@ -70,7 +70,7 @@ final class PostDetailViewController: UIViewController {
         ])
         commentTextField.placeholder   = "Add a comment…"
         commentTextField.borderStyle   = .none
-        commentTextField.font          = .systemFont(ofSize: 15)
+        commentTextField.font          = AppDesign.Typography.subheadlineRegular
         commentTextField.returnKeyType = .send
         commentTextField.delegate      = self
         sendButton.tintColor = AppDesign.Color.primary
@@ -184,7 +184,7 @@ final class PostDetailViewController: UIViewController {
                 }
             } catch {
                 self.commentTextField.text = text  // restore on failure
-                let alert = UIAlertController(title: "Couldn't post comment",
+                let alert = UIAlertController(title: "Comment Not Posted",
                                               message: error.localizedDescription,
                                               preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "OK", style: .default))
@@ -233,7 +233,7 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
         let isVerified = UserDataModel.shared.getUser(by: post.authorUserID)?.isEmailVerified == true
 
         config.text          = name
-        config.textProperties.font = .systemFont(ofSize: 13, weight: .semibold)
+        config.textProperties.font = AppDesign.Typography.captionStrong
         config.textProperties.color = .secondaryLabel
 
         // Timestamp
@@ -249,7 +249,7 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
             iv.contentMode = .scaleAspectFill
             iv.clipsToBounds = true
             iv.layer.cornerRadius = 18
-            iv.backgroundColor = .systemGray6
+            iv.backgroundColor = AppDesign.Color.surfaceElevated
             iv.translatesAutoresizingMaskIntoConstraints = false
             cell.contentView.addSubview(iv)
             NSLayoutConstraint.activate([
@@ -285,7 +285,7 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
             let body = UILabel()
             body.tag = 88
             body.numberOfLines = 0
-            body.font = .systemFont(ofSize: 16)
+            body.font = AppDesign.Typography.body
             body.textColor = .label
             body.translatesAutoresizingMaskIntoConstraints = false
             cell.contentView.addSubview(body)
