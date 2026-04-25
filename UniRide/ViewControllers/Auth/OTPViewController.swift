@@ -126,12 +126,12 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
         let code = otpFields().map { $0.text ?? "" }.joined()
 
         guard code.count == 6 else {
-            errorLabel.text = "Please enter all 6 digits"
+            errorLabel.text = "Enter all 6 digits to continue"
             errorLabel.isHidden = false
             return
         }
         verifyButton.setPrimaryCTAEnabled(false)
-        showAppLoading(message: "Verifying code...")
+        showAppLoading(message: "Verifying code…")
 
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -204,7 +204,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     @objc private func resendTapped() {
         guard seconds <= 0 else { return }
         resendLabel.isUserInteractionEnabled = false
-        showAppLoading(message: "Resending code...")
+        showAppLoading(message: "Resending…")
 
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -216,7 +216,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
                         .trimmingCharacters(in: .whitespacesAndNewlines)
                         .lowercased()
                     guard !email.isEmpty else {
-                        errorLabel.text = "Something went wrong. Go back and re-enter your email."
+                        errorLabel.text = "Something went wrong. Go back and try a different email."
                         errorLabel.isHidden = false
                         return
                     }
@@ -277,7 +277,7 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     private func configureSubtitle() {
         titleLabel.text = "Verify your email"
         let email = (UserDefaults.standard.string(forKey: "lastEmailForOTP") ?? "").lowercased()
-        subtitleLabel?.text = "We sent a 6-digit code to \(maskedEmail(email)). It expires in 10 minutes."
+        subtitleLabel?.text = "We sent a 6-digit code to \(maskedEmail(email)). Expires in 10 minutes."
     }
 
     private func maskedEmail(_ email: String) -> String {

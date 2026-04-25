@@ -25,7 +25,7 @@ final class PostDetailViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Post"
+        title = "Comments"
         view.backgroundColor = .systemGroupedBackground
         setupTableView()
         setupComposeBar()

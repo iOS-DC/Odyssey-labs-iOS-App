@@ -54,7 +54,7 @@ final class DriverDetailViewController: UIViewController {
         headerView.addSubview(closeBtn)
 
         let titleLabel = UILabel()
-        titleLabel.text = "Driver Details"
+        titleLabel.text = driver.fullName.components(separatedBy: " ").first ?? "Driver"
         titleLabel.font = AppDesign.Typography.bodyStrong
         titleLabel.textColor = .secondaryLabel
         titleLabel.textAlignment = .center

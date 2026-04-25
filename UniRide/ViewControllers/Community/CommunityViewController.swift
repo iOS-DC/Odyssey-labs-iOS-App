@@ -126,7 +126,7 @@ class CommunityViewController: UIViewController,
         commentTableView.dataSource = self
 
         newPostTextView.delegate = self
-        characterCountLabel.text = "0/280 characters"
+        characterCountLabel.text = "0 / 280"
 
         newPostContainerView.isHidden = true
         commentPopupView.isHidden = true
@@ -535,7 +535,7 @@ class CommunityViewController: UIViewController,
         }
 
         newPostTextView.text = ""
-        characterCountLabel.text = "0/280 characters"
+        characterCountLabel.text = "0 / 280"
 
         hideComposer()
     }
@@ -779,7 +779,7 @@ class CommunityViewController: UIViewController,
             textView.text = String(textView.text.prefix(maxCharacters))
         }
 
-        characterCountLabel.text = "\(textView.text.count)/280 characters"
+        characterCountLabel.text = "\(textView.text.count) / 280"
     }
 
     // MARK: - Feed auto-refresh

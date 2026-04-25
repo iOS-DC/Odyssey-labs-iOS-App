@@ -84,7 +84,7 @@ final class RateRideViewController: UIViewController {
     }
 
     private func configureSkipButton() {
-        skipBtn.setTitle("Skip", for: .normal)
+        skipBtn.setTitle("Rate Later", for: .normal)
         skipBtn.setTitleColor(.tertiaryLabel, for: .normal)
         skipBtn.titleLabel?.font = AppDesign.Typography.subheadline
     }
@@ -172,7 +172,7 @@ extension RateRideViewController: UITextViewDelegate {
     }
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            textView.text = "How was this ride? (optional)"
+            textView.text = "Add a note (optional)"
             textView.textColor = .tertiaryLabel
         }
     }

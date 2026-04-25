@@ -114,8 +114,8 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         let isStudent = activeRole == .student
         headerTitleLabel.text = "Tell us about yourself"
         headerSubtitleLabel.text = isStudent
-            ? "Help us create your student profile"
-            : "Help us create your faculty profile"
+            ? "Let's set up your student profile"
+            : "Let's set up your faculty profile"
 
         courseLabel.text = isStudent ? "Course" : "Department"
         dropDownButton.setTitle(isStudent ? "Choose your course" : "Choose your department", for: .normal)
@@ -194,7 +194,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         let phone = (phoneTextField.text ?? "").filter(\.isNumber)
 
         guard phone.count == 10 else {
-            showOTPStatus("Enter a 10-digit phone number (no spaces or dashes)", color: AppDesign.Color.destructive)
+            showOTPStatus("Enter your 10-digit mobile number", color: AppDesign.Color.destructive)
             phoneTextField.becomeFirstResponder()
             return
         }
@@ -290,7 +290,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         yearDropDownButton.accessibilityLabel = "Year"
         yearDropDownButton.accessibilityHint = "Select your academic year"
         phoneTextField.accessibilityLabel = "Phone number"
-        phoneTextField.accessibilityHint = "Enter your 10 digit mobile number"
+        phoneTextField.accessibilityHint = "Enter your 10-digit mobile number"
         continueButton.accessibilityLabel = "Continue"
         continueButton.accessibilityHint = "Proceed to the next step"
     }

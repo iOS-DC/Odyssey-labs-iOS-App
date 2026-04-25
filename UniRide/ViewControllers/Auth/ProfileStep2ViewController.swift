@@ -46,7 +46,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Commute Setup"
+        title = "Your Vehicle"
         applyOnboardingChrome(step: 6, total: 7)
 
         vehicleSectionStack.isHidden = true
@@ -215,7 +215,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
                                        collected: [LocationPoint],
                                        completion: @escaping ([LocationPoint]) -> Void) {
         let alert = UIAlertController(
-            title: "Add Home Location \(index) of 3",
+            title: "Add Location \(index) of 3",
             message: "Enter your area/address to prefill rides later.",
             preferredStyle: .alert
         )
@@ -280,7 +280,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
     private func askAddAnotherLocation(currentCount: Int, completion: @escaping (Bool) -> Void) {
         let alert = UIAlertController(
             title: "Location saved",
-            message: "You have added \(currentCount) location(s). Add another?",
+            message: "You've added \(currentCount) location. Add another?",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "Done", style: .default) { _ in completion(false) })
@@ -292,7 +292,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
         let maxSeats = vehicleType.lowercased() == "car" ? 4 : 1
         let alert = UIAlertController(
             title: "Seat Capacity",
-            message: "How many passengers can sit comfortably? (Max \(maxSeats))",
+            message: "How many passengers fit in your vehicle?",
             preferredStyle: .alert
         )
         alert.addTextField { tf in
@@ -304,7 +304,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
             if value >= 1 && value <= maxSeats {
                 completion(value)
             } else {
-                self.showSimpleAlert(title: "Invalid seats", message: "Enter a value between 1 and \(maxSeats).")
+                self.showSimpleAlert(title: "Invalid Seats", message: "Enter a number between 1 and \(maxSeats).")
                 self.askSeatCapacity(vehicleType: vehicleType, completion: completion)
             }
         })
@@ -491,7 +491,7 @@ class ProfileStep2ViewController: UIViewController, UITextFieldDelegate {
 
     private func configureAccessibility() {
         yesVehicleButton.accessibilityLabel = "Yes, I have a vehicle"
-        noVehicleButton.accessibilityLabel = "No, I do not have a vehicle"
+        noVehicleButton.accessibilityLabel = "No vehicle yet"
         vehicleTypeDropdown.accessibilityLabel = "Vehicle type"
         modelTextField.accessibilityLabel = "Vehicle model"
         plateTextField.accessibilityLabel = "Vehicle plate number"
