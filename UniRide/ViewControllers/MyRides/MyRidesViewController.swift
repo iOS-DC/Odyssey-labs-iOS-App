@@ -683,7 +683,8 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
 
     func upcomingCellDidTapStartTrip(_ cell: UpcomingTableViewCell) {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
-        let rideID = currentTrips[index].ride.id
+        let trip   = currentTrips[index]
+        let rideID = trip.ride.id
         let alert = UIAlertController(
             title: "Start Ride?",
             message: "Your passengers will be notified that the ride has started.",
@@ -697,6 +698,17 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
                 do {
                     _ = try await RideDataModel.shared.startRideAsync(id: rideID)
                     self?.reloadTrips()
+
+                    // Present the live tracking screen for the driver
+                    let passengers = RideDataModel.shared.listBookings(for: rideID)
+                        .filter { $0.status == .confirmed }
+                        .compactMap { $0.passengerProfile }
+                    let trackingVC = ActiveRideViewController.make(
+                        mode: .driver(ride: trip.ride, passengers: passengers)
+                    ) { [weak self] in
+                        self?.reloadTrips()
+                    }
+                    self?.present(trackingVC, animated: true)
                 } catch {
                     let alert = UIAlertController(
                         title: "Couldn't Start Ride",
@@ -741,6 +753,20 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         present(alert, animated: true)
     }
 
+    func upcomingCellDidTapTrackLiveRide(_ cell: UpcomingTableViewCell) {
+        guard let index = tableView.indexPath(for: cell)?.row else { return }
+        let trip = currentTrips[index]
+        let passengers = RideDataModel.shared.listBookings(for: trip.ride.id)
+            .filter { $0.status == .confirmed }
+            .compactMap { $0.passengerProfile }
+        let trackingVC = ActiveRideViewController.make(
+            mode: .driver(ride: trip.ride, passengers: passengers)
+        ) { [weak self] in
+            self?.reloadTrips()
+        }
+        present(trackingVC, animated: true)
+    }
+
     func upcomingCellDidTapPassenger(_ cell: UpcomingTableViewCell, passenger: UserProfile, ride: Ride) {
         let vc = PassengerDetailViewController()
         vc.passenger = passenger
@@ -771,6 +797,16 @@ extension MyRidesViewController: UpcomingPassengerCellDelegate {
             sheet.preferredCornerRadius = 24
         }
         present(vc, animated: true)
+    }
+
+    func passengerCellDidTapTrackRide(
+        _ cell: UpcomingPassengerTableViewCell,
+        trip: RideDataModel.MyTrip
+    ) {
+        let trackingVC = ActiveRideViewController.make(
+            mode: .passenger(ride: trip.ride, driver: trip.ride.driverProfile)
+        )
+        present(trackingVC, animated: true)
     }
 }
 

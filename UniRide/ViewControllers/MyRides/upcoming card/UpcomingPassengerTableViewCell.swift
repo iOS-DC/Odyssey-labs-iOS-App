@@ -3,6 +3,7 @@ import MapKit
 
 protocol UpcomingPassengerCellDelegate: AnyObject {
     func passengerCellDidTapDriver(_ cell: UpcomingPassengerTableViewCell, driver: UserProfile, ride: Ride)
+    func passengerCellDidTapTrackRide(_ cell: UpcomingPassengerTableViewCell, trip: RideDataModel.MyTrip)
 }
 
 final class UpcomingPassengerTableViewCell: UITableViewCell {
@@ -26,7 +27,8 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
 
     // MARK: - Programmatic map & button (inserted into XIB layout)
     private let mapView = MKMapView()
-    private let showMapButton = UIButton(type: .system)
+    private let showMapButton   = UIButton(type: .system)
+    private let trackRideButton = UIButton(type: .system)
     private var mapHeightConstraint: NSLayoutConstraint!
     private var cancelTopConstraint: NSLayoutConstraint!     // replaces XIB's constraint
     private var isMapExpanded = false
@@ -74,11 +76,16 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     // MARK: – Map button insertion
 
     private func insertMapButton() {
-        // Insert "Map" button as first item in the existing XIB button stack
+        // Insert "Map" and "Track" buttons as first items in the XIB button stack
         guard let btnStack = messageButton.superview as? UIStackView else { return }
         showMapButton.applyTintActionStyle(title: "View Map", imageSystemName: "map")
         showMapButton.addTarget(self, action: #selector(toggleMap), for: .touchUpInside)
         btnStack.insertArrangedSubview(showMapButton, at: 0)
+
+        trackRideButton.applyTintActionStyle(title: "Track Ride", imageSystemName: "location.fill")
+        trackRideButton.addTarget(self, action: #selector(trackRideTapped), for: .touchUpInside)
+        trackRideButton.isHidden = true   // shown only when ride is ongoing
+        btnStack.insertArrangedSubview(trackRideButton, at: 1)
     }
 
     private func insertMapView() {
@@ -226,6 +233,13 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
                                           imageSystemName: isMapExpanded ? "map.fill" : "map")
         cancelRequestButton.applyTintActionStyle(title: cancelTitle, color: AppDesign.Color.destructive)
 
+        // "Track Ride" — only visible when the ride is actively in progress
+        let showTrackButton = ride.status == .ongoing && isConfirmed
+        trackRideButton.isHidden = !showTrackButton
+        if showTrackButton {
+            trackRideButton.applyTintActionStyle(title: "Track Ride", imageSystemName: "location.fill")
+        }
+
         // Draw route on map
         drawRouteIfNeeded(for: ride)
 
@@ -311,6 +325,11 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)
         guard let validDriver = driver else { return }
         delegate?.passengerCellDidTapDriver(self, driver: validDriver, ride: trip.ride)
+    }
+
+    @objc private func trackRideTapped() {
+        guard let trip = currentTrip else { return }
+        delegate?.passengerCellDidTapTrackRide(self, trip: trip)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
