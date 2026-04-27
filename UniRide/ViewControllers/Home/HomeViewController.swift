@@ -75,7 +75,7 @@ class HomeViewController: UIViewController {
 
     private func configureQuickActions() {
         requestButton.applyProminentPrimaryCTA(title: "Find a Ride")
-        offerButton.applyCompactSecondaryButton(title: "Offer a Ride")
+        offerButton.applyProminentPrimaryCTA(title: "Offer a Ride")
     }
 
     private func configureSafeAreaLayout() {
@@ -135,9 +135,8 @@ class HomeViewController: UIViewController {
         headerView.addSubview(buttonStack)
         
         if let stack = buttonStack as? UIStackView {
-            stack.distribution = .fill
+            stack.distribution = .fillEqually
             stack.spacing = 12
-            offerButton.widthAnchor.constraint(equalTo: requestButton.widthAnchor, multiplier: 0.62).isActive = true
         }
         
         NSLayoutConstraint.activate([
