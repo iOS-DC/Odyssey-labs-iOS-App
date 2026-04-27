@@ -200,6 +200,7 @@ final class UpcomingTableViewCell: UITableViewCell {
     func configure(with trip: RideDataModel.MyTrip) {
         self.trip = trip
         let ride = trip.ride
+        let lifecycle = RideLifecycle.presentation(for: trip)
 
         // Role badge
         roleLabel.text = "  Driving  "
@@ -225,16 +226,8 @@ final class UpcomingTableViewCell: UITableViewCell {
             .reduce(0) { $0 + $1.seats }
         seatsLabel.text = "\(confirmedCount) / \(ride.seatsTotal)"
 
-        // Status badge
-        let (statusIcon, bgColor): (String, UIColor) = {
-            switch ride.status {
-            case .published: return ("✓", UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0))
-            case .ongoing:   return ("▶", AppDesign.Color.primary)
-            default:         return ("•", UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 1.0))
-            }
-        }()
-        statusLabel.text = "  \(statusIcon) \(ride.status.rawValue.capitalized)  "
-        applyBadgeStyle(to: statusLabel, backgroundColor: bgColor, textColor: .white)
+        statusLabel.text = "  \(lifecycle.title)  "
+        applyBadgeStyle(to: statusLabel, backgroundColor: lifecycle.color, textColor: .white)
 
         // Pending request badge (inline with roleLabel)
         rideRequests = RideDataModel.shared.listRequests(for: ride.id).filter { $0.status == .pending }
@@ -257,7 +250,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             .filter { $0.status == .confirmed }
             .compactMap { $0.passengerProfile ?? UserDataModel.shared.getUser(by: $0.passengerUserID) }
 
-        passengersLabel.text = "Passengers: \(approvedPassengers.count) / \(ride.seatsTotal)"
+        passengersLabel.text = "Passengers: \(approvedPassengers.count) / \(ride.seatsTotal)\nNext: \(lifecycle.nextStep)"
         approvedContainerHeightConstraint.constant = 0
 
         renderAvatars(passengers: approvedPassengers, totalSeats: ride.seatsTotal, ride: ride)
@@ -297,7 +290,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         switch ride.status {
         case .published:
             var startConfig = UIButton.Configuration.filled()
-            startConfig.title = "Start Ride"
+            startConfig.title = lifecycle.actionTitle ?? "Start Ride"
             startConfig.image = UIImage(systemName: "play.fill")
             startConfig.imagePlacement = .leading
             startConfig.imagePadding = 6
@@ -309,7 +302,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             trackLiveButton.isHidden = true
         case .ongoing:
             var endConfig = UIButton.Configuration.filled()
-            endConfig.title = "End Ride"
+            endConfig.title = lifecycle.actionTitle ?? "End Ride"
             endConfig.image = UIImage(systemName: "stop.fill")
             endConfig.imagePlacement = .leading
             endConfig.imagePadding = 6

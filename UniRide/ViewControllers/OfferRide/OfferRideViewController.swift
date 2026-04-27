@@ -31,6 +31,12 @@ class OfferRideViewController: UIViewController,
     @IBOutlet weak var timePicker: UIDatePicker!
     @IBOutlet weak var contentView: UIView!
 
+    // MARK: - Optional route handoff
+    var prefilledFrom: LocationPoint?
+    var prefilledTo: LocationPoint?
+    var prefilledDate: Date?
+    var prefilledTime: Date?
+
     // MARK: - Route state
     private let minimumLeadTimeSeconds: TimeInterval = 10 * 60
     private var fromCoord: CLLocationCoordinate2D?
@@ -501,6 +507,23 @@ class OfferRideViewController: UIViewController,
     }
 
     private func prefillLocationsIfPossible() {
+        if let prefilledFrom {
+            fromTextField.text = prefilledFrom.address ?? "Selected pickup"
+            fromCoord = CLLocationCoordinate2D(latitude: prefilledFrom.lat, longitude: prefilledFrom.lon)
+        }
+        if let prefilledTo {
+            toTextField.text = prefilledTo.address ?? "Selected drop-off"
+            toCoord = CLLocationCoordinate2D(latitude: prefilledTo.lat, longitude: prefilledTo.lon)
+        }
+        if let prefilledDate { datePicker.date = prefilledDate }
+        if let prefilledTime { timePicker.date = prefilledTime }
+        if prefilledFrom != nil || prefilledTo != nil {
+            refreshTimeConstraintIfNeeded()
+            updateNextButtonState()
+            tryFetchRoutes()
+            return
+        }
+
         guard let prefill = UserDataModel.shared.suggestedCommutePrefill() else { return }
         fromTextField.text = prefill.from.address ?? "Chitkara University"
         toTextField.text   = prefill.to.address   ?? "Home"

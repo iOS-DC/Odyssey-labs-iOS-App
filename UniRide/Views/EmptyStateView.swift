@@ -44,12 +44,11 @@ final class EmptyStateView: UIView {
         bodyLabel.text  = body
 
         if let actionTitle {
-            actionButton.setTitle(actionTitle, for: .normal)
+            actionButton.applyTintActionStyle(title: actionTitle, imageSystemName: "arrow.right", color: tintColor)
             actionButton.isHidden = false
         } else {
             actionButton.isHidden = true
         }
-        actionButton.tintColor = tintColor
     }
 
     // MARK: - Layout
@@ -71,7 +70,6 @@ final class EmptyStateView: UIView {
         bodyLabel.textAlignment = .center
         bodyLabel.numberOfLines = 0
 
-        actionButton.titleLabel?.font = AppDesign.Typography.subheadline
         actionButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
 
         stack.axis      = .vertical

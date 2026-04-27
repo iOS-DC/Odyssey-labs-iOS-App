@@ -45,11 +45,14 @@ class JoinRideViewController: UIViewController,
 
         fromTextField.delegate = self
         toTextField.delegate = self
+        fromTextField.addTarget(self, action: #selector(routeFieldChanged(_:)), for: .editingChanged)
+        toTextField.addTarget(self, action: #selector(routeFieldChanged(_:)), for: .editingChanged)
 
         setDefaultDateAndTime()
         setupPickers()
         buildLayout()
         prefillLocationsIfPossible()
+        updateFindButtonState()
     }
 
     // MARK: - Build Layout (matches Offer Ride Step 1)
@@ -107,7 +110,7 @@ class JoinRideViewController: UIViewController,
         stack.addArrangedSubview(makeCard(title: "When", content: pickerRow))
 
         // Find Ride button
-        let findTitle = findRideButton.currentTitle ?? "Find a Ride"
+        let findTitle = findRideButton.currentTitle ?? "Find Available Rides"
         findRideButton.applyProminentPrimaryCTA(title: findTitle, corner: AppDesign.Radius.md)
         stack.addArrangedSubview(findRideButton)
 
@@ -217,6 +220,7 @@ class JoinRideViewController: UIViewController,
         toTextField.text   = prefill.to.address   ?? "Home"
         fromCoordinate = CLLocationCoordinate2D(latitude: prefill.from.lat, longitude: prefill.from.lon)
         toCoordinate   = CLLocationCoordinate2D(latitude: prefill.to.lat,   longitude: prefill.to.lon)
+        updateFindButtonState()
     }
 
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) { refreshTimeConstraintIfNeeded() }
@@ -232,16 +236,31 @@ class JoinRideViewController: UIViewController,
         }
     }
 
+    @objc private func routeFieldChanged(_ sender: UITextField) {
+        if sender == fromTextField { fromCoordinate = nil }
+        if sender == toTextField { toCoordinate = nil }
+        updateFindButtonState()
+    }
+
+    private func updateFindButtonState() {
+        let hasFrom = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasTo = !(toTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        findRideButton.setPrimaryCTAEnabled(hasFrom && hasTo && fromCoordinate != nil && toCoordinate != nil)
+    }
+
     // MARK: - Autocomplete typing
     func textField(_ textField: UITextField,
                    shouldChangeCharactersIn range: NSRange,
                    replacementString string: String) -> Bool {
         guard textField == fromTextField || textField == toTextField else { return true }
         let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
+        if textField == fromTextField { fromCoordinate = nil }
+        if textField == toTextField { toCoordinate = nil }
         searchRequestID += 1
         searchCompleter.queryFragment = updated
         activeTextField = textField
         updateSuggestionTablePosition()
+        DispatchQueue.main.async { [weak self] in self?.updateFindButtonState() }
         return true
     }
 
@@ -298,6 +317,7 @@ class JoinRideViewController: UIViewController,
                 self.suggestionsTable.isHidden = true
                 self.activeTextField?.resignFirstResponder()
                 self.activeTextField = nil
+                self.updateFindButtonState()
             }
         }
     }
@@ -344,6 +364,8 @@ class JoinRideViewController: UIViewController,
                     as? AvailableRideViewController else { return }
             vc.fromCoordinate = fromCoord
             vc.toCoordinate   = toCoord
+            vc.fromAddress = fromText
+            vc.toAddress = toText
             vc.date = self.datePicker.date
             vc.time = self.timePicker.date
             self.navigationController?.pushViewController(vc, animated: true)

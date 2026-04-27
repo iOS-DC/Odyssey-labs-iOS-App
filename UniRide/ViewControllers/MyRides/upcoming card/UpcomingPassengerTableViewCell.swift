@@ -146,6 +146,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     func configure(with trip: RideDataModel.MyTrip) {
         currentTrip = trip
         let ride = trip.ride
+        let lifecycle = RideLifecycle.presentation(for: trip)
 
         // Date
         let df = DateFormatter()
@@ -167,7 +168,9 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         // Seat count
         seatsLabel.text = "\(ride.seatsTotal - ride.seatsAvailable)/\(ride.seatsTotal) seats"
 
-        rideStatusLabel.isHidden = true
+        rideStatusLabel.isHidden = false
+        rideStatusLabel.text = "Next: \(lifecycle.nextStep)"
+        rideStatusLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel, lines: 0)
 
         // Role badge
         roleLabel.text            = "  Passenger  "
@@ -190,15 +193,15 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let cancelTitle: String
         if isConfirmed {
             if ride.status == .ongoing {
-                requestStatusLabel.text            = "  Ride Started  "
-                requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                requestStatusLabel.text            = "  \(lifecycle.title)  "
+                requestStatusLabel.backgroundColor = lifecycle.color
                 requestStatusLabel.textColor       = .white
                 cancelTitle = "Cancel Booking"
                 cancelRequestButton.isEnabled = false
                 cancelRequestButton.alpha     = 0.4
             } else {
-                requestStatusLabel.text            = "  ✓ Confirmed  "
-                requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                requestStatusLabel.text            = "  \(lifecycle.title)  "
+                requestStatusLabel.backgroundColor = lifecycle.color
                 requestStatusLabel.textColor       = .white
                 cancelTitle = "Cancel Booking"
                 cancelRequestButton.isEnabled = true
@@ -207,16 +210,16 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         } else {
             let (text, color): (String, UIColor) = {
                 switch trip.requestStatus {
-                case .pending:   return ("  Pending  ",   UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0))
-                case .denied:    return ("  Denied  ",    UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 1.0))
-                case .cancelled: return ("  Cancelled  ", UIColor(red: 0.60, green: 0.60, blue: 0.60, alpha: 1.0))
-                default:         return ("  Pending  ",   UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0))
+                case .pending:   return ("  \(lifecycle.title)  ", lifecycle.color)
+                case .denied:    return ("  \(lifecycle.title)  ", lifecycle.color)
+                case .cancelled: return ("  \(lifecycle.title)  ", lifecycle.color)
+                default:         return ("  \(lifecycle.title)  ", lifecycle.color)
                 }
             }()
             requestStatusLabel.text            = text
             requestStatusLabel.backgroundColor = color
             requestStatusLabel.textColor       = .white
-            cancelTitle = "Cancel Booking"
+            cancelTitle = lifecycle.actionTitle ?? "Cancel Request"
         }
         requestStatusLabel.font                   = AppDesign.Typography.captionStrong
         requestStatusLabel.layer.cornerRadius     = AppDesign.Radius.sm

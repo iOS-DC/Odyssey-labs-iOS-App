@@ -12,6 +12,8 @@ final class AvailableRideViewController: UIViewController,
     // MARK: - Inputs (from JoinRideViewController or EventDetailsViewController)
     var fromCoordinate: CLLocationCoordinate2D?
     var toCoordinate: CLLocationCoordinate2D?
+    var fromAddress: String?
+    var toAddress: String?
     var date: Date?
     var time: Date?
     var event: EventItem?
@@ -28,6 +30,7 @@ final class AvailableRideViewController: UIViewController,
     // MARK: - UI
     private let searchController  = UISearchController(searchResultsController: nil)
     private let resultCountLabel  = UILabel()
+    private let routeSummaryView  = UIView()
     private let emptyStateView    = UIView()
     private var filterBarBtn: UIBarButtonItem!
     private lazy var offlineView: OfflineEmptyStateView = {
@@ -45,6 +48,7 @@ final class AvailableRideViewController: UIViewController,
         title = event != nil ? "Rides to \(event!.title)" : "Available Rides"
         setupSearchController()
         setupFilterButton()
+        setupRouteSummary()
         setupResultCountLabel()
         setupEmptyState()
         setupTableView()
@@ -143,7 +147,7 @@ final class AvailableRideViewController: UIViewController,
         }
 
         NSLayoutConstraint.activate([
-            resultCountLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+            resultCountLabel.topAnchor.constraint(equalTo: routeSummaryView.bottomAnchor, constant: AppDesign.Spacing.xs),
             resultCountLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
             resultCountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -30),
             
@@ -152,6 +156,66 @@ final class AvailableRideViewController: UIViewController,
         
         // Remove the top contentInset we added before as we're using real constraints now
         tableView.contentInset.top = 0
+    }
+
+    private func setupRouteSummary() {
+        routeSummaryView.translatesAutoresizingMaskIntoConstraints = false
+        routeSummaryView.applyCardStyle(corner: AppDesign.Radius.md,
+                                        shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                                        shadowRadius: AppDesign.Shadow.smallCardRadius)
+        view.addSubview(routeSummaryView)
+
+        let fromLabel = makeRouteSummaryLabel(
+            icon: "circle.fill",
+            tint: AppDesign.Color.success,
+            text: fromAddress?.nilIfBlank ?? event?.location?.name ?? "Selected pickup"
+        )
+        let toLabel = makeRouteSummaryLabel(
+            icon: "mappin.circle.fill",
+            tint: AppDesign.Color.destructive,
+            text: toAddress?.nilIfBlank ?? event?.location?.name ?? "Selected drop-off"
+        )
+        let divider = UIView()
+        divider.backgroundColor = AppDesign.Color.divider
+        divider.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
+
+        let stack: UIStackView = UIStackView(arrangedSubviews: [fromLabel, divider, toLabel])
+        stack.axis = .vertical
+        stack.spacing = AppDesign.Spacing.xs
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        routeSummaryView.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            routeSummaryView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDesign.Spacing.sm),
+            routeSummaryView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            routeSummaryView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.md),
+
+            stack.topAnchor.constraint(equalTo: routeSummaryView.topAnchor, constant: AppDesign.Spacing.sm),
+            stack.leadingAnchor.constraint(equalTo: routeSummaryView.leadingAnchor, constant: AppDesign.Spacing.sm),
+            stack.trailingAnchor.constraint(equalTo: routeSummaryView.trailingAnchor, constant: -AppDesign.Spacing.sm),
+            stack.bottomAnchor.constraint(equalTo: routeSummaryView.bottomAnchor, constant: -AppDesign.Spacing.sm)
+        ])
+    }
+
+    private func makeRouteSummaryLabel(icon: String, tint: UIColor, text: String) -> UIView {
+        let imageView = UIImageView(image: UIImage(systemName: icon))
+        imageView.tintColor = tint
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            imageView.widthAnchor.constraint(equalToConstant: AppDesign.Size.iconSm),
+            imageView.heightAnchor.constraint(equalToConstant: AppDesign.Size.iconSm)
+        ])
+
+        let label = UILabel()
+        label.text = text
+        label.applyTextStyle(AppDesign.Typography.captionStrong, color: AppDesign.Color.textPrimary, lines: 1)
+
+        let row = UIStackView(arrangedSubviews: [imageView, label])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = AppDesign.Spacing.xs
+        return row
     }
 
     private func setupEmptyState() {
@@ -349,6 +413,22 @@ final class AvailableRideViewController: UIViewController,
     @objc private func offerThisRoute() {
         let sb = UIStoryboard(name: "OfferRide", bundle: nil)
         guard let vc = sb.instantiateViewController(withIdentifier: "OfferRideViewController") as? OfferRideViewController else { return }
+        if let fromCoordinate {
+            vc.prefilledFrom = LocationPoint(
+                lat: fromCoordinate.latitude,
+                lon: fromCoordinate.longitude,
+                address: fromAddress
+            )
+        }
+        if let toCoordinate {
+            vc.prefilledTo = LocationPoint(
+                lat: toCoordinate.latitude,
+                lon: toCoordinate.longitude,
+                address: toAddress
+            )
+        }
+        vc.prefilledDate = date
+        vc.prefilledTime = time
         navigationController?.pushViewController(vc, animated: true)
     }
 
@@ -357,6 +437,13 @@ final class AvailableRideViewController: UIViewController,
     func updateSearchResults(for searchController: UISearchController) {
         searchQuery = searchController.searchBar.text ?? ""
         applyFilters()
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
