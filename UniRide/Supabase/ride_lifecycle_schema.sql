@@ -41,7 +41,7 @@ BEGIN
         ALTER TABLE public.ride_requests ADD COLUMN cancelled_at timestamptz;
     END IF;
 
-    IF NOT EXISTS (Ω
+    IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'ride_requests' AND column_name = 'cancellation_reason'
     ) THEN

@@ -161,7 +161,9 @@ class EmailViewController: UIViewController {
     
     @objc private func emailChanged() {
         let raw = (emailTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let isValid = raw.hasSuffix("@chitkara.edu.in") || raw.hasSuffix("@chitkarauniversity.edu.in")
+        let isValid = raw.hasSuffix("@chitkara.edu.in")
+            || raw.hasSuffix("@chitkarauniversity.edu.in")
+            || EventAdminSession.shared.isAdminEmail(raw)
         continueButton.setPrimaryCTAEnabled(isValid)
     }
     
@@ -170,8 +172,9 @@ class EmailViewController: UIViewController {
         errorLabel.isHidden = true
         errorLabel.text = nil
         let raw = (emailTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let isEventAdminEmail = EventAdminSession.shared.isAdminEmail(raw)
 
-        if let remaining = remainingCooldownSeconds(), remaining > 0 {
+        if !isEventAdminEmail, let remaining = remainingCooldownSeconds(), remaining > 0 {
             let msg = "Too many attempts. Try again in \(remaining)s."
             showError(msg)
             let alert = UIAlertController(title: "Too Many Attempts", message: msg, preferredStyle: .alert)
@@ -191,6 +194,16 @@ class EmailViewController: UIViewController {
             }
 
             do {
+                if isEventAdminEmail {
+                    UserDefaults.standard.set(raw.lowercased(), forKey: "lastEmailForOTP")
+                    let otpVC = storyboard!.instantiateViewController(withIdentifier: "OTPViewController") as! OTPViewController
+                    otpVC.verificationMode = .email
+                    let nav = UINavigationController(rootViewController: otpVC)
+                    nav.modalPresentationStyle = .fullScreen
+                    present(nav, animated: true, completion: nil)
+                    return
+                }
+
                 try await UserDataModel.shared.startEmailVerificationAsync(email: raw)
                 UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: otpCooldownKey)
 

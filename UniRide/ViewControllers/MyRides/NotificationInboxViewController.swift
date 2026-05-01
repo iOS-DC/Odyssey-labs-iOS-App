@@ -4,6 +4,7 @@ import UIKit
 final class NotificationInboxViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     var notifications: [AppNotification]!
+    var onNotificationTapped: ((AppNotification) -> Void)?
 
     @IBOutlet private var tableView: UITableView!
 
@@ -32,6 +33,10 @@ final class NotificationInboxViewController: UIViewController, UITableViewDataSo
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        let notif = notifications[indexPath.row]
+        dismiss(animated: true) { [weak self] in
+            self?.onNotificationTapped?(notif)
+        }
     }
 }
 

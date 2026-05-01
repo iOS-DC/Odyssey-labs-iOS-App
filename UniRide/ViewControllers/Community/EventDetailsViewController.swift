@@ -125,11 +125,7 @@ class EventDetailsViewController: UIViewController {
         guard let event = event else { return }
         
         // Image
-        if let name = event.imageName, let img = UIImage(named: name) {
-            heroImageView.image = img
-        } else {
-            heroImageView.image = UIImage(named: "default_event")
-        }
+        heroImageView.loadImage(from: event.imageName ?? "default_event")
         
         // Title
         headerTitleLabel.text = event.title

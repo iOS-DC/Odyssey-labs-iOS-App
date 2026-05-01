@@ -130,12 +130,12 @@ class OfferRideViewController: UIViewController,
         // From / To unified route card
         fromTextField.borderStyle = .none
         fromTextField.backgroundColor = .clear
-        fromTextField.addLeftIcon("circle.fill", tint: AppDesign.Color.success)
+        fromTextField.addLeftIcon("smallcircle.filled.circle", tint: AppDesign.Color.success)
         fromTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
 
         toTextField.borderStyle = .none
         toTextField.backgroundColor = .clear
-        toTextField.addLeftIcon("mappin.circle.fill", tint: AppDesign.Color.destructive)
+        toTextField.addLeftIcon("smallcircle.filled.circle", tint: AppDesign.Color.destructive)
         toTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
 
         stack.addArrangedSubview(makeRouteCard())
@@ -659,10 +659,7 @@ class OfferRideViewController: UIViewController,
         for (index, route) in routes.enumerated() {
             let minutes = Int(route.expectedTravelTime / 60)
             let km = String(format: "%.1f", route.distance / 1000)
-            let title: String
-            if index == 0 { title = "Fastest\n\(km) km • \(minutes) min" }
-            else if index == 1 { title = "Shortest\n\(km) km • \(minutes) min" }
-            else { title = "Alternative\n\(km) km • \(minutes) min" }
+            let title = "Route \(index + 1)\n\(km) km • \(minutes) min"
 
             let btn = UIButton(type: .system)
             btn.tag = index

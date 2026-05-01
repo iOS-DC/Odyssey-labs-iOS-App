@@ -152,6 +152,17 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
                         return
                     }
 
+                    if EventAdminSession.shared.isAdminEmail(email) {
+                        guard EventAdminSession.shared.isValidOTP(code) else {
+                            errorLabel.text = "Invalid event admin code"
+                            errorLabel.isHidden = false
+                            return
+                        }
+                        EventAdminSession.shared.login()
+                        goToEventAdmin()
+                        return
+                    }
+
                     let user = try await UserDataModel.shared.verifyEmailOTPAsync(email: email, code: code)
 
                     if let returningUser = user {
@@ -220,6 +231,13 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
                         errorLabel.isHidden = false
                         return
                     }
+                    if EventAdminSession.shared.isAdminEmail(email) {
+                        clearOTPFields()
+                        errorLabel.isHidden = true
+                        startResendTimer()
+                        otpFields().first?.becomeFirstResponder()
+                        return
+                    }
                     try await UserDataModel.shared.startEmailVerificationAsync(email: email)
                 }
                 clearOTPFields()
@@ -277,6 +295,11 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
     private func configureSubtitle() {
         titleLabel.text = "Verify your email"
         let email = (UserDefaults.standard.string(forKey: "lastEmailForOTP") ?? "").lowercased()
+        if EventAdminSession.shared.isAdminEmail(email) {
+            titleLabel.text = "Event admin"
+            subtitleLabel?.text = "Enter the fixed event admin code to manage campus events."
+            return
+        }
         subtitleLabel?.text = "We sent a 6-digit code to \(maskedEmail(email)). Expires in 10 minutes."
     }
 
@@ -308,6 +331,16 @@ final class OTPViewController: UIViewController, UITextFieldDelegate {
 
             // Optional transition animation
             UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil, completion: nil)
+        }
+    }
+
+    private func goToEventAdmin() {
+        let nav = UINavigationController(rootViewController: EventAdminDashboardViewController())
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first {
+            window.rootViewController = nav
+            window.makeKeyAndVisible()
+            UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil)
         }
     }
 

@@ -10,7 +10,7 @@ protocol UpcomingTableViewCellDelegate: AnyObject {
     func upcomingCellDidTapEndTrip(_ cell: UpcomingTableViewCell)
     func upcomingCellDidTapPassenger(_ cell: UpcomingTableViewCell, passenger: UserProfile, ride: Ride)
     func upcomingCellDidTapViewRequests(_ cell: UpcomingTableViewCell)
-    func upcomingCellDidTapTrackLiveRide(_ cell: UpcomingTableViewCell)
+    func upcomingCellDidTapViewMap(_ cell: UpcomingTableViewCell)
 }
 
 final class UpcomingTableViewCell: UITableViewCell {
@@ -56,9 +56,6 @@ final class UpcomingTableViewCell: UITableViewCell {
 
     // Programmatic inline badge (replaces XIB viewRequestButton which overlaps roleLabel)
     private let pendingBadge = UILabel()
-
-    // Programmatic "Track Live" button — shown only when ride is ongoing
-    private let trackLiveButton = UIButton(type: .system)
 
     weak var delegate: UpcomingTableViewCellDelegate?
 
@@ -140,25 +137,6 @@ final class UpcomingTableViewCell: UITableViewCell {
         viewRequestsHeightConstraint.constant = 0
         viewRequestsTopConstraint.constant    = 0
 
-        // "Track Live" button — sits to the left of startTripButton, hidden until ride is ongoing
-        var trackCfg = UIButton.Configuration.tinted()
-        trackCfg.title             = "Track Live"
-        trackCfg.image             = UIImage(systemName: "location.fill")
-        trackCfg.imagePadding      = 6
-        trackCfg.imagePlacement    = .leading
-        trackCfg.baseBackgroundColor = AppDesign.Color.primary
-        trackCfg.baseForegroundColor = AppDesign.Color.primary
-        trackCfg.cornerStyle       = .capsule
-        trackLiveButton.configuration = trackCfg
-        trackLiveButton.isHidden   = true
-        trackLiveButton.translatesAutoresizingMaskIntoConstraints = false
-        trackLiveButton.addTarget(self, action: #selector(trackLiveTapped), for: .touchUpInside)
-        cardView.addSubview(trackLiveButton)
-        NSLayoutConstraint.activate([
-            trackLiveButton.centerYAnchor.constraint(equalTo: startTripButton.centerYAnchor),
-            trackLiveButton.trailingAnchor.constraint(equalTo: startTripButton.leadingAnchor, constant: -10),
-            trackLiveButton.heightAnchor.constraint(equalTo: startTripButton.heightAnchor),
-        ])
     }
 
     override func layoutSubviews() {
@@ -190,7 +168,6 @@ final class UpcomingTableViewCell: UITableViewCell {
 
         mapView.isHidden = true
         mapHeightConstraint.constant = 1
-        trackLiveButton.isHidden = true
 
         avatarStackView.subviews.forEach { $0.removeFromSuperview() }
     }
@@ -290,7 +267,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         switch ride.status {
         case .published:
             var startConfig = UIButton.Configuration.filled()
-            startConfig.title = lifecycle.actionTitle ?? "Start Ride"
+            startConfig.title = "Start Trip"
             startConfig.image = UIImage(systemName: "play.fill")
             startConfig.imagePlacement = .leading
             startConfig.imagePadding = 6
@@ -299,10 +276,9 @@ final class UpcomingTableViewCell: UITableViewCell {
             startConfig.cornerStyle = .capsule
             startTripButton.configuration = startConfig
             startTripButton.isHidden = false
-            trackLiveButton.isHidden = true
         case .ongoing:
             var endConfig = UIButton.Configuration.filled()
-            endConfig.title = lifecycle.actionTitle ?? "End Ride"
+            endConfig.title = "End Trip"
             endConfig.image = UIImage(systemName: "stop.fill")
             endConfig.imagePlacement = .leading
             endConfig.imagePadding = 6
@@ -311,10 +287,8 @@ final class UpcomingTableViewCell: UITableViewCell {
             endConfig.cornerStyle = .capsule
             startTripButton.configuration = endConfig
             startTripButton.isHidden = false
-            trackLiveButton.isHidden = false     // ← show "Track Live" while ride is in progress
         default:
             startTripButton.isHidden = true
-            trackLiveButton.isHidden = true
         }
     }
 
@@ -329,6 +303,11 @@ final class UpcomingTableViewCell: UITableViewCell {
     }
 
     @IBAction func toggleMap(_ sender: UIButton) {
+        // When ride is in progress, open the full tracking screen instead of toggling inline map
+        if trip?.ride.status == .ongoing {
+            delegate?.upcomingCellDidTapViewMap(self)
+            return
+        }
         isMapExpanded.toggle()
         mapView.isHidden = !isMapExpanded
         mapHeightConstraint.constant = isMapExpanded ? 180 : 1
@@ -349,10 +328,6 @@ final class UpcomingTableViewCell: UITableViewCell {
         } else if trip.ride.status == .ongoing {
             delegate?.upcomingCellDidTapEndTrip(self)
         }
-    }
-
-    @objc private func trackLiveTapped() {
-        delegate?.upcomingCellDidTapTrackLiveRide(self)
     }
 
     // MARK: - Route Drawing

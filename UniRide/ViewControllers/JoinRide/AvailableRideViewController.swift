@@ -303,7 +303,12 @@ final class AvailableRideViewController: UIViewController,
 
             // Event-filtered rides (shown from EventDetails screen)
             if let event = self.event {
-                self.rides = MockData.mockRidesForEvent(event)
+                if let lat = event.location?.lat, let lon = event.location?.lon {
+                    let dest = LocationPoint(lat: lat, lon: lon, address: event.location?.name)
+                    self.rides = RideDataModel.shared.ridesNear(dest, maxMeters: 2000)
+                } else {
+                    self.rides = RideDataModel.shared.allPublishedRides()
+                }
                 self.applyFilters()
                 return
             }

@@ -121,17 +121,7 @@ final class EventDataModel {
         eventsURL = documentsDirectory.appendingPathComponent("community_events.json")
         attendanceURL = documentsDirectory.appendingPathComponent("community_event_attendance.json")
 
-        // loadAll()
-        
-        // Force mock data for demo purposes
-        events = EventDataModel.mockEvents()
-        saveEvents()
-        
-        // If app is first time OR JSON was empty → load mock data
-        // if events.isEmpty {
-        //     events = EventDataModel.mockEvents()
-        //     saveEvents()
-        // }
+        loadAll()
     }
 
     // MARK: - PUBLIC ACCESS
@@ -139,11 +129,27 @@ final class EventDataModel {
         return events
     }
 
+    @discardableResult
+    func addEvent(_ event: EventItem) -> EventItem {
+        events.insert(event, at: 0)
+        events.sort { $0.startsAt < $1.startsAt }
+        saveEvents()
+        return event
+    }
+
     func updateEvent(_ event: EventItem) {
         if let i = events.firstIndex(where: { $0.id == event.id }) {
             events[i] = event
+            events.sort { $0.startsAt < $1.startsAt }
             saveEvents()
         }
+    }
+
+    func deleteEvent(id: UUID) {
+        events.removeAll { $0.id == id }
+        attendance.removeAll { $0.eventID == id }
+        saveEvents()
+        saveAttendance()
     }
 
     /// Replaces event feed from backend payload.
@@ -153,7 +159,7 @@ final class EventDataModel {
         saveEvents()
     }
 
-    // MARK: - Mock Events (UI feed)
+    // MARK: - Mock Events (kept only for admin unit tests — not used in production UI)
     static func mockEvents() -> [EventItem] {
         let user = UUID()
         let calendar = Calendar.current

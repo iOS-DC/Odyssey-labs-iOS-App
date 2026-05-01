@@ -55,7 +55,9 @@ final class MyRidesViewController: UIViewController {
             guard let self else { return }
             let sb = UIStoryboard(name: "JoinRide", bundle: nil)
             guard let vc = sb.instantiateViewController(withIdentifier: "JoinRideViewController") as? JoinRideViewController else { return }
-            navigationController?.pushViewController(vc, animated: true)
+            let nav = UINavigationController(rootViewController: vc)
+            nav.modalPresentationStyle = .fullScreen
+            present(nav, animated: true)
         }
         return v
     }()
@@ -753,7 +755,7 @@ extension MyRidesViewController: UpcomingTableViewCellDelegate {
         present(alert, animated: true)
     }
 
-    func upcomingCellDidTapTrackLiveRide(_ cell: UpcomingTableViewCell) {
+    func upcomingCellDidTapViewMap(_ cell: UpcomingTableViewCell) {
         guard let index = tableView.indexPath(for: cell)?.row else { return }
         let trip = currentTrips[index]
         let passengers = RideDataModel.shared.listBookings(for: trip.ride.id)
@@ -976,6 +978,78 @@ extension MyRidesViewController {
         DispatchQueue.main.async { self.refreshBellBadge() }
     }
 
+    // MARK: - Notification deep-link routing
+
+    private func handleNotificationNavigation(_ notif: AppNotification) {
+        reloadTrips()
+
+        switch notif.type {
+
+        // Driver receives a new join request → open the requests sheet for that ride
+        case .newRequest:
+            guard let rideID = notif.rideID,
+                  let trip = upcomingTrips.first(where: { $0.ride.id == rideID }) else { return }
+            let sb = UIStoryboard(name: "DriverRequests", bundle: nil)
+            guard let requestsVC = sb.instantiateViewController(withIdentifier: "DriverRequestsViewController")
+                    as? DriverRequestsViewController else { return }
+            requestsVC.trip = trip
+            let nav = UINavigationController(rootViewController: requestsVC)
+            if let sheet = nav.sheetPresentationController {
+                sheet.detents = [.medium(), .large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 24
+            }
+            present(nav, animated: true)
+
+        // Passenger: request approved or ride started → show upcoming tab, open driver detail
+        case .requestApproved, .rideStarted:
+            segmentedControl.selectedSegmentIndex = 0
+            updateForSelectedSegment()
+            guard let rideID = notif.rideID,
+                  let trip = upcomingTrips.first(where: { $0.ride.id == rideID }),
+                  trip.role == .passenger,
+                  let driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)
+            else { return }
+            if notif.type == .rideStarted {
+                let trackingVC = ActiveRideViewController.make(mode: .passenger(ride: trip.ride, driver: driver))
+                present(trackingVC, animated: true)
+            } else {
+                let vc = DriverDetailViewController()
+                vc.driver = driver
+                vc.ride = trip.ride
+                if let sheet = vc.sheetPresentationController {
+                    sheet.detents = [.medium(), .large()]
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 24
+                }
+                present(vc, animated: true)
+            }
+
+        // Ride completed → switch to past tab; show rating sheet if available
+        case .rideCompleted:
+            segmentedControl.selectedSegmentIndex = 1
+            updateForSelectedSegment()
+            guard let rideID = notif.rideID,
+                  let trip = pastTrips.first(where: { $0.ride.id == rideID }) else { return }
+            presentRatingSheet(for: trip)
+
+        // Driver: passenger cancelled a confirmed booking → show upcoming tab
+        case .passengerCancelled, .passengerJoined:
+            segmentedControl.selectedSegmentIndex = 0
+            updateForSelectedSegment()
+
+        // Passenger: request denied or ride cancelled → show upcoming/past tab
+        case .requestDenied, .rideCancelled:
+            segmentedControl.selectedSegmentIndex = 0
+            updateForSelectedSegment()
+
+        // Ride created (driver confirmation) → show upcoming tab
+        case .rideCreated:
+            segmentedControl.selectedSegmentIndex = 0
+            updateForSelectedSegment()
+        }
+    }
+
     @objc private func bellTapped() {
         guard let me = UserDataModel.shared.getCurrentUser() else { return }
         Task { [weak self] in
@@ -998,6 +1072,9 @@ extension MyRidesViewController {
                 let sb = UIStoryboard(name: "NotificationInbox", bundle: nil)
                 guard let vc = sb.instantiateViewController(withIdentifier: "NotificationInboxViewController") as? NotificationInboxViewController else { return }
                 vc.notifications = notifs
+                vc.onNotificationTapped = { [weak self] notif in
+                    self?.handleNotificationNavigation(notif)
+                }
                 vc.modalPresentationStyle = .pageSheet
                 if let sheet = vc.sheetPresentationController {
                     sheet.detents = [.medium(), .large()]

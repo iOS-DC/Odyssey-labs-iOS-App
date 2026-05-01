@@ -50,6 +50,13 @@ class CommunityViewController: UIViewController,
     private var pendingShareOperations: Set<UUID> = []
     private var expandedPostKeys: Set<String> = []
 
+    // MARK: - Trips (replaces Feed segment)
+    private var showPastTrips = false
+    private let tripsFilterButton = UIButton(type: .system)
+    private var currentTrips: [Trip] {
+        showPastTrips ? TripDataModel.shared.pastTrips() : TripDataModel.shared.upcomingTrips()
+    }
+
     // MARK: - Models
     struct Post {
         var name: String
@@ -107,7 +114,7 @@ class CommunityViewController: UIViewController,
         )
 
         segmentedControl.setTitle("Events", forSegmentAt: 0)
-        segmentedControl.setTitle("Feed", forSegmentAt: 1)
+        segmentedControl.setTitle("Trips", forSegmentAt: 1)
         segmentedControl.selectedSegmentIndex = 0
 
         tableView.delegate = self
@@ -137,6 +144,8 @@ class CommunityViewController: UIViewController,
         // Register Custom Cells
         commentTableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
         tableView.register(EventCardCell.self, forCellReuseIdentifier: EventCardCell.reuseID)
+        tableView.register(TripCardCell.self, forCellReuseIdentifier: TripCardCell.reuseID)
+        setupTripsFilterButton()
         commentTableView.separatorStyle = .none
         commentTableView.rowHeight = UITableView.automaticDimension
         commentTableView.estimatedRowHeight = 80
@@ -159,9 +168,11 @@ class CommunityViewController: UIViewController,
         navigationController?.setNavigationBarHidden(true, animated: animated)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
-        // Mock events as requested for better visual demonstration
-        self.eventPosts = EventDataModel.mockEvents()
-        
+        // Load cached events immediately, then refresh from Supabase in background
+        self.eventPosts = EventDataModel.shared.eventList()
+        refreshEventsFromBackend()
+        refreshTripsFromBackend()
+
         // Start polling so other users' likes / comments appear automatically
         startFeedRefreshTimer()
     }
@@ -273,6 +284,58 @@ class CommunityViewController: UIViewController,
             existingTop.isActive = false
         }
         segmentedControl.topAnchor.constraint(equalTo: customHeaderView.bottomAnchor, constant: 12).isActive = true
+    }
+
+    func setupTripsFilterButton() {
+        var filterCfg = UIButton.Configuration.filled()
+        filterCfg.baseBackgroundColor = AppDesign.Color.primaryTonal
+        filterCfg.baseForegroundColor = AppDesign.Color.primary
+        filterCfg.cornerStyle = .capsule
+        filterCfg.contentInsets = NSDirectionalEdgeInsets(top: 7, leading: 14, bottom: 7, trailing: 14)
+        filterCfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attr in
+            var a = attr; a.font = UIFont.systemFont(ofSize: 14, weight: .medium); return a
+        }
+        tripsFilterButton.configuration = filterCfg
+        tripsFilterButton.addTarget(self, action: #selector(tripsFilterTapped), for: .touchUpInside)
+        tripsFilterButton.translatesAutoresizingMaskIntoConstraints = false
+        tripsFilterButton.alpha = 0
+        tripsFilterButton.isUserInteractionEnabled = false
+        updateTripsFilterButtonTitle()
+        customHeaderView.addSubview(tripsFilterButton)
+        NSLayoutConstraint.activate([
+            tripsFilterButton.centerYAnchor.constraint(equalTo: customHeaderView.centerYAnchor),
+            tripsFilterButton.trailingAnchor.constraint(equalTo: customHeaderView.trailingAnchor),
+        ])
+    }
+
+    private func updateTripsFilterButtonTitle() {
+        let title = showPastTrips ? "Past Trips" : "Upcoming"
+        tripsFilterButton.configuration?.title = title
+        tripsFilterButton.configuration?.image = UIImage(systemName: "chevron.down")
+        tripsFilterButton.configuration?.imagePlacement = .trailing
+        tripsFilterButton.configuration?.imagePadding = 4
+    }
+
+    @objc private func tripsFilterTapped() {
+        let sheet = UIAlertController(title: "Show Trips", message: nil, preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "Upcoming Trips", style: .default) { [weak self] _ in
+            guard let self else { return }
+            self.showPastTrips = false
+            self.updateTripsFilterButtonTitle()
+            self.tableView.reloadData()
+        })
+        sheet.addAction(UIAlertAction(title: "Past Trips", style: .default) { [weak self] _ in
+            guard let self else { return }
+            self.showPastTrips = true
+            self.updateTripsFilterButtonTitle()
+            self.tableView.reloadData()
+        })
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let pop = sheet.popoverPresentationController {
+            pop.sourceView = tripsFilterButton
+            pop.sourceRect = tripsFilterButton.bounds
+        }
+        present(sheet, animated: true)
     }
 
     func setupNewPostUI() {
@@ -413,17 +476,21 @@ class CommunityViewController: UIViewController,
 
     @IBAction func segmentChanged(_ sender: Any) {
         AppHaptics.selection()
-        
+
         // Ensure all popups are dismissed when switching tabs
         hideComposer()
         hideCommentPopup()
-        
+
         tableView.reloadData()
-        
-        // Hide the custom plus button when on Events tab (index 0)
+
+        let isTrips = segmentedControl.selectedSegmentIndex == 1
         UIView.animate(withDuration: 0.2) {
-            self.headerPlusButton.alpha = self.segmentedControl.selectedSegmentIndex == 0 ? 0 : 1
-            self.headerPlusButton.isUserInteractionEnabled = self.segmentedControl.selectedSegmentIndex != 0
+            // Plus button only shows for... nothing now — Feed is replaced by Trips
+            self.headerPlusButton.alpha = 0
+            self.headerPlusButton.isUserInteractionEnabled = false
+            // Trips filter button visible only on Trips segment
+            self.tripsFilterButton.alpha = isTrips ? 1 : 0
+            self.tripsFilterButton.isUserInteractionEnabled = isTrips
         }
     }
 
@@ -806,9 +873,17 @@ class CommunityViewController: UIViewController,
         }
 
         if segmentedControl.selectedSegmentIndex == 1 {
-            fetchPostsFromSupabase()
+            // Trips segment — refresh from Supabase
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if let remote = try? await TripsAPI.shared.fetchTrips(), !remote.isEmpty {
+                    TripDataModel.shared.replaceTripsFromBackend(remote)
+                    self.tableView.reloadData()
+                }
+                self.refreshControl.endRefreshing()
+            }
         } else {
-            // Re-trigger event fetch (same logic as viewWillAppear)
+            // Events segment
             Task {
                 if let remote = try? await EventsAPI.shared.fetchTopEvents(limit: 30), !remote.isEmpty {
                     await MainActor.run {
@@ -824,6 +899,31 @@ class CommunityViewController: UIViewController,
     }
 
     // MARK: - Supabase integration
+
+    private func refreshEventsFromBackend() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if let remote = try? await EventsAPI.shared.fetchTopEvents(limit: 30), !remote.isEmpty {
+                EventDataModel.shared.replaceEventsFromBackend(remote)
+                self.eventPosts = EventDataModel.shared.eventList()
+                if self.segmentedControl.selectedSegmentIndex == 0 {
+                    self.tableView.reloadData()
+                }
+            }
+        }
+    }
+
+    private func refreshTripsFromBackend() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if let remote = try? await TripsAPI.shared.fetchTrips(), !remote.isEmpty {
+                TripDataModel.shared.replaceTripsFromBackend(remote)
+                if self.segmentedControl.selectedSegmentIndex == 1 {
+                    self.tableView.reloadData()
+                }
+            }
+        }
+    }
 
     /// Fetches posts from the community_posts Supabase table and prepends them to feedPosts.
     /// The local seed/default posts are kept as a fallback if the network is unavailable.
@@ -959,7 +1059,7 @@ class CommunityViewController: UIViewController,
         }
 
         return segmentedControl.selectedSegmentIndex == 1
-            ? feedPosts.count
+            ? currentTrips.count
             : eventPosts.count
     }
     func getCellIndexPath(sender: UIView) -> IndexPath? {
@@ -987,8 +1087,40 @@ class CommunityViewController: UIViewController,
             return cell
         }
 
-        // FEED LIST
+        // TRIPS LIST
         if segmentedControl.selectedSegmentIndex == 1 {
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: TripCardCell.reuseID, for: indexPath) as? TripCardCell else {
+                return UITableViewCell()
+            }
+            let trips = currentTrips
+            guard indexPath.row < trips.count else { return UITableViewCell() }
+            let trip = trips[indexPath.row]
+            cell.configure(with: trip)
+            cell.onLike = { [weak self] in
+                guard let self else { return }
+                TripDataModel.shared.toggleLike(id: trip.id)
+                self.tableView.reloadRows(at: [indexPath], with: .none)
+            }
+            cell.onShare = { [weak self] in
+                guard let self else { return }
+                let text = "Check out \(trip.title) — \(trip.location) (\(trip.dateRange)) for \(trip.priceFormatted)!"
+                let vc = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+                if let pop = vc.popoverPresentationController {
+                    pop.sourceView = self.view
+                    pop.sourceRect = CGRect(x: self.view.bounds.midX, y: self.view.bounds.midY, width: 0, height: 0)
+                }
+                self.present(vc, animated: true)
+            }
+            cell.onJoin = { [weak self] in
+                guard let self else { return }
+                let detail = TripDetailViewController(trip: trip)
+                self.navigationController?.pushViewController(detail, animated: true)
+            }
+            return cell
+        }
+
+        // ---- dead code below kept to silence compiler (Feed is now Trips) ----
+        if false {
             let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath)
             let post = feedPosts[indexPath.row]
             let expansionKey = postExpansionKey(for: post, at: indexPath)
@@ -1221,8 +1353,14 @@ class CommunityViewController: UIViewController,
 
     // MARK: - didSelectRowAt
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        // Card tap does nothing — only the 💬 comment button opens the comment section.
         tableView.deselectRow(at: indexPath, animated: true)
+        guard tableView != commentTableView else { return }
+        if segmentedControl.selectedSegmentIndex == 1 {
+            let trips = currentTrips
+            guard indexPath.row < trips.count else { return }
+            let detail = TripDetailViewController(trip: trips[indexPath.row])
+            navigationController?.pushViewController(detail, animated: true)
+        }
     }
 
     // MARK: - Swipe actions (Delete own posts/comments)
@@ -1273,8 +1411,10 @@ class CommunityViewController: UIViewController,
         }
 
         // ACTION: Delete Post
-        // Only the feed tab, not events
-        guard segmentedControl.selectedSegmentIndex == 1,
+        // Trips tab has no swipe-to-delete; Events tab has none either
+        return nil
+        // (Feed is replaced by Trips — dead code below kept to avoid removing symbols)
+        guard segmentedControl.selectedSegmentIndex == -1,
               indexPath.row < feedPosts.count else { return nil }
 
         let post = feedPosts[indexPath.row]
@@ -1316,7 +1456,8 @@ class CommunityViewController: UIViewController,
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         guard tableView != commentTableView else { return 80 }
-        return segmentedControl.selectedSegmentIndex == 0 ? 270 : 160
+        if segmentedControl.selectedSegmentIndex == 1 { return 420 }
+        return 270
     }
 }
 

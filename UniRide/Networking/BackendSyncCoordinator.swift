@@ -9,9 +9,10 @@ final class BackendSyncCoordinator {
     func refreshHomeFeedIfEnabled() async {
         async let ridesTask: Void = syncRides()
         async let eventsTask: Void = syncEvents()
+        async let tripsTask: Void = syncTrips()
         async let myHistoryTask: Void = syncMyHistory()
 
-        _ = await (ridesTask, eventsTask, myHistoryTask)
+        _ = await (ridesTask, eventsTask, tripsTask, myHistoryTask)
     }
 
     private func syncMyHistory() async {
@@ -36,6 +37,17 @@ final class BackendSyncCoordinator {
             EventDataModel.shared.replaceEventsFromBackend(events)
         } catch {
             print("Backend event sync failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func syncTrips() async {
+        do {
+            let trips = try await TripsAPI.shared.fetchTrips()
+            if !trips.isEmpty {
+                TripDataModel.shared.replaceTripsFromBackend(trips)
+            }
+        } catch {
+            print("Backend trip sync failed: \(error.localizedDescription)")
         }
     }
 }

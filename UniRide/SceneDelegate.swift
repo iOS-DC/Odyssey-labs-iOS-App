@@ -22,7 +22,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // This prevents UIKit from defaulting to the "Email" storyboard VC and flickering.
         let isLoggedIn = SessionManager.shared.isLoggedIn
         
-        if isLoggedIn {
+        if EventAdminSession.shared.isLoggedIn {
+            window.rootViewController = UINavigationController(rootViewController: EventAdminDashboardViewController())
+        } else if isLoggedIn {
             // Logged in: Show a neutral color (Splash) while restoreSessionOrShowAuth runs
             let splashVC = UIViewController()
             splashVC.view.backgroundColor = .systemBackground // or matches LaunchScreen
@@ -61,6 +63,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func restoreSessionOrShowAuth() async {
         guard let window = window else { return }
         let session = SessionManager.shared
+
+        guard !EventAdminSession.shared.isLoggedIn else {
+            await MainActor.run {
+                window.rootViewController = UINavigationController(rootViewController: EventAdminDashboardViewController())
+                window.makeKeyAndVisible()
+            }
+            return
+        }
 
         guard session.isLoggedIn else {
             // No valid session — show auth flow on main thread
@@ -119,4 +129,3 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneWillResignActive(_ scene: UIScene) {}
     func sceneDidEnterBackground(_ scene: UIScene) {}
 }
-

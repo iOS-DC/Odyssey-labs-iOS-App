@@ -73,7 +73,7 @@ class EventTableViewCell: UITableViewCell {
 
         attendButton.setTitle("View Details ›", for: .normal)
 
-        eventImageView.image = UIImage(named: event.imageName ?? "eventPlaceholder")
+        eventImageView.loadImage(from: event.imageName ?? "eventPlaceholder")
     }
 
     private func timingBadge(for date: Date) -> String {

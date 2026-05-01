@@ -31,6 +31,16 @@ class JoinRideViewController: UIViewController,
         title = "Find a Ride"
         view.backgroundColor = AppDesign.Color.groupedBackground
 
+        // Show a close button when presented modally (no back stack)
+        if navigationController?.viewControllers.first == self {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(
+                image: UIImage(systemName: "xmark"),
+                style: .plain,
+                target: self,
+                action: #selector(closeTapped)
+            )
+        }
+
         // Hide the storyboard card — we build our own layout
         contentView?.isHidden = true
 
@@ -221,6 +231,10 @@ class JoinRideViewController: UIViewController,
         fromCoordinate = CLLocationCoordinate2D(latitude: prefill.from.lat, longitude: prefill.from.lon)
         toCoordinate   = CLLocationCoordinate2D(latitude: prefill.to.lat,   longitude: prefill.to.lon)
         updateFindButtonState()
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: true)
     }
 
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) { refreshTimeConstraintIfNeeded() }
