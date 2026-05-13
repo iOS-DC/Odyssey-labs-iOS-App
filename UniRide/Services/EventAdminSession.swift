@@ -3,7 +3,7 @@ import Foundation
 final class EventAdminSession {
     static let shared = EventAdminSession()
 
-    static let email = "events.admin@chitkara.edu.in"
+    static let email = "admin@chitkara.edu.in"
     static let otp = "202606"
 
     private let sessionKey = "event_admin_session"

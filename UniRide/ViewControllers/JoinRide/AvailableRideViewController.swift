@@ -307,7 +307,7 @@ final class AvailableRideViewController: UIViewController,
                     let dest = LocationPoint(lat: lat, lon: lon, address: event.location?.name)
                     self.rides = RideDataModel.shared.ridesNear(dest, maxMeters: 2000)
                 } else {
-                    self.rides = RideDataModel.shared.allPublishedRides()
+                    self.rides = RideDataModel.shared.getAllRides().filter { $0.status == .published }
                 }
                 self.applyFilters()
                 return
