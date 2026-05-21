@@ -189,6 +189,7 @@ Camera permit in forest area'
 where u.email = 'events.admin@chitkara.edu.in';
 
 
+
 -- ═══════════════════════════════════════════════════════════════
 -- STEP 3 — Seed events  (run as a third query)
 -- ═══════════════════════════════════════════════════════════════

@@ -100,12 +100,12 @@ class JoinRideViewController: UIViewController,
         // From / To unified route card
         fromTextField.borderStyle = .none
         fromTextField.backgroundColor = .clear
-        fromTextField.addLeftIcon("circle.fill", tint: AppDesign.Color.success)
+        fromTextField.addLeftIcon("smallcircle.filled.circle", tint: AppDesign.Color.success)
         fromTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
 
         toTextField.borderStyle = .none
         toTextField.backgroundColor = .clear
-        toTextField.addLeftIcon("mappin.circle.fill", tint: AppDesign.Color.destructive)
+        toTextField.addLeftIcon("smallcircle.filled.circle", tint: AppDesign.Color.destructive)
         toTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
 
         stack.addArrangedSubview(makeRouteCard())

@@ -166,12 +166,12 @@ final class AvailableRideViewController: UIViewController,
         view.addSubview(routeSummaryView)
 
         let fromLabel = makeRouteSummaryLabel(
-            icon: "circle.fill",
+            icon: "smallcircle.filled.circle",
             tint: AppDesign.Color.success,
             text: fromAddress?.nilIfBlank ?? event?.location?.name ?? "Selected pickup"
         )
         let toLabel = makeRouteSummaryLabel(
-            icon: "mappin.circle.fill",
+            icon: "smallcircle.filled.circle",
             tint: AppDesign.Color.destructive,
             text: toAddress?.nilIfBlank ?? event?.location?.name ?? "Selected drop-off"
         )
