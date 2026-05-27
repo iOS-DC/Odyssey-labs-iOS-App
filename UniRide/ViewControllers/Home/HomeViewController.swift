@@ -109,6 +109,10 @@ class HomeViewController: UIViewController {
             forCellReuseIdentifier: HomeTripShelfCell.reuseID
         )
         homeTableView.register(
+            UINib(nibName: "HomeEventShelfCell", bundle: nil),
+            forCellReuseIdentifier: HomeEventShelfCell.reuseID
+        )
+        homeTableView.register(
             UINib(nibName: "HomeEmptyStateCell", bundle: nil),
             forCellReuseIdentifier: HomeEmptyStateCell.reuseID
         )
@@ -205,11 +209,6 @@ class HomeViewController: UIViewController {
         navigationController?.pushViewController(vc, animated: true)
     }
 
-    @objc private func attendEventFromHome(_ sender: UIButton) {
-        guard events.indices.contains(sender.tag) else { return }
-        openEventDetailsScreen(event: events[sender.tag])
-    }
-
     @objc private func seeAllEventsTapped() {
         tabBarController?.selectedIndex = 2
     }
@@ -272,7 +271,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         if section == upcomingSectionIndex { return 1 }
         if section == ridesSectionIndex { return max(nearbyRides.count, 1) }
         if section == tripsSectionIndex { return trips.isEmpty ? 0 : 1 }
-        if section == eventsSectionIndex { return events.isEmpty ? 1 : events.count }
+        if section == eventsSectionIndex { return 1 } // one shelf row, or one empty-state row
         return 0
     }
 
@@ -317,7 +316,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
             return cell
         }
 
-        // ── Events ──
+        // ── Top Events shelf ──
         if indexPath.section == eventsSectionIndex {
             if events.isEmpty {
                 let cell = tableView.dequeueReusableCell(withIdentifier: HomeEmptyStateCell.reuseID, for: indexPath) as! HomeEmptyStateCell
@@ -330,11 +329,11 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
                 )
                 return cell
             }
-            let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
-            cell.configure(with: events[indexPath.row])
-            cell.attendButton.tag = indexPath.row
-            cell.attendButton.removeTarget(nil, action: nil, for: .allEvents)
-            cell.attendButton.addTarget(self, action: #selector(attendEventFromHome(_:)), for: .touchUpInside)
+            let cell = tableView.dequeueReusableCell(withIdentifier: HomeEventShelfCell.reuseID, for: indexPath) as! HomeEventShelfCell
+            cell.configure(with: events)
+            cell.onEventTapped = { [weak self] event in
+                self?.openEventDetailsScreen(event: event)
+            }
             return cell
         }
 
@@ -347,6 +346,7 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         if indexPath.section == upcomingSectionIndex { return UITableView.automaticDimension }
         if indexPath.section == ridesSectionIndex { return nearbyRides.isEmpty ? 240 : 220 }
         if indexPath.section == tripsSectionIndex { return 210 }
+        if indexPath.section == eventsSectionIndex { return events.isEmpty ? 240 : 210 }
         return 150
     }
 
@@ -354,12 +354,12 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         tableView.deselectRow(at: indexPath, animated: true)
         guard !isLoading else { return }
 
+        // Nearby rides are still per-row, so they get table-level row taps.
+        // Trips and events live inside horizontal shelves and handle taps internally.
         if indexPath.section == ridesSectionIndex && !nearbyRides.isEmpty {
             let ride = nearbyRides[indexPath.row]
             let driver = ride.driverProfile ?? UserDataModel.shared.getUser(by: ride.driverUserID)
             openRideDetail(ride: ride, driver: driver)
-        } else if indexPath.section == eventsSectionIndex && !events.isEmpty {
-            openEventDetailsScreen(event: events[indexPath.row])
         }
     }
 

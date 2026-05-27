@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="EMC-Rt-Vw1" customClass="EventMiniCardView" customModule="UniRide" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="168" height="200"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <subviews>
+                <view contentMode="scaleToFill" clipsSubviews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EMC-Cl-Vw1">
+                    <rect key="frame" x="0.0" y="0.0" width="168" height="200"/>
+                    <subviews>
+                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="EMC-Iv-Hr1">
+                            <rect key="frame" x="0.0" y="0.0" width="168" height="110"/>
+                            <color key="backgroundColor" red="0.89803921568627454" green="0.89803921568627454" blue="0.91764705882352937" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="110" id="EMC-Iv-Ht"/>
+                            </constraints>
+                        </imageView>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="EMC-Lb-Ttl">
+                            <rect key="frame" x="10" y="118" width="148" height="16"/>
+                            <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="13"/>
+                            <nil key="textColor"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Location" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="EMC-Lb-Loc">
+                            <rect key="frame" x="10" y="136" width="148" height="14"/>
+                            <fontDescription key="fontDescription" type="system" pointSize="11"/>
+                            <color key="textColor" systemColor="secondaryLabelColor"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Date" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="EMC-Lb-Dt">
+                            <rect key="frame" x="10" y="156" width="148" height="17"/>
+                            <fontDescription key="fontDescription" type="system" weight="bold" pointSize="14"/>
+                            <nil key="textColor"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                    </subviews>
+                    <constraints>
+                        <constraint firstItem="EMC-Iv-Hr1" firstAttribute="top" secondItem="EMC-Cl-Vw1" secondAttribute="top" id="EMC-Iv-Top"/>
+                        <constraint firstItem="EMC-Iv-Hr1" firstAttribute="leading" secondItem="EMC-Cl-Vw1" secondAttribute="leading" id="EMC-Iv-Lead"/>
+                        <constraint firstItem="EMC-Cl-Vw1" firstAttribute="trailing" secondItem="EMC-Iv-Hr1" secondAttribute="trailing" id="EMC-Iv-Trail"/>
+                        <constraint firstItem="EMC-Lb-Ttl" firstAttribute="top" secondItem="EMC-Iv-Hr1" secondAttribute="bottom" constant="8" id="EMC-Lb-Top"/>
+                        <constraint firstItem="EMC-Lb-Ttl" firstAttribute="leading" secondItem="EMC-Cl-Vw1" secondAttribute="leading" constant="10" id="EMC-Lb-Lead"/>
+                        <constraint firstItem="EMC-Cl-Vw1" firstAttribute="trailing" secondItem="EMC-Lb-Ttl" secondAttribute="trailing" constant="10" id="EMC-Lb-Trail"/>
+                        <constraint firstItem="EMC-Lb-Loc" firstAttribute="top" secondItem="EMC-Lb-Ttl" secondAttribute="bottom" constant="2" id="EMC-Lc-Top"/>
+                        <constraint firstItem="EMC-Lb-Loc" firstAttribute="leading" secondItem="EMC-Cl-Vw1" secondAttribute="leading" constant="10" id="EMC-Lc-Lead"/>
+                        <constraint firstItem="EMC-Cl-Vw1" firstAttribute="trailing" secondItem="EMC-Lb-Loc" secondAttribute="trailing" constant="10" id="EMC-Lc-Trail"/>
+                        <constraint firstItem="EMC-Lb-Dt" firstAttribute="top" secondItem="EMC-Lb-Loc" secondAttribute="bottom" constant="6" id="EMC-Dt-Top"/>
+                        <constraint firstItem="EMC-Lb-Dt" firstAttribute="leading" secondItem="EMC-Cl-Vw1" secondAttribute="leading" constant="10" id="EMC-Dt-Lead"/>
+                        <constraint firstItem="EMC-Cl-Vw1" firstAttribute="bottom" secondItem="EMC-Lb-Dt" secondAttribute="bottom" constant="10" id="EMC-Dt-Bot"/>
+                    </constraints>
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                            <real key="value" value="16"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
+                </view>
+            </subviews>
+            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <constraints>
+                <constraint firstAttribute="width" constant="168" id="EMC-Rt-Wd"/>
+                <constraint firstItem="EMC-Cl-Vw1" firstAttribute="top" secondItem="EMC-Rt-Vw1" secondAttribute="top" id="EMC-Cl-Top"/>
+                <constraint firstItem="EMC-Cl-Vw1" firstAttribute="leading" secondItem="EMC-Rt-Vw1" secondAttribute="leading" id="EMC-Cl-Lead"/>
+                <constraint firstItem="EMC-Rt-Vw1" firstAttribute="trailing" secondItem="EMC-Cl-Vw1" secondAttribute="trailing" id="EMC-Cl-Trail"/>
+                <constraint firstItem="EMC-Rt-Vw1" firstAttribute="bottom" secondItem="EMC-Cl-Vw1" secondAttribute="bottom" id="EMC-Cl-Bot"/>
+            </constraints>
+            <connections>
+                <outlet property="dateLabel" destination="EMC-Lb-Dt" id="EMC-Out-Dt"/>
+                <outlet property="heroImageView" destination="EMC-Iv-Hr1" id="EMC-Out-Iv"/>
+                <outlet property="locationLabel" destination="EMC-Lb-Loc" id="EMC-Out-Lc"/>
+                <outlet property="titleLabel" destination="EMC-Lb-Ttl" id="EMC-Out-Tt"/>
+            </connections>
+        </view>
+    </objects>
+    <resources>
+        <systemColor name="secondaryLabelColor">
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.6" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>
