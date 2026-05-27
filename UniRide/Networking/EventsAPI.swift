@@ -28,6 +28,34 @@ private struct RemoteEvent: Decodable {
     }
 }
 
+private struct EventPayload: Encodable {
+    let id: String?
+    let createdByUserID: String
+    let title: String
+    let details: String?
+    let locationName: String?
+    let startsAt: String
+    let endsAt: String?
+    let attendeeCount: Int
+    let dayScholarCount: Int
+    let imageName: String?
+    let shareCount: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case createdByUserID = "created_by_user_id"
+        case title
+        case details
+        case locationName = "location_name"
+        case startsAt = "starts_at"
+        case endsAt = "ends_at"
+        case attendeeCount = "attendee_count"
+        case dayScholarCount = "day_scholar_count"
+        case imageName = "image_name"
+        case shareCount = "share_count"
+    }
+}
+
 final class EventsAPI {
     static let shared = EventsAPI()
 
@@ -79,5 +107,49 @@ final class EventsAPI {
         // Supabase PATCH returns 204 No Content by default unless Prefer: return=representation is set.
         let _: EmptyResponse = try await client.send(endpoint, as: EmptyResponse.self)
         return newCount
+    }
+
+    func createEvent(_ event: EventItem) async throws {
+        let endpoint = APIEndpoint(
+            path: "/rest/v1/events",
+            method: "POST",
+            headers: ["Prefer": "return=minimal"],
+            body: try client.encodeBody(payload(for: event, includeID: true))
+        )
+        let _: EmptyResponse = try await client.send(endpoint, as: EmptyResponse.self)
+    }
+
+    func updateEvent(_ event: EventItem) async throws {
+        let endpoint = APIEndpoint(
+            path: "/rest/v1/events?id=eq.\(event.id.uuidString)",
+            method: "PATCH",
+            headers: ["Prefer": "return=minimal"],
+            body: try client.encodeBody(payload(for: event, includeID: false))
+        )
+        let _: EmptyResponse = try await client.send(endpoint, as: EmptyResponse.self)
+    }
+
+    func deleteEvent(eventID: UUID) async throws {
+        let endpoint = APIEndpoint(
+            path: "/rest/v1/events?id=eq.\(eventID.uuidString)",
+            method: "DELETE"
+        )
+        let _: EmptyResponse = try await client.send(endpoint, as: EmptyResponse.self)
+    }
+
+    private func payload(for event: EventItem, includeID: Bool) -> EventPayload {
+        EventPayload(
+            id: includeID ? event.id.uuidString : nil,
+            createdByUserID: event.createdByUserID.uuidString,
+            title: event.title,
+            details: event.details,
+            locationName: event.location?.name,
+            startsAt: iso.string(from: event.startsAt),
+            endsAt: event.endsAt.map { iso.string(from: $0) },
+            attendeeCount: event.attendeeCount,
+            dayScholarCount: event.dayScholarCount,
+            imageName: event.imageName,
+            shareCount: event.shareCount
+        )
     }
 }

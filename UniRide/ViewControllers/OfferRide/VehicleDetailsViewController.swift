@@ -175,7 +175,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
         // Minus
         var minusCfg = UIButton.Configuration.filled()
         minusCfg.image                = UIImage(systemName: "minus")
-        minusCfg.baseBackgroundColor  = .systemGray5
+        minusCfg.baseBackgroundColor  = AppDesign.Color.borderSubtle
         minusCfg.baseForegroundColor  = .label
         minusCfg.cornerStyle          = .capsule
         minusSeat.configuration       = minusCfg
@@ -186,7 +186,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
         // Count label
         seatCountLbl.text          = "\(seatCount)"
-        seatCountLbl.font          = AppDesign.Typography.h2
+        seatCountLbl.font          = AppDesign.Typography.display
         seatCountLbl.textAlignment = .center
         seatCountLbl.widthAnchor.constraint(equalToConstant: 60).isActive = true
 
@@ -240,7 +240,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     }
 
     private func configureNextButton() {
-        nextBtn.setTitle("Next", for: .normal)
+        nextBtn.setTitle("Continue", for: .normal)
         nextBtn.applyPrimaryButton(color: AppDesign.Color.primary, radius: AppDesign.Radius.sm)
         nextBtn.setPrimaryCTAEnabled(false)
         nextBtn.translatesAutoresizingMaskIntoConstraints = false

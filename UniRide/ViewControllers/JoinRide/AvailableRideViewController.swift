@@ -12,6 +12,8 @@ final class AvailableRideViewController: UIViewController,
     // MARK: - Inputs (from JoinRideViewController or EventDetailsViewController)
     var fromCoordinate: CLLocationCoordinate2D?
     var toCoordinate: CLLocationCoordinate2D?
+    var fromAddress: String?
+    var toAddress: String?
     var date: Date?
     var time: Date?
     var event: EventItem?
@@ -28,6 +30,7 @@ final class AvailableRideViewController: UIViewController,
     // MARK: - UI
     private let searchController  = UISearchController(searchResultsController: nil)
     private let resultCountLabel  = UILabel()
+    private let routeSummaryView  = UIView()
     private let emptyStateView    = UIView()
     private var filterBarBtn: UIBarButtonItem!
     private lazy var offlineView: OfflineEmptyStateView = {
@@ -45,6 +48,7 @@ final class AvailableRideViewController: UIViewController,
         title = event != nil ? "Rides to \(event!.title)" : "Available Rides"
         setupSearchController()
         setupFilterButton()
+        setupRouteSummary()
         setupResultCountLabel()
         setupEmptyState()
         setupTableView()
@@ -143,7 +147,7 @@ final class AvailableRideViewController: UIViewController,
         }
 
         NSLayoutConstraint.activate([
-            resultCountLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+            resultCountLabel.topAnchor.constraint(equalTo: routeSummaryView.bottomAnchor, constant: AppDesign.Spacing.xs),
             resultCountLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
             resultCountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -30),
             
@@ -154,24 +158,84 @@ final class AvailableRideViewController: UIViewController,
         tableView.contentInset.top = 0
     }
 
+    private func setupRouteSummary() {
+        routeSummaryView.translatesAutoresizingMaskIntoConstraints = false
+        routeSummaryView.applyCardStyle(corner: AppDesign.Radius.md,
+                                        shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                                        shadowRadius: AppDesign.Shadow.smallCardRadius)
+        view.addSubview(routeSummaryView)
+
+        let fromLabel = makeRouteSummaryLabel(
+            icon: "smallcircle.filled.circle",
+            tint: AppDesign.Color.success,
+            text: fromAddress?.nilIfBlank ?? event?.location?.name ?? "Selected pickup"
+        )
+        let toLabel = makeRouteSummaryLabel(
+            icon: "smallcircle.filled.circle",
+            tint: AppDesign.Color.destructive,
+            text: toAddress?.nilIfBlank ?? event?.location?.name ?? "Selected drop-off"
+        )
+        let divider = UIView()
+        divider.backgroundColor = AppDesign.Color.divider
+        divider.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
+
+        let stack: UIStackView = UIStackView(arrangedSubviews: [fromLabel, divider, toLabel])
+        stack.axis = .vertical
+        stack.spacing = AppDesign.Spacing.xs
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        routeSummaryView.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            routeSummaryView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDesign.Spacing.sm),
+            routeSummaryView.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            routeSummaryView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDesign.Spacing.md),
+
+            stack.topAnchor.constraint(equalTo: routeSummaryView.topAnchor, constant: AppDesign.Spacing.sm),
+            stack.leadingAnchor.constraint(equalTo: routeSummaryView.leadingAnchor, constant: AppDesign.Spacing.sm),
+            stack.trailingAnchor.constraint(equalTo: routeSummaryView.trailingAnchor, constant: -AppDesign.Spacing.sm),
+            stack.bottomAnchor.constraint(equalTo: routeSummaryView.bottomAnchor, constant: -AppDesign.Spacing.sm)
+        ])
+    }
+
+    private func makeRouteSummaryLabel(icon: String, tint: UIColor, text: String) -> UIView {
+        let imageView = UIImageView(image: UIImage(systemName: icon))
+        imageView.tintColor = tint
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            imageView.widthAnchor.constraint(equalToConstant: AppDesign.Size.iconSm),
+            imageView.heightAnchor.constraint(equalToConstant: AppDesign.Size.iconSm)
+        ])
+
+        let label = UILabel()
+        label.text = text
+        label.applyTextStyle(AppDesign.Typography.captionStrong, color: AppDesign.Color.textPrimary, lines: 1)
+
+        let row = UIStackView(arrangedSubviews: [imageView, label])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = AppDesign.Spacing.xs
+        return row
+    }
+
     private func setupEmptyState() {
         emptyStateView.isHidden = true
         emptyStateView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(emptyStateView)
 
         let iconView = UIImageView(image: UIImage(systemName: "magnifyingglass"))
-        iconView.tintColor = .systemGray3
+        iconView.tintColor = AppDesign.Color.textTertiary
         iconView.contentMode = .scaleAspectFit
         iconView.translatesAutoresizingMaskIntoConstraints = false
 
         let titleLbl = UILabel()
-        titleLbl.text = "No rides found"
+        titleLbl.text = "No rides on this route"
         titleLbl.applyTextStyle(AppDesign.Typography.bodyStrong, color: .secondaryLabel)
         titleLbl.textAlignment = .center
         titleLbl.translatesAutoresizingMaskIntoConstraints = false
 
         let bodyLbl = UILabel()
-        bodyLbl.text = "Try adjusting your filters\nor search for a different route."
+        bodyLbl.text = "Try a nearby date or widen your search — or offer this ride yourself."
         bodyLbl.applyTextStyle(AppDesign.Typography.subheadline, color: .tertiaryLabel, lines: 0)
         bodyLbl.textAlignment = .center
         bodyLbl.translatesAutoresizingMaskIntoConstraints = false
@@ -182,7 +246,13 @@ final class AvailableRideViewController: UIViewController,
         clearBtn.addTarget(self, action: #selector(clearFilters), for: .touchUpInside)
         clearBtn.translatesAutoresizingMaskIntoConstraints = false
 
-        let stack = UIStackView(arrangedSubviews: [iconView, titleLbl, bodyLbl, clearBtn])
+        let offerBtn = UIButton(type: .system)
+        offerBtn.setTitle("Offer This Route", for: .normal)
+        offerBtn.applyTextActionStyle()
+        offerBtn.addTarget(self, action: #selector(offerThisRoute), for: .touchUpInside)
+        offerBtn.translatesAutoresizingMaskIntoConstraints = false
+
+        let stack = UIStackView(arrangedSubviews: [iconView, titleLbl, bodyLbl, clearBtn, offerBtn])
         stack.axis = .vertical
         stack.alignment = .center
         stack.spacing = AppDesign.Spacing.sm
@@ -233,7 +303,12 @@ final class AvailableRideViewController: UIViewController,
 
             // Event-filtered rides (shown from EventDetails screen)
             if let event = self.event {
-                self.rides = MockData.mockRidesForEvent(event)
+                if let lat = event.location?.lat, let lon = event.location?.lon {
+                    let dest = LocationPoint(lat: lat, lon: lon, address: event.location?.name)
+                    self.rides = RideDataModel.shared.ridesNear(dest, maxMeters: 2000)
+                } else {
+                    self.rides = RideDataModel.shared.getAllRides().filter { $0.status == .published }
+                }
                 self.applyFilters()
                 return
             }
@@ -258,6 +333,14 @@ final class AvailableRideViewController: UIViewController,
         // FILTER: Exclude rides from blocked users
         result = result.filter { !blockedUserIDs.contains($0.driverUserID) }
 
+        // FILTER: Exclude my own rides
+        if let currentUID = UserDataModel.shared.getCurrentUser()?.id {
+            result = result.filter { $0.driverUserID != currentUID }
+        }
+
+        // FILTER: Exclude full rides
+        result = result.filter { $0.seatsAvailable > 0 }
+
         // Apply text search on top of filter
         let q = searchQuery.trimmingCharacters(in: .whitespaces).lowercased()
         if !q.isEmpty {
@@ -276,12 +359,18 @@ final class AvailableRideViewController: UIViewController,
         tableView.reloadData()
 
         // Result count label
-        let total    = rides.count
+        let currentUID = UserDataModel.shared.getCurrentUser()?.id
+        let eligible  = rides.filter { ride in
+            !blockedUserIDs.contains(ride.driverUserID) &&
+            ride.driverUserID != currentUID &&
+            ride.seatsAvailable > 0
+        }
+        let total    = eligible.count
         let showing  = filteredRides.count
         let filtered = !activeFilter.isDefault || !searchQuery.isEmpty
 
         if filtered {
-            resultCountLabel.text = showing == 0 ? "No rides match your filters"
+            resultCountLabel.text = showing == 0 ? "No matches — try clearing your filters"
                                                  : "Showing \(showing) of \(total) ride\(total == 1 ? "" : "s")"
         } else {
             resultCountLabel.text = "\(total) ride\(total == 1 ? "" : "s") available"
@@ -302,7 +391,8 @@ final class AvailableRideViewController: UIViewController,
 
     @objc private func filterTapped() {
         AppHaptics.impact(.light)
-        let vc = RideFilterViewController()
+        let sb = UIStoryboard(name: "RideFilter", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "RideFilterViewController") as? RideFilterViewController else { return }
         vc.currentFilter = activeFilter
         vc.onApply = { [weak self] newFilter in
             self?.activeFilter = newFilter
@@ -325,11 +415,40 @@ final class AvailableRideViewController: UIViewController,
         applyFilters()
     }
 
+    @objc private func offerThisRoute() {
+        let sb = UIStoryboard(name: "OfferRide", bundle: nil)
+        guard let vc = sb.instantiateViewController(withIdentifier: "OfferRideViewController") as? OfferRideViewController else { return }
+        if let fromCoordinate {
+            vc.prefilledFrom = LocationPoint(
+                lat: fromCoordinate.latitude,
+                lon: fromCoordinate.longitude,
+                address: fromAddress
+            )
+        }
+        if let toCoordinate {
+            vc.prefilledTo = LocationPoint(
+                lat: toCoordinate.latitude,
+                lon: toCoordinate.longitude,
+                address: toAddress
+            )
+        }
+        vc.prefilledDate = date
+        vc.prefilledTime = time
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
     // MARK: - UISearchResultsUpdating
 
     func updateSearchResults(for searchController: UISearchController) {
         searchQuery = searchController.searchBar.text ?? ""
         applyFilters()
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
@@ -370,8 +489,10 @@ extension AvailableRideViewController {
 
     private func openDetail(ride: Ride, driver: UserProfile?) {
         ensureNonGuest { [weak self] in
-            let vc = RideDetailViewController()
-            vc.ride = ride; vc.driver = driver
+            let sb = UIStoryboard(name: "RideDetail", bundle: nil)
+            guard let vc = sb.instantiateViewController(withIdentifier: "RideDetailViewController") as? RideDetailViewController else { return }
+            vc.ride = ride
+            vc.driver = driver
             self?.navigationController?.pushViewController(vc, animated: true)
         }
     }

@@ -110,7 +110,7 @@ struct GroupChatView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 22))
                 .overlay(
                     RoundedRectangle(cornerRadius: 22)
-                        .stroke(Color(.systemGray4), lineWidth: 1)
+                        .stroke(Color(AppDesign.Color.border), lineWidth: 1)
                 )
 
             Button {
@@ -120,8 +120,8 @@ struct GroupChatView: View {
                     .resizable()
                     .frame(width: 38, height: 38)
                     .foregroundColor(inputText.trimmingCharacters(in: .whitespaces).isEmpty
-                                     ? Color(.systemGray3)
-                                     : .green)
+                                     ? Color(AppDesign.Color.textTertiary)
+                                     : Color(AppDesign.Color.success))
             }
             .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty)
             .animation(.easeInOut(duration: 0.15), value: inputText)
@@ -166,7 +166,7 @@ private struct MessageBubble: View {
                     .foregroundColor(message.isCurrentUser ? .white : .primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(message.isCurrentUser ? Color.blue : Color(.systemGray6))
+                    .background(message.isCurrentUser ? Color(AppDesign.Color.primary) : Color(AppDesign.Color.surfaceElevated))
                     .clipShape(BubbleShape(isCurrentUser: message.isCurrentUser))
                     .contextMenu {
                         if !message.isCurrentUser {

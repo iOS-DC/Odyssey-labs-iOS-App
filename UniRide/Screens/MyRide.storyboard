@@ -10,7 +10,7 @@
         <!--My Ride-->
         <scene sceneID="s0d-6b-0kx">
             <objects>
-                <viewController storyboardIdentifier="MyRidesViewController" title="My Ride" id="Y6W-OH-hqX" customClass="MyRidesViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="MyRidesViewController" title="My Rides" id="Y6W-OH-hqX" customClass="MyRidesViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -68,7 +68,7 @@
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="flt-btn-001" secondAttribute="trailing" constant="16" id="flt-trail-001"/>
                         </constraints>
                     </view>
-                    <tabBarItem key="tabBarItem" title="MyRide" image="car" catalog="system" id="trU-ad-aCg"/>
+                    <tabBarItem key="tabBarItem" title="My Rides" image="car" catalog="system" id="trU-ad-aCg"/>
                     <connections>
                         <outlet property="filterButton" destination="flt-btn-001" id="flt-out-001"/>
                         <outlet property="segmentedControl" destination="ozt-5i-FBz" id="qja-Gk-VWB"/>

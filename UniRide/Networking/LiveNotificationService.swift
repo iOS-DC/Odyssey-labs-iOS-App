@@ -270,7 +270,9 @@ final class LiveNotificationService {
                     }
                     guard let pendingTrip else { return }
 
-                    let vc = DriverRequestsViewController(trip: pendingTrip)
+                    let sb = UIStoryboard(name: "DriverRequests", bundle: nil)
+                    guard let vc = sb.instantiateViewController(withIdentifier: "DriverRequestsViewController") as? DriverRequestsViewController else { return }
+                    vc.trip = pendingTrip
                     let nav = UINavigationController(rootViewController: vc)
                     if let sheet = nav.sheetPresentationController {
                         sheet.detents = [.medium(), .large()]

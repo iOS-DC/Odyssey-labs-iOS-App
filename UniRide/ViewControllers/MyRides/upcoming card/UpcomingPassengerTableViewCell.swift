@@ -3,6 +3,7 @@ import MapKit
 
 protocol UpcomingPassengerCellDelegate: AnyObject {
     func passengerCellDidTapDriver(_ cell: UpcomingPassengerTableViewCell, driver: UserProfile, ride: Ride)
+    func passengerCellDidTapTrackRide(_ cell: UpcomingPassengerTableViewCell, trip: RideDataModel.MyTrip)
 }
 
 final class UpcomingPassengerTableViewCell: UITableViewCell {
@@ -26,7 +27,8 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
 
     // MARK: - Programmatic map & button (inserted into XIB layout)
     private let mapView = MKMapView()
-    private let showMapButton = UIButton(type: .system)
+    private let showMapButton   = UIButton(type: .system)
+    private let trackRideButton = UIButton(type: .system)
     private var mapHeightConstraint: NSLayoutConstraint!
     private var cancelTopConstraint: NSLayoutConstraint!     // replaces XIB's constraint
     private var isMapExpanded = false
@@ -74,11 +76,16 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     // MARK: – Map button insertion
 
     private func insertMapButton() {
-        // Insert "Map" button as first item in the existing XIB button stack
+        // Insert "Map" and "Track" buttons as first items in the XIB button stack
         guard let btnStack = messageButton.superview as? UIStackView else { return }
-        showMapButton.applyTintActionStyle(title: "Map", imageSystemName: "map")
+        showMapButton.applyTintActionStyle(title: "View Map", imageSystemName: "map")
         showMapButton.addTarget(self, action: #selector(toggleMap), for: .touchUpInside)
         btnStack.insertArrangedSubview(showMapButton, at: 0)
+
+        trackRideButton.applyTintActionStyle(title: "Track Ride", imageSystemName: "location.fill")
+        trackRideButton.addTarget(self, action: #selector(trackRideTapped), for: .touchUpInside)
+        trackRideButton.isHidden = true   // shown only when ride is ongoing
+        btnStack.insertArrangedSubview(trackRideButton, at: 1)
     }
 
     private func insertMapView() {
@@ -139,6 +146,7 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
     func configure(with trip: RideDataModel.MyTrip) {
         currentTrip = trip
         let ride = trip.ride
+        let lifecycle = RideLifecycle.presentation(for: trip)
 
         // Date
         let df = DateFormatter()
@@ -160,11 +168,13 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         // Seat count
         seatsLabel.text = "\(ride.seatsTotal - ride.seatsAvailable)/\(ride.seatsTotal) seats"
 
-        rideStatusLabel.isHidden = true
+        rideStatusLabel.isHidden = false
+        rideStatusLabel.text = "Next: \(lifecycle.nextStep)"
+        rideStatusLabel.applyTextStyle(AppDesign.Typography.caption, color: .secondaryLabel, lines: 0)
 
         // Role badge
         roleLabel.text            = "  Passenger  "
-        roleLabel.backgroundColor = .systemGray6
+        roleLabel.backgroundColor = AppDesign.Color.surfaceElevated
         roleLabel.textColor       = .secondaryLabel
         roleLabel.font            = AppDesign.Typography.captionStrong
         roleLabel.layer.cornerRadius  = AppDesign.Radius.sm
@@ -183,15 +193,15 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let cancelTitle: String
         if isConfirmed {
             if ride.status == .ongoing {
-                requestStatusLabel.text            = "  Trip Started  "
-                requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                requestStatusLabel.text            = "  \(lifecycle.title)  "
+                requestStatusLabel.backgroundColor = lifecycle.color
                 requestStatusLabel.textColor       = .white
                 cancelTitle = "Cancel Booking"
                 cancelRequestButton.isEnabled = false
                 cancelRequestButton.alpha     = 0.4
             } else {
-                requestStatusLabel.text            = "  ✓ Confirmed  "
-                requestStatusLabel.backgroundColor = UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0)
+                requestStatusLabel.text            = "  \(lifecycle.title)  "
+                requestStatusLabel.backgroundColor = lifecycle.color
                 requestStatusLabel.textColor       = .white
                 cancelTitle = "Cancel Booking"
                 cancelRequestButton.isEnabled = true
@@ -200,16 +210,16 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         } else {
             let (text, color): (String, UIColor) = {
                 switch trip.requestStatus {
-                case .pending:   return ("  Pending  ",   UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0))
-                case .denied:    return ("  Denied  ",    UIColor(red: 0.94, green: 0.36, blue: 0.27, alpha: 1.0))
-                case .cancelled: return ("  Cancelled  ", UIColor(red: 0.60, green: 0.60, blue: 0.60, alpha: 1.0))
-                default:         return ("  Pending  ",   UIColor(red: 0.96, green: 0.61, blue: 0.07, alpha: 1.0))
+                case .pending:   return ("  \(lifecycle.title)  ", lifecycle.color)
+                case .denied:    return ("  \(lifecycle.title)  ", lifecycle.color)
+                case .cancelled: return ("  \(lifecycle.title)  ", lifecycle.color)
+                default:         return ("  \(lifecycle.title)  ", lifecycle.color)
                 }
             }()
             requestStatusLabel.text            = text
             requestStatusLabel.backgroundColor = color
             requestStatusLabel.textColor       = .white
-            cancelTitle = "Cancel Request"
+            cancelTitle = lifecycle.actionTitle ?? "Cancel Request"
         }
         requestStatusLabel.font                   = AppDesign.Typography.captionStrong
         requestStatusLabel.layer.cornerRadius     = AppDesign.Radius.sm
@@ -222,9 +232,16 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         // Button styles
         messageButton.applyTintActionStyle(title: "Chat", imageSystemName: "message.fill")
         applyUnreadBadge(to: messageButton, rideID: ride.id.uuidString)
-        showMapButton.applyTintActionStyle(title: isMapExpanded ? "Hide" : "Map",
+        showMapButton.applyTintActionStyle(title: isMapExpanded ? "Hide Map" : "View Map",
                                           imageSystemName: isMapExpanded ? "map.fill" : "map")
         cancelRequestButton.applyTintActionStyle(title: cancelTitle, color: AppDesign.Color.destructive)
+
+        // "Track Ride" — only visible when the ride is actively in progress
+        let showTrackButton = ride.status == .ongoing && isConfirmed
+        trackRideButton.isHidden = !showTrackButton
+        if showTrackButton {
+            trackRideButton.applyTintActionStyle(title: "Track Ride", imageSystemName: "location.fill")
+        }
 
         // Draw route on map
         drawRouteIfNeeded(for: ride)
@@ -243,14 +260,14 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         isMapExpanded = true
         mapView.isHidden = false
         mapHeightConstraint.constant = 180
-        showMapButton.applyTintActionStyle(title: "Hide", imageSystemName: "map.fill")
+        showMapButton.applyTintActionStyle(title: "Hide Map", imageSystemName: "map.fill")
         animateIfNeeded(animated)
     }
 
     private func collapseMap(animated: Bool) {
         isMapExpanded = false
         mapHeightConstraint.constant = 0
-        showMapButton.applyTintActionStyle(title: "Map", imageSystemName: "map")
+        showMapButton.applyTintActionStyle(title: "View Map", imageSystemName: "map")
         animateIfNeeded(animated) { [weak self] in
             self?.mapView.isHidden = true
         }
@@ -311,6 +328,11 @@ final class UpcomingPassengerTableViewCell: UITableViewCell {
         let driver = trip.ride.driverProfile ?? UserDataModel.shared.getUser(by: trip.ride.driverUserID)
         guard let validDriver = driver else { return }
         delegate?.passengerCellDidTapDriver(self, driver: validDriver, ride: trip.ride)
+    }
+
+    @objc private func trackRideTapped() {
+        guard let trip = currentTrip else { return }
+        delegate?.passengerCellDidTapTrackRide(self, trip: trip)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {

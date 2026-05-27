@@ -10,6 +10,7 @@ protocol UpcomingTableViewCellDelegate: AnyObject {
     func upcomingCellDidTapEndTrip(_ cell: UpcomingTableViewCell)
     func upcomingCellDidTapPassenger(_ cell: UpcomingTableViewCell, passenger: UserProfile, ride: Ride)
     func upcomingCellDidTapViewRequests(_ cell: UpcomingTableViewCell)
+    func upcomingCellDidTapViewMap(_ cell: UpcomingTableViewCell)
 }
 
 final class UpcomingTableViewCell: UITableViewCell {
@@ -135,6 +136,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         viewRequestButton.isHidden = true
         viewRequestsHeightConstraint.constant = 0
         viewRequestsTopConstraint.constant    = 0
+
     }
 
     override func layoutSubviews() {
@@ -175,10 +177,11 @@ final class UpcomingTableViewCell: UITableViewCell {
     func configure(with trip: RideDataModel.MyTrip) {
         self.trip = trip
         let ride = trip.ride
+        let lifecycle = RideLifecycle.presentation(for: trip)
 
         // Role badge
-        roleLabel.text = "  Hosting  "
-        applyBadgeStyle(to: roleLabel, backgroundColor: .systemGray6, textColor: .darkGray)
+        roleLabel.text = "  Driving  "
+        applyBadgeStyle(to: roleLabel, backgroundColor: AppDesign.Color.surfaceElevated, textColor: AppDesign.Color.textSecondary)
 
         // Date & times
         dateLabel.text = DateFormatter.localizedString(from: ride.departureTime, dateStyle: .medium, timeStyle: .none)
@@ -200,16 +203,8 @@ final class UpcomingTableViewCell: UITableViewCell {
             .reduce(0) { $0 + $1.seats }
         seatsLabel.text = "\(confirmedCount) / \(ride.seatsTotal)"
 
-        // Status badge
-        let (statusIcon, bgColor): (String, UIColor) = {
-            switch ride.status {
-            case .published: return ("✓", UIColor(red: 0.06, green: 0.73, blue: 0.51, alpha: 1.0))
-            case .ongoing:   return ("▶", AppDesign.Color.primary)
-            default:         return ("•", UIColor(red: 0.42, green: 0.45, blue: 0.50, alpha: 1.0))
-            }
-        }()
-        statusLabel.text = "  \(statusIcon) \(ride.status.rawValue.capitalized)  "
-        applyBadgeStyle(to: statusLabel, backgroundColor: bgColor, textColor: .white)
+        statusLabel.text = "  \(lifecycle.title)  "
+        applyBadgeStyle(to: statusLabel, backgroundColor: lifecycle.color, textColor: .white)
 
         // Pending request badge (inline with roleLabel)
         rideRequests = RideDataModel.shared.listRequests(for: ride.id).filter { $0.status == .pending }
@@ -232,7 +227,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             .filter { $0.status == .confirmed }
             .compactMap { $0.passengerProfile ?? UserDataModel.shared.getUser(by: $0.passengerUserID) }
 
-        passengersLabel.text = "Passengers: \(approvedPassengers.count) / \(ride.seatsTotal)"
+        passengersLabel.text = "Passengers: \(approvedPassengers.count) / \(ride.seatsTotal)\nNext: \(lifecycle.nextStep)"
         approvedContainerHeightConstraint.constant = 0
 
         renderAvatars(passengers: approvedPassengers, totalSeats: ride.seatsTotal, ride: ride)
@@ -261,7 +256,7 @@ final class UpcomingTableViewCell: UITableViewCell {
         callButton.isHidden = true
         
         showMapButton.applyTintActionStyle(
-            title: isMapExpanded ? "Hide" : "Map",
+            title: isMapExpanded ? "Hide Map" : "View Map",
             imageSystemName: isMapExpanded ? "map.fill" : "map"
         )
         showMapButton.configuration?.buttonSize = .large
@@ -308,11 +303,16 @@ final class UpcomingTableViewCell: UITableViewCell {
     }
 
     @IBAction func toggleMap(_ sender: UIButton) {
+        // When ride is in progress, open the full tracking screen instead of toggling inline map
+        if trip?.ride.status == .ongoing {
+            delegate?.upcomingCellDidTapViewMap(self)
+            return
+        }
         isMapExpanded.toggle()
         mapView.isHidden = !isMapExpanded
         mapHeightConstraint.constant = isMapExpanded ? 180 : 1
         var config = sender.configuration ?? UIButton.Configuration.tinted()
-        config.title = isMapExpanded ? "Hide" : "Map"
+        config.title = isMapExpanded ? "Hide Map" : "View Map"
         config.image = UIImage(systemName: isMapExpanded ? "map.fill" : "map")
         sender.configuration = config
         delegate?.upcomingCellRequestsToggled(self)
@@ -372,7 +372,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             avatarView.layer.borderWidth = 2.5
             avatarView.layer.borderColor = UIColor.white.cgColor
             avatarView.contentMode = .scaleAspectFill
-            avatarView.backgroundColor = .systemGray5
+            avatarView.backgroundColor = AppDesign.Color.borderSubtle
             avatarView.isUserInteractionEnabled = true
 
             if i < passengers.count {
@@ -398,7 +398,7 @@ final class UpcomingTableViewCell: UITableViewCell {
             } else {
                 let config = UIImage.SymbolConfiguration(pointSize: 22, weight: .light)
                 avatarView.image = UIImage(systemName: "person.fill", withConfiguration: config)
-                avatarView.tintColor = .systemGray3
+                avatarView.tintColor = AppDesign.Color.textTertiary
                 avatarView.contentMode = .center
             }
 

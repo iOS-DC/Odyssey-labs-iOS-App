@@ -28,8 +28,18 @@ class JoinRideViewController: UIViewController,
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Find Ride"
+        title = "Find a Ride"
         view.backgroundColor = AppDesign.Color.groupedBackground
+
+        // Show a close button when presented modally (no back stack)
+        if navigationController?.viewControllers.first == self {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(
+                image: UIImage(systemName: "xmark"),
+                style: .plain,
+                target: self,
+                action: #selector(closeTapped)
+            )
+        }
 
         // Hide the storyboard card — we build our own layout
         contentView?.isHidden = true
@@ -45,11 +55,14 @@ class JoinRideViewController: UIViewController,
 
         fromTextField.delegate = self
         toTextField.delegate = self
+        fromTextField.addTarget(self, action: #selector(routeFieldChanged(_:)), for: .editingChanged)
+        toTextField.addTarget(self, action: #selector(routeFieldChanged(_:)), for: .editingChanged)
 
         setDefaultDateAndTime()
         setupPickers()
         buildLayout()
         prefillLocationsIfPossible()
+        updateFindButtonState()
     }
 
     // MARK: - Build Layout (matches Offer Ride Step 1)
@@ -80,27 +93,22 @@ class JoinRideViewController: UIViewController,
 
         // Header subtitle
         let header = UILabel()
-        header.text = "Enter your pickup and drop-off location, then choose a date and time."
+        header.text = "Where are you going, and when?"
         header.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
         stack.addArrangedSubview(header)
 
-        // From field
+        // From / To unified route card
         fromTextField.borderStyle = .none
-        fromTextField.applyRoundedField()
-        fromTextField.layer.cornerRadius = 16
-        fromTextField.clipsToBounds = true
-        fromTextField.addLeftIcon("mappin")
-        fromTextField.heightAnchor.constraint(equalToConstant: 54).isActive = true
-        stack.addArrangedSubview(makeCard(title: "From", content: fromTextField))
+        fromTextField.backgroundColor = .clear
+        fromTextField.addLeftIcon("smallcircle.filled.circle", tint: AppDesign.Color.success)
+        fromTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
 
-        // To field
         toTextField.borderStyle = .none
-        toTextField.applyRoundedField()
-        toTextField.layer.cornerRadius = 16
-        toTextField.clipsToBounds = true
-        toTextField.addLeftIcon("mappin")
-        toTextField.heightAnchor.constraint(equalToConstant: 54).isActive = true
-        stack.addArrangedSubview(makeCard(title: "To", content: toTextField))
+        toTextField.backgroundColor = .clear
+        toTextField.addLeftIcon("smallcircle.filled.circle", tint: AppDesign.Color.destructive)
+        toTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
+
+        stack.addArrangedSubview(makeRouteCard())
 
         // Date + Time pickers side by side (no "When" label — just a card)
         let dateView = makeLabeledPicker(picker: datePicker, icon: "calendar")
@@ -109,10 +117,10 @@ class JoinRideViewController: UIViewController,
         pickerRow.axis = .horizontal
         pickerRow.spacing = 10
         pickerRow.distribution = .fillEqually
-        stack.addArrangedSubview(makeCard(title: "Date & Time", content: pickerRow))
+        stack.addArrangedSubview(makeCard(title: "When", content: pickerRow))
 
         // Find Ride button
-        let findTitle = findRideButton.currentTitle ?? "Find Ride"
+        let findTitle = findRideButton.currentTitle ?? "Find Available Rides"
         findRideButton.applyProminentPrimaryCTA(title: findTitle, corner: AppDesign.Radius.md)
         stack.addArrangedSubview(findRideButton)
 
@@ -121,7 +129,36 @@ class JoinRideViewController: UIViewController,
         view.bringSubviewToFront(findRideButton)
     }
 
-    // MARK: - Card helpers (identical to OfferRideViewController)
+    // MARK: - Card helpers
+
+    private func makeRouteCard() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .systemBackground
+        card.applyCardStyle(corner: AppDesign.Radius.md,
+                            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                            shadowRadius: AppDesign.Shadow.smallCardRadius)
+
+        let titleLbl = UILabel()
+        titleLbl.text = "Route"
+        titleLbl.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+
+        let hairline = UIView()
+        hairline.backgroundColor = AppDesign.Color.divider
+        hairline.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
+
+        let innerStack = UIStackView(arrangedSubviews: [titleLbl, fromTextField, hairline, toTextField])
+        innerStack.axis = .vertical
+        innerStack.spacing = 4
+        innerStack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(innerStack)
+        NSLayoutConstraint.activate([
+            innerStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
+            innerStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
+            innerStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
+            innerStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
+        ])
+        return card
+    }
 
     private func makeCard(title: String, content: UIView) -> UIView {
         let card = UIView()
@@ -193,6 +230,11 @@ class JoinRideViewController: UIViewController,
         toTextField.text   = prefill.to.address   ?? "Home"
         fromCoordinate = CLLocationCoordinate2D(latitude: prefill.from.lat, longitude: prefill.from.lon)
         toCoordinate   = CLLocationCoordinate2D(latitude: prefill.to.lat,   longitude: prefill.to.lon)
+        updateFindButtonState()
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: true)
     }
 
     @IBAction func datePickerValueChanged(_ sender: UIDatePicker) { refreshTimeConstraintIfNeeded() }
@@ -208,16 +250,31 @@ class JoinRideViewController: UIViewController,
         }
     }
 
+    @objc private func routeFieldChanged(_ sender: UITextField) {
+        if sender == fromTextField { fromCoordinate = nil }
+        if sender == toTextField { toCoordinate = nil }
+        updateFindButtonState()
+    }
+
+    private func updateFindButtonState() {
+        let hasFrom = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasTo = !(toTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        findRideButton.setPrimaryCTAEnabled(hasFrom && hasTo && fromCoordinate != nil && toCoordinate != nil)
+    }
+
     // MARK: - Autocomplete typing
     func textField(_ textField: UITextField,
                    shouldChangeCharactersIn range: NSRange,
                    replacementString string: String) -> Bool {
         guard textField == fromTextField || textField == toTextField else { return true }
         let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
+        if textField == fromTextField { fromCoordinate = nil }
+        if textField == toTextField { toCoordinate = nil }
         searchRequestID += 1
         searchCompleter.queryFragment = updated
         activeTextField = textField
         updateSuggestionTablePosition()
+        DispatchQueue.main.async { [weak self] in self?.updateFindButtonState() }
         return true
     }
 
@@ -274,6 +331,7 @@ class JoinRideViewController: UIViewController,
                 self.suggestionsTable.isHidden = true
                 self.activeTextField?.resignFirstResponder()
                 self.activeTextField = nil
+                self.updateFindButtonState()
             }
         }
     }
@@ -298,19 +356,19 @@ class JoinRideViewController: UIViewController,
             let toText   = self.toTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
             guard !fromText.isEmpty, !toText.isEmpty else {
-                self.showAlert("Missing Location", message: "Please select both a pickup and a drop-off location.")
+                self.showAlert("Route Incomplete", message: "Add both a pickup and drop-off to search for rides.")
                 return
             }
             guard let fromCoord = self.fromCoordinate else {
-                self.showAlert("Select from suggestions", message: "Please pick your pickup location from the list.")
+                self.showAlert("Select a Location", message: "Tap a suggestion to confirm your pickup.")
                 return
             }
             guard let toCoord = self.toCoordinate else {
-                self.showAlert("Select from suggestions", message: "Please pick your drop-off location from the list.")
+                self.showAlert("Select a Location", message: "Tap a suggestion to confirm your drop-off.")
                 return
             }
             guard fromText.lowercased() != toText.lowercased() else {
-                self.showAlert("Same Location", message: "Pickup and drop-off can't be the same.")
+                self.showAlert("Same Location", message: "Your pickup and drop-off are the same place. Update one to continue.")
                 return
             }
 
@@ -320,6 +378,8 @@ class JoinRideViewController: UIViewController,
                     as? AvailableRideViewController else { return }
             vc.fromCoordinate = fromCoord
             vc.toCoordinate   = toCoord
+            vc.fromAddress = fromText
+            vc.toAddress = toText
             vc.date = self.datePicker.date
             vc.time = self.timePicker.date
             self.navigationController?.pushViewController(vc, animated: true)

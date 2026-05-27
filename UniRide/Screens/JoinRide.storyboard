@@ -11,7 +11,7 @@
         <!--Join Ride-->
         <scene sceneID="s0d-6b-0kx">
             <objects>
-                <viewController storyboardIdentifier="JoinRideViewController" title="Join Ride" id="Y6W-OH-hqX" customClass="JoinRideViewController" customModule="UniRide" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="JoinRideViewController" title="Find a Ride" id="Y6W-OH-hqX" customClass="JoinRideViewController" customModule="UniRide" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="5EZ-qb-Rvc">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -245,7 +245,7 @@
                                             <constraint firstAttribute="height" constant="40" id="ucN-Sl-dAP"/>
                                         </constraints>
                                         <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="filled" title="Find Ride">
+                                        <buttonConfiguration key="configuration" style="filled" title="Find a Ride">
                                             <color key="baseBackgroundColor" systemColor="systemBlueColor"/>
                                         </buttonConfiguration>
                                         <connections>
@@ -306,7 +306,7 @@
         <!--Join Ride-->
         <scene sceneID="FAB-LB-0kN">
             <objects>
-                <viewController storyboardIdentifier="AvailableRideViewController" title="Join Ride" id="bIy-B2-RQC" customClass="AvailableRideViewController" customModule="UniRide" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="AvailableRideViewController" title="Find a Ride" id="bIy-B2-RQC" customClass="AvailableRideViewController" customModule="UniRide" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="kk5-dx-CWb">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

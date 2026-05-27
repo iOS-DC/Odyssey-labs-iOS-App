@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Ride Filter View Controller-->
+        <scene sceneID="RF1-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="RideFilterViewController" id="RF1-vc-001" customClass="RideFilterViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="RF1-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="560"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <!-- Grabber -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-gr-001">
+                                <rect key="frame" x="178" y="8" width="36" height="5"/>
+                                <color key="backgroundColor" systemColor="systemGray4Color"/>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                        <real key="value" value="2.5"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
+                            </view>
+                            <!-- Title Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Filter Rides" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-tl-001">
+                                <rect key="frame" x="20" y="29" width="353" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Sort Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="SORT BY" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-sl-001">
+                                <rect key="frame" x="20" y="70" width="353" height="16"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="13" weight="semibold"/>
+                                <color key="textColor" systemColor="tertiaryLabelColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Sort Segmented Control -->
+                            <segmentedControl opaque="NO" contentMode="scaleToFill" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-sort-001">
+                                <rect key="frame" x="20" y="90" width="353" height="32"/>
+                                <segments>
+                                    <segment title="Earliest"/>
+                                    <segment title="Cheapest"/>
+                                    <segment title="Most Seats"/>
+                                </segments>
+                                <connections>
+                                    <action selector="sortChanged" destination="RF1-vc-001" eventType="valueChanged" id="RF1-ac-sort"/>
+                                </connections>
+                            </segmentedControl>
+                            <!-- Fare Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MAX FARE" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-fl-001">
+                                <rect key="frame" x="20" y="142" width="353" height="16"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="13" weight="semibold"/>
+                                <color key="textColor" systemColor="tertiaryLabelColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Fare Slider -->
+                            <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="500" minimumValue="0" maximumValue="500" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-fslider-001">
+                                <rect key="frame" x="20" y="162" width="290" height="31"/>
+                                <connections>
+                                    <action selector="fareChanged" destination="RF1-vc-001" eventType="valueChanged" id="RF1-ac-fare"/>
+                                </connections>
+                            </slider>
+                            <!-- Fare Value Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="right" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-fv-001">
+                                <rect key="frame" x="318" y="169" width="55" height="18"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="15" weight="medium"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Seats Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MIN SEATS" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-ssel-001">
+                                <rect key="frame" x="20" y="213" width="353" height="16"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="13" weight="semibold"/>
+                                <color key="textColor" systemColor="tertiaryLabelColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Seats Value Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="1" textAlignment="right" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-sval-001">
+                                <rect key="frame" x="20" y="237" width="60" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Seats Stepper -->
+                            <stepper opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minimumValue="1" maximumValue="6" stepValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-step-001">
+                                <rect key="frame" x="299" y="233" width="74" height="29"/>
+                                <connections>
+                                    <action selector="seatsChanged" destination="RF1-vc-001" eventType="valueChanged" id="RF1-ac-seats"/>
+                                </connections>
+                            </stepper>
+                            <!-- Time Label -->
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="TIME OF DAY" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-timel-001">
+                                <rect key="frame" x="20" y="282" width="353" height="16"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="13" weight="semibold"/>
+                                <color key="textColor" systemColor="tertiaryLabelColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <!-- Time Chip Stack (chips added dynamically in code) -->
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="horizontal" spacing="8" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-chips-001">
+                                <rect key="frame" x="20" y="302" width="353" height="40"/>
+                            </stackView>
+                            <!-- Button Row Stack -->
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="horizontal" spacing="12" distribution="fill" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-btnrow-001">
+                                <rect key="frame" x="20" y="390" width="353" height="48"/>
+                                <subviews>
+                                    <!-- Reset Button -->
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-reset-001">
+                                        <rect key="frame" x="0.0" y="0.0" width="109" height="48"/>
+                                        <state key="normal" title="Reset">
+                                            <color key="titleColor" systemColor="secondaryLabelColor"/>
+                                        </state>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                        <connections>
+                                            <action selector="resetTapped" destination="RF1-vc-001" eventType="touchUpInside" id="RF1-ac-reset"/>
+                                        </connections>
+                                    </button>
+                                    <!-- Apply Button -->
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="RF1-apply-001">
+                                        <rect key="frame" x="121" y="0.0" width="232" height="48"/>
+                                        <state key="normal" title="Apply Filters"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                        <connections>
+                                            <action selector="applyTapped" destination="RF1-vc-001" eventType="touchUpInside" id="RF1-ac-apply"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                            </stackView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="RF1-sa-001"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <!-- Grabber -->
+                            <constraint firstItem="RF1-gr-001" firstAttribute="top" secondItem="RF1-vw-001" secondAttribute="top" constant="8" id="RF1-ct-gr-top"/>
+                            <constraint firstItem="RF1-gr-001" firstAttribute="centerX" secondItem="RF1-vw-001" secondAttribute="centerX" id="RF1-ct-gr-cx"/>
+                            <constraint firstItem="RF1-gr-001" firstAttribute="width" constant="36" id="RF1-ct-gr-w"/>
+                            <constraint firstItem="RF1-gr-001" firstAttribute="height" constant="5" id="RF1-ct-gr-h"/>
+                            <!-- Title -->
+                            <constraint firstItem="RF1-tl-001" firstAttribute="top" secondItem="RF1-gr-001" secondAttribute="bottom" constant="16" id="RF1-ct-tl-top"/>
+                            <constraint firstItem="RF1-tl-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-tl-lead"/>
+                            <!-- Sort Label -->
+                            <constraint firstItem="RF1-sl-001" firstAttribute="top" secondItem="RF1-tl-001" secondAttribute="bottom" constant="20" id="RF1-ct-sl-top"/>
+                            <constraint firstItem="RF1-sl-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-sl-lead"/>
+                            <constraint firstItem="RF1-sl-001" firstAttribute="trailing" secondItem="RF1-vw-001" secondAttribute="trailing" constant="-20" id="RF1-ct-sl-trail"/>
+                            <!-- Sort Control -->
+                            <constraint firstItem="RF1-sort-001" firstAttribute="top" secondItem="RF1-sl-001" secondAttribute="bottom" constant="6" id="RF1-ct-sc-top"/>
+                            <constraint firstItem="RF1-sort-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-sc-lead"/>
+                            <constraint firstItem="RF1-sort-001" firstAttribute="trailing" secondItem="RF1-vw-001" secondAttribute="trailing" constant="-20" id="RF1-ct-sc-trail"/>
+                            <!-- Fare Label -->
+                            <constraint firstItem="RF1-fl-001" firstAttribute="top" secondItem="RF1-sort-001" secondAttribute="bottom" constant="20" id="RF1-ct-fl-top"/>
+                            <constraint firstItem="RF1-fl-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-fl-lead"/>
+                            <!-- Fare Slider -->
+                            <constraint firstItem="RF1-fslider-001" firstAttribute="top" secondItem="RF1-fl-001" secondAttribute="bottom" constant="4" id="RF1-ct-fslide-top"/>
+                            <constraint firstItem="RF1-fslider-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-fslide-lead"/>
+                            <constraint firstItem="RF1-fslider-001" firstAttribute="trailing" secondItem="RF1-fv-001" secondAttribute="leading" constant="-10" id="RF1-ct-fslide-trail"/>
+                            <!-- Fare Value -->
+                            <constraint firstItem="RF1-fv-001" firstAttribute="trailing" secondItem="RF1-vw-001" secondAttribute="trailing" constant="-20" id="RF1-ct-fv-trail"/>
+                            <constraint firstItem="RF1-fv-001" firstAttribute="centerY" secondItem="RF1-fslider-001" secondAttribute="centerY" id="RF1-ct-fv-cy"/>
+                            <!-- Seats Label -->
+                            <constraint firstItem="RF1-ssel-001" firstAttribute="top" secondItem="RF1-fslider-001" secondAttribute="bottom" constant="14" id="RF1-ct-ssel-top"/>
+                            <constraint firstItem="RF1-ssel-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-ssel-lead"/>
+                            <!-- Seats Value -->
+                            <constraint firstItem="RF1-sval-001" firstAttribute="top" secondItem="RF1-ssel-001" secondAttribute="bottom" constant="6" id="RF1-ct-sval-top"/>
+                            <constraint firstItem="RF1-sval-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-sval-lead"/>
+                            <!-- Seats Stepper -->
+                            <constraint firstItem="RF1-step-001" firstAttribute="centerY" secondItem="RF1-sval-001" secondAttribute="centerY" id="RF1-ct-step-cy"/>
+                            <constraint firstItem="RF1-step-001" firstAttribute="trailing" secondItem="RF1-vw-001" secondAttribute="trailing" constant="-20" id="RF1-ct-step-trail"/>
+                            <!-- Time Label -->
+                            <constraint firstItem="RF1-timel-001" firstAttribute="top" secondItem="RF1-sval-001" secondAttribute="bottom" constant="20" id="RF1-ct-timel-top"/>
+                            <constraint firstItem="RF1-timel-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-timel-lead"/>
+                            <!-- Chip Stack -->
+                            <constraint firstItem="RF1-chips-001" firstAttribute="top" secondItem="RF1-timel-001" secondAttribute="bottom" constant="6" id="RF1-ct-chips-top"/>
+                            <constraint firstItem="RF1-chips-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-chips-lead"/>
+                            <constraint firstItem="RF1-chips-001" firstAttribute="trailing" secondItem="RF1-vw-001" secondAttribute="trailing" constant="-20" id="RF1-ct-chips-trail"/>
+                            <constraint firstItem="RF1-chips-001" firstAttribute="height" constant="40" id="RF1-ct-chips-h"/>
+                            <!-- Button Row -->
+                            <constraint firstItem="RF1-btnrow-001" firstAttribute="top" secondItem="RF1-chips-001" secondAttribute="bottom" constant="24" id="RF1-ct-btnrow-top"/>
+                            <constraint firstItem="RF1-btnrow-001" firstAttribute="leading" secondItem="RF1-vw-001" secondAttribute="leading" constant="20" id="RF1-ct-btnrow-lead"/>
+                            <constraint firstItem="RF1-btnrow-001" firstAttribute="trailing" secondItem="RF1-vw-001" secondAttribute="trailing" constant="-20" id="RF1-ct-btnrow-trail"/>
+                            <constraint firstItem="RF1-btnrow-001" firstAttribute="height" constant="48" id="RF1-ct-btnrow-h"/>
+                            <!-- Apply button width = 68% of row -->
+                            <constraint firstItem="RF1-apply-001" firstAttribute="width" secondItem="RF1-btnrow-001" secondAttribute="width" multiplier="0.68" id="RF1-ct-apply-w"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="sortControl" destination="RF1-sort-001" id="RF1-ol-sc"/>
+                        <outlet property="fareSlider" destination="RF1-fslider-001" id="RF1-ol-fslide"/>
+                        <outlet property="fareValueLbl" destination="RF1-fv-001" id="RF1-ol-fv"/>
+                        <outlet property="seatsStepper" destination="RF1-step-001" id="RF1-ol-step"/>
+                        <outlet property="seatsValueLbl" destination="RF1-sval-001" id="RF1-ol-sval"/>
+                        <outlet property="chipStack" destination="RF1-chips-001" id="RF1-ol-chips"/>
+                        <outlet property="applyBtn" destination="RF1-apply-001" id="RF1-ol-apply"/>
+                        <outlet property="resetBtn" destination="RF1-reset-001" id="RF1-ol-reset"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="RF1-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="0.0" y="0.0"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemGray4Color">
+            <color red="0.82352941176470584" green="0.82352941176470584" blue="0.83921568627450980" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="secondaryLabelColor">
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.26274509803921570" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="tertiaryLabelColor">
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.26274509803921570" alpha="0.29999999999999999" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

@@ -85,7 +85,7 @@ class EventDetailsViewController: UIViewController {
         infoStack.axis = .vertical
         infoStack.spacing = AppDesign.Spacing.xs
         
-        headerTitleLabel.applyTextStyle(AppDesign.Typography.h2, lines: 0)
+        headerTitleLabel.applyTextStyle(AppDesign.Typography.display, lines: 0)
         infoStack.addArrangedSubview(headerTitleLabel)
         
         eventDateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
@@ -102,8 +102,8 @@ class EventDetailsViewController: UIViewController {
         actionButtonsStack.distribution = .fillEqually
         actionButtonsStack.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight).isActive = true
         
-        offerRideButton.applyProminentPrimaryCTA(title: "Offer Ride", corner: AppDesign.Radius.md)
-        joinRideButton.applyProminentPrimaryCTA(title: "Join Ride", corner: AppDesign.Radius.md)
+        offerRideButton.applyProminentPrimaryCTA(title: "Offer a Ride", corner: AppDesign.Radius.md)
+        joinRideButton.applyProminentPrimaryCTA(title: "Join a Ride", corner: AppDesign.Radius.md)
         
         offerRideButton.addTarget(self, action: #selector(offerRideTapped), for: .touchUpInside)
         joinRideButton.addTarget(self, action: #selector(joinRide), for: .touchUpInside)
@@ -125,11 +125,7 @@ class EventDetailsViewController: UIViewController {
         guard let event = event else { return }
         
         // Image
-        if let name = event.imageName, let img = UIImage(named: name) {
-            heroImageView.image = img
-        } else {
-            heroImageView.image = UIImage(named: "default_event")
-        }
+        heroImageView.loadImage(from: event.imageName ?? "default_event")
         
         // Title
         headerTitleLabel.text = event.title

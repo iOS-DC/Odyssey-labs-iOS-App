@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Edit Home Location View Controller-->
+        <scene sceneID="EHL-sc-001">
+            <objects>
+                <viewController storyboardIdentifier="EditHomeLocationViewController" id="EHL-vc-001" customClass="EditHomeLocationViewController" customModule="UniRide" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="EHL-vw-001">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <!-- Scroll View -->
+                            <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-sv-001">
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                                <subviews>
+                                    <!-- Content Stack -->
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="20" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-cs-001">
+                                        <rect key="frame" x="16" y="16" width="361" height="0"/>
+                                        <subviews>
+                                            <!-- Search Container -->
+                                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-srch-001">
+                                                <rect key="frame" x="0.0" y="0.0" width="361" height="50"/>
+                                                <subviews>
+                                                    <!-- Search Text Field -->
+                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="Enter college / city / sector" borderStyle="roundedRect" minimumFontSize="17" autocorrectionType="no" clearButtonMode="whileEditing" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-tf-001">
+                                                        <rect key="frame" x="0.0" y="0.0" width="361" height="50"/>
+                                                        <textInputTraits key="textInputTraits" autocorrectionType="no"/>
+                                                    </textField>
+                                                </subviews>
+                                                <constraints>
+                                                    <constraint firstItem="EHL-tf-001" firstAttribute="top" secondItem="EHL-srch-001" secondAttribute="top" id="EHL-ct-tf-top"/>
+                                                    <constraint firstItem="EHL-tf-001" firstAttribute="leading" secondItem="EHL-srch-001" secondAttribute="leading" id="EHL-ct-tf-lead"/>
+                                                    <constraint firstItem="EHL-tf-001" firstAttribute="trailing" secondItem="EHL-srch-001" secondAttribute="trailing" id="EHL-ct-tf-trail"/>
+                                                    <constraint firstItem="EHL-tf-001" firstAttribute="bottom" secondItem="EHL-srch-001" secondAttribute="bottom" id="EHL-ct-tf-bot"/>
+                                                </constraints>
+                                            </view>
+                                            <!-- Map Preview Container -->
+                                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-mp-001">
+                                                <rect key="frame" x="0.0" y="70" width="361" height="160"/>
+                                                <subviews>
+                                                    <!-- MapKit Map View -->
+                                                    <mapView opaque="NO" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-mv-001" customClass="MKMapView" customModule="MapKit">
+                                                        <rect key="frame" x="0.0" y="0.0" width="361" height="160"/>
+                                                    </mapView>
+                                                </subviews>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                                <constraints>
+                                                    <constraint firstItem="EHL-mv-001" firstAttribute="top" secondItem="EHL-mp-001" secondAttribute="top" id="EHL-ct-mv-top"/>
+                                                    <constraint firstItem="EHL-mv-001" firstAttribute="leading" secondItem="EHL-mp-001" secondAttribute="leading" id="EHL-ct-mv-lead"/>
+                                                    <constraint firstItem="EHL-mv-001" firstAttribute="trailing" secondItem="EHL-mp-001" secondAttribute="trailing" id="EHL-ct-mv-trail"/>
+                                                    <constraint firstItem="EHL-mv-001" firstAttribute="bottom" secondItem="EHL-mp-001" secondAttribute="bottom" id="EHL-ct-mv-bot"/>
+                                                    <constraint firstItem="EHL-mp-001" firstAttribute="height" constant="160" id="EHL-ct-mp-h"/>
+                                                </constraints>
+                                                <userDefinedRuntimeAttributes>
+                                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                                        <real key="value" value="12"/>
+                                                    </userDefinedRuntimeAttribute>
+                                                    <userDefinedRuntimeAttribute type="boolean" keyPath="clipsToBounds">
+                                                        <boolean key="value" value="YES"/>
+                                                    </userDefinedRuntimeAttribute>
+                                                </userDefinedRuntimeAttributes>
+                                            </view>
+                                            <!-- Summary Card -->
+                                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-sum-001">
+                                                <rect key="frame" x="0.0" y="250" width="361" height="80"/>
+                                                <subviews>
+                                                    <!-- Summary Title Label -->
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Selected Location" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-stl-001">
+                                                        <rect key="frame" x="48" y="16" width="297" height="16"/>
+                                                        <fontDescription key="fontDescription" type="system" pointSize="13" weight="semibold"/>
+                                                        <color key="textColor" systemColor="secondaryLabelColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                    <!-- Summary Address Label -->
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="No location selected" numberOfLines="0" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-sal-001">
+                                                        <rect key="frame" x="48" y="36" width="297" height="28"/>
+                                                        <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                                        <nil key="textColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                </subviews>
+                                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                                <constraints>
+                                                    <constraint firstItem="EHL-stl-001" firstAttribute="top" secondItem="EHL-sum-001" secondAttribute="top" constant="16" id="EHL-ct-stl-top"/>
+                                                    <constraint firstItem="EHL-stl-001" firstAttribute="leading" secondItem="EHL-sum-001" secondAttribute="leading" constant="48" id="EHL-ct-stl-lead"/>
+                                                    <constraint firstItem="EHL-stl-001" firstAttribute="trailing" secondItem="EHL-sum-001" secondAttribute="trailing" constant="-16" id="EHL-ct-stl-trail"/>
+                                                    <constraint firstItem="EHL-sal-001" firstAttribute="top" secondItem="EHL-stl-001" secondAttribute="bottom" constant="4" id="EHL-ct-sal-top"/>
+                                                    <constraint firstItem="EHL-sal-001" firstAttribute="leading" secondItem="EHL-sum-001" secondAttribute="leading" constant="48" id="EHL-ct-sal-lead"/>
+                                                    <constraint firstItem="EHL-sal-001" firstAttribute="trailing" secondItem="EHL-sum-001" secondAttribute="trailing" constant="-16" id="EHL-ct-sal-trail"/>
+                                                    <constraint firstItem="EHL-sal-001" firstAttribute="bottom" secondItem="EHL-sum-001" secondAttribute="bottom" constant="-16" id="EHL-ct-sal-bot"/>
+                                                </constraints>
+                                                <userDefinedRuntimeAttributes>
+                                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                                        <real key="value" value="12"/>
+                                                    </userDefinedRuntimeAttribute>
+                                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.shadowOpacity">
+                                                        <real key="value" value="0.06"/>
+                                                    </userDefinedRuntimeAttribute>
+                                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.shadowRadius">
+                                                        <real key="value" value="6"/>
+                                                    </userDefinedRuntimeAttribute>
+                                                </userDefinedRuntimeAttributes>
+                                            </view>
+                                            <!-- Save Button -->
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="EHL-savebtn-001">
+                                                <rect key="frame" x="0.0" y="350" width="361" height="52"/>
+                                                <state key="normal" title="Save Location"/>
+                                                <fontDescription key="fontDescription" type="system" pointSize="17" weight="semibold"/>
+                                                <connections>
+                                                    <action selector="saveTapped" destination="EHL-vc-001" eventType="touchUpInside" id="EHL-ac-save"/>
+                                                </connections>
+                                            </button>
+                                        </subviews>
+                                    </stackView>
+                                </subviews>
+                                <constraints>
+                                    <constraint firstItem="EHL-cs-001" firstAttribute="top" secondItem="EHL-clg-001" secondAttribute="top" constant="16" id="EHL-ct-cs-top"/>
+                                    <constraint firstItem="EHL-cs-001" firstAttribute="leading" secondItem="EHL-clg-001" secondAttribute="leading" constant="16" id="EHL-ct-cs-lead"/>
+                                    <constraint firstAttribute="trailing" secondItem="EHL-cs-001" secondAttribute="trailing" constant="16" id="EHL-ct-cs-trail"/>
+                                    <constraint firstAttribute="bottom" secondItem="EHL-cs-001" secondAttribute="bottom" constant="24" id="EHL-ct-cs-bot"/>
+                                    <constraint firstItem="EHL-cs-001" firstAttribute="width" secondItem="EHL-flg-001" secondAttribute="width" constant="-32" id="EHL-ct-cs-w"/>
+                                </constraints>
+                                <viewLayoutGuide key="contentLayoutGuide" id="EHL-clg-001"/>
+                                <viewLayoutGuide key="frameLayoutGuide" id="EHL-flg-001"/>
+                            </scrollView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="EHL-sa-001"/>
+                        <color key="backgroundColor" systemColor="systemGroupedBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="EHL-sv-001" firstAttribute="top" secondItem="EHL-sa-001" secondAttribute="top" id="EHL-ct-sv-top"/>
+                            <constraint firstItem="EHL-sv-001" firstAttribute="leading" secondItem="EHL-vw-001" secondAttribute="leading" id="EHL-ct-sv-lead"/>
+                            <constraint firstItem="EHL-sv-001" firstAttribute="trailing" secondItem="EHL-vw-001" secondAttribute="trailing" id="EHL-ct-sv-trail"/>
+                            <constraint firstItem="EHL-sv-001" firstAttribute="bottom" secondItem="EHL-vw-001" secondAttribute="bottom" id="EHL-ct-sv-bot"/>
+                        </constraints>
+                    </view>
+                    <navigationItem key="navigationItem" title="Edit Home Location" largeTitleDisplayMode="never" id="EHL-ni-001"/>
+                    <connections>
+                        <outlet property="scrollView" destination="EHL-sv-001" id="EHL-ol-sv"/>
+                        <outlet property="contentStack" destination="EHL-cs-001" id="EHL-ol-cs"/>
+                        <outlet property="searchContainer" destination="EHL-srch-001" id="EHL-ol-scon"/>
+                        <outlet property="searchTextField" destination="EHL-tf-001" id="EHL-ol-tf"/>
+                        <outlet property="mapPreviewContainer" destination="EHL-mp-001" id="EHL-ol-mp"/>
+                        <outlet property="mapView" destination="EHL-mv-001" id="EHL-ol-mv"/>
+                        <outlet property="summaryCard" destination="EHL-sum-001" id="EHL-ol-sum"/>
+                        <outlet property="summaryTitleLabel" destination="EHL-stl-001" id="EHL-ol-stl"/>
+                        <outlet property="summaryAddressLabel" destination="EHL-sal-001" id="EHL-ol-sal"/>
+                        <outlet property="saveButton" destination="EHL-savebtn-001" id="EHL-ol-savebtn"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="EHL-fr-001" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="0.0" y="0.0"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="systemGroupedBackgroundColor">
+            <color red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="secondaryLabelColor">
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.26274509803921570" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

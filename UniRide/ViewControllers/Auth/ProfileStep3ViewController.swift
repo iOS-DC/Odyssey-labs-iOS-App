@@ -96,7 +96,7 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
             homeAddressTextField.text = text
             completeSetupButton.setPrimaryCTAEnabled(true)
         } else {
-            locationsSummaryLabel.text = "No home location set.\nPlease search and select your primary route from the suggestions above."
+            locationsSummaryLabel.text = "Search above to set your home address."
             completeSetupButton.setPrimaryCTAEnabled(false)
         }
     }
@@ -131,7 +131,7 @@ final class ProfileStep3ViewController: UIViewController, UITextFieldDelegate, U
         guard let location = LocationService.shared.lastLocation else {
             LocationService.shared.requestWhenInUse()
             LocationService.shared.startLiveUpdates()
-            showAlert("Fetching Location", "Please allow access and try again in a moment.")
+            showAlert("Location Access Needed", "Allow location access in Settings, then try again.")
             return
         }
         

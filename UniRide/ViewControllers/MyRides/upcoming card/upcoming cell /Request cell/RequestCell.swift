@@ -48,7 +48,7 @@ final class RequestCell: UITableViewCell {
         // Avatar
         avatarView.clipsToBounds    = true
         avatarView.contentMode      = .scaleAspectFill
-        avatarView.backgroundColor  = .systemGray5
+        avatarView.backgroundColor  = AppDesign.Color.borderSubtle
         avatarView.translatesAutoresizingMaskIntoConstraints = false
 
         // Name

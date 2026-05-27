@@ -10,10 +10,11 @@ class VehicleRegistrationViewController: UIViewController {
     private var selectedType: VehicleType = .car
     private var seatCount: Int = 1
 
-    // MARK: - UI — form fields
-    private let scrollView   = UIScrollView()
-    private let formStack    = UIStackView()
- 
+    // MARK: - UI (structural containers wired in VehicleRegistration.storyboard)
+    @IBOutlet private var scrollView: UIScrollView!
+    @IBOutlet private var formStack: UIStackView!
+
+    // MARK: - Form field views (built & added to formStack at runtime)
     private let nameField    = UITextField()
     private let plateField   = UITextField()
     private let modelField   = UITextField()
@@ -33,58 +34,37 @@ class VehicleRegistrationViewController: UIViewController {
         super.viewDidLoad()
         title = vehicleToEdit == nil ? "Add Vehicle" : "Edit Vehicle"
         view.backgroundColor = .systemGroupedBackground
+        scrollView.alwaysBounceVertical = true
         setupLayout()
         preloadExisting()
     }
 
     // MARK: - Layout
     private func setupLayout() {
-        scrollView.alwaysBounceVertical = true
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(scrollView)
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
-
-        formStack.axis    = .vertical
-        formStack.spacing = AppDesign.Spacing.lg
-        formStack.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(formStack)
-        NSLayoutConstraint.activate([
-            formStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.xl),
-            formStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
-            formStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
-            formStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl - AppDesign.Spacing.xs),
-            formStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.xl * 2),
-        ])
-
         // 1. Header
         let headerLabel = makeHeaderLabel("Enter your vehicle information so commuters can recognize your vehicle.")
         formStack.addArrangedSubview(headerLabel)
- 
-        // 1.5 Vehicle Name (Alias)
+
+        // 2. Vehicle Name (Alias)
         formStack.addArrangedSubview(makeCard(title: "Vehicle Name (e.g. My Swift)", content: makeNameField()))
 
-        // 2. Registration Plate
+        // 3. Registration Plate
         formStack.addArrangedSubview(makeCard(title: "Registration Plate", content: makePlateField()))
 
-        // 3. Car Model
+        // 4. Car Model
         formStack.addArrangedSubview(makeCard(title: "Car Model", content: makeModelField()))
 
-        // 4. Vehicle Type
+        // 5. Vehicle Type
         formStack.addArrangedSubview(makeCard(title: "Vehicle Type", content: makeTypeSelector()))
 
-        // 5. Seats
+        // 6. Seats
         formStack.addArrangedSubview(makeCard(title: "Total Seats", content: makeSeatsControl()))
 
-        // 6. Save button
+        // 7. Save button
         configureSaveButton()
         formStack.addArrangedSubview(saveButton)
-        
-        // 7. Delete button (only in edit mode)
+
+        // 8. Delete button (only in edit mode)
         if vehicleToEdit != nil {
             configureDeleteButton()
             formStack.addArrangedSubview(deleteButton)
@@ -92,7 +72,7 @@ class VehicleRegistrationViewController: UIViewController {
     }
 
     // MARK: - Field factories
-    
+
     private func makeNameField() -> UIView {
         nameField.placeholder = "e.g. Silver City, Red Activa"
         nameField.applyRoundedField()
@@ -127,10 +107,7 @@ class VehicleRegistrationViewController: UIViewController {
     }
 
     private func makeTypeSelector() -> UIView {
-        // Car
         configTypeButton(carButton, icon: "car.fill", label: "Car", type: .car)
-
-        // Bike
         configTypeButton(bikeButton, icon: "bicycle", label: "Two-Wheeler", type: .bike)
 
         let row      = UIStackView(arrangedSubviews: [carButton, bikeButton])
@@ -150,7 +127,6 @@ class VehicleRegistrationViewController: UIViewController {
         config.baseForegroundColor = AppDesign.Color.primary
         config.cornerStyle = .medium
         btn.configuration = config
-        btn.translatesAutoresizingMaskIntoConstraints = false
         btn.heightAnchor.constraint(equalToConstant: 80).isActive = true
         btn.addAction(UIAction { [weak self] _ in
             self?.didSelectType(type)
@@ -158,32 +134,27 @@ class VehicleRegistrationViewController: UIViewController {
     }
 
     private func makeSeatsControl() -> UIView {
-        // Minus
         var minusCfg = UIButton.Configuration.filled()
         minusCfg.image = UIImage(systemName: "minus")
-        minusCfg.baseBackgroundColor = .systemGray5
+        minusCfg.baseBackgroundColor = AppDesign.Color.borderSubtle
         minusCfg.baseForegroundColor = .label
         minusCfg.cornerStyle = .capsule
         minusSeat.configuration = minusCfg
-        minusSeat.translatesAutoresizingMaskIntoConstraints = false
         minusSeat.widthAnchor.constraint(equalToConstant: 44).isActive  = true
         minusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
         minusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(-1) }, for: .touchUpInside)
 
-        // Count label
         seatCountLbl.text          = "\(seatCount)"
-        seatCountLbl.font          = AppDesign.Typography.h2
+        seatCountLbl.font          = AppDesign.Typography.display
         seatCountLbl.textAlignment = .center
         seatCountLbl.widthAnchor.constraint(equalToConstant: 60).isActive = true
 
-        // Plus
         var plusCfg = UIButton.Configuration.filled()
         plusCfg.image = UIImage(systemName: "plus")
         plusCfg.baseBackgroundColor = AppDesign.Color.primary
         plusCfg.baseForegroundColor = .white
         plusCfg.cornerStyle = .capsule
         plusSeat.configuration = plusCfg
-        plusSeat.translatesAutoresizingMaskIntoConstraints = false
         plusSeat.widthAnchor.constraint(equalToConstant: 44).isActive  = true
         plusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
         plusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(1) }, for: .touchUpInside)
@@ -208,14 +179,12 @@ class VehicleRegistrationViewController: UIViewController {
         saveButton.setTitle(vehicleToEdit == nil ? "Save Vehicle" : "Update Vehicle", for: .normal)
         saveButton.applyPrimaryButton(color: AppDesign.Color.primary, radius: AppDesign.Radius.sm)
         saveButton.setPrimaryCTAEnabled(false)
-        saveButton.translatesAutoresizingMaskIntoConstraints = false
         saveButton.addTarget(self, action: #selector(saveTapped), for: .touchUpInside)
     }
-    
+
     private func configureDeleteButton() {
         deleteButton.setTitle("Delete Vehicle", for: .normal)
         deleteButton.applyPrimaryButton(color: AppDesign.Color.destructive, radius: AppDesign.Radius.sm)
-        deleteButton.translatesAutoresizingMaskIntoConstraints = false
         deleteButton.addTarget(self, action: #selector(deleteTapped), for: .touchUpInside)
     }
 
@@ -291,31 +260,28 @@ class VehicleRegistrationViewController: UIViewController {
         guard let name = nameField.text?.trimmingCharacters(in: .whitespaces), !name.isEmpty,
               let plate = plateField.text?.trimmingCharacters(in: .whitespaces), !plate.isEmpty,
               let model = modelField.text?.trimmingCharacters(in: .whitespaces), !model.isEmpty else { return }
- 
+
         let vehicle = Vehicle(alias: name, type: selectedType, model: model, registrationNumber: plate, seats: seatCount)
- 
+
         // Update local state
         var user = UserDataModel.shared.getCurrentUser()
         var list = user?.vehicles ?? []
-        
+
         if let original = vehicleToEdit {
-            // Update existing (find by plate since that's part of our unique key)
             if let idx = list.firstIndex(where: { $0.registrationNumber == original.registrationNumber }) {
                 list[idx] = vehicle
             } else {
                 list.append(vehicle)
             }
         } else {
-            // Add new
             list.append(vehicle)
         }
-        
+
         user?.vehicles = list
         if let u = user {
             UserDataModel.shared.editCurrentUser(vehicles: u.vehicles)
         }
 
-        // Show loading state on save button
         saveButton.isEnabled = false
         var cfg = saveButton.configuration
         cfg?.showsActivityIndicator = true
@@ -325,17 +291,14 @@ class VehicleRegistrationViewController: UIViewController {
         Task { @MainActor [weak self] in
             guard let self else { return }
 
-            // Sync to Supabase
             if let userID = SessionManager.shared.userID {
                 do {
                     try await ProfileRepository.shared.upsertVehicle(userID: userID, vehicle: vehicle)
                 } catch {
-                    // Non-fatal — local save already succeeded
                     print("[VehicleReg] Remote sync failed:", error.localizedDescription)
                 }
             }
 
-            // Restore button state
             var cfg = self.saveButton.configuration
             cfg?.showsActivityIndicator = false
             cfg?.title = "Save Vehicle"
@@ -346,30 +309,27 @@ class VehicleRegistrationViewController: UIViewController {
             self.navigationController?.popViewController(animated: true)
         }
     }
-    
+
     @objc private func deleteTapped() {
-        let alert = UIAlertController(title: "Delete Vehicle?", message: "This action cannot be undone.", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Delete Vehicle?", message: "This vehicle will be removed from your profile. This can't be undone.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "Delete", style: .destructive) { [weak self] _ in
             self?.performDelete()
         })
         present(alert, animated: true)
     }
-    
+
     private func performDelete() {
         guard let original = vehicleToEdit, var user = UserDataModel.shared.getCurrentUser() else { return }
         var list = user.vehicles ?? []
         list.removeAll(where: { $0.registrationNumber == original.registrationNumber })
         user.vehicles = list
         UserDataModel.shared.editCurrentUser(vehicles: list)
-        
-        // Background delete from Supabase if needed (requires registration_number)
+
         Task {
-            // Need a way to delete from repository, for now we just upsert the profile
-            // which will sync the vehicles if the repo handles list sync correctly.
-            // Our current repo handles total profile push including multiple vehicles.
+            // Sync via profile upsert handled by repository
         }
-        
+
         AppHaptics.success()
         navigationController?.popViewController(animated: true)
     }
@@ -387,8 +347,6 @@ class VehicleRegistrationViewController: UIViewController {
             fieldsChanged()
             return
         }
-        
-        // Fallback or fresh start
         updateTypeButtons()
     }
 }

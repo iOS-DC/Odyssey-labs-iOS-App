@@ -28,13 +28,13 @@ final class RoleSelectionViewController: UIViewController {
             studentButton,
             icon: "graduationcap.fill",
             title: "Student",
-            subtitle: "I'm currently enrolled as a student"
+            subtitle: "Student at Chitkara University"
         )
         configureRoleButton(
             facultyButton,
             icon: "briefcase.fill",
             title: "Faculty",
-            subtitle: "I'm a faculty or staff member"
+            subtitle: "Faculty or staff at Chitkara"
         )
 
         continueButton.applyPrimaryButton(color: AppDesign.Color.primary)

@@ -32,14 +32,14 @@ final class OfflineEmptyStateView: UIView {
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
 
         // Title
-        titleLabel.text          = "No Internet Connection"
-        titleLabel.font          = .systemFont(ofSize: 17, weight: .semibold)
+        titleLabel.text          = "You're offline"
+        titleLabel.font          = AppDesign.Typography.bodyStrong
         titleLabel.textColor     = .label
         titleLabel.textAlignment = .center
 
         // Subtitle
-        subtitleLabel.text          = "Check your connection and pull down to refresh."
-        subtitleLabel.font          = .systemFont(ofSize: 14)
+        subtitleLabel.text          = "Check your Wi-Fi or mobile data, then pull down to refresh."
+        subtitleLabel.font          = AppDesign.Typography.subheadline
         subtitleLabel.textColor     = .secondaryLabel
         subtitleLabel.textAlignment = .center
         subtitleLabel.numberOfLines = 0

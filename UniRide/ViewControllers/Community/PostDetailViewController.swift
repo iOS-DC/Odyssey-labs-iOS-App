@@ -13,18 +13,19 @@ final class PostDetailViewController: UIViewController {
     /// Real names fetched from Supabase `profiles` table — always preferred over local cache.
     private var authorNames: [UUID: String] = [:]
 
-    // MARK: - UI
-    private let tableView         = UITableView(frame: .zero, style: .plain)
-    private let composeBar        = UIView()
-    private let commentTextField  = UITextField()
-    private let sendButton        = UIButton(type: .system)
-    private let spinner           = UIActivityIndicatorView(style: .medium)
-    private var composeBarBottom: NSLayoutConstraint!
+    // MARK: - UI (wired in PostDetail.storyboard)
+    @IBOutlet private var tableView: UITableView!
+    @IBOutlet private var composeBar: UIView!
+    @IBOutlet private var commentTextField: UITextField!
+    @IBOutlet private var sendButton: UIButton!
+    @IBOutlet private var spinner: UIActivityIndicatorView!
+    /// Bottom constraint of the compose bar — animated when keyboard appears/disappears.
+    @IBOutlet var composeBarBottom: NSLayoutConstraint!
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Post"
+        title = "Comments"
         view.backgroundColor = .systemGroupedBackground
         setupTableView()
         setupComposeBar()
@@ -45,80 +46,35 @@ final class PostDetailViewController: UIViewController {
     // MARK: - Setup
 
     private func setupTableView() {
-        tableView.dataSource        = self
-        tableView.delegate          = self
-        tableView.separatorStyle    = .singleLine
-        tableView.rowHeight         = UITableView.automaticDimension
+        tableView.dataSource         = self
+        tableView.delegate           = self
+        tableView.separatorStyle     = .singleLine
+        tableView.rowHeight          = UITableView.automaticDimension
         tableView.estimatedRowHeight = 80
         tableView.keyboardDismissMode = .interactive
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(tableView)
-
-        NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-        ])
-
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PostHeaderCell")
         tableView.register(CommentTableViewCell.self, forCellReuseIdentifier: CommentTableViewCell.identifier)
     }
 
     private func setupComposeBar() {
-        composeBar.backgroundColor = .secondarySystemGroupedBackground
-        composeBar.translatesAutoresizingMaskIntoConstraints = false
-
+        // Top separator (0.5pt) — dynamic runtime subview, acceptable exception
         let topSep = UIView()
         topSep.backgroundColor = .separator
         topSep.translatesAutoresizingMaskIntoConstraints = false
         composeBar.addSubview(topSep)
-
-        commentTextField.placeholder     = "Add a comment…"
-        commentTextField.borderStyle     = .none
-        commentTextField.font            = .systemFont(ofSize: 15)
-        commentTextField.returnKeyType   = .send
-        commentTextField.delegate        = self
-        commentTextField.translatesAutoresizingMaskIntoConstraints = false
-
-        sendButton.setImage(UIImage(systemName: "paperplane.fill"), for: .normal)
-        sendButton.tintColor = AppDesign.Color.primary
-        sendButton.translatesAutoresizingMaskIntoConstraints = false
-        sendButton.addTarget(self, action: #selector(sendTapped), for: .touchUpInside)
-
-        spinner.translatesAutoresizingMaskIntoConstraints = false
-        spinner.hidesWhenStopped = true
-
-        composeBar.addSubview(commentTextField)
-        composeBar.addSubview(sendButton)
-        composeBar.addSubview(spinner)
-        view.addSubview(composeBar)
-
-        composeBarBottom = composeBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         NSLayoutConstraint.activate([
             topSep.topAnchor.constraint(equalTo: composeBar.topAnchor),
             topSep.leadingAnchor.constraint(equalTo: composeBar.leadingAnchor),
             topSep.trailingAnchor.constraint(equalTo: composeBar.trailingAnchor),
             topSep.heightAnchor.constraint(equalToConstant: 0.5),
-
-            composeBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            composeBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            composeBar.heightAnchor.constraint(equalToConstant: 52),
-            composeBarBottom,
-
-            tableView.bottomAnchor.constraint(equalTo: composeBar.topAnchor),
-
-            commentTextField.leadingAnchor.constraint(equalTo: composeBar.leadingAnchor, constant: 16),
-            commentTextField.centerYAnchor.constraint(equalTo: composeBar.centerYAnchor),
-            commentTextField.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor, constant: -8),
-
-            sendButton.trailingAnchor.constraint(equalTo: spinner.leadingAnchor, constant: -4),
-            sendButton.centerYAnchor.constraint(equalTo: composeBar.centerYAnchor),
-            sendButton.widthAnchor.constraint(equalToConstant: 32),
-
-            spinner.trailingAnchor.constraint(equalTo: composeBar.trailingAnchor, constant: -16),
-            spinner.centerYAnchor.constraint(equalTo: composeBar.centerYAnchor),
-            spinner.widthAnchor.constraint(equalToConstant: 22),
         ])
+        commentTextField.placeholder   = "Add a comment…"
+        commentTextField.borderStyle   = .none
+        commentTextField.font          = AppDesign.Typography.subheadlineRegular
+        commentTextField.returnKeyType = .send
+        commentTextField.delegate      = self
+        sendButton.tintColor = AppDesign.Color.primary
+        spinner.hidesWhenStopped = true
     }
 
     private func setupKeyboardObservers() {
@@ -194,7 +150,7 @@ final class PostDetailViewController: UIViewController {
 
     // MARK: - Send comment
 
-    @objc private func sendTapped() {
+    @IBAction private func sendTapped() {
         submitComment()
     }
 
@@ -212,7 +168,7 @@ final class PostDetailViewController: UIViewController {
             }
             do {
                 let newCount = try await CommunityRepository.shared.insertComment(postID: post.id, text: text)
-                
+
                 // NOTIFY GLOBALLY: So feed can update its local count immediately
                 NotificationCenter.default.post(
                     name: .CommunityCommentDidUpdate,
@@ -228,7 +184,7 @@ final class PostDetailViewController: UIViewController {
                 }
             } catch {
                 self.commentTextField.text = text  // restore on failure
-                let alert = UIAlertController(title: "Couldn't post comment",
+                let alert = UIAlertController(title: "Comment Not Posted",
                                               message: error.localizedDescription,
                                               preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "OK", style: .default))
@@ -277,7 +233,7 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
         let isVerified = UserDataModel.shared.getUser(by: post.authorUserID)?.isEmailVerified == true
 
         config.text          = name
-        config.textProperties.font = .systemFont(ofSize: 13, weight: .semibold)
+        config.textProperties.font = AppDesign.Typography.captionStrong
         config.textProperties.color = .secondaryLabel
 
         // Timestamp
@@ -293,7 +249,7 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
             iv.contentMode = .scaleAspectFill
             iv.clipsToBounds = true
             iv.layer.cornerRadius = 18
-            iv.backgroundColor = .systemGray6
+            iv.backgroundColor = AppDesign.Color.surfaceElevated
             iv.translatesAutoresizingMaskIntoConstraints = false
             cell.contentView.addSubview(iv)
             NSLayoutConstraint.activate([
@@ -303,13 +259,13 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
                 iv.heightAnchor.constraint(equalToConstant: 36)
             ])
         }
-        
+
         let avatar = cell.contentView.viewWithTag(101) as? UIImageView
         avatar?.loadAndFallback(from: post.authorProfile?.photoURL, name: name)
 
         config.image = nil // Disable standard image
         config.imageToTextPadding = 52 // Room for avatar
-        
+
         cell.contentConfiguration = config
 
         // Verified badge
@@ -329,7 +285,7 @@ extension PostDetailViewController: UITableViewDataSource, UITableViewDelegate {
             let body = UILabel()
             body.tag = 88
             body.numberOfLines = 0
-            body.font = .systemFont(ofSize: 16)
+            body.font = AppDesign.Typography.body
             body.textColor = .label
             body.translatesAutoresizingMaskIntoConstraints = false
             cell.contentView.addSubview(body)

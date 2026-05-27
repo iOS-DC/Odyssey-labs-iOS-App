@@ -11,131 +11,92 @@ final class RideDetailViewController: UIViewController {
     /// Called after a successful join request — parent can pop or reload
     var onRequested: (() -> Void)?
 
-    // MARK: - UI
-    private let scrollView   = UIScrollView()
-    private let contentStack = UIStackView()  // vertical, everything inside
+    // MARK: - IBOutlets (wired in RideDetail.storyboard)
+    @IBOutlet private var scrollView: UIScrollView!
+    @IBOutlet private var contentStack: UIStackView!
+    @IBOutlet private var mapView: MKMapView!
+    @IBOutlet private var bottomBar: UIView!
+    @IBOutlet private var requestBtn: UIButton!
 
-    private let mapView      = MKMapView()
+    // MARK: - Runtime card views (built from data, acceptable dynamic subviews)
     private let driverCard   = UIView()
     private let infoGrid     = UIView()
     private let notesCard    = UIView()
-    private let bottomBar    = UIView()       // fixed at screen bottom
-    private let requestBtn   = UIButton(type: .system)
 
     private var alreadyRequested = false
+    private var isDriver = false
+    private var hasTimeConflict = false
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemGroupedBackground
-        title = "Ride Details"
-        navigationItem.largeTitleDisplayMode = .never
-        buildLayout()
+        setupMapView()
+        setupCards()
+        setupBottomBar()
         populate()
         drawRoute()
         checkExistingRequest()
-        // Fetch remote reviews for the driver so the star rating is
-        // cross-device accurate (not just what's cached on this device).
         if let driverID = driver?.id {
             ReviewDataModel.shared.fetchAndMerge(for: driverID)
         }
     }
 
-    // MARK: - Layout
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tabBarController?.tabBar.isHidden = true
+    }
 
-    private func buildLayout() {
-        // ── Scroll + stack ──
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.alwaysBounceVertical = true
-        view.addSubview(scrollView)
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        tabBarController?.tabBar.isHidden = false
+    }
 
-        contentStack.axis    = .vertical
-        contentStack.spacing = AppDesign.Spacing.md
-        contentStack.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(contentStack)
+    // MARK: - Setup
 
-        // ── Bottom bar (fixed) ──
+    private func setupMapView() {
+        mapView.layer.cornerRadius = AppDesign.Radius.lg
+        mapView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        mapView.clipsToBounds = true
+        mapView.isZoomEnabled   = true
+        mapView.isScrollEnabled = true
+        mapView.delegate = self
+    }
+
+    private func setupCards() {
+        [driverCard, infoGrid, notesCard].forEach {
+            $0.applyCardStyle(corner: AppDesign.Radius.md)
+        }
+        contentStack.addArrangedSubview(horizontalPad(driverCard))
+        contentStack.addArrangedSubview(horizontalPad(infoGrid))
+        contentStack.addArrangedSubview(horizontalPad(notesCard))
+        // Spacer so last card clears the fixed button bar
+        let spacer = UIView()
+        spacer.heightAnchor.constraint(
+            equalToConstant: AppDesign.Size.buttonHeight + (AppDesign.Spacing.lg * 2)
+        ).isActive = true
+        contentStack.addArrangedSubview(spacer)
+    }
+
+    private func setupBottomBar() {
         bottomBar.backgroundColor = .systemBackground
-        bottomBar.translatesAutoresizingMaskIntoConstraints = false
-        // subtle top shadow
         bottomBar.layer.shadowColor   = UIColor.black.cgColor
         bottomBar.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
         bottomBar.layer.shadowOffset  = CGSize(width: 0, height: -AppDesign.Spacing.xxs)
         bottomBar.layer.shadowRadius  = AppDesign.Shadow.smallCardRadius
-        view.addSubview(bottomBar)
-
         requestBtn.applyProminentPrimaryCTA(
-            title: "Request to Join",
+            title: "Request Seat",
             corner: AppDesign.Radius.md,
             imageSystemName: "arrow.right.circle.fill",
             imagePlacement: .trailing
         )
-        requestBtn.translatesAutoresizingMaskIntoConstraints = false
-        requestBtn.addTarget(self, action: #selector(requestTapped), for: .touchUpInside)
-        bottomBar.addSubview(requestBtn)
-
-        // ── Map ──
-        mapView.layer.cornerRadius = 0
-        mapView.isZoomEnabled   = true
-        mapView.isScrollEnabled = true
-        mapView.delegate = self
-        mapView.translatesAutoresizingMaskIntoConstraints = false
-
-        // ── Cards ──
-        [driverCard, infoGrid, notesCard].forEach {
-            $0.applyCardStyle(corner: AppDesign.Radius.md)
-            $0.translatesAutoresizingMaskIntoConstraints = false
-        }
-
-        // Add to scrollable stack (wrapped in horizontal padding container)
-        contentStack.addArrangedSubview(mapView)
-        contentStack.addArrangedSubview(horizontalPad(driverCard))
-        contentStack.addArrangedSubview(horizontalPad(infoGrid))
-        contentStack.addArrangedSubview(horizontalPad(notesCard))
-        // spacer so content clears the fixed button bar
-        let spacer = UIView(); spacer.translatesAutoresizingMaskIntoConstraints = false
-        contentStack.addArrangedSubview(spacer)
-
-        NSLayoutConstraint.activate([
-            // ScrollView fills view above bottom bar
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            contentStack.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            contentStack.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            contentStack.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            contentStack.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentStack.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-
-            // Map: full width, fixed height
-            mapView.heightAnchor.constraint(equalToConstant: 220),
-
-            // Spacer so last card clears the fixed button bar (safe area + button + padding)
-            spacer.heightAnchor.constraint(
-                equalToConstant: AppDesign.Size.buttonHeight + (AppDesign.Spacing.lg * 2)
-            ),
-
-            // ── Bottom bar: fills from button top to screen edge (covers home indicator area) ──
-            bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            bottomBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bottomBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            // ── Request button sits ABOVE the tab bar (safe area) ──
-            requestBtn.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: AppDesign.Spacing.lg),
-            requestBtn.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -AppDesign.Spacing.lg),
-            requestBtn.heightAnchor.constraint(equalToConstant: AppDesign.Size.buttonHeight),
-            requestBtn.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.sm),
-            // Button top determines the bar's top
-            requestBtn.topAnchor.constraint(equalTo: bottomBar.topAnchor, constant: AppDesign.Spacing.sm),
-        ])
     }
 
     /// Wraps a card view in a container with 16pt horizontal padding
     private func horizontalPad(_ card: UIView) -> UIView {
         let wrap = UIView()
         wrap.translatesAutoresizingMaskIntoConstraints = false
+        card.translatesAutoresizingMaskIntoConstraints = false
         wrap.addSubview(card)
         NSLayoutConstraint.activate([
             card.topAnchor.constraint(equalTo: wrap.topAnchor),
@@ -160,7 +121,7 @@ final class RideDetailViewController: UIViewController {
         avatar.layer.cornerRadius = 30
         avatar.clipsToBounds = true
         avatar.contentMode = .scaleAspectFill
-        avatar.backgroundColor = .systemGray5
+        avatar.backgroundColor = AppDesign.Color.borderSubtle
         avatar.layer.borderWidth  = 2.5
         avatar.layer.borderColor  = AppDesign.Color.primary.withAlphaComponent(0.5).cgColor
         avatar.loadAndFallback(from: driver?.photoURL, name: driver?.fullName ?? "D")
@@ -183,7 +144,6 @@ final class RideDetailViewController: UIViewController {
             subLabel.text = "Driver"
         }
 
-        // Star rating
         let ratingRow = buildStarRow(for: driver?.id)
 
         let textStack = UIStackView(arrangedSubviews: [nameLabel, subLabel, ratingRow])
@@ -225,7 +185,7 @@ final class RideDetailViewController: UIViewController {
 
         for i in 1...5 {
             let img = UIImageView(image: UIImage(systemName: i <= filled ? "star.fill" : "star"))
-            img.tintColor = i <= filled ? .systemYellow : .systemGray3
+            img.tintColor = i <= filled ? AppDesign.Color.warning : AppDesign.Color.borderSubtle
             img.widthAnchor.constraint(equalToConstant: 14).isActive = true
             img.heightAnchor.constraint(equalToConstant: 14).isActive = true
             stack.addArrangedSubview(img)
@@ -269,12 +229,22 @@ final class RideDetailViewController: UIViewController {
         }
         let vehicleChip = makeChip(icon: "car.fill", color: AppDesign.Color.primary, text: vehicleText)
 
-        let chipStack = UIStackView(arrangedSubviews: [dateChip, seatsChip, fareChip, vehicleChip])
-        chipStack.axis = .vertical
-        chipStack.spacing = 10
-        chipStack.translatesAutoresizingMaskIntoConstraints = false
+        let topRow = UIStackView(arrangedSubviews: [dateChip, seatsChip])
+        topRow.axis = .horizontal
+        topRow.spacing = AppDesign.Spacing.sm
+        topRow.distribution = .fillEqually
 
-        [sectionLabel, chipStack].forEach {
+        let bottomRow = UIStackView(arrangedSubviews: [fareChip, vehicleChip])
+        bottomRow.axis = .horizontal
+        bottomRow.spacing = AppDesign.Spacing.sm
+        bottomRow.distribution = .fillEqually
+
+        let chipGrid = UIStackView(arrangedSubviews: [topRow, bottomRow])
+        chipGrid.axis = .vertical
+        chipGrid.spacing = AppDesign.Spacing.sm
+        chipGrid.translatesAutoresizingMaskIntoConstraints = false
+
+        [sectionLabel, chipGrid].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             infoGrid.addSubview($0)
         }
@@ -283,10 +253,10 @@ final class RideDetailViewController: UIViewController {
             sectionLabel.topAnchor.constraint(equalTo: infoGrid.topAnchor, constant: 14),
             sectionLabel.leadingAnchor.constraint(equalTo: infoGrid.leadingAnchor, constant: 16),
 
-            chipStack.topAnchor.constraint(equalTo: sectionLabel.bottomAnchor, constant: 10),
-            chipStack.leadingAnchor.constraint(equalTo: infoGrid.leadingAnchor, constant: 16),
-            chipStack.trailingAnchor.constraint(equalTo: infoGrid.trailingAnchor, constant: -16),
-            chipStack.bottomAnchor.constraint(equalTo: infoGrid.bottomAnchor, constant: -16),
+            chipGrid.topAnchor.constraint(equalTo: sectionLabel.bottomAnchor, constant: 10),
+            chipGrid.leadingAnchor.constraint(equalTo: infoGrid.leadingAnchor, constant: 16),
+            chipGrid.trailingAnchor.constraint(equalTo: infoGrid.trailingAnchor, constant: -16),
+            chipGrid.bottomAnchor.constraint(equalTo: infoGrid.bottomAnchor, constant: -16),
         ])
     }
 
@@ -354,9 +324,8 @@ final class RideDetailViewController: UIViewController {
 
     private func makeSectionLabel(_ text: String) -> UILabel {
         let l = UILabel()
-        l.text = text
-        l.applyTextStyle(AppDesign.Typography.captionStrong, color: .tertiaryLabel)
-        l.letterSpacing(1.2)
+        l.text = text.capitalized
+        l.applyTextStyle(AppDesign.Typography.cardTitle)
         return l
     }
 
@@ -366,14 +335,12 @@ final class RideDetailViewController: UIViewController {
         let src = CLLocationCoordinate2D(latitude: ride.source.lat, longitude: ride.source.lon)
         let dst = CLLocationCoordinate2D(latitude: ride.destination.lat, longitude: ride.destination.lon)
 
-        // Place pins
         let srcPin = MKPointAnnotation(); srcPin.coordinate = src
         srcPin.title = ride.source.address ?? "Pickup"
         let dstPin = MKPointAnnotation(); dstPin.coordinate = dst
         dstPin.title = ride.destination.address ?? "Drop-off"
         mapView.addAnnotations([srcPin, dstPin])
 
-        // Request directions polyline
         let srcItem = MKMapItem(placemark: MKPlacemark(coordinate: src))
         let dstItem = MKMapItem(placemark: MKPlacemark(coordinate: dst))
         let req = MKDirections.Request()
@@ -381,7 +348,6 @@ final class RideDetailViewController: UIViewController {
         req.transportType = .automobile
         MKDirections(request: req).calculate { [weak self] resp, _ in
             guard let self, let route = resp?.routes.first else {
-                // fallback: just show both pins
                 self?.mapView.showAnnotations([srcPin, dstPin], animated: true)
                 return
             }
@@ -395,28 +361,61 @@ final class RideDetailViewController: UIViewController {
 
     private func checkExistingRequest() {
         guard let user = UserDataModel.shared.getCurrentUser() else { return }
+        
+        // 1. Check if user is the driver
+        if ride.driverUserID == user.id {
+            isDriver = true
+        }
+
+        // 2. Check for overlapping rides in the user's schedule (+/- 2 hours)
+        let myUpcoming = RideDataModel.shared.myUpcoming(userID: user.id)
+        hasTimeConflict = myUpcoming.contains { trip in
+            // Skip the current ride if it's already in our upcoming list
+            if trip.ride.id == ride.id { return false }
+            
+            let timeDiff = abs(trip.ride.departureTime.timeIntervalSince(ride.departureTime))
+            return timeDiff < 7200 // 2 hours buffer
+        }
+
+        // 3. Check if already requested
         let existing = RideDataModel.shared.listRequests(for: ride.id)
             .first { $0.passengerUserID == user.id }
         if existing != nil {
             alreadyRequested = true
-            updateButtonState()
         }
+        
+        updateButtonState()
     }
 
     private func updateButtonState() {
         var cfg = requestBtn.configuration ?? UIButton.Configuration.filled()
-        if alreadyRequested {
-            cfg.title = "Request Sent ✓"
-            cfg.baseBackgroundColor = .systemGray4
+        
+        if isDriver {
+            cfg.title = "Your Offered Ride"
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = AppDesign.Color.textSecondary
+            cfg.image = nil
+            requestBtn.isEnabled = false
+        } else if alreadyRequested {
+            cfg.title = "Request Sent"
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = AppDesign.Color.textSecondary
+            cfg.image = nil
+            requestBtn.isEnabled = false
+        } else if hasTimeConflict {
+            cfg.title = "You have a ride at this time"
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = AppDesign.Color.textSecondary
             cfg.image = nil
             requestBtn.isEnabled = false
         } else if ride.seatsAvailable <= 0 {
-            cfg.title = "Ride Full"
-            cfg.baseBackgroundColor = .systemGray4
+            cfg.title = "Fully Booked"
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = AppDesign.Color.textSecondary
             cfg.image = nil
             requestBtn.isEnabled = false
         } else {
-            cfg.title = "Request to Join"
+            cfg.title = "Request Seat"
             cfg.baseBackgroundColor = AppDesign.Color.primary
             cfg.image = UIImage(systemName: "arrow.right.circle.fill")
             cfg.imagePlacement = .trailing
@@ -426,8 +425,17 @@ final class RideDetailViewController: UIViewController {
         requestBtn.configuration = cfg
     }
 
-    @objc private func requestTapped() {
+    @IBAction private func requestTapped() {
         guard let user = UserDataModel.shared.getCurrentUser() else { return }
+        
+        // Final safety checks
+        if isDriver { return }
+        if hasTimeConflict {
+            let alert = UIAlertController(title: "Time Conflict", message: "You've already got a ride around this time. Check My Rides before requesting.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Got It", style: .default))
+            present(alert, animated: true)
+            return
+        }
 
         let req = RideRequest(
             rideID: ride.id,
@@ -448,11 +456,11 @@ final class RideDetailViewController: UIViewController {
                 AppHaptics.success()
 
                 let alert = UIAlertController(
-                    title: "Request Sent! 🎉",
-                    message: "The driver will approve your request. Check My Rides → Upcoming.",
+                    title: "Request Sent!",
+                    message: "The driver will review your request. Check My Rides → Upcoming for updates.",
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+                alert.addAction(UIAlertAction(title: "Got It", style: .default) { [weak self] _ in
                     self?.onRequested?()
                     self?.navigationController?.popViewController(animated: true)
                 })
@@ -461,11 +469,11 @@ final class RideDetailViewController: UIViewController {
                 requestBtn.isEnabled = true
                 updateButtonState()
                 let alert = UIAlertController(
-                    title: "Couldn’t send request",
-                    message: error.localizedDescription,
+                    title: "Request Failed",
+                    message: "Couldn't send your request. Try again or contact the driver.",
                     preferredStyle: .alert
                 )
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                alert.addAction(UIAlertAction(title: "Got It", style: .default))
                 present(alert, animated: true)
             }
         }

@@ -114,11 +114,11 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         let isStudent = activeRole == .student
         headerTitleLabel.text = "Tell us about yourself"
         headerSubtitleLabel.text = isStudent
-            ? "Help us create your student profile"
-            : "Help us create your faculty profile"
+            ? "Let's set up your student profile"
+            : "Let's set up your faculty profile"
 
         courseLabel.text = isStudent ? "Course" : "Department"
-        dropDownButton.setTitle(isStudent ? "Select Course" : "Select Department", for: .normal)
+        dropDownButton.setTitle(isStudent ? "Choose your course" : "Choose your department", for: .normal)
         
         yearLabel.isHidden = !isStudent
         yearDropDownButton.isHidden = !isStudent
@@ -194,7 +194,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         let phone = (phoneTextField.text ?? "").filter(\.isNumber)
 
         guard phone.count == 10 else {
-            showOTPStatus("Phone number must be exactly 10 digits", color: AppDesign.Color.destructive)
+            showOTPStatus("Enter your 10-digit mobile number", color: AppDesign.Color.destructive)
             phoneTextField.becomeFirstResponder()
             return
         }
@@ -225,7 +225,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
     private func validateContinueAvailability() {
         let name = (fullNameTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let dept = dropDownButton.title(for: .normal) ?? ""
-        let hasDepartment = dept != "Select Department" && dept != "Select Course"
+        let hasDepartment = dept != "Select Department" && dept != "Select Course" && dept != "Choose your course" && dept != "Choose your department"
         let hasValidPhone = (phoneTextField.text ?? "").filter(\.isNumber).count == 10
 
         if activeRole == .student {
@@ -268,7 +268,8 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
             }
 
             if activeRole == .student {
-                if dropDownButton.title(for: .normal) == "Select Department" || dropDownButton.title(for: .normal) == "Select Course" {
+                let currentTitle = dropDownButton.title(for: .normal) ?? ""
+                if currentTitle == "Select Department" || currentTitle == "Select Course" || currentTitle == "Choose your course" || currentTitle == "Choose your department" {
                     if let department = user.courseName, !department.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         dropDownButton.setTitle(department, for: .normal)
                     }
@@ -289,7 +290,7 @@ final class ProfileStep1ViewController: UIViewController, UITextFieldDelegate {
         yearDropDownButton.accessibilityLabel = "Year"
         yearDropDownButton.accessibilityHint = "Select your academic year"
         phoneTextField.accessibilityLabel = "Phone number"
-        phoneTextField.accessibilityHint = "Enter your 10 digit mobile number"
+        phoneTextField.accessibilityHint = "Enter your 10-digit mobile number"
         continueButton.accessibilityLabel = "Continue"
         continueButton.accessibilityHint = "Proceed to the next step"
     }

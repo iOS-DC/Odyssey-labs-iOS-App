@@ -256,7 +256,7 @@ final class PastRideCell: UITableViewCell {
         let isHost = trip.role == .hosting
 
         // Role chip
-        roleChip.text = isHost ? "  Hosting  " : "  Passenger  "
+        roleChip.text = isHost ? "  Driving  " : "  Passenger  "
         if isHost {
             roleChip.backgroundColor = AppDesign.Color.primary.withAlphaComponent(0.12)
             roleChip.textColor = AppDesign.Color.primary
@@ -366,7 +366,7 @@ final class PastRideCell: UITableViewCell {
         avatar.contentMode = .scaleAspectFill
         avatar.clipsToBounds = true
         avatar.layer.cornerRadius = AppDesign.Radius.md
-        avatar.backgroundColor = .systemGray5
+        avatar.backgroundColor = AppDesign.Color.borderSubtle
         avatar.translatesAutoresizingMaskIntoConstraints = false
         avatar.loadAndFallback(from: profile.photoURL, name: profile.fullName)
 

@@ -58,7 +58,7 @@ class CommentTableViewCell: UITableViewCell {
         config.contentInsets = .zero
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = .systemFont(ofSize: 12, weight: .medium)
+            outgoing.font = AppDesign.Typography.micro
             return outgoing
         }
         btn.configuration = config
