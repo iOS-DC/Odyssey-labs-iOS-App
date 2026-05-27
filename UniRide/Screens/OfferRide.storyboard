@@ -863,9 +863,8 @@
                                         </subviews>
                                     </stackView>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="b0z-WJ-fpZ">
-                                        <rect key="frame" x="96.666666666666686" y="309" width="160" height="40"/>
+                                        <rect key="frame" x="16" y="309" width="321" height="40"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="160" id="cD0-gz-Nqr"/>
                                             <constraint firstAttribute="height" constant="40" id="uLy-lz-DPA"/>
                                         </constraints>
                                         <color key="tintColor" systemColor="systemBlueColor"/>
@@ -880,28 +879,110 @@
                                 <constraints>
                                     <constraint firstItem="b0z-WJ-fpZ" firstAttribute="top" secondItem="hCI-yD-2tI" secondAttribute="bottom" constant="34" id="7t6-J4-6GC"/>
                                     <constraint firstItem="hCI-yD-2tI" firstAttribute="leading" secondItem="ibk-gR-xpX" secondAttribute="leading" constant="20" id="CML-OI-z9y"/>
-                                    <constraint firstItem="b0z-WJ-fpZ" firstAttribute="centerX" secondItem="ibk-gR-xpX" secondAttribute="centerX" id="NdH-3Y-1k1"/>
+                                    <constraint firstItem="b0z-WJ-fpZ" firstAttribute="leading" secondItem="ibk-gR-xpX" secondAttribute="leading" constant="16" id="REV-Ob-Ld"/>
+                                    <constraint firstItem="ibk-gR-xpX" firstAttribute="trailing" secondItem="b0z-WJ-fpZ" secondAttribute="trailing" constant="16" id="REV-Ob-Tr"/>
                                     <constraint firstAttribute="trailing" secondItem="hCI-yD-2tI" secondAttribute="trailing" constant="20" id="dcy-Wy-G1R"/>
                                     <constraint firstAttribute="bottom" secondItem="b0z-WJ-fpZ" secondAttribute="bottom" constant="22" id="j2Y-J6-lRD"/>
                                     <constraint firstItem="hCI-yD-2tI" firstAttribute="top" secondItem="ibk-gR-xpX" secondAttribute="top" constant="24" id="lIo-KH-1kF"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-Crd" userLabel="recurringCard">
+                                <rect key="frame" x="20" y="525" width="353" height="64"/>
+                                <subviews>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Repeat this ride" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-Lbl">
+                                        <rect key="frame" x="14" y="21" width="151" height="22"/>
+                                        <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="17"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-Sw">
+                                        <rect key="frame" x="288" y="14" width="51" height="31"/>
+                                        <connections>
+                                            <action selector="recurringToggled:" destination="g46-YD-dXd" eventType="valueChanged" id="REV-Rc-Sw-Ac"/>
+                                        </connections>
+                                    </switch>
+                                    <stackView opaque="NO" contentMode="scaleToFill" hidden="YES" alpha="0.0" axis="horizontal" distribution="fillEqually" spacing="6" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-Stk">
+                                        <rect key="frame" x="14" y="57" width="325" height="0.0"/>
+                                        <subviews>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-D1">
+                                                <state key="normal" title="Mon"/>
+                                                <connections>
+                                                    <action selector="dayPillTapped:" destination="g46-YD-dXd" eventType="touchUpInside" id="REV-Rc-D1-Ac"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-D2">
+                                                <state key="normal" title="Tue"/>
+                                                <connections>
+                                                    <action selector="dayPillTapped:" destination="g46-YD-dXd" eventType="touchUpInside" id="REV-Rc-D2-Ac"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-D3">
+                                                <state key="normal" title="Wed"/>
+                                                <connections>
+                                                    <action selector="dayPillTapped:" destination="g46-YD-dXd" eventType="touchUpInside" id="REV-Rc-D3-Ac"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-D4">
+                                                <state key="normal" title="Thu"/>
+                                                <connections>
+                                                    <action selector="dayPillTapped:" destination="g46-YD-dXd" eventType="touchUpInside" id="REV-Rc-D4-Ac"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-D5">
+                                                <state key="normal" title="Fri"/>
+                                                <connections>
+                                                    <action selector="dayPillTapped:" destination="g46-YD-dXd" eventType="touchUpInside" id="REV-Rc-D5-Ac"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-D6">
+                                                <state key="normal" title="Sat"/>
+                                                <connections>
+                                                    <action selector="dayPillTapped:" destination="g46-YD-dXd" eventType="touchUpInside" id="REV-Rc-D6-Ac"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="REV-Rc-D7">
+                                                <state key="normal" title="Sun"/>
+                                                <connections>
+                                                    <action selector="dayPillTapped:" destination="g46-YD-dXd" eventType="touchUpInside" id="REV-Rc-D7-Ac"/>
+                                                </connections>
+                                            </button>
+                                        </subviews>
+                                    </stackView>
+                                </subviews>
+                                <color key="backgroundColor" systemColor="secondarySystemGroupedBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstItem="REV-Rc-Lbl" firstAttribute="leading" secondItem="REV-Rc-Crd" secondAttribute="leading" constant="14" id="REV-Rc-LbL"/>
+                                    <constraint firstItem="REV-Rc-Lbl" firstAttribute="centerY" secondItem="REV-Rc-Sw" secondAttribute="centerY" id="REV-Rc-LbCy"/>
+                                    <constraint firstItem="REV-Rc-Crd" firstAttribute="trailing" secondItem="REV-Rc-Sw" secondAttribute="trailing" constant="14" id="REV-Rc-SwT"/>
+                                    <constraint firstItem="REV-Rc-Sw" firstAttribute="top" secondItem="REV-Rc-Crd" secondAttribute="top" constant="14" id="REV-Rc-SwTp"/>
+                                    <constraint firstItem="REV-Rc-Stk" firstAttribute="top" secondItem="REV-Rc-Sw" secondAttribute="bottom" constant="12" id="REV-Rc-StkT"/>
+                                    <constraint firstItem="REV-Rc-Stk" firstAttribute="leading" secondItem="REV-Rc-Crd" secondAttribute="leading" constant="14" id="REV-Rc-StkL"/>
+                                    <constraint firstItem="REV-Rc-Crd" firstAttribute="trailing" secondItem="REV-Rc-Stk" secondAttribute="trailing" constant="14" id="REV-Rc-StkR"/>
+                                    <constraint firstItem="REV-Rc-Stk" firstAttribute="height" constant="36" id="REV-Rc-StkH"/>
+                                    <constraint firstItem="REV-Rc-Crd" firstAttribute="bottom" secondItem="REV-Rc-Stk" secondAttribute="bottom" constant="14" id="REV-Rc-StkB"/>
                                 </constraints>
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="5z0-c2-TzJ"/>
                         <color key="backgroundColor" red="0.9643554688" green="0.9799804688" blue="0.9838867188" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                         <constraints>
-                            <constraint firstItem="5z0-c2-TzJ" firstAttribute="bottom" secondItem="ibk-gR-xpX" secondAttribute="bottom" constant="275" id="0Zs-eq-gdf"/>
                             <constraint firstItem="5z0-c2-TzJ" firstAttribute="trailing" secondItem="ibk-gR-xpX" secondAttribute="trailing" constant="20" id="9ta-zE-73s"/>
                             <constraint firstItem="ibk-gR-xpX" firstAttribute="top" secondItem="5z0-c2-TzJ" secondAttribute="top" constant="20" id="LFq-VX-YlC"/>
                             <constraint firstItem="ibk-gR-xpX" firstAttribute="leading" secondItem="5z0-c2-TzJ" secondAttribute="leading" constant="20" id="x2V-yw-ODy"/>
+                            <constraint firstItem="REV-Rc-Crd" firstAttribute="top" secondItem="ibk-gR-xpX" secondAttribute="bottom" constant="16" id="REV-Rc-Tp"/>
+                            <constraint firstItem="REV-Rc-Crd" firstAttribute="leading" secondItem="ibk-gR-xpX" secondAttribute="leading" id="REV-Rc-Ld"/>
+                            <constraint firstItem="REV-Rc-Crd" firstAttribute="trailing" secondItem="ibk-gR-xpX" secondAttribute="trailing" id="REV-Rc-Tr"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="cardView" destination="ibk-gR-xpX" id="Px9-LW-Hmn"/>
                         <outlet property="dateLabel" destination="g4K-9h-ZSz" id="Zj9-e9-cVi"/>
+                        <outlet property="dayPillsStack" destination="REV-Rc-Stk" id="REV-Out-Stk"/>
                         <outlet property="fareLabel" destination="h3M-eC-Xgr" id="3Zm-PX-Qtn"/>
                         <outlet property="fromLabel" destination="pyv-e0-dM5" id="iag-qe-0OT"/>
                         <outlet property="offerButton" destination="b0z-WJ-fpZ" id="qeh-jW-dfg"/>
+                        <outlet property="recurringCard" destination="REV-Rc-Crd" id="REV-Out-Crd"/>
+                        <outlet property="recurringSwitch" destination="REV-Rc-Sw" id="REV-Out-Sw"/>
                         <outlet property="seatsLabel" destination="6kP-Zy-jaD" id="37Z-0s-e7F"/>
                         <outlet property="timeLabel" destination="aFL-hn-V7F" id="y3r-S8-tmj"/>
                         <outlet property="toLabel" destination="phi-e1-wY8" id="zrh-wz-2Pe"/>
@@ -956,6 +1037,9 @@
         <image name="motorcycle.fill" catalog="system" width="128" height="76"/>
         <systemColor name="secondaryLabelColor">
             <color red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="secondarySystemGroupedBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
