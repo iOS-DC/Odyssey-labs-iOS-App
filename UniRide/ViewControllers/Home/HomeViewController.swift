@@ -88,8 +88,6 @@ class HomeViewController: UIViewController {
     }
 
     func setupTable() {
-        homeTableView.sectionHeaderTopPadding = 0
-
         homeTableView.register(
             UINib(nibName: "RideTableViewCell", bundle: nil),
             forCellReuseIdentifier: "RideCell"

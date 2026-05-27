@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="TMC-Rt-Vw1" customClass="TripMiniCardView" customModule="UniRide" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="168" height="200"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <subviews>
+                <view contentMode="scaleToFill" clipsSubviews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="TMC-Cl-Vw1">
+                    <rect key="frame" x="0.0" y="0.0" width="168" height="200"/>
+                    <subviews>
+                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="TMC-Iv-Hr1">
+                            <rect key="frame" x="0.0" y="0.0" width="168" height="110"/>
+                            <color key="backgroundColor" red="0.89803921568627454" green="0.89803921568627454" blue="0.91764705882352937" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            <constraints>
+                                <constraint firstAttribute="height" constant="110" id="TMC-Iv-Ht"/>
+                            </constraints>
+                        </imageView>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TMC-Lb-Ttl">
+                            <rect key="frame" x="10" y="118" width="148" height="16"/>
+                            <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="13"/>
+                            <nil key="textColor"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Location" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TMC-Lb-Loc">
+                            <rect key="frame" x="10" y="136" width="148" height="14"/>
+                            <fontDescription key="fontDescription" type="system" pointSize="11"/>
+                            <color key="textColor" systemColor="secondaryLabelColor"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Price" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TMC-Lb-Prc">
+                            <rect key="frame" x="10" y="156" width="148" height="17"/>
+                            <fontDescription key="fontDescription" type="system" weight="bold" pointSize="14"/>
+                            <nil key="textColor"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                    </subviews>
+                    <constraints>
+                        <constraint firstItem="TMC-Iv-Hr1" firstAttribute="top" secondItem="TMC-Cl-Vw1" secondAttribute="top" id="TMC-Iv-Top"/>
+                        <constraint firstItem="TMC-Iv-Hr1" firstAttribute="leading" secondItem="TMC-Cl-Vw1" secondAttribute="leading" id="TMC-Iv-Lead"/>
+                        <constraint firstItem="TMC-Cl-Vw1" firstAttribute="trailing" secondItem="TMC-Iv-Hr1" secondAttribute="trailing" id="TMC-Iv-Trail"/>
+                        <constraint firstItem="TMC-Lb-Ttl" firstAttribute="top" secondItem="TMC-Iv-Hr1" secondAttribute="bottom" constant="8" id="TMC-Lb-Top"/>
+                        <constraint firstItem="TMC-Lb-Ttl" firstAttribute="leading" secondItem="TMC-Cl-Vw1" secondAttribute="leading" constant="10" id="TMC-Lb-Lead"/>
+                        <constraint firstItem="TMC-Cl-Vw1" firstAttribute="trailing" secondItem="TMC-Lb-Ttl" secondAttribute="trailing" constant="10" id="TMC-Lb-Trail"/>
+                        <constraint firstItem="TMC-Lb-Loc" firstAttribute="top" secondItem="TMC-Lb-Ttl" secondAttribute="bottom" constant="2" id="TMC-Lc-Top"/>
+                        <constraint firstItem="TMC-Lb-Loc" firstAttribute="leading" secondItem="TMC-Cl-Vw1" secondAttribute="leading" constant="10" id="TMC-Lc-Lead"/>
+                        <constraint firstItem="TMC-Cl-Vw1" firstAttribute="trailing" secondItem="TMC-Lb-Loc" secondAttribute="trailing" constant="10" id="TMC-Lc-Trail"/>
+                        <constraint firstItem="TMC-Lb-Prc" firstAttribute="top" secondItem="TMC-Lb-Loc" secondAttribute="bottom" constant="6" id="TMC-Pr-Top"/>
+                        <constraint firstItem="TMC-Lb-Prc" firstAttribute="leading" secondItem="TMC-Cl-Vw1" secondAttribute="leading" constant="10" id="TMC-Pr-Lead"/>
+                        <constraint firstItem="TMC-Cl-Vw1" firstAttribute="bottom" secondItem="TMC-Lb-Prc" secondAttribute="bottom" constant="10" id="TMC-Pr-Bot"/>
+                    </constraints>
+                    <userDefinedRuntimeAttributes>
+                        <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                            <real key="value" value="16"/>
+                        </userDefinedRuntimeAttribute>
+                    </userDefinedRuntimeAttributes>
+                </view>
+            </subviews>
+            <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+            <constraints>
+                <constraint firstAttribute="width" constant="168" id="TMC-Rt-Wd"/>
+                <constraint firstItem="TMC-Cl-Vw1" firstAttribute="top" secondItem="TMC-Rt-Vw1" secondAttribute="top" id="TMC-Cl-Top"/>
+                <constraint firstItem="TMC-Cl-Vw1" firstAttribute="leading" secondItem="TMC-Rt-Vw1" secondAttribute="leading" id="TMC-Cl-Lead"/>
+                <constraint firstItem="TMC-Rt-Vw1" firstAttribute="trailing" secondItem="TMC-Cl-Vw1" secondAttribute="trailing" id="TMC-Cl-Trail"/>
+                <constraint firstItem="TMC-Rt-Vw1" firstAttribute="bottom" secondItem="TMC-Cl-Vw1" secondAttribute="bottom" id="TMC-Cl-Bot"/>
+            </constraints>
+            <connections>
+                <outlet property="heroImageView" destination="TMC-Iv-Hr1" id="TMC-Out-Iv"/>
+                <outlet property="locationLabel" destination="TMC-Lb-Loc" id="TMC-Out-Lc"/>
+                <outlet property="priceLabel" destination="TMC-Lb-Prc" id="TMC-Out-Pr"/>
+                <outlet property="titleLabel" destination="TMC-Lb-Ttl" id="TMC-Out-Tt"/>
+            </connections>
+        </view>
+    </objects>
+    <resources>
+        <systemColor name="secondaryLabelColor">
+            <color red="0.23529411764705882" green="0.23529411764705882" blue="0.2627450980392157" alpha="0.6" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>
