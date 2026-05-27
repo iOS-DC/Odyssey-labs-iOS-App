@@ -16,10 +16,16 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bhF-3a-zUs">
-                                <rect key="frame" x="20" y="89" width="76.666666666666671" height="36"/>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="1" baselineAdjustment="alignBaselines" minimumScaleFactor="0.75" adjustsFontSizeToFit="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bhF-3a-zUs">
+                                <rect key="frame" x="20" y="75" width="76.666666666666671" height="36"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="22" weight="semibold"/>
                                 <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Where are you heading today?" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="GsL-bt-Sub">
+                                <rect key="frame" x="20" y="113" width="200" height="16"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="12"/>
+                                <color key="textColor" white="0.3" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="IXv-Qa-9B1">
@@ -67,17 +73,21 @@
                                     <constraint firstAttribute="height" constant="64" id="z1W-vb-CRa"/>
                                 </constraints>
                             </stackView>
-                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="exj-Zl-8Yn">
-                                <rect key="frame" x="20" y="255" width="353" height="529"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                            <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" estimatedSectionHeaderHeight="-1" sectionFooterHeight="-1" estimatedSectionFooterHeight="-1" translatesAutoresizingMaskIntoConstraints="NO" id="exj-Zl-8Yn">
+                                <rect key="frame" x="20" y="141" width="353" height="643"/>
+                                <color key="backgroundColor" name="Color"/>
                                 <color key="sectionIndexBackgroundColor" red="0.96862745098039216" green="0.98039215686274506" blue="0.98431372549019602" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                                <connections>
+                                    <outlet property="dataSource" destination="Y6W-OH-hqX" id="Hd1-da-T0a"/>
+                                    <outlet property="delegate" destination="Y6W-OH-hqX" id="Hd2-de-T0b"/>
+                                </connections>
                             </tableView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="vDu-zF-Fre"/>
-                        <color key="backgroundColor" red="0.96470588235294119" green="0.98039215686274506" blue="0.98431372549019602" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" name="Color"/>
                         <constraints>
-                            <constraint firstItem="exj-Zl-8Yn" firstAttribute="top" secondItem="IXv-Qa-9B1" secondAttribute="bottom" constant="20" id="2L2-zA-Ntj"/>
-                            <constraint firstItem="bhF-3a-zUs" firstAttribute="top" secondItem="5EZ-qb-Rvc" secondAttribute="top" constant="89" id="5mh-IG-ykB"/>
+                            <constraint firstItem="exj-Zl-8Yn" firstAttribute="top" secondItem="GsL-bt-Sub" secondAttribute="bottom" constant="12" id="2L2-zA-Ntj"/>
+                            <constraint firstItem="bhF-3a-zUs" firstAttribute="top" secondItem="vDu-zF-Fre" secondAttribute="top" constant="16" id="5mh-IG-ykB"/>
                             <constraint firstItem="IXv-Qa-9B1" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="20" id="EPB-Lt-IMX"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="bottom" secondItem="exj-Zl-8Yn" secondAttribute="bottom" id="Epb-Q2-dNS"/>
                             <constraint firstItem="vDu-zF-Fre" firstAttribute="trailing" secondItem="IXv-Qa-9B1" secondAttribute="trailing" constant="20" id="PQW-0h-0FU"/>
@@ -85,10 +95,13 @@
                             <constraint firstItem="bhF-3a-zUs" firstAttribute="leading" secondItem="5EZ-qb-Rvc" secondAttribute="leading" constant="20" id="ayv-u5-FYv"/>
                             <constraint firstItem="IXv-Qa-9B1" firstAttribute="top" secondItem="bhF-3a-zUs" secondAttribute="bottom" constant="20" id="kju-BB-e1e"/>
                             <constraint firstItem="exj-Zl-8Yn" firstAttribute="leading" secondItem="vDu-zF-Fre" secondAttribute="leading" constant="20" id="vu4-Fc-OVQ"/>
+                            <constraint firstItem="GsL-bt-Sub" firstAttribute="top" secondItem="bhF-3a-zUs" secondAttribute="bottom" constant="2" id="GsL-tp-Sub"/>
+                            <constraint firstItem="GsL-bt-Sub" firstAttribute="leading" secondItem="bhF-3a-zUs" secondAttribute="leading" id="GsL-ld-Sub"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="iL8-lL-Dys"/>
                     <connections>
+                        <outlet property="greetingSubtitleLabel" destination="GsL-bt-Sub" id="naM-V5-Gst"/>
                         <outlet property="greetingsLabel" destination="bhF-3a-zUs" id="naM-V5-kFz"/>
                         <outlet property="homeTableView" destination="exj-Zl-8Yn" id="9zA-HD-7lF"/>
                         <outlet property="offerButton" destination="tnd-rS-XM5" id="Yzv-fh-9Vb"/>
@@ -121,9 +134,9 @@
     </scenes>
     <resources>
         <image name="house" catalog="system" width="128" height="104"/>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
+        <namedColor name="Color">
+            <color red="0.96899999999999997" green="0.97999999999999998" blue="0.98399999999999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
         <systemColor name="systemBlueColor">
             <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>

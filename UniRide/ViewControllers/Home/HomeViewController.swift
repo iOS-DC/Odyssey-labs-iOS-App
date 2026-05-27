@@ -11,6 +11,7 @@ import CoreLocation
 class HomeViewController: UIViewController {
 
     @IBOutlet weak var greetingsLabel: UILabel!
+    @IBOutlet weak var greetingSubtitleLabel: UILabel!
     @IBOutlet weak var homeTableView: UITableView!
     @IBOutlet weak var offerButton: UIButton!
     @IBOutlet weak var requestButton: UIButton!
@@ -23,17 +24,12 @@ class HomeViewController: UIViewController {
     private var isLoading = false
     private var didAnimateListOnFirstShow = false
     private let refreshControl = UIRefreshControl()
-    private let greetingSubtitleLabel = UILabel()
-    private var greetingTopConstraint: NSLayoutConstraint?
-    private var tableTopConstraint: NSLayoutConstraint?
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = AppDesign.Color.groupedBackground
-        homeTableView.backgroundColor = AppDesign.Color.groupedBackground
-        configureSafeAreaLayout()
+        styleHeaderLabels()
         configureQuickActions()
         configureScrollingHeader()
         setupTable()
@@ -79,49 +75,11 @@ class HomeViewController: UIViewController {
         offerButton.applyProminentPrimaryCTA(title: "Offer a Ride")
     }
 
-    private func configureSafeAreaLayout() {
-        greetingsLabel.translatesAutoresizingMaskIntoConstraints = false
-        homeTableView.translatesAutoresizingMaskIntoConstraints = false
+    /// Dynamic typography that can't be expressed in the storyboard.
+    /// Layout, text, basic colors live in Home.storyboard.
+    private func styleHeaderLabels() {
         greetingsLabel.applyGreetingStyle()
-        greetingsLabel.numberOfLines = 1
-        greetingsLabel.adjustsFontSizeToFitWidth = true
-        greetingsLabel.minimumScaleFactor = 0.75
-
-        greetingSubtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        greetingSubtitleLabel.text = "Where are you heading today?"
         greetingSubtitleLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
-        view.addSubview(greetingSubtitleLabel)
-
-        view.constraints.forEach { constraint in
-            let firstView = constraint.firstItem as? UIView
-            let secondView = constraint.secondItem as? UIView
-            let touchesGreeting = firstView == greetingsLabel || secondView == greetingsLabel
-            let touchesTable = firstView == homeTableView || secondView == homeTableView
-
-            if touchesGreeting && (constraint.firstAttribute == .top || constraint.secondAttribute == .top) {
-                constraint.isActive = false
-            }
-
-            if touchesTable && (constraint.firstAttribute == .top || constraint.secondAttribute == .top) {
-                constraint.isActive = false
-            }
-        }
-
-        greetingTopConstraint = greetingsLabel.topAnchor.constraint(
-            equalTo: view.safeAreaLayoutGuide.topAnchor,
-            constant: AppDesign.Spacing.md
-        )
-        tableTopConstraint = homeTableView.topAnchor.constraint(
-            equalTo: greetingSubtitleLabel.bottomAnchor,
-            constant: AppDesign.Spacing.sm
-        )
-
-        NSLayoutConstraint.activate([
-            greetingTopConstraint,
-            greetingSubtitleLabel.topAnchor.constraint(equalTo: greetingsLabel.bottomAnchor, constant: 2),
-            greetingSubtitleLabel.leadingAnchor.constraint(equalTo: greetingsLabel.leadingAnchor),
-            tableTopConstraint
-        ].compactMap { $0 })
     }
 
     private func configureScrollingHeader() {
@@ -163,9 +121,6 @@ class HomeViewController: UIViewController {
     }
 
     func setupTable() {
-        homeTableView.delegate = self
-        homeTableView.dataSource = self
-        homeTableView.separatorStyle = .none
         homeTableView.sectionHeaderTopPadding = 0
 
         homeTableView.register(
