@@ -2,45 +2,34 @@ import UIKit
 
 class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
 
-    // MARK: - Storyboard Outlets (kept so connections don't crash; hidden below)
-    @IBOutlet weak var ContainerView: UIView!
-    @IBOutlet weak var carView: UIView!
-    @IBOutlet weak var bikeView: UIView!
-    @IBOutlet weak var seatsLabel: UILabel!
+    // MARK: - Storyboard outlets (layout lives in OfferRide.storyboard)
+
+    @IBOutlet weak var plateCard: UIView!
+    @IBOutlet weak var modelCard: UIView!
+    @IBOutlet weak var typeCard: UIView!
+    @IBOutlet weak var seatsCard: UIView!
+    @IBOutlet weak var fareCard: UIView!
+
+    @IBOutlet weak var plateField: UITextField!
+    @IBOutlet weak var modelField: UITextField!
+
+    @IBOutlet weak var carButton: UIButton!
+    @IBOutlet weak var bikeButton: UIButton!
+
+    @IBOutlet weak var seatsLabel: UILabel!     // big "0" count label
     @IBOutlet weak var minusButton: UIButton!
     @IBOutlet weak var plusButton: UIButton!
-    @IBOutlet weak var maxSeatsLabel: UILabel!
+    @IBOutlet weak var maxSeatsLabel: UILabel!  // "Maximum N seats" hint
+
     @IBOutlet weak var costTextField: UITextField!
     @IBOutlet weak var suggestedFareLabel: UILabel!
+
     @IBOutlet weak var nextButton: UIButton!
 
-    // MARK: - Programmatic layout (Profile-style)
-    private let scrollView   = UIScrollView()
-    private let formStack    = UIStackView()
-
-    // Fields
-    private let plateField      = UITextField()
-    private let modelField      = UITextField()
-
-    // Vehicle type buttons
-    private let carButton       = UIButton(type: .system)
-    private let bikeButton      = UIButton(type: .system)
-
-    // Seats
-    private let minusSeat       = UIButton(type: .system)
-    private let seatCountLbl    = UILabel()
-    private let plusSeat        = UIButton(type: .system)
-
-    // Fare
-    private let fareField       = UITextField()
-    private let suggestedLbl    = UILabel()
-
-    // Next
-    private let nextBtn         = UIButton(type: .system)
-
     // MARK: - State
+
     private var selectedType: VehicleType = .car {
-        didSet { updateTypeButtons(); calculateSuggestedFare() }
+        didSet { updateTypeButtons(); updateMaxSeatsHint(); calculateSuggestedFare() }
     }
     private var seatCount: Int = 0 {
         didSet { updateSeatsUI(); calculateSuggestedFare(); validateNext() }
@@ -54,233 +43,54 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     var selectedRoute: RideRoute?
 
     // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Step 2"
-        view.backgroundColor = .systemGroupedBackground
-
-        // Hide the storyboard container — we build our own layout
-        ContainerView?.isHidden = true
-
-        buildLayout()
+        styleCards()
+        styleFields()
+        nextButton.applyPrimaryButton(color: AppDesign.Color.primary, radius: AppDesign.Radius.sm)
+        nextButton.setPrimaryCTAEnabled(false)
+        updateTypeButtons()
+        updateMaxSeatsHint()
+        updateSeatsUI()
         preloadVehicleIdentity()
     }
 
-    // MARK: - Build Layout (same pattern as VehicleRegistrationViewController)
-    private func buildLayout() {
-        scrollView.alwaysBounceVertical = true
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(scrollView)
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
+    // MARK: - Styling (dynamic tokens; layout itself is in IB)
 
-        formStack.axis    = .vertical
-        formStack.spacing = AppDesign.Spacing.lg
-        formStack.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(formStack)
-        NSLayoutConstraint.activate([
-            formStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.xl),
-            formStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
-            formStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
-            formStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl),
-            formStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.xl * 2),
-        ])
-
-        // 1. Header
-        formStack.addArrangedSubview(makeHeaderLabel("Enter your vehicle information so passengers can recognise your vehicle."))
-
-        // 2. Registration Plate
-        formStack.addArrangedSubview(makeCard(title: "Registration Plate", content: makePlateField()))
-
-        // 3. Car Model
-        formStack.addArrangedSubview(makeCard(title: "Car Model", content: makeModelField()))
-
-        // 4. Vehicle Type
-        formStack.addArrangedSubview(makeCard(title: "Vehicle Type", content: makeTypeSelector()))
-
-        // 5. Seats
-        formStack.addArrangedSubview(makeCard(title: "Seats You Can Offer", content: makeSeatsControl()))
-
-        // 6. Fare
-        formStack.addArrangedSubview(makeCard(title: "Fare Per Seat (₹)", content: makeFareField()))
-
-        // 7. Next button
-        configureNextButton()
-        formStack.addArrangedSubview(nextBtn)
-
-        updateTypeButtons()
-        updateSeatsUI()
+    private func styleCards() {
+        [plateCard, modelCard, typeCard, seatsCard, fareCard].forEach {
+            $0?.applyCardStyle(corner: AppDesign.Radius.md,
+                               shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                               shadowRadius: AppDesign.Shadow.smallCardRadius)
+        }
     }
 
-    // MARK: - Field factories
-
-    private func makePlateField() -> UIView {
-        plateField.placeholder            = "e.g. PB-08-AB-1234"
-        plateField.autocapitalizationType = .allCharacters
-        plateField.returnKeyType          = .next
-        plateField.clearButtonMode        = .whileEditing
+    private func styleFields() {
         plateField.applyRoundedField()
         plateField.font = AppDesign.Typography.body
-        plateField.heightAnchor.constraint(equalToConstant: 54).isActive = true
         plateField.delegate = self
-        plateField.addTarget(self, action: #selector(fieldsChanged), for: .editingChanged)
-        return plateField
-    }
 
-    private func makeModelField() -> UIView {
-        modelField.placeholder    = "e.g. Maruti Swift, Honda City"
-        modelField.returnKeyType  = .done
-        modelField.clearButtonMode = .whileEditing
         modelField.applyRoundedField()
         modelField.font = AppDesign.Typography.body
-        modelField.heightAnchor.constraint(equalToConstant: 54).isActive = true
         modelField.delegate = self
-        modelField.addTarget(self, action: #selector(fieldsChanged), for: .editingChanged)
-        return modelField
+
+        costTextField.applyRoundedField()
+        costTextField.setLeftPaddingPoints(12)
+        costTextField.font = AppDesign.Typography.body
+        costTextField.delegate = self
     }
 
-    private func makeTypeSelector() -> UIView {
-        configTypeButton(carButton,  icon: "car.fill", label: "Car",         type: .car)
-        configTypeButton(bikeButton, icon: "motorcycle",  label: "Two-Wheeler", type: .bike)
+    // MARK: - Vehicle type buttons (wired in storyboard)
 
-        let row           = UIStackView(arrangedSubviews: [carButton, bikeButton])
-        row.axis          = .horizontal
-        row.spacing       = 12
-        row.distribution  = .fillEqually
-        return row
+    @IBAction private func carButtonTapped(_ sender: UIButton) {
+        didSelectType(.car)
     }
 
-    private func configTypeButton(_ btn: UIButton, icon: String, label: String, type: VehicleType) {
-        var config = UIButton.Configuration.tinted()
-        config.image            = UIImage(systemName: icon)
-        config.title            = label
-        config.imagePlacement   = .top
-        config.imagePadding     = 8
-        config.baseBackgroundColor = AppDesign.Color.primary
-        config.baseForegroundColor = AppDesign.Color.primary
-        config.cornerStyle      = .medium
-        btn.configuration       = config
-        btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.heightAnchor.constraint(equalToConstant: 80).isActive = true
-        btn.addAction(UIAction { [weak self] _ in
-            self?.didSelectType(type)
-        }, for: .touchUpInside)
+    @IBAction private func bikeButtonTapped(_ sender: UIButton) {
+        didSelectType(.bike)
     }
-
-    private func makeSeatsControl() -> UIView {
-        // Minus
-        var minusCfg = UIButton.Configuration.filled()
-        minusCfg.image                = UIImage(systemName: "minus")
-        minusCfg.baseBackgroundColor  = AppDesign.Color.borderSubtle
-        minusCfg.baseForegroundColor  = .label
-        minusCfg.cornerStyle          = .capsule
-        minusSeat.configuration       = minusCfg
-        minusSeat.translatesAutoresizingMaskIntoConstraints = false
-        minusSeat.widthAnchor.constraint(equalToConstant: 44).isActive  = true
-        minusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        minusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(-1) }, for: .touchUpInside)
-
-        // Count label
-        seatCountLbl.text          = "\(seatCount)"
-        seatCountLbl.font          = AppDesign.Typography.display
-        seatCountLbl.textAlignment = .center
-        seatCountLbl.widthAnchor.constraint(equalToConstant: 60).isActive = true
-
-        // Plus
-        var plusCfg = UIButton.Configuration.filled()
-        plusCfg.image               = UIImage(systemName: "plus")
-        plusCfg.baseBackgroundColor = AppDesign.Color.primary
-        plusCfg.baseForegroundColor = .white
-        plusCfg.cornerStyle         = .capsule
-        plusSeat.configuration      = plusCfg
-        plusSeat.translatesAutoresizingMaskIntoConstraints = false
-        plusSeat.widthAnchor.constraint(equalToConstant: 44).isActive  = true
-        plusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        plusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(1) }, for: .touchUpInside)
-
-        let maxLabel = selectedType == .car ? "Maximum 4 seats" : "Maximum 1 seat"
-        let hint = UILabel()
-        hint.text = maxLabel
-        hint.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
-
-        let row       = UIStackView(arrangedSubviews: [minusSeat, seatCountLbl, plusSeat])
-        row.axis      = .horizontal
-        row.spacing   = 16
-        row.alignment = .center
-
-        let container = UIStackView(arrangedSubviews: [row, hint])
-        container.axis      = .vertical
-        container.spacing   = 6
-        container.alignment = .center
-        return container
-    }
-
-    private func makeFareField() -> UIView {
-        fareField.placeholder    = "Enter fare"
-        fareField.keyboardType   = .numberPad
-        fareField.clearButtonMode = .whileEditing
-        fareField.applyRoundedField()
-        fareField.setLeftPaddingPoints(12)
-        fareField.font = AppDesign.Typography.body
-        fareField.heightAnchor.constraint(equalToConstant: 54).isActive = true
-        fareField.delegate = self
-        fareField.addTarget(self, action: #selector(fieldsChanged), for: .editingChanged)
-
-        suggestedLbl.text = "Suggested fare: ₹—"
-        suggestedLbl.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
-
-        let container = UIStackView(arrangedSubviews: [fareField, suggestedLbl])
-        container.axis    = .vertical
-        container.spacing = 6
-        return container
-    }
-
-    private func configureNextButton() {
-        nextBtn.setTitle("Continue", for: .normal)
-        nextBtn.applyPrimaryButton(color: AppDesign.Color.primary, radius: AppDesign.Radius.sm)
-        nextBtn.setPrimaryCTAEnabled(false)
-        nextBtn.translatesAutoresizingMaskIntoConstraints = false
-        nextBtn.addTarget(self, action: #selector(handleNext), for: .touchUpInside)
-    }
-
-    // MARK: - Card wrapper (same as VehicleRegistrationViewController)
-    private func makeCard(title: String, content: UIView) -> UIView {
-        let card = UIView()
-        card.applyCardStyle(corner: AppDesign.Radius.md,
-                            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
-                            shadowRadius: AppDesign.Shadow.smallCardRadius)
-
-        let titleLbl = UILabel()
-        titleLbl.text = title
-        titleLbl.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
-
-        let stack      = UIStackView(arrangedSubviews: [titleLbl, content])
-        stack.axis     = .vertical
-        stack.spacing  = AppDesign.Spacing.sm - AppDesign.Spacing.xxs / 2
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: AppDesign.Spacing.md),
-            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: AppDesign.Spacing.md),
-            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -AppDesign.Spacing.md),
-            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -AppDesign.Spacing.md),
-        ])
-        return card
-    }
-
-    private func makeHeaderLabel(_ text: String) -> UILabel {
-        let lbl = UILabel()
-        lbl.text = text
-        lbl.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
-        lbl.numberOfLines = 0
-        return lbl
-    }
-
-    // MARK: - Actions
 
     private func didSelectType(_ type: VehicleType) {
         selectedType = type
@@ -291,6 +101,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     private func updateTypeButtons() {
         let isCarSelected = selectedType == .car
         [carButton, bikeButton].forEach { btn in
+            guard let btn else { return }
             let isSel = (btn == carButton) ? isCarSelected : !isCarSelected
             btn.configuration?.baseBackgroundColor = isSel ? AppDesign.Color.primary : AppDesign.Color.fieldBackground
             btn.configuration?.baseForegroundColor = isSel ? AppDesign.Color.primary : .secondaryLabel
@@ -300,6 +111,11 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
         }
     }
 
+    // MARK: - Seats (wired in storyboard)
+
+    @IBAction private func minusSeatTapped(_ sender: UIButton) { adjustSeats(-1) }
+    @IBAction private func plusSeatTapped(_ sender: UIButton)  { adjustSeats(1) }
+
     private func adjustSeats(_ delta: Int) {
         let maxSeats = selectedType == .car ? 4 : 1
         let newVal = seatCount + delta
@@ -308,23 +124,29 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     }
 
     private func updateSeatsUI() {
-        seatCountLbl.text = "\(seatCount)"
-        minusSeat.isEnabled = seatCount > 0
-        minusSeat.alpha     = seatCount > 0 ? 1 : 0.4
+        seatsLabel.text = "\(seatCount)"
+        minusButton.isEnabled = seatCount > 0
+        minusButton.alpha     = seatCount > 0 ? 1 : 0.4
         let maxSeats = selectedType == .car ? 4 : 1
-        plusSeat.isEnabled = seatCount < maxSeats
-        plusSeat.alpha     = seatCount < maxSeats ? 1 : 0.4
+        plusButton.isEnabled = seatCount < maxSeats
+        plusButton.alpha     = seatCount < maxSeats ? 1 : 0.4
     }
 
-    // MARK: - Pricing (unchanged from original)
+    private func updateMaxSeatsHint() {
+        let maxSeats = selectedType == .car ? 4 : 1
+        maxSeatsLabel.text = "Maximum \(maxSeats) seat\(maxSeats == 1 ? "" : "s")"
+    }
+
+    // MARK: - Pricing
+
     private func calculateSuggestedFare() {
         guard let route = selectedRoute else {
-            suggestedLbl.text = "Suggested fare: ₹—"
+            suggestedFareLabel.text = "Suggested fare: ₹—"
             return
         }
         guard seatCount > 0 else {
-            fareField.text    = ""
-            suggestedLbl.text = "Suggested fare: ₹—"
+            costTextField.text     = ""
+            suggestedFareLabel.text = "Suggested fare: ₹—"
             validateNext()
             return
         }
@@ -337,25 +159,24 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
             departureTime: departure
         )
 
-        fareField.text = "\(fare)"
-        let peakNote   = PricingManager.shared.isPeakHour(departure) ? " (peak-hour)" : ""
-        suggestedLbl.text = "Suggested fare: ₹\(fare)\(peakNote)"
+        costTextField.text = "\(fare)"
+        let peakNote = PricingManager.shared.isPeakHour(departure) ? " (peak-hour)" : ""
+        suggestedFareLabel.text = "Suggested fare: ₹\(fare)\(peakNote)"
         validateNext()
     }
 
-    @objc private func fieldsChanged() {
-        validateNext()
-    }
+    @IBAction private func fieldsChanged() { validateNext() }
 
     private func validateNext() {
-        let cost    = Double(fareField.text ?? "") ?? 0
+        let cost    = Double(costTextField.text ?? "") ?? 0
         let plateOK = !(plateField.text?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
         let modelOK = !(modelField.text?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
         let enabled = seatCount > 0 && cost > 0 && plateOK && modelOK
-        nextBtn.setPrimaryCTAEnabled(enabled)
+        nextButton.setPrimaryCTAEnabled(enabled)
     }
 
     // MARK: - Pre-fill from saved vehicle
+
     private func preloadVehicleIdentity() {
         guard let vehicle = UserDataModel.shared.getCurrentUser()?.vehicles?.first else { return }
         plateField.text = vehicle.registrationNumber
@@ -367,13 +188,15 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
         }
         let maxSeats = selectedType == .car ? 4 : 1
         seatCount = min(vehicle.seats, maxSeats)
-        seatCountLbl.text = "\(seatCount)"
+        seatsLabel.text = "\(seatCount)"
         updateTypeButtons()
+        updateMaxSeatsHint()
         calculateSuggestedFare()
     }
 
     // MARK: - Next
-    @objc private func handleNext() {
+
+    @IBAction func nextTapped(_ sender: UIButton) {
         let plate = plateField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         let model = modelField.text?.trimmingCharacters(in: .whitespaces) ?? ""
 
@@ -385,7 +208,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
             route: selectedRoute,
             vehicleType: selectedType == .car ? "Car" : "Bike",
             seats: seatCount,
-            farePerSeat: Double(fareField.text ?? "") ?? 0,
+            farePerSeat: Double(costTextField.text ?? "") ?? 0,
             registrationPlate: plate,
             vehicleModel: model
         )
@@ -397,6 +220,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     }
 
     // MARK: - UITextFieldDelegate
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         if textField == plateField {
             modelField.becomeFirstResponder()
@@ -409,7 +233,7 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     func textField(_ textField: UITextField,
                    shouldChangeCharactersIn range: NSRange,
                    replacementString string: String) -> Bool {
-        guard textField == fareField else { return true }
+        guard textField == costTextField else { return true }
         if string.isEmpty { return true }
         let allowedChars = CharacterSet.decimalDigits
         guard string.unicodeScalars.allSatisfy({ allowedChars.contains($0) }) else { return false }
@@ -419,13 +243,6 @@ class VehicleDetailsViewController: UIViewController, UITextFieldDelegate {
     }
 
     func textFieldDidChangeSelection(_ textField: UITextField) {
-        if textField == fareField { validateNext() }
+        if textField == costTextField { validateNext() }
     }
-
-    // MARK: - Legacy IBAction stubs (storyboard wires these; logic now handled above)
-    @IBAction func carTapped(_ sender: UITapGestureRecognizer) {}
-    @IBAction func bikeTapped(_ sender: UITapGestureRecognizer) {}
-    @IBAction func minusTapped(_ sender: UIButton) {}
-    @IBAction func plusTapped(_ sender: UIButton) {}
-    @IBAction func nextTapped(_ sender: UIButton) { handleNext() }
 }
