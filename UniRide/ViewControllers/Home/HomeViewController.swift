@@ -31,7 +31,6 @@ class HomeViewController: UIViewController {
         super.viewDidLoad()
         styleHeaderLabels()
         configureQuickActions()
-        configureScrollingHeader()
         setupTable()
         setupRefreshControl()
 
@@ -82,38 +81,6 @@ class HomeViewController: UIViewController {
         greetingSubtitleLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
     }
 
-    private func configureScrollingHeader() {
-        guard let buttonStack = offerButton.superview else { return }
-        
-        // Remove only the button stack from main view hierarchy
-        buttonStack.removeFromSuperview()
-        buttonStack.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Create the scrolling container just for the buttons
-        let headerView = UIView()
-        headerView.addSubview(buttonStack)
-        
-        if let stack = buttonStack as? UIStackView {
-            stack.distribution = .fillEqually
-            stack.spacing = 12
-        }
-        
-        NSLayoutConstraint.activate([
-            buttonStack.topAnchor.constraint(equalTo: headerView.topAnchor, constant: 4),
-            buttonStack.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 12),
-            buttonStack.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -12),
-            buttonStack.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -16)
-        ])
-        
-        // Pre-calculate the header's auto-layout height
-        headerView.setNeedsLayout()
-        headerView.layoutIfNeeded()
-        let size = headerView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
-        headerView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: size.height)
-        
-        homeTableView.tableHeaderView = headerView
-    }
-
     private func setupRefreshControl() {
         refreshControl.tintColor = AppDesign.Color.primary
         refreshControl.addTarget(self, action: #selector(handlePullToRefresh), for: .valueChanged)
@@ -136,12 +103,16 @@ class HomeViewController: UIViewController {
             forCellReuseIdentifier: "UpcomingRideCell"
         )
         homeTableView.register(
-            SkeletonCell.self,
+            UINib(nibName: "HomeSkeletonCell", bundle: nil),
             forCellReuseIdentifier: SkeletonCell.reuseID
         )
         homeTableView.register(
-            HomeTripShelfCell.self,
+            UINib(nibName: "HomeTripShelfCell", bundle: nil),
             forCellReuseIdentifier: HomeTripShelfCell.reuseID
+        )
+        homeTableView.register(
+            UINib(nibName: "HomeEmptyStateCell", bundle: nil),
+            forCellReuseIdentifier: HomeEmptyStateCell.reuseID
         )
         homeTableView.contentInset = UIEdgeInsets(top: AppDesign.Spacing.xs, left: 0, bottom: AppDesign.Spacing.lg, right: 0)
     }
@@ -269,28 +240,14 @@ class HomeViewController: UIViewController {
 
     // MARK: - Helpers
 
-    /// Returns a fully configured empty-state cell — single source of truth.
+    /// Returns the XIB-backed empty-state cell configured for "no nearby rides".
     private func emptyRidesCell(for tableView: UITableView, at indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell()
-        cell.selectionStyle = .none
-        cell.backgroundColor = .clear
-        let esv = EmptyStateView(
+        let cell = tableView.dequeueReusableCell(withIdentifier: HomeEmptyStateCell.reuseID, for: indexPath) as! HomeEmptyStateCell
+        cell.configure(
             systemImage: "car.fill",
             title: "No rides near you yet",
             body: "Be the first on your route — offer a ride and let classmates find you."
         )
-        esv.translatesAutoresizingMaskIntoConstraints = false
-
-        let container = UIStackView(arrangedSubviews: [esv])
-        container.axis = .vertical
-        container.translatesAutoresizingMaskIntoConstraints = false
-        cell.contentView.addSubview(container)
-        NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 20),
-            container.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -12),
-            container.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
-        ])
         return cell
     }
 
@@ -365,25 +322,14 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
         // ── Events ──
         if indexPath.section == eventsSectionIndex {
             if events.isEmpty {
-                let cell = UITableViewCell()
-                cell.selectionStyle = .none
-                cell.backgroundColor = .clear
-                let esv = EmptyStateView(
+                let cell = tableView.dequeueReusableCell(withIdentifier: HomeEmptyStateCell.reuseID, for: indexPath) as! HomeEmptyStateCell
+                cell.configure(
                     systemImage: "calendar",
                     title: "Nothing on the calendar yet",
                     body: "Check back soon — events from your campus will appear here.",
                     actionTitle: "Browse Community",
-                    tintColor: AppDesign.Color.primary
+                    onAction: { [weak self] in self?.tabBarController?.selectedIndex = 2 }
                 )
-                esv.onAction = { [weak self] in self?.tabBarController?.selectedIndex = 2 }
-                esv.translatesAutoresizingMaskIntoConstraints = false
-                cell.contentView.addSubview(esv)
-                NSLayoutConstraint.activate([
-                    esv.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 12),
-                    esv.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -12),
-                    esv.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
-                    esv.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
-                ])
                 return cell
             }
             let cell = tableView.dequeueReusableCell(withIdentifier: "EventCell", for: indexPath) as! EventTableViewCell
@@ -431,141 +377,35 @@ extension HomeViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard !isLoading else { return nil }
 
-        let container = UIView()
-        container.backgroundColor = tableView.backgroundColor ?? view.backgroundColor
+        let header = HomeSectionHeaderView.loadFromNib()
+        header.backgroundColor = tableView.backgroundColor ?? view.backgroundColor
 
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.backgroundColor = .clear
-        label.applyTextStyle(AppDesign.Typography.bodyStrong)
-
-        if section == upcomingSectionIndex      { label.text = "Upcoming Ride" }
-        else if section == ridesSectionIndex    { label.text = "Rides Near You" }
-        else if section == tripsSectionIndex    { label.text = "Top Trips" }
-        else if section == eventsSectionIndex   { label.text = "Top Events" }
-
-        container.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: AppDesign.Spacing.md),
-            label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-        ])
-
-        // "See All" on Trips and Events sections
-        if section == tripsSectionIndex || section == eventsSectionIndex {
-            let seeAll = UIButton(type: .system)
-            seeAll.setTitle("See All", for: .normal)
-            seeAll.titleLabel?.font = AppDesign.Typography.captionStrong
-            seeAll.tintColor = AppDesign.Color.primary
-            seeAll.translatesAutoresizingMaskIntoConstraints = false
-            let action = section == tripsSectionIndex ? #selector(seeAllTripsTapped) : #selector(seeAllEventsTapped)
-            seeAll.addTarget(self, action: action, for: .touchUpInside)
-            container.addSubview(seeAll)
-            NSLayoutConstraint.activate([
-                seeAll.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -AppDesign.Spacing.md),
-                seeAll.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            ])
+        let title: String
+        let showSeeAll: Bool
+        if section == upcomingSectionIndex {
+            title = "Upcoming Ride"
+            showSeeAll = false
+        } else if section == ridesSectionIndex {
+            title = "Rides Near You"
+            showSeeAll = false
+        } else if section == tripsSectionIndex {
+            title = "Top Trips"
+            showSeeAll = true
+            header.onSeeAllTapped = { [weak self] in self?.seeAllTripsTapped() }
+        } else if section == eventsSectionIndex {
+            title = "Top Events"
+            showSeeAll = true
+            header.onSeeAllTapped = { [weak self] in self?.seeAllEventsTapped() }
+        } else {
+            title = ""
+            showSeeAll = false
         }
 
-        return container
+        header.configure(title: title, showSeeAll: showSeeAll)
+        return header
     }
 
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return isLoading ? 0 : 36
-    }
-}
-
-// MARK: - SkeletonCell
-
-/// A shimmer placeholder cell shown while data is loading.
-private final class SkeletonCell: UITableViewCell {
-    static let reuseID = "SkeletonCell"
-
-    private let cardView    = UIView()
-    private let bar1        = UIView()
-    private let bar2        = UIView()
-    private let bar3        = UIView()
-    private var shimmerLayers: [CAGradientLayer] = []
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .clear
-        contentView.backgroundColor = .clear
-        selectionStyle = .none
-
-        cardView.backgroundColor = .systemBackground
-        cardView.layer.cornerRadius = AppDesign.Radius.lg
-        cardView.layer.shadowColor = UIColor.black.cgColor
-        cardView.layer.shadowOpacity = AppDesign.Shadow.smallCardOpacity
-        cardView.layer.shadowOffset = AppDesign.Shadow.smallCardOffset
-        cardView.layer.shadowRadius = AppDesign.Shadow.smallCardRadius
-        cardView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(cardView)
-
-        [bar1, bar2, bar3].forEach {
-            $0.backgroundColor = .systemGray5
-            $0.layer.cornerRadius = 6
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            cardView.addSubview($0)
-        }
-
-        NSLayoutConstraint.activate([
-            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: AppDesign.Spacing.md),
-            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -AppDesign.Spacing.md),
-
-            bar1.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 20),
-            bar1.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
-            bar1.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.45),
-            bar1.heightAnchor.constraint(equalToConstant: 14),
-
-            bar2.topAnchor.constraint(equalTo: bar1.bottomAnchor, constant: 12),
-            bar2.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
-            bar2.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.65),
-            bar2.heightAnchor.constraint(equalToConstant: 12),
-
-            bar3.topAnchor.constraint(equalTo: bar2.bottomAnchor, constant: 12),
-            bar3.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
-            bar3.widthAnchor.constraint(equalTo: cardView.widthAnchor, multiplier: 0.35),
-            bar3.heightAnchor.constraint(equalToConstant: 12),
-        ])
-    }
-    required init?(coder: NSCoder) { fatalError() }
-
-    func startAnimating() {
-        shimmerLayers.forEach { $0.removeFromSuperlayer() }
-        shimmerLayers = []
-
-        [bar1, bar2, bar3].forEach { bar in
-            let shimmer = CAGradientLayer()
-            shimmer.colors = [
-                UIColor.systemGray5.cgColor,
-                UIColor.systemGray4.withAlphaComponent(0.8).cgColor,
-                UIColor.systemGray5.cgColor,
-            ]
-            shimmer.startPoint = CGPoint(x: 0, y: 0.5)
-            shimmer.endPoint   = CGPoint(x: 1, y: 0.5)
-            shimmer.locations  = [-1, -0.5, 0]
-            shimmer.frame      = bar.bounds
-            shimmer.cornerRadius = 6
-            bar.layer.addSublayer(shimmer)
-            shimmerLayers.append(shimmer)
-
-            let anim = CABasicAnimation(keyPath: "locations")
-            anim.fromValue = [-1, -0.5, 0]
-            anim.toValue   = [1, 1.5, 2]
-            anim.duration  = 1.3
-            anim.repeatCount = .infinity
-            anim.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            shimmer.add(anim, forKey: "shimmer")
-        }
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        // Keep shimmer layers in sync with bar frame after layout
-        zip([bar1, bar2, bar3], shimmerLayers).forEach { bar, shimmer in
-            shimmer.frame = bar.bounds
-        }
     }
 }

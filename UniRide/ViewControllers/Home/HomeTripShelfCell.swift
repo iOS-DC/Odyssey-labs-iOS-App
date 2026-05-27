@@ -1,27 +1,18 @@
 import UIKit
 
-/// A single table-view row that horizontally scrolls up to 3 trip mini-cards.
+/// A table-view row that horizontally scrolls up to 3 trip mini-cards.
+/// Static shell (scroll view + horizontal stack) lives in `HomeTripShelfCell.xib`.
+/// The mini cards themselves are built in code because they're data-driven.
 final class HomeTripShelfCell: UITableViewCell {
 
     static let reuseID = "HomeTripShelfCell"
 
+    @IBOutlet weak var scrollView: UIScrollView!
+    @IBOutlet weak var stackView: UIStackView!
+
     var onTripTapped: ((Trip) -> Void)?
 
-    private let scrollView = UIScrollView()
-    private let stackView = UIStackView()
     private var trips: [Trip] = []
-
-    // MARK: - Init
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        selectionStyle = .none
-        backgroundColor = .clear
-        contentView.backgroundColor = .clear
-        build()
-    }
-
-    required init?(coder: NSCoder) { fatalError() }
 
     // MARK: - Configure
 
@@ -35,35 +26,6 @@ final class HomeTripShelfCell: UITableViewCell {
         }
 
         scrollView.setContentOffset(.zero, animated: false)
-    }
-
-    // MARK: - Build
-
-    private func build() {
-        scrollView.showsHorizontalScrollIndicator = false
-        scrollView.alwaysBounceHorizontal = true
-        scrollView.clipsToBounds = false
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(scrollView)
-
-        stackView.axis = .horizontal
-        stackView.spacing = 12
-        stackView.alignment = .fill
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(stackView)
-
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
-
-            stackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            stackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 16),
-            stackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -16),
-            stackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            stackView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
-        ])
     }
 
     // MARK: - Mini Card

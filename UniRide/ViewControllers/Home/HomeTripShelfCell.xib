@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="24128" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="none" indentationWidth="0.0" reuseIdentifier="HomeTripShelfCell" rowHeight="210" id="HTC-Rt-Cl1" customClass="HomeTripShelfCell" customModule="UniRide" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="393" height="210"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" multipleTouchEnabled="YES" contentMode="center" tableViewCell="HTC-Rt-Cl1" id="HTC-Ct-Vw1">
+                <rect key="frame" x="0.0" y="0.0" width="393" height="210"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <scrollView clipsSubviews="NO" multipleTouchEnabled="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" alwaysBounceHorizontal="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HTC-Sv-Sc1">
+                        <rect key="frame" x="0.0" y="4" width="393" height="202"/>
+                        <subviews>
+                            <stackView opaque="NO" contentMode="scaleToFill" axis="horizontal" alignment="fill" spacing="12" translatesAutoresizingMaskIntoConstraints="NO" id="HTC-Sk-St1"/>
+                        </subviews>
+                        <viewLayoutGuide key="contentLayoutGuide" id="HTC-Lg-Ct1"/>
+                        <viewLayoutGuide key="frameLayoutGuide" id="HTC-Lg-Fr1"/>
+                        <constraints>
+                            <constraint firstItem="HTC-Sk-St1" firstAttribute="top" secondItem="HTC-Lg-Ct1" secondAttribute="top" id="HTC-Sk-Top"/>
+                            <constraint firstItem="HTC-Sk-St1" firstAttribute="leading" secondItem="HTC-Lg-Ct1" secondAttribute="leading" constant="16" id="HTC-Sk-Lead"/>
+                            <constraint firstItem="HTC-Lg-Ct1" firstAttribute="trailing" secondItem="HTC-Sk-St1" secondAttribute="trailing" constant="16" id="HTC-Sk-Trail"/>
+                            <constraint firstItem="HTC-Sk-St1" firstAttribute="bottom" secondItem="HTC-Lg-Ct1" secondAttribute="bottom" id="HTC-Sk-Bot"/>
+                            <constraint firstItem="HTC-Sk-St1" firstAttribute="height" secondItem="HTC-Lg-Fr1" secondAttribute="height" id="HTC-Sk-Ht"/>
+                        </constraints>
+                    </scrollView>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="HTC-Sv-Sc1" firstAttribute="top" secondItem="HTC-Ct-Vw1" secondAttribute="top" constant="4" id="HTC-Sv-Top"/>
+                    <constraint firstItem="HTC-Sv-Sc1" firstAttribute="leading" secondItem="HTC-Ct-Vw1" secondAttribute="leading" id="HTC-Sv-Lead"/>
+                    <constraint firstItem="HTC-Ct-Vw1" firstAttribute="trailing" secondItem="HTC-Sv-Sc1" secondAttribute="trailing" id="HTC-Sv-Trail"/>
+                    <constraint firstItem="HTC-Ct-Vw1" firstAttribute="bottom" secondItem="HTC-Sv-Sc1" secondAttribute="bottom" constant="4" id="HTC-Sv-Bot"/>
+                </constraints>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="scrollView" destination="HTC-Sv-Sc1" id="HTC-Out-Sv"/>
+                <outlet property="stackView" destination="HTC-Sk-St1" id="HTC-Out-Sk"/>
+            </connections>
+        </tableViewCell>
+    </objects>
+</document>
