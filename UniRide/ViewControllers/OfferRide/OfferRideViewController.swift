@@ -3,12 +3,15 @@ import MapKit
 
 // MARK: - OfferRideViewController (Step 1)
 // Route + datetime + vehicle selection + seats + fare in a single screen.
-// On "Next" jumps directly to ReviewRideViewController (old Step 3).
+// Layout lives in OfferRide.storyboard (Step 1 scene). This file holds the
+// dynamic state, behaviour, and the per-vehicle row builder that populates
+// the storyboard-defined vehicleCardsStack.
 class OfferRideViewController: UIViewController,
                                 UITableViewDelegate, UITableViewDataSource,
                                 UITextFieldDelegate, MKMapViewDelegate {
 
-    // MARK: - Storyboard Outlets (route / map section — unchanged)
+    // MARK: - Storyboard outlets (layout is in IB)
+
     @IBOutlet weak var fromTextField: UITextField!
     @IBOutlet weak var toTextField: UITextField!
     @IBOutlet weak var suggestionsTable: UITableView!
@@ -17,19 +20,32 @@ class OfferRideViewController: UIViewController,
     @IBOutlet weak var routePillsContainer: UIView!
     @IBOutlet weak var chooseRouteLabel: UILabel!
     @IBOutlet weak var nextButton: UIButton!
-    @IBOutlet weak var dateTimeStack: UIStackView!
     @IBOutlet weak var loadingContainer: UIStackView!
     @IBOutlet weak var loadingSpinner: UIActivityIndicatorView!
     @IBOutlet weak var loadingLabel: UILabel!
     @IBOutlet weak var emptyStateLabel: UILabel!
-    @IBOutlet weak var titleLabel: UILabel!
-    @IBOutlet weak var fromLabelTitle: UILabel!
-    @IBOutlet weak var fromFieldContainer: UIView!
-    @IBOutlet weak var toLabelTitle: UILabel!
-    @IBOutlet weak var toFieldContainer: UIView!
     @IBOutlet weak var datePicker: UIDatePicker!
     @IBOutlet weak var timePicker: UIDatePicker!
-    @IBOutlet weak var contentView: UIView!
+
+    // Cards (styled via applyCardStyle in viewDidLoad)
+    @IBOutlet weak var routeCard: UIView!
+    @IBOutlet weak var whenCard: UIView!
+    @IBOutlet weak var vehicleCard: UIView!
+    @IBOutlet weak var seatsCard: UIView!
+    @IBOutlet weak var fareCard: UIView!
+
+    // Vehicle list (rows added dynamically)
+    @IBOutlet weak var vehicleCardsStack: UIStackView!
+
+    // Seat controls
+    @IBOutlet weak var minusSeat: UIButton!
+    @IBOutlet weak var plusSeat: UIButton!
+    @IBOutlet weak var seatCountLbl: UILabel!
+    @IBOutlet weak var seatsHintLabel: UILabel!
+
+    // Fare controls
+    @IBOutlet weak var fareField: UITextField!
+    @IBOutlet weak var suggestedLbl: UILabel!
 
     // MARK: - Optional route handoff
     var prefilledFrom: LocationPoint?
@@ -56,29 +72,37 @@ class OfferRideViewController: UIViewController,
         didSet { updateSeatsUI(); calculateSuggestedFare(); updateNextButtonState() }
     }
 
-    // MARK: - Programmatic vehicle / seats / fare views
-    private let vehicleCardsStack  = UIStackView()   // rows inside Vehicle card
-    private let seatCountLbl       = UILabel()
-    private let seatsHintLabel     = UILabel()
-    private let minusSeat          = UIButton(type: .system)
-    private let plusSeat           = UIButton(type: .system)
-    private let fareField          = UITextField()
-    private let suggestedLbl       = UILabel()
-
-    // Keep a ref to the seats card so we can show/hide it
-    private var seatsCard: UIView?
-    private var fareCard: UIView?
-
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Plan Your Ride"
+        styleCards()
+        styleHeaderTextFields()
+        styleSeatButtons()
+        applyDynamicTypography()
+        nextButton.applyProminentPrimaryCTA(title: nextButton.currentTitle ?? "Continue",
+                                            corner: AppDesign.Radius.md)
+
+        // Map gets a corner radius + clipping (matches former runtime style).
+        mapView.layer.cornerRadius = AppDesign.Radius.md
+        mapView.clipsToBounds = true
+        routePillsContainer.applySmallCard()
+
+        // Seats / fare cards start hidden until the user picks a vehicle.
+        seatsCard.isHidden = true
+        fareCard.isHidden = true
+
+        // Fare field needs runtime styling.
+        fareField.applyRoundedField()
+        fareField.setLeftPaddingPoints(12)
+        fareField.font = AppDesign.Typography.body
+        fareField.delegate = self
+
         setDefaultDateAndTime()
-        view.backgroundColor = AppDesign.Color.groupedBackground
         setupAutocomplete()
         setupPickers()
-        rebuildLayout()
         setInitialRouteUIState()
+        reloadVehicles()
         prefillLocationsIfPossible()
         updateNextButtonState()
 
@@ -89,109 +113,51 @@ class OfferRideViewController: UIViewController,
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // Refresh vehicles every time user comes back (e.g. after adding a new one)
         reloadVehicles()
     }
 
-    // MARK: - Layout
-    private func rebuildLayout() {
-        contentView?.isHidden = true
+    // MARK: - Dynamic styling (tokens that can't live in IB)
 
-        let scroll = UIScrollView()
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        scroll.alwaysBounceVertical = true
-        view.addSubview(scroll)
+    private func styleCards() {
+        [routeCard, whenCard, vehicleCard, seatsCard, fareCard].forEach {
+            $0?.applyCardStyle(corner: AppDesign.Radius.md,
+                               shadowOpacity: AppDesign.Shadow.smallCardOpacity,
+                               shadowRadius: AppDesign.Shadow.smallCardRadius)
+        }
+    }
 
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = AppDesign.Spacing.lg
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        scroll.addSubview(stack)
-
-        NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: AppDesign.Spacing.xl),
-            stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: AppDesign.Spacing.md),
-            stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -AppDesign.Spacing.md),
-            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -AppDesign.Spacing.xl),
-            stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -AppDesign.Spacing.md * 2)
-        ])
-
-        // Header
-        let headerLabel = UILabel()
-        headerLabel.text = "Tell us your route and when you're leaving — classmates nearby will find you."
-        headerLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
-        stack.addArrangedSubview(headerLabel)
-
-        // From / To unified route card
+    private func styleHeaderTextFields() {
         fromTextField.borderStyle = .none
         fromTextField.backgroundColor = .clear
         fromTextField.addLeftIcon("smallcircle.filled.circle", tint: AppDesign.Color.success)
-        fromTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
 
         toTextField.borderStyle = .none
         toTextField.backgroundColor = .clear
         toTextField.addLeftIcon("smallcircle.filled.circle", tint: AppDesign.Color.destructive)
-        toTextField.heightAnchor.constraint(equalToConstant: 48).isActive = true
+    }
 
-        stack.addArrangedSubview(makeRouteCard())
+    private func styleSeatButtons() {
+        // Storyboard sets the minus/plus button images + capsule corner. We
+        // tint them at runtime so it picks up the design tokens.
+        if var cfg = minusSeat.configuration {
+            cfg.baseBackgroundColor = AppDesign.Color.borderSubtle
+            cfg.baseForegroundColor = .label
+            minusSeat.configuration = cfg
+        }
+        if var cfg = plusSeat.configuration {
+            cfg.baseBackgroundColor = AppDesign.Color.primary
+            cfg.baseForegroundColor = .white
+            plusSeat.configuration = cfg
+        }
+        seatCountLbl.font = AppDesign.Typography.display
+    }
 
-        // Date / Time pickers
-        let dateView = makeLabeledPicker(picker: datePicker, icon: "calendar")
-        let timeView = makeLabeledPicker(picker: timePicker, icon: "clock")
-        let whenStack = UIStackView(arrangedSubviews: [dateView, timeView])
-        whenStack.axis = .horizontal
-        whenStack.spacing = 10
-        whenStack.distribution = .fillEqually
-        stack.addArrangedSubview(makeStepCard(title: "When", content: whenStack))
-
-        // Route section
-        chooseRouteLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
-        stack.addArrangedSubview(chooseRouteLabel)
-
-        mapView.layer.cornerRadius = AppDesign.Radius.md
-        mapView.clipsToBounds = true
-        mapView.heightAnchor.constraint(equalToConstant: 240).isActive = true
-        stack.addArrangedSubview(mapView)
-
-        routePillsContainer.applySmallCard()
-        stack.addArrangedSubview(routePillsContainer)
-
-        // ── NEW: Vehicle selection ──────────────────────────────────────────
-        vehicleCardsStack.axis = .vertical
-        vehicleCardsStack.spacing = 8
-        let vehicleCard = makeStepCard(title: "Your Vehicle", content: vehicleCardsStack)
-        stack.addArrangedSubview(vehicleCard)
-        reloadVehicles()   // populate vehicleCardsStack
-
-        // ── NEW: Seats ──────────────────────────────────────────────────────
-        let sc = makeSeatsCard()
-        seatsCard = sc
-        sc.isHidden = true
-        stack.addArrangedSubview(sc)
-
-        // ── NEW: Fare ───────────────────────────────────────────────────────
-        let fc = makeStepCard(title: "Price Per Seat (₹)", content: makeFareContent())
-        fareCard = fc
-        fc.isHidden = true
-        stack.addArrangedSubview(fc)
-
-        // Next button
-        let nextTitle = nextButton.currentTitle ?? "Continue"
-        nextButton.applyProminentPrimaryCTA(title: nextTitle, corner: AppDesign.Radius.md)
-        stack.addArrangedSubview(nextButton)
-
-        // Keep autocomplete overlay on top
-        view.bringSubviewToFront(suggestionsTable)
-        view.bringSubviewToFront(loadingContainer)
-        view.bringSubviewToFront(emptyStateLabel)
-
+    private func applyDynamicTypography() {
         loadingLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
         emptyStateLabel.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel, lines: 0)
+        chooseRouteLabel.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
+        seatsHintLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
+        suggestedLbl.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
     }
 
     // MARK: - Vehicle list helpers
@@ -209,7 +175,6 @@ class OfferRideViewController: UIViewController,
             vehicleCardsStack.addArrangedSubview(row)
         }
 
-        // "＋ Add New Vehicle" row
         let addRow = makeAddVehicleRow()
         vehicleCardsStack.addArrangedSubview(addRow)
     }
@@ -227,7 +192,6 @@ class OfferRideViewController: UIViewController,
             ? AppDesign.Color.primary.cgColor
             : AppDesign.Color.border.cgColor
 
-        // Icon
         let iconName: String
         switch vehicle.type {
         case .car:   iconName = "car.fill"
@@ -241,7 +205,6 @@ class OfferRideViewController: UIViewController,
         icon.widthAnchor.constraint(equalToConstant: 28).isActive = true
         icon.heightAnchor.constraint(equalToConstant: 28).isActive = true
 
-        // Labels
         let nameLabel = UILabel()
         let displayName = vehicle.alias?.isEmpty == false ? vehicle.alias! : vehicle.model
         nameLabel.text = displayName
@@ -257,7 +220,6 @@ class OfferRideViewController: UIViewController,
         textStack.axis = .vertical
         textStack.spacing = 2
 
-        // Checkmark
         let checkmark = UIImageView(image: UIImage(systemName: "checkmark.circle.fill"))
         checkmark.tintColor = AppDesign.Color.primary
         checkmark.alpha = isSelected ? 1 : 0
@@ -279,7 +241,6 @@ class OfferRideViewController: UIViewController,
             row.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
         ])
 
-        // Tap to select
         let tap = UITapGestureRecognizer(target: self, action: #selector(vehicleRowTapped(_:)))
         container.addGestureRecognizer(tap)
         container.tag = vehicles.firstIndex(where: { $0.registrationNumber == vehicle.registrationNumber }) ?? 0
@@ -292,9 +253,8 @@ class OfferRideViewController: UIViewController,
         guard let view = sender.view, vehicles.indices.contains(view.tag) else { return }
         AppHaptics.selection()
         selectedVehicle = vehicles[view.tag]
-        // Show seats + fare cards
-        seatsCard?.isHidden = false
-        fareCard?.isHidden = false
+        seatsCard.isHidden = false
+        fareCard.isHidden = false
     }
 
     private func makeAddVehicleRow() -> UIView {
@@ -340,58 +300,13 @@ class OfferRideViewController: UIViewController,
         let sb = UIStoryboard(name: "VehicleRegistration", bundle: nil)
         guard let vc = sb.instantiateViewController(withIdentifier: "VehicleRegistrationViewController") as? VehicleRegistrationViewController else { return }
         vc.vehicleToEdit = nil
-        // After the user saves and pops back, viewWillAppear will reload vehicles
         navigationController?.pushViewController(vc, animated: true)
     }
 
-    // MARK: - Seats card
+    // MARK: - Seats (wired from storyboard)
 
-    private func makeSeatsCard() -> UIView {
-        // Minus
-        var minusCfg = UIButton.Configuration.filled()
-        minusCfg.image               = UIImage(systemName: "minus")
-        minusCfg.baseBackgroundColor = AppDesign.Color.borderSubtle
-        minusCfg.baseForegroundColor = .label
-        minusCfg.cornerStyle         = .capsule
-        minusSeat.configuration      = minusCfg
-        minusSeat.translatesAutoresizingMaskIntoConstraints = false
-        minusSeat.widthAnchor.constraint(equalToConstant: 44).isActive  = true
-        minusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        minusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(-1) }, for: .touchUpInside)
-
-        // Count
-        seatCountLbl.text          = "0"
-        seatCountLbl.font          = AppDesign.Typography.display
-        seatCountLbl.textAlignment = .center
-        seatCountLbl.widthAnchor.constraint(equalToConstant: 60).isActive = true
-
-        // Plus
-        var plusCfg = UIButton.Configuration.filled()
-        plusCfg.image               = UIImage(systemName: "plus")
-        plusCfg.baseBackgroundColor = AppDesign.Color.primary
-        plusCfg.baseForegroundColor = .white
-        plusCfg.cornerStyle         = .capsule
-        plusSeat.configuration      = plusCfg
-        plusSeat.translatesAutoresizingMaskIntoConstraints = false
-        plusSeat.widthAnchor.constraint(equalToConstant: 44).isActive  = true
-        plusSeat.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        plusSeat.addAction(UIAction { [weak self] _ in self?.adjustSeats(1) }, for: .touchUpInside)
-
-        seatsHintLabel.text = "Maximum 4 seats"
-        seatsHintLabel.applyTextStyle(AppDesign.Typography.caption, color: .tertiaryLabel)
-
-        let row = UIStackView(arrangedSubviews: [minusSeat, seatCountLbl, plusSeat])
-        row.axis = .horizontal
-        row.spacing = 16
-        row.alignment = .center
-
-        let inner = UIStackView(arrangedSubviews: [row, seatsHintLabel])
-        inner.axis = .vertical
-        inner.spacing = 6
-        inner.alignment = .center
-
-        return makeStepCard(title: "Available Seats", content: inner)
-    }
+    @IBAction private func minusSeatTapped(_ sender: UIButton) { adjustSeats(-1) }
+    @IBAction private func plusSeatTapped(_ sender: UIButton)  { adjustSeats(1) }
 
     private func updateSeatsMax() {
         let maxSeats = maxOfferableSeats()
@@ -420,29 +335,9 @@ class OfferRideViewController: UIViewController,
         return max(1, min(vehicle.seats, 6))
     }
 
-    // MARK: - Fare content
+    // MARK: - Fare
 
-    private func makeFareContent() -> UIView {
-        fareField.placeholder    = "Enter price"
-        fareField.keyboardType   = .numberPad
-        fareField.clearButtonMode = .whileEditing
-        fareField.applyRoundedField()
-        fareField.setLeftPaddingPoints(12)
-        fareField.font = AppDesign.Typography.body
-        fareField.heightAnchor.constraint(equalToConstant: 54).isActive = true
-        fareField.delegate = self
-        fareField.addTarget(self, action: #selector(fareChanged), for: .editingChanged)
-
-        suggestedLbl.text = "Suggested: ₹—"
-        suggestedLbl.applyTextStyle(AppDesign.Typography.subheadline, color: .secondaryLabel)
-
-        let container = UIStackView(arrangedSubviews: [fareField, suggestedLbl])
-        container.axis    = .vertical
-        container.spacing = 6
-        return container
-    }
-
-    @objc private func fareChanged() { updateNextButtonState() }
+    @IBAction private func fareChanged() { updateNextButtonState() }
 
     private func calculateSuggestedFare() {
         guard let route = selectedRoute, seatCount > 0, let vehicle = selectedVehicle else {
@@ -538,7 +433,6 @@ class OfferRideViewController: UIViewController,
     func textField(_ textField: UITextField,
                    shouldChangeCharactersIn range: NSRange,
                    replacementString string: String) -> Bool {
-        // Location fields: drive autocomplete
         if textField == fromTextField || textField == toTextField {
             let updated = ((textField.text ?? "") as NSString).replacingCharacters(in: range, with: string)
             activeField = textField
@@ -546,7 +440,6 @@ class OfferRideViewController: UIViewController,
             updateSuggestionTablePosition()
             return true
         }
-        // Fare field: digits only, max 5 chars
         if textField == fareField {
             if string.isEmpty { return true }
             let allowed = CharacterSet.decimalDigits
@@ -615,11 +508,11 @@ class OfferRideViewController: UIViewController,
     // MARK: - Route fetching
 
     private func setInitialRouteUIState() {
-        chooseRouteLabel.alpha = 0;   chooseRouteLabel.isHidden = true
-        mapView.alpha = 0;            mapView.isHidden = true
+        chooseRouteLabel.alpha = 0;    chooseRouteLabel.isHidden = true
+        mapView.alpha = 0;             mapView.isHidden = true
         routePillsContainer.alpha = 0; routePillsContainer.isHidden = true
-        emptyStateLabel.alpha = 1;    emptyStateLabel.isHidden = false
-        loadingContainer.alpha = 0;   loadingContainer.isHidden = true
+        emptyStateLabel.alpha = 1;     emptyStateLabel.isHidden = false
+        loadingContainer.alpha = 0;    loadingContainer.isHidden = true
         loadingSpinner.stopAnimating()
     }
 
@@ -643,7 +536,7 @@ class OfferRideViewController: UIViewController,
                 self.buildRoutePills()
                 self.hideLoading()
                 self.revealRouteUI()
-                self.calculateSuggestedFare()   // recalc once route is known
+                self.calculateSuggestedFare()
             }
         }
     }
@@ -750,7 +643,7 @@ class OfferRideViewController: UIViewController,
     private func updateNextButtonState() {
         let hasFrom    = !(fromTextField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasTo      = !(toTextField.text   ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        
+
         if !SessionManager.shared.isLoggedIn {
             nextButton.setPrimaryCTAEnabled(hasFrom && hasTo)
             return
@@ -826,90 +719,5 @@ class OfferRideViewController: UIViewController,
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
-    }
-
-    // MARK: - UI helpers
-
-    private func makeLabeledPicker(picker: UIDatePicker, icon: String) -> UIView {
-        let container = UIView()
-        container.backgroundColor = AppDesign.Color.fieldBackground
-        container.layer.cornerRadius = 16
-        container.clipsToBounds = true
-
-        let iconView = UIImageView(image: UIImage(systemName: icon))
-        iconView.tintColor = .systemGray
-        iconView.contentMode = .scaleAspectFit
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-
-        picker.translatesAutoresizingMaskIntoConstraints = false
-        picker.transform = .identity
-        container.addSubview(iconView)
-        container.addSubview(picker)
-
-        NSLayoutConstraint.activate([
-            container.heightAnchor.constraint(equalToConstant: 54),
-            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
-            iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 20),
-            iconView.heightAnchor.constraint(equalToConstant: 20),
-            picker.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 4),
-            picker.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -4),
-            picker.centerYAnchor.constraint(equalTo: container.centerYAnchor)
-        ])
-        return container
-    }
-
-    private func makeRouteCard() -> UIView {
-        let card = UIView()
-        card.backgroundColor = .systemBackground
-        card.applyCardStyle(corner: AppDesign.Radius.md,
-                            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
-                            shadowRadius: AppDesign.Shadow.smallCardRadius)
-
-        let titleLbl = UILabel()
-        titleLbl.text = "Route"
-        titleLbl.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
-
-        let hairline = UIView()
-        hairline.backgroundColor = AppDesign.Color.divider
-        hairline.heightAnchor.constraint(equalToConstant: 0.5).isActive = true
-
-        let innerStack = UIStackView(arrangedSubviews: [titleLbl, fromTextField, hairline, toTextField])
-        innerStack.axis = .vertical
-        innerStack.spacing = 4
-        innerStack.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(innerStack)
-        NSLayoutConstraint.activate([
-            innerStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            innerStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-            innerStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            innerStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
-        ])
-        return card
-    }
-
-    private func makeStepCard(title: String, content: UIView) -> UIView {
-        let card = UIView()
-        card.backgroundColor = .systemBackground
-        card.applyCardStyle(corner: AppDesign.Radius.md,
-                            shadowOpacity: AppDesign.Shadow.smallCardOpacity,
-                            shadowRadius: AppDesign.Shadow.smallCardRadius)
-
-        let titleLbl = UILabel()
-        titleLbl.text = title
-        titleLbl.applyTextStyle(AppDesign.Typography.captionStrong, color: .secondaryLabel)
-
-        let innerStack = UIStackView(arrangedSubviews: [titleLbl, content])
-        innerStack.axis = .vertical
-        innerStack.spacing = 8
-        innerStack.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(innerStack)
-        NSLayoutConstraint.activate([
-            innerStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 16),
-            innerStack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-            innerStack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            innerStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -16)
-        ])
-        return card
     }
 }
